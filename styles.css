@@ -1004,3 +1004,6 @@ body.stable-race-result-active .stable-race-controls,body.stable-race-result-act
 .dev-grid button:active{background:#30392b;color:#f4f0e7}
 .dev-grid button.danger{grid-column:1/-1;background:#f0d9cf;color:#8a3f25}
 @media (max-height:520px) and (orientation:landscape){.dev-menu .wilds-card{display:flex;width:min(760px,100%)}.dev-menu .dev-menu-body{display:grid;grid-template-columns:1fr 1fr;align-content:start}.dev-grid{grid-template-columns:repeat(3,1fr)}}
+.dev-grid.profiles{grid-template-columns:1fr}
+.dev-grid button.active{background:#30392b;color:#ffd45a}
+.dev-note{margin:0;font-size:11px;line-height:1.4;color:#5b6353}

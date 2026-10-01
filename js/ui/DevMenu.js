@@ -2,6 +2,7 @@
 // Test shortcuts for the wilds/garden loop. Enabled per device from Indstillinger on the start
 // screen (localStorage 'tgw.devMenu' = '1'). Works on the player's real save.
 import { MATERIALS, TOOLS } from '../data/wildsCatalog.js';
+import { PROFILES, CONTROL_PROFILE_KEY, savedProfile, applyControlProfile } from '../core/ControlProfiles.js';
 
 export const DEV_MENU_KEY = 'tgw.devMenu';
 export function devMenuEnabled() { try { return localStorage.getItem(DEV_MENU_KEY) === '1'; } catch { return false; } }
@@ -19,6 +20,7 @@ export class DevMenu {
     el.innerHTML = `<div class="wilds-card">
       <header><div><small>TEST · RIGTIG SAVE</small><h2>Dev menu</h2></div><button type="button" class="wilds-close" aria-label="Close">✕</button></header>
       <div class="dev-menu-body">
+        <section><small>KAMERA & STYRING (kun dev)</small><div class="dev-grid profiles">${Object.entries(PROFILES).map(([id, p]) => `<button data-a="cam:${id}">${p.name}</button>`).join('')}</div><p class="dev-note"></p></section>
         <section><small>RESSOURCER</small><div class="dev-grid">
           <button data-a="mats">+20 materialer</button><button data-a="tools">Alle redskaber</button><button data-a="pots">3 potter + vand</button><button data-a="skip">Spol 5 min frem</button>
         </div></section>
@@ -35,6 +37,7 @@ export class DevMenu {
         <section><small>FARE</small><div class="dev-grid"><button data-a="reset" class="danger">Nulstil wilds-save (denne karakter)</button></div></section>
       </div></div>`;
     document.body.appendChild(el); this.el = el; this.open = false;
+    this.profile = applyControlProfile(game, savedProfile()); this.markProfile();
     for (const t of ['pointerdown', 'pointermove', 'pointerup']) { el.addEventListener(t, e => e.stopPropagation()); btn.addEventListener(t, e => e.stopPropagation()); }
     btn.addEventListener('click', () => this.show());
     el.addEventListener('click', e => {
@@ -46,6 +49,10 @@ export class DevMenu {
 
   show() { this.open = true; this.el.classList.add('open'); this.g.input?.resetTouchPointers?.(); }
   hide() { this.open = false; this.el.classList.remove('open'); }
+  markProfile() {
+    this.el.querySelectorAll('[data-a^="cam:"]').forEach(b => b.classList.toggle('active', b.dataset.a === `cam:${this.profile}`));
+    this.el.querySelector('.dev-note').textContent = PROFILES[this.profile]?.text || '';
+  }
   toast(t) { this.g.hud?.showToast(t); }
 
   teleport(space, x, z, heading) {
@@ -61,6 +68,11 @@ export class DevMenu {
 
   run(a) {
     const g = this.g, w = g.wilds, p = w.profile;
+    if (a.startsWith('cam:')) {
+      const id = a.slice(4); try { localStorage.setItem(CONTROL_PROFILE_KEY, id); } catch {}
+      this.profile = applyControlProfile(g, id); this.markProfile(); this.toast(`Kamera: ${PROFILES[this.profile].name}`);
+      return;
+    }
     if (a === 'mats') { for (const id of Object.keys(MATERIALS)) w.give(id, id === 'golden_seed' ? 2 : id === 'wild_seed' ? 5 : 20); g.hud.materials.classList.add('show'); this.toast('+20 materialer, +5 Wild Seeds, +2 Golden Seeds'); }
     else if (a === 'tools') { for (const t of TOOLS) { p.tools[t.id] = true; if (w.rack[t.id]) w.rack[t.id].visible = true; } w.save.persist(); w.emit(); this.toast('Alle redskaber'); }
     else if (a === 'pots') {

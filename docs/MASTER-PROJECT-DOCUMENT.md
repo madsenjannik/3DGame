@@ -1500,6 +1500,13 @@ Start screen → Indstillinger → **Dev-menu** (per device). In game a **DEV** 
 level 0–3 (writes the greenhouse's own save key and reloads), spawn/clear weeds and snails, reset wilds save.
 Works on the **real save**. Crafted tools show as a row under the materials in the HUD (water charges on the can).
 
+## Camera/control variants (R50.1, DEV ONLY)
+Dev menu → KAMERA & STYRING: **Standard** (unchanged, locked behavior), **A · Frit kamera** (Genshin/Roblox-style:
+camera only turns on swipe, lazy recenter behind you after ~2.5 s of walking, 7.0/5.8 m, FOV 60/52) and **B · Cozy
+ovenfra** (Animal Crossing-style: fixed high camera, never rotates, stick matches the screen, 11.5/9.8 m, FOV 46/40).
+Implemented in `js/core/ControlProfiles.js` by swapping methods on the live camera instance; `ThirdPersonCamera.js`
+and `CharacterController.js` are untouched and non-dev players always get Standard. Choosing a winner = separate GO.
+
 ## Known limits
 Placeholder procedural art for all new props; no real combat/health; no global day/night lighting; balancing is a
 first guess. Older systems' saves not unified.

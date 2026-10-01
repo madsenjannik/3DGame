@@ -82,7 +82,7 @@ export class Game {
     this.workbenchPanel=new WorkbenchPanel({wilds:this.wilds,state:this.state});
     this.wilds.onOpenWorkbench=()=>{this.workbenchPanel.show();this.input.resetTouchPointers?.();};
     const syncTools=()=>this.hud.setTools?.(this.wilds.profile.tools,this.wilds.profile.water);this.wilds.onChange(syncTools);syncTools();
-    if(devMode||devMenuEnabled())this.devMenu=new DevMenu(this);
+    if(devMode||devMenuEnabled()){this.devMenu=new DevMenu(this);window.__tgw=this;}
     mark('wildsReadyMs');
     this.cameraOcclusion=new CameraOcclusionSystem({world:this.world,homePortal:this.homePortal,greenhouse:this.greenhouse,orangery:this.orangery,stable:this.stable});
     this.followCamera.setOcclusionSystem(this.cameraOcclusion);
