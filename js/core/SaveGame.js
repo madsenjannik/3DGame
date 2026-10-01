@@ -83,6 +83,11 @@ export class SaveGame {
     document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') this.flush(); });
   }
 
+  // DEV: drop this character's wilds profile; nothing is written afterwards (caller reloads).
+  resetProfile() {
+    delete this.data.profiles[this.characterId]; this.flush(); this.ephemeral = true;
+  }
+
   // Coalesce bursts of changes (gathering several nodes) into one write.
   persist() {
     if (this.ephemeral) return;

@@ -9,7 +9,20 @@
 ---
 
 
-## CURRENT WORKING STATUS — 01/10/2026
+## CURRENT WORKING STATUS — 01/10/2026 (R50 candidate line)
+
+- **Source of truth is now GitHub:** `madsenjannik/3DGame`, branch `claude/magical-lovelace-nuka97`, served by GitHub Pages at `https://madsenjannik.github.io/3DGame/`. Commits replace ZIP packages; `version.js` is the single version/build label.
+- **Last LOCKED gameplay baseline is still R45.** Everything after it is CANDIDATE until Jannik tests and writes **LÅS**:
+  - R46.2 Start/Splash presentation (v0.4.00);
+  - cleanup pass (v0.4.01): fully offline (three.js addons + React/Babel vendored), dead duplicates removed, docs moved to `docs/`;
+  - R47 core loop v1 (v0.4.10) and R48 threat/traits/golden seeds/daily (v0.4.20), R48.1 mobile layout (v0.4.21);
+  - R49 builds moved into the private garden + greenhouse pots (v0.5.00);
+  - R50 dev menu + tools in HUD (v0.5.10).
+- **Pre-existing bug fixed in the R47 line:** `game.html` never closed `#stable-race-ui`, so joystick, E/action button, toasts, hint and loading screen were invisible outside races (no tappable interaction on iPhone). Stable result screen re-verified unchanged.
+- **Jannik's rule restated:** building happens in the **private garden**, not the shared world (world building may come later). The greenhouse is for pots and plants. **The three greenhouse levels must not be changed.**
+- No build without Jannik's explicit **GO** — this applies to every follow-up, including "small" layout fixes.
+
+## R45 LOCKED STATUS (carried forward)
 
 - **Current canonical locked working base:** `THE-GROWING-WILDS-v0.3.96-R45-HOLO-INDICATOR-LOCKED.zip`.
 - **R45 is the branch/source-of-truth baseline** for all new work unless Jannik explicitly chooses another base.
@@ -587,12 +600,13 @@ Placement:
 
 The recent Stable Result / Podium / Standings redesign and RIDE / JUMP / FISH indicator work are complete in the R45 locked baseline. Do not reopen them without a new explicit GO.
 
-No next implementation scope is selected yet. Unless a runtime bug appears, the preferred content/progression order is:
+Status 01/10/2026: items 3 and (partly) 4 now exist as CANDIDATES (R47–R50, see section 30). Lookout is retired.
+Unless a runtime bug appears, the remaining content/progression order is:
 
-1. **Boat rent/buy economy**
-2. **Lookout Scout Mode**
-3. **Resource / Build / Crafting — next gameplay layer**
-4. **Snail integration / reusable basic-enemy framework**
+1. **Test + lock R47–R50** (garden builds, pots, threat, dev menu) after Jannik's runtime test
+2. **Boat rent/buy economy**
+3. ~~Lookout Scout Mode~~ — retired by Jannik ("fuck lookout"); do not rebuild without a new GO
+4. **Snail → real basic-enemy framework** (today: placeholder snails that eat pots, 2 swats; no health/combat)
 5. **Mole integration**
 6. **Wood Giant integration**
 7. **Lake Run integration**
@@ -603,7 +617,7 @@ No next implementation scope is selected yet. Unless a runtime bug appears, the 
 
 Separate validation/technical items:
 - final real-device approval of R34B mobile gesture controls;
-- consolidate save/progression into a versioned SaveGame flow only after active gameplay/content bugs are stable;
+- SaveGame: new progression uses `tgw.save` (SaveGameV2, per character). Stable/Greenhouse/MoveIn/Fishing keys are NOT migrated yet — separate GO;
 - performance work remains measurement-first; do not optimize without evidence;
 - central interaction resolver / broader architecture seams are only introduced when a concrete need justifies them.
 
@@ -628,6 +642,9 @@ Boat collision remains separate from ordinary character-water blocking.
 ---
 
 # 15. LOOKOUT / RESOURCE LOOP
+
+**R49: the private-garden Lookout build loop (`ResourceBuildLoopSystem`) is retired** and no longer constructed;
+the wilds workbench took its site. The world landmark Lookout is untouched. Text below is historical.
 
 Lookout exists as a world landmark.
 
@@ -1090,7 +1107,8 @@ Locked beneath/currently carried forward: R38A Stable premium UI/Tack Shop, R37 
 Separate pending validation:
 - R34B mobile gesture controls still need final real-device approval.
 
-**Next build scope is intentionally OPEN / not selected.** Recommended next content options are Boat economy, Lookout Scout Mode, or Resource / Build / Crafting, but no option is authorized until Jannik explicitly chooses the scope and writes **GO**.
+**Update 01/10/2026:** R47–R50 (wilds core loop, garden builds, greenhouse pots, dev menu) are built as CANDIDATES on GitHub
+and await Jannik's runtime test. Next scope after that is OPEN; nothing is authorized without **GO**.
 
 **No build is authorized by this document itself. Explicit GO is always required.**
 
@@ -1448,3 +1466,41 @@ R45 gameplay remains the regression baseline. R46.2 does not intentionally alter
 
 ## Approval status
 **OPEN / visual candidate.** Do not mark R46.2 locked until Jannik explicitly approves the Splash and Start presentation after testing.
+
+---
+
+# 30. WILDS CORE LOOP — R47–R50 (CANDIDATE, 01/10/2026)
+
+**Loop:** explore the shared world → gather → craft at the garden workbench → cut Thornbrush → loot caches →
+grow plants in greenhouse pots → upgrade the garden → defend it from overgrowth and snails → repeat. Daily requests
+and Golden Seed perks give a reason to return.
+
+## Where things live
+- **Shared world (exploration only):** ~49 resource nodes (Fallen Branches, Loose Stones, Clay Bank, Wild Grass;
+  Old Logs need the Stone Axe, Boulders the Stone Pickaxe), regrowing on real time; 6 Thornbrush patches with amber
+  caches (3 also hold a Golden Seed). World map shows discovered caches.
+- **Private garden (all building):** Workbench on the old Lookout site; upgrades L1 Rain Barrel & Compost, L2 Seed
+  Shrine (Golden Seed perks), L3 Thorn Hedge; overgrowth weeds and snails attack here.
+- **Greenhouse (pots and plants):** up to 3 Terracotta Pots (`pot-terracotta.glb`) on the current level's own
+  furniture (L1 shelf, L2 plant table, L3 floor). Wild Seed → water (Watering Can, filled at the garden pond) →
+  3 real-time stages × 4 min (only while watered) → harvest. Greenhouse code/models/collision untouched.
+
+## Systems / files
+`js/core/SaveGame.js` (tgw.save v2, per character, v1→v2 migration) · `js/gameplay/WildsLoopSystem.js` ·
+`js/gameplay/GardenPotsSystem.js` · `js/gameplay/WildsThreatSystem.js` · `js/gameplay/DailyRequests.js` ·
+`js/ui/WorkbenchPanel.js` · `js/ui/DevMenu.js` · all balancing in `js/data/wildsCatalog.js`.
+
+## Character traits (one each)
+Tulip +1 Fiber · Daisy home nodes regrow faster · Hyacinth +1 Clay · Cactus cuts thorns barehanded ·
+Fern +1 Wood · Succulent slower overgrowth · Spire sees all caches · Swamp extra snail shell · Aloe +1 Stone.
+
+## Dev menu (R50)
+Start screen → Indstillinger → **Dev-menu** (per device). In game a **DEV** button gives: +20 materials, all tools,
+3 pots + water, skip 5 min, teleports (bench, greenhouse, pond, gate, world, nearest node/thornbrush), greenhouse
+level 0–3 (writes the greenhouse's own save key and reloads), spawn/clear weeds and snails, reset wilds save.
+Works on the **real save**. Crafted tools show as a row under the materials in the HUD (water charges on the can).
+
+## Known limits
+Placeholder procedural art for all new props; no real combat/health; no global day/night lighting; balancing is a
+first guess. Older systems' saves not unified.
+

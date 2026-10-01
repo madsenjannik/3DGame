@@ -989,3 +989,18 @@ body.stable-race-result-active .stable-race-controls,body.stable-race-result-act
 @media (max-width:380px){.wilds-card{padding:16px}.wilds-tabs button{font-size:10px}.wilds-item{grid-template-columns:34px 1fr auto;gap:8px}.wilds-icon{width:34px;height:34px;font-size:17px}.wilds-item button{min-width:62px;padding:0 10px}}
 .materials-card{grid-template-columns:repeat(7,auto)}
 .material-chip.wild_seed i{color:#e7a3b4}
+
+/* ===== Tools row in the materials card + dev menu ===== */
+.tools-row{grid-column:1/-1;display:flex;justify-content:space-around;gap:6px;padding:4px 6px 2px;border-top:1px solid rgba(255,255,255,.14);font-style:normal}
+.tools-row i{position:relative;font-style:normal;font-size:14px;line-height:1;filter:grayscale(1);opacity:.32;transition:opacity .2s,filter .2s}
+.tools-row i.owned{filter:none;opacity:1}
+.tools-row b{position:absolute;right:-7px;bottom:-4px;font-size:9px;color:#cfe7f5}
+.dev-menu-btn{position:fixed;left:max(14px,env(safe-area-inset-left));bottom:calc(max(14px,env(safe-area-inset-bottom)) + 4px);z-index:35;height:34px;padding:0 14px;border:1px solid rgba(255,214,90,.6);border-radius:999px;background:rgba(43,42,36,.78);color:#ffd45a;font:800 11px Manrope,system-ui,sans-serif;letter-spacing:.14em;cursor:pointer}
+.dev-menu{z-index:45}
+.dev-menu .dev-menu-body{display:flex;flex-direction:column;gap:12px;overflow:auto;min-height:0;-webkit-overflow-scrolling:touch}
+.dev-menu section{display:flex;flex-direction:column;gap:6px}
+.dev-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:6px}.dev-grid.four{grid-template-columns:repeat(4,1fr)}
+.dev-grid button{min-height:40px;padding:6px 8px;border:0;border-radius:12px;background:rgba(48,57,43,.1);color:#30392b;font:700 12px Manrope,system-ui,sans-serif;cursor:pointer}
+.dev-grid button:active{background:#30392b;color:#f4f0e7}
+.dev-grid button.danger{grid-column:1/-1;background:#f0d9cf;color:#8a3f25}
+@media (max-height:520px) and (orientation:landscape){.dev-menu .wilds-card{display:flex;width:min(760px,100%)}.dev-menu .dev-menu-body{display:grid;grid-template-columns:1fr 1fr;align-content:start}.dev-grid{grid-template-columns:repeat(3,1fr)}}

@@ -23,6 +23,7 @@ import { NorthStableSystem } from '../world/NorthStableSystem.js?build=STABLE-R4
 import { SaveGame } from './SaveGame.js';
 import { WildsLoopSystem } from '../gameplay/WildsLoopSystem.js';
 import { WorkbenchPanel } from '../ui/WorkbenchPanel.js';
+import { DevMenu, devMenuEnabled } from '../ui/DevMenu.js';
 
 export class Game {
   async init({characterId='succulent',devMode=false}={}){
@@ -80,6 +81,8 @@ export class Game {
     this.wilds=new WildsLoopSystem({world:this.world,state:this.state,save:this.save,hud:this.hud,greenhouse:this.greenhouse}).init();
     this.workbenchPanel=new WorkbenchPanel({wilds:this.wilds,state:this.state});
     this.wilds.onOpenWorkbench=()=>{this.workbenchPanel.show();this.input.resetTouchPointers?.();};
+    const syncTools=()=>this.hud.setTools?.(this.wilds.profile.tools,this.wilds.profile.water);this.wilds.onChange(syncTools);syncTools();
+    if(devMode||devMenuEnabled())this.devMenu=new DevMenu(this);
     mark('wildsReadyMs');
     this.cameraOcclusion=new CameraOcclusionSystem({world:this.world,homePortal:this.homePortal,greenhouse:this.greenhouse,orangery:this.orangery,stable:this.stable});
     this.followCamera.setOcclusionSystem(this.cameraOcclusion);
@@ -105,7 +108,7 @@ export class Game {
     const fishingBusy=!gardenSpace&&(this.fishing?.isBusy?.()||false);
     const stableBusy=!gardenSpace&&(this.stable?.isBusy?.()||false);
     const specialBusy=fishingBusy||stableBusy;
-    const wildsPanel=this.workbenchPanel?.open||false;
+    const wildsPanel=(this.workbenchPanel?.open||this.devMenu?.open)||false;
     const mapOpen=this.worldMap?.isOpen||false,mapOverlay=mapOpen&&(this.worldMap?.overlayMode||false);
     const touchLook=this.input.isTouch?this.input.consumeLook?.():null;
     if(!this.state.choice.open&&!specialBusy&&!portalBusy&&!mapOpen&&!wildsPanel)this.followCamera.applyTouchLook?.(touchLook);
