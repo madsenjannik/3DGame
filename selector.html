@@ -16,6 +16,23 @@
 <script type="module" src="./selector-stage.js"></script>
 <style>html,body{margin:0;height:100%;background:#e9e2d5;overflow:hidden}a{color:#2e2b26;text-decoration:none}a:hover{color:#5e6b4a}
 .dym-selector-mobile-nav,.dym-selector-mobile-actions,.dym-selector-mobile-walk,.dym-selector-swipe-coach{display:none}
+/* Phone landscape: compress the identity column so name, stats and actions fit in ~390px of height. */
+@media (max-height:500px) and (orientation:landscape){
+  .dym-selector-layout{padding:max(10px,env(safe-area-inset-top)) max(20px,env(safe-area-inset-right)) max(8px,env(safe-area-inset-bottom)) max(20px,env(safe-area-inset-left))!important;gap:4px!important}
+  .dym-selector-kicker,.dym-selector-hint{font-size:10px!important}
+  .dym-selector-counter,.dym-selector-poles{display:none!important}
+  .dym-selector-copy{align-self:center!important;gap:7px!important}
+  .dym-selector-titleblock{gap:3px!important}
+  .dym-selector-name{font-size:30px!important}
+  .dym-selector-role{font-size:10px!important}
+  .dym-selector-desc{font-size:11.5px!important;line-height:1.35!important}
+  .dym-selector-stats{gap:4px!important}
+  .dym-selector-statlabel{font-size:9.5px!important}
+  .dym-selector-actions{flex-wrap:nowrap!important;gap:8px!important}
+  .dym-selector-start{height:40px!important;padding:0 18px!important;font-size:13px!important;white-space:nowrap}
+  .dym-selector-walk{height:40px!important;padding:0 16px!important;white-space:nowrap}
+  .dym-selector-nav-arrow{width:36px!important;height:36px!important}
+}
 @keyframes dymSwipeCoachNudge{0%,100%{transform:translateX(0)}35%{transform:translateX(-7px)}70%{transform:translateX(7px)}}
 @keyframes dymSwipeCoachFade{0%,72%{opacity:1}100%{opacity:0}}
 @media (max-width:520px) and (orientation:portrait){
