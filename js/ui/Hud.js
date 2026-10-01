@@ -2,10 +2,11 @@
 export class Hud {
   constructor(state){
     this.seed=document.getElementById('seed-count');this.action=document.getElementById('action');this.toast=document.getElementById('toast');this.objective=document.getElementById('objective');this.kicker=document.getElementById('objective-kicker');this.title=document.getElementById('objective-title');this.copy=document.getElementById('objective-copy');this.hint=document.getElementById('hint');this.loading=document.getElementById('loading');this.materials=document.getElementById('materials');
-    this.materialIds=['wood','stone','clay','fiber','amber'];
+    this.materialIds=['wood','stone','clay','fiber','amber','shell'];
     this.seed.textContent=String(state.inventory.get('rare_seed')||0);
     this.materialIds.forEach(id=>this.setMaterial(id,state.inventory.get(id)||0));
-    state.events.on('inventory:changed',e=>{if(e.id==='rare_seed')this.seed.textContent=String(e.amount);if(this.materialIds.includes(e.id))this.setMaterial(e.id,e.amount);});
+    // Golden Seeds from the wilds (golden_seed) and the first-discovery seed share one counter.
+    state.events.on('inventory:changed',e=>{if(e.id==='rare_seed'||e.id==='golden_seed')this.seed.textContent=String((state.inventory.get('rare_seed')||0)+(state.inventory.get('golden_seed')||0));if(this.materialIds.includes(e.id))this.setMaterial(e.id,e.amount);});
     state.events.on('golden-seed:awakened',()=>{
       this.objective.classList.remove('complete');this.kicker.textContent='DISCOVERY';this.title.textContent='The Golden Seed is awake';this.copy.textContent='Step closer and collect it.';this.showToast('The seed awakened');
     });

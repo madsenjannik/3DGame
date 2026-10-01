@@ -5,7 +5,9 @@
 // Visuals are procedural placeholders in the low-poly palette until authored GLBs exist.
 import * as THREE from 'three';
 import { damp, radialTexture } from '../visual/VisualKit.js';
-import { MATERIALS, NODE_KINDS, TOOLS, HOME_UPGRADES, RULES } from '../data/wildsCatalog.js';
+import { MATERIALS, NODE_KINDS, TOOLS, HOME_UPGRADES, RULES, PASSIVES, PERKS, GOLDEN_CACHES } from '../data/wildsCatalog.js';
+import { WildsThreatSystem } from './WildsThreatSystem.js';
+import { DailyRequests } from './DailyRequests.js';
 
 const HOME = { x: 0, z: 4.7 };
 const WORKBENCH = { x: 3.9, z: 16.4, ry: -Math.PI / 2 };
@@ -35,6 +37,7 @@ export class WildsLoopSystem {
     this.root = new THREE.Group(); this.root.name = 'WILDS_CORE_LOOP'; this.L.root.add(this.root);
     this.nodes = []; this.thorns = []; this.current = null; this.flashT = 0;
     this.listeners = new Set();
+    this.passive = PASSIVES[state.player.characterId] || null;
   }
 
   init() {
@@ -45,6 +48,9 @@ export class WildsLoopSystem {
     this.buildHomeUpgrades();
     this.placeThorns();
     this.applyHomeLevel(false);
+    this.threat = new WildsThreatSystem(this);
+    this.daily = new DailyRequests(this);
+    if (this.passive?.revealThorns) for (const t of this.thorns) if (!this.profile.thorns[t.id]) this.profile.thorns[t.id] = 'seen';
     if (Object.keys(this.profile.inventory).length) this.hud?.materials?.classList.add('show');
     return this;
   }
@@ -65,6 +71,7 @@ export class WildsLoopSystem {
   inv() { return this.state.inventory; }
   give(id, n) { if (n > 0) this.state.addItem(id, n); }
   pay(cost) { if (!costMet(this.inv(), cost)) return false; for (const [id, n] of Object.entries(cost)) this.state.removeItem(id, n); return true; }
+  track(stat, n) { this.daily?.track(stat, n); }
   onChange(fn) { this.listeners.add(fn); return () => this.listeners.delete(fn); }
   emit() { for (const fn of this.listeners) fn(); }
 
@@ -201,8 +208,35 @@ export class WildsLoopSystem {
     return node;
   }
 
-  regrowMs(def) { return def.regrowSec * 1000 * (this.profile.homeLevel >= 2 ? RULES.rainBarrelRegrowFactor : 1); }
-  yieldFor(def) { return def.yield + (def.tool && this.has(def.tool) ? 1 : 0) + (this.profile.homeLevel >= 3 ? RULES.shrineYieldBonus : 0); }
+  regrowMs(def, node) {
+    const nearHome = node && Math.hypot(node.x - HOME.x, node.z - HOME.z) < 40;
+    return def.regrowSec * 1000 * (this.profile.homeLevel >= 2 ? RULES.rainBarrelRegrowFactor : 1) * (this.profile.perks.swift ? .75 : 1) * (nearHome && this.passive?.homeRegrow || 1);
+  }
+  yieldFor(def) {
+    return def.yield + (def.tool && this.has(def.tool) ? 1 : 0) + (this.profile.homeLevel >= 3 ? RULES.shrineYieldBonus : 0)
+      + (this.passive?.bonus?.[def.material] || 0) + (this.profile.perks.roots && (def.material === 'wood' || def.material === 'stone') ? 1 : 0);
+  }
+  canCut() { return this.has('sickle') || !!this.passive?.thornHands; }
+  // Everything near the home a weed must not sprout on.
+  homeProps() {
+    return [{ x: WORKBENCH.x, z: WORKBENCH.z, r: 1 }, { x: 6.2, z: 15, r: 1 }, { x: 6.2, z: 17.9, r: 1 }, { x: -3.4, z: 17.2, r: .8 }, { x: -4.35, z: 17.2, r: .7 }, { x: 7.8, z: 21, r: 1 }];
+  }
+  eatBed(node) {
+    if (node.state !== 'ready') return;
+    node.state = 'regrowing'; node.body.scale.setScalar(.001); node.glow.visible = false; node.ring.material.opacity = 0;
+    this.profile.nodes[node.id] = Date.now() + this.regrowMs(node.def, node); this.save.persist();
+  }
+  plantSeed(perkId) {
+    const perk = PERKS.find(p => p.id === perkId);
+    if (!perk || this.profile.perks[perkId] || this.profile.homeLevel < 3 || !this.pay({ golden_seed: 1 })) return false;
+    this.profile.perks[perkId] = true; this.save.persist(); this.hud?.showToast(`${perk.name} takes root`); this.emit();
+    return true;
+  }
+  mapMarkers() {
+    const out = [{ type: 'poi', x: WORKBENCH.x, z: WORKBENCH.z, label: 'Workbench' }];
+    for (const t of this.thorns) if (this.profile.thorns[t.id] === 'seen' || this.profile.thorns[t.id] === 'cleared') out.push({ type: 'quest', x: t.x, z: t.z, label: 'Cache' });
+    return out.concat(this.threat?.markers() || []);
+  }
 
   // ---------- workbench + home upgrades ----------
   buildWorkbench() {
@@ -260,6 +294,15 @@ export class WildsLoopSystem {
     const halo = new THREE.Sprite(new THREE.SpriteMaterial({ map: this.amberTex, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, opacity: .7 }));
     halo.position.y = 1.45; halo.scale.setScalar(1.6); l3.add(halo);
     this.upgradeL3 = l3; this.shrineSeed = seed;
+    // L4: low thorn-hedge fence around the workbench garden corner (visual only, gaps keep it walkable).
+    const l4 = new THREE.Group(); l4.visible = false; this.root.add(l4); this.upgradeL4 = l4;
+    const hedge = [[9.4, 13.2], [9.6, 15.4], [9.7, 17.6], [9.6, 19.8], [9.2, 22.0], [7.0, 23.4], [4.8, 23.6], [-2.4, 19.6], [-5.2, 19.4], [-6.6, 17.6], [-6.4, 15.4]];
+    for (const [hx, hz] of hedge) {
+      const b = new THREE.Group(); b.position.set(hx, this.L.groundHeight(hx, hz), hz); l4.add(b);
+      b.add(this.mesh(new THREE.DodecahedronGeometry(.42, 0), m.thorn, [0, .32, 0], [1.25, .8, .9], [0, rand() * 3, 0]));
+      b.add(this.mesh(new THREE.ConeGeometry(.05, .2, 4), m.thornDark, [.3, .5, .1], [1, 1, 1], [0, 0, -1.2], false));
+      b.add(this.mesh(new THREE.ConeGeometry(.05, .2, 4), m.thornDark, [-.3, .45, -.1], [1, 1, 1], [0, 0, 1.2], false));
+    }
     this.upgradeObstacles = [this.world.addObstacle({ x: -3.4, z: 17.2, r: .55, height: .9, kind: 'wilds-barrel' }), this.world.addObstacle({ x: -4.35, z: 17.2, r: .5, height: .6, kind: 'wilds-compost' }), this.world.addObstacle({ x: 7.8, z: 21.0, r: .65, height: 1.2, kind: 'wilds-shrine' })];
 
   }
@@ -269,6 +312,7 @@ export class WildsLoopSystem {
     for (const b of this.beds) { b.root.visible = lvl >= 1; b.node.root.visible = lvl >= 1; this.setObstacle(b.obstacle, lvl >= 1); }
     this.upgradeL2.visible = lvl >= 2; this.setObstacle(this.upgradeObstacles[0], lvl >= 2); this.setObstacle(this.upgradeObstacles[1], lvl >= 2);
     this.upgradeL3.visible = lvl >= 3; this.setObstacle(this.upgradeObstacles[2], lvl >= 3);
+    this.upgradeL4.visible = lvl >= 4;
     if (celebrate) this.hud?.showToast(`${HOME_UPGRADES[lvl - 1].name} built`);
   }
 
@@ -315,7 +359,7 @@ export class WildsLoopSystem {
       for (let s = 0; s < 2; s++) brush.add(this.mesh(new THREE.ConeGeometry(.03, .22, 4), m.thornDark, [Math.cos(a) * (r + .18), .3 + rand() * h * .7, Math.sin(a) * (r + .18)], [1, 1, 1], [0, 0, Math.PI / 2 + a], false));
     }
     for (let k = 0; k < 4; k++) { const a = rand() * 6.283; brush.add(this.mesh(new THREE.TorusGeometry(.9 + rand() * .4, .035, 4, 18, Math.PI), m.thornDark, [0, .35 + k * .22, 0], [1, 1, 1], [Math.PI / 2 + (rand() - .5) * .6, 0, a], false)); }
-    const t = { id, x, z, root, cache, brush, crystals, halo, near: 0, t: 0, phase: this.profile.thorns[id] || 'wild' };
+    const saved = this.profile.thorns[id], t = { id, x, z, root, cache, brush, crystals, halo, near: 0, t: 0, phase: saved === 'cleared' || saved === 'looted' ? saved : 'wild' };
     t.obstacle = this.world.addObstacle({ x, z, r: 1.45, height: 1.6, kind: 'wilds-thornbrush' });
     if (t.phase !== 'wild') { brush.visible = false; this.setObstacle(t.obstacle, false); }
     if (t.phase === 'looted') cache.visible = false;
@@ -329,6 +373,8 @@ export class WildsLoopSystem {
     if (hit.type === 'wilds-gather') return this.gather(hit.node, character);
     if (hit.type === 'wilds-cut') return this.cut(hit.thorn, character);
     if (hit.type === 'wilds-cache') return this.loot(hit.thorn, character);
+    if (hit.type === 'wilds-weed') return this.threat.pull(hit.weed, character);
+    if (hit.type === 'wilds-snail') return this.threat.swat(hit.snail, character);
     return false;
   }
 
@@ -346,11 +392,12 @@ export class WildsLoopSystem {
     for (const [id, b] of Object.entries(def.bonus || {})) { this.give(id, b); text += `  ${MATERIALS[id].name} +${b}`; }
     this.hud?.materials?.classList.add('show'); this.hud?.showToast(text);
     node.character?.flash(); this.profile.stats.gathered++;
-    node.state = 'regrowing'; node.obstacles.forEach(o => this.setObstacle(o, false)); this.profile.nodes[node.id] = Date.now() + this.regrowMs(def); this.save.persist();
+    node.state = 'regrowing'; node.obstacles.forEach(o => this.setObstacle(o, false)); this.profile.nodes[node.id] = Date.now() + this.regrowMs(def, node); this.save.persist();
+    this.track(def.material, n); this.track('nodes', 1); for (const [id, b] of Object.entries(def.bonus || {})) this.track(id, b);
   }
 
   cut(thorn, character) {
-    if (thorn.phase !== 'wild' || !this.has('sickle')) return false;
+    if (thorn.phase !== 'wild' || !this.canCut()) return false;
     thorn.phase = 'cutting'; thorn.t = 0; character.flash();
     return true;
   }
@@ -358,9 +405,9 @@ export class WildsLoopSystem {
   loot(thorn, character) {
     if (thorn.phase !== 'cleared') return false;
     thorn.phase = 'looting'; thorn.t = 0; character.flash();
-    const extra = COMMON[Math.floor(Math.random() * COMMON.length)];
-    this.give('amber', RULES.cacheReward.amber); this.give(extra, RULES.cacheReward.extra);
-    this.hud?.showToast(`Hidden cache: Amber +${RULES.cacheReward.amber}  ${MATERIALS[extra].name} +${RULES.cacheReward.extra}`);
+    const extra = COMMON[Math.floor(Math.random() * COMMON.length)], amber = RULES.cacheReward.amber + (this.profile.perks.lucky ? 2 : 0), seed = GOLDEN_CACHES.includes(thorn.id);
+    this.give('amber', amber); this.give(extra, RULES.cacheReward.extra); if (seed) this.give('golden_seed', 1);
+    this.hud?.showToast(`Hidden cache: Amber +${amber}  ${MATERIALS[extra].name} +${RULES.cacheReward.extra}${seed ? '  Golden Seed +1!' : ''}`);
     this.profile.thorns[thorn.id] = 'looted'; this.save.persist();
     return true;
   }
@@ -374,7 +421,7 @@ export class WildsLoopSystem {
       if (!node.root.visible) continue;
       const d = Math.hypot(px - node.x, pz - node.z);
       // Far away: skip visuals, but never freeze a gather/grow animation that is already running.
-      if (d > 70 && (node.state === 'ready' || node.state === 'regrowing')) { if (node.state === 'regrowing' && now >= (this.profile.nodes[node.id] || 0)) this.regrown(node, true); continue; }
+      if (d > 70 && (node.state === 'ready' || node.state === 'regrowing') && !(node.kind === 'bed' && this.threat?.chokes(node))) { if (node.state === 'regrowing' && now >= (this.profile.nodes[node.id] || 0)) this.regrown(node, true); continue; }
       const inReach = d < node.reach && node.state === 'ready';
       node.near += ((inReach ? 1 : 0) - node.near) * damp(6, dt);
       if (node.state === 'ready') {
@@ -390,7 +437,10 @@ export class WildsLoopSystem {
         node.body.scale.setScalar(Math.max(.001, 1 - e)); node.body.position.y = (node.kind === 'bed' ? .22 : 0) + e * .4; node.glow.material.opacity *= .9;
         if (p >= 1) { node.body.position.y = node.kind === 'bed' ? .22 : 0; node.glow.visible = false; node.ring.material.opacity = 0; this.finishGather(node); }
       } else if (node.state === 'regrowing') {
-        if (now >= (this.profile.nodes[node.id] || 0)) this.regrown(node, false);
+        if (node.kind === 'bed' && this.threat?.chokes(node)) {
+          if ((this.profile.nodes[node.id] || 0) < now + 1000) this.profile.nodes[node.id] = now + 1000;
+          if (d < node.reach) offer({ type: 'wilds-gather', node, distance: d, disabled: true, label: 'Planter Bed · choked by weeds' });
+        } else if (now >= (this.profile.nodes[node.id] || 0)) this.regrown(node, false);
       } else if (node.state === 'growing') {
         node.t += dt; const p = Math.min(1, node.t / 1.2), s = ease(p) * (1 + Math.sin(p * Math.PI) * .12);
         node.body.scale.setScalar(Math.max(.001, s)); if (p >= 1) { node.body.scale.setScalar(1); node.state = 'ready'; }
@@ -403,7 +453,8 @@ export class WildsLoopSystem {
       t.halo.material.opacity = .5 + Math.sin(time * 2.2 + t.x) * .12;
       t.crystals.forEach((c, i) => { c.rotation.y += dt * (.5 + i * .2); });
       if (t.phase === 'wild') {
-        if (d < 2.65) offer({ type: 'wilds-cut', thorn: t, distance: d, disabled: !this.has('sickle'), label: this.has('sickle') ? 'Cut Thornbrush' : 'Thornbrush · needs Sickle' });
+        if (d < 30 && !this.profile.thorns[t.id]) { this.profile.thorns[t.id] = 'seen'; this.save.persist(); this.hud?.showToast('Thornbrush spotted: something glows inside'); }
+        if (d < 2.65) offer({ type: 'wilds-cut', thorn: t, distance: d, disabled: !this.canCut(), label: this.canCut() ? 'Cut Thornbrush' : 'Thornbrush · needs Sickle' });
       } else if (t.phase === 'cutting') {
         t.t += dt; const p = Math.min(1, t.t / .7), e = ease(p);
         t.brush.scale.set(1 + e * .25, Math.max(.001, 1 - e), 1 + e * .25); t.brush.rotation.y += dt * 3;
@@ -422,6 +473,8 @@ export class WildsLoopSystem {
       }
     }
 
+    this.threat?.update(dt, time, character, offer);
+    this.daily?.update();
     const w = this.workbench, wd = Math.hypot(px - WORKBENCH.x, pz - WORKBENCH.z), wNear = wd < 1.9;
     w.near += ((wNear ? 1 : 0) - w.near) * damp(6, dt);
     w.glow.material.opacity = .16 + w.near * .3 + Math.sin(time * 1.6) * .04;

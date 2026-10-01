@@ -178,7 +178,7 @@ export class Game {
     this.structureVisibility?.update(dt,{enabled:!specialCameraBusy});
     const mapVisible=!gardenSpace&&!portalBusy&&!specialBusy&&!this.state.choice.open;
     this.worldMap?.setVisible?.(mapVisible);
-    this.worldMap?.setMarkers?.([]);
+    this.worldMap?.setMarkers?.(gardenSpace?[]:(this.wilds?.mapMarkers?.()||[]));
     this.worldMap?.update?.();
     this.renderer.render(this.scene,this.camera);
   }

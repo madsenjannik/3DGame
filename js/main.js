@@ -54,7 +54,7 @@ async function start() {
     if(params.get('devBoat')==='1')game.fishing.setBoatAccess({rented:true});
     if(params.get('devWildlife')==='1')game.wildlife?.enableDevMode?.();
     // Core loop QA: throwaway materials (dev profile is never saved) + console handle.
-    if(params.get('devWilds')==='1')for(const id of ['wood','stone','clay','fiber','amber'])game.state.addItem(id,40);
+    if(params.get('devWilds')==='1')for(const id of ['wood','stone','clay','fiber','amber','shell','golden_seed'])game.state.addItem(id,id==='golden_seed'?4:40);
     window.__tgw=game;
   }
 }

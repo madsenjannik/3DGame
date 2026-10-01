@@ -1,5 +1,5 @@
 // @ts-nocheck
-import { MATERIALS, TOOLS, HOME_UPGRADES } from '../data/wildsCatalog.js';
+import { MATERIALS, TOOLS, HOME_UPGRADES, PERKS } from '../data/wildsCatalog.js';
 
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 
@@ -10,8 +10,9 @@ export class WorkbenchPanel {
     el.className = 'wilds-panel'; el.setAttribute('role', 'dialog'); el.setAttribute('aria-modal', 'true'); el.setAttribute('aria-labelledby', 'wilds-panel-title');
     el.innerHTML = `<div class="wilds-card">
       <header><div><small>YOUR HOME</small><h2 id="wilds-panel-title">Workbench</h2></div><button type="button" class="wilds-close" aria-label="Close">✕</button></header>
+      <div class="wilds-trait"></div>
       <div class="wilds-goal"></div>
-      <div class="wilds-tabs" role="tablist"><button type="button" role="tab" data-tab="tools">Tools</button><button type="button" role="tab" data-tab="home">Home</button></div>
+      <div class="wilds-tabs" role="tablist"><button type="button" role="tab" data-tab="tools">Tools</button><button type="button" role="tab" data-tab="home">Home</button><button type="button" role="tab" data-tab="seeds">Seeds</button><button type="button" role="tab" data-tab="today">Today</button></div>
       <div class="wilds-list"></div>
       <footer class="wilds-inv"></footer>
     </div>`;
@@ -22,6 +23,7 @@ export class WorkbenchPanel {
       if (e.target === el || e.target.closest('.wilds-close')) return this.hide();
       const tab = e.target.closest('[data-tab]'); if (tab) { this.tab = tab.dataset.tab; return this.render(); }
       const craft = e.target.closest('[data-craft]'); if (craft) { this.wilds.craft(craft.dataset.craft); return; }
+      const plant = e.target.closest('[data-plant]'); if (plant) { this.wilds.plantSeed(plant.dataset.plant); return; }
       if (e.target.closest('[data-upgrade]')) this.wilds.upgradeHome();
     });
     addEventListener('keydown', e => { if (this.open && (e.key === 'Escape' || e.code === 'KeyE' && !e.repeat)) { e.stopImmediatePropagation(); e.preventDefault(); this.hide(); } }, true);
@@ -43,13 +45,16 @@ export class WorkbenchPanel {
     if (tool) return `Craft the ${tool.name}. Gather what you are missing out in the wilds.`;
     if ((this.state.inventory.get('amber') || 0) < 1 && p.homeLevel < 3 && Object.values(p.thorns).filter(v => v === 'looted').length < w.thorns.length)
       return 'Find Thornbrush in the wilds. Cut it with your Sickle to reach hidden amber caches.';
+    if (w.threat?.weeds.some(x => x.state === 'alive')) return 'Overgrowth is creeping in. Pull it before it chokes your beds.';
     const up = HOME_UPGRADES[p.homeLevel];
     if (up) return `Build ${up.name} to grow your home.`;
+    if ((this.state.inventory.get('golden_seed') || 0) > 0 && PERKS.some(k => !p.perks[k.id])) return 'Plant your Golden Seed at the shrine (Seeds tab).';
     return 'Your home garden is complete. More of the wilds will open with the seasons.';
   }
 
   render() {
     const w = this.wilds;
+    const tr = w.passive; this.el.querySelector('.wilds-trait').innerHTML = tr ? `<small>YOUR TRAIT</small><b>${esc(tr.name)}</b><span>${esc(tr.text)}</span>` : '';
     this.el.querySelector('.wilds-goal').innerHTML = `<small>NEXT GOAL</small><span>${esc(this.nextGoal())}</span>`;
     this.el.querySelectorAll('[data-tab]').forEach(b => b.setAttribute('aria-selected', String(b.dataset.tab === this.tab)));
     let html = '';
@@ -59,10 +64,26 @@ export class WorkbenchPanel {
         html += `<article class="wilds-item${owned ? ' owned' : ''}"><div class="wilds-icon">${t.icon}</div><div class="wilds-body"><b>${esc(t.name)}</b><p>${esc(t.effect)}</p>${owned ? '' : `<div class="wilds-costs">${this.costHtml(t.cost)}</div>`}</div>
           <button type="button" data-craft="${t.id}" ${can ? '' : 'disabled'}>${owned ? 'Owned' : 'Craft'}</button></article>`;
       }
+    } else if (this.tab === 'seeds') {
+      const seeds = this.state.inventory.get('golden_seed') || 0, shrine = w.profile.homeLevel >= 3;
+      html += `<p class="wilds-note">${shrine ? `You have <b>${seeds}</b> Golden Seed${seeds === 1 ? '' : 's'}. Each one grows into a permanent perk.` : 'Build the Seed Shrine (Home tab) to plant Golden Seeds. Seeds hide in some caches and reward daily streaks.'}</p>`;
+      for (const k of PERKS) {
+        const owned = !!w.profile.perks[k.id], can = shrine && !owned && seeds > 0;
+        html += `<article class="wilds-item${owned ? ' owned' : ''}"><div class="wilds-icon">✦</div><div class="wilds-body"><b>${esc(k.name)}</b><p>${esc(k.text)}</p></div>
+          <button type="button" data-plant="${k.id}" ${can ? '' : 'disabled'}>${owned ? 'Grown' : 'Plant'}</button></article>`;
+      }
+    } else if (this.tab === 'today') {
+      const d = w.daily, view = d.view();
+      html += `<p class="wilds-note">New requests every day. Finish all three on consecutive days: every 3rd day gives a Golden Seed. Streak: <b>${d.d.streak}</b></p>`;
+      for (const t of view) {
+        const reward = Object.entries(t.reward).map(([id, n]) => `${MATERIALS[id].icon} ${n}`).join('  ');
+        html += `<article class="wilds-item${t.done ? ' owned' : ''}"><div class="wilds-icon">${t.done ? '✓' : '☀'}</div><div class="wilds-body"><b>${esc(t.text)}</b><p>Reward: ${reward}</p>
+          <div class="wilds-bar"><i style="width:${Math.round(t.have / t.goal * 100)}%"></i></div></div><span class="wilds-count">${t.have}/${t.goal}</span></article>`;
+      }
     } else {
       HOME_UPGRADES.forEach((u, i) => {
         const done = w.profile.homeLevel > i, isNext = w.profile.homeLevel === i, can = isNext && this.affordable(u.cost);
-        html += `<article class="wilds-item${done ? ' owned' : ''}${!done && !isNext ? ' locked' : ''}"><div class="wilds-icon">${['🌱', '🛢', '✦'][i]}</div><div class="wilds-body"><b>${esc(u.name)}</b><p>${esc(u.effect)}</p>${done ? '' : `<div class="wilds-costs">${this.costHtml(u.cost)}</div>`}</div>
+        html += `<article class="wilds-item${done ? ' owned' : ''}${!done && !isNext ? ' locked' : ''}"><div class="wilds-icon">${['🌱', '🛢', '✦', '🌿'][i]}</div><div class="wilds-body"><b>${esc(u.name)}</b><p>${esc(u.effect)}</p>${done ? '' : `<div class="wilds-costs">${this.costHtml(u.cost)}</div>`}</div>
           ${isNext ? `<button type="button" data-upgrade ${can ? '' : 'disabled'}>Build</button>` : `<button type="button" disabled>${done ? 'Built' : 'Later'}</button>`}</article>`;
       });
     }
