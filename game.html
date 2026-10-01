@@ -1,0 +1,270 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover" />
+  <meta name="theme-color" content="#dfe6d6" />
+  <title>The Growing Wilds v0.3.96 - R45 Holo Indicator Locked</title>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./styles.css?v=STABLE-R42-20261001A" />
+  <!-- Vendored three@0.165.0, MIT license in vendor/LICENSE -->
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "./vendor/three.module.js",
+      "three/addons/": "./vendor/"
+    },
+    "scopes": {
+      "./characters/": {
+        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.165.0/examples/jsm/"
+      },
+      "./character-rig.js": {
+        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.165.0/examples/jsm/"
+      }
+    }
+  }
+  </script>
+</head>
+<body>
+  <div id="character-selector" class="character-selector" style="display:none" aria-label="Choose your character">
+    <div class="character-selector-shell">
+      <section class="character-preview-panel" aria-live="polite">
+        <div class="character-selector-kicker">THE GROWING WILDS · YOUR BOTANICAL IDENTITY</div>
+        <div id="character-preview-stage" class="character-preview-stage" tabindex="0" aria-label="3D character preview. Drag left or right, or use arrow keys, to rotate.">
+          <canvas id="character-preview-canvas" aria-label="Live 3D character preview"></canvas>
+          <div id="character-preview-loading" class="character-preview-loading">Growing creature…</div>
+          <div class="character-rotate-hint" aria-hidden="true"><i>↔</i> Drag to rotate</div>
+        </div>
+        <div class="character-preview-meta">
+          <div>
+            <small>YOUR CREATURE</small>
+            <h1 id="character-preview-name">Succulent</h1>
+            <p id="character-preview-blurb" class="character-preview-blurb">Steady, adaptable. Grows best with good people around.</p>
+          </div>
+        </div>
+      </section>
+      <section class="character-select-panel">
+        <div>
+          <small class="character-select-eyebrow">MEET YOUR GARDEN SELF</small>
+          <h2>Choose how you grow</h2>
+          <p>Four botanical identities. Same opportunities. Pick the one that feels like you. Your species never locks your future combat style.</p>
+        </div>
+        <div id="character-options" class="character-options" role="group" aria-label="Available characters"></div>
+        <div class="character-select-footer">
+          <span><b>9</b> playable characters · more will emerge in the wilds</span>
+          <button id="character-confirm" type="button">ENTER THE WORLD <span>→</span></button>
+        </div>
+      </section>
+    </div>
+  </div>
+  <div id="app" aria-label="Playable 3D garden prototype"></div>
+  <div id="vignette" aria-hidden="true"></div>
+  <div id="hud">
+    <div class="dev-badge"><b>CORE v0.3.72</b><span>THE GROWING WILDS · R29 DEV MENU</span></div>
+    <div id="inventory" class="inventory-stack" aria-live="polite">
+      <div class="inventory-card seed-card"><span class="inventory-icon">✦</span><span><small>GOLDEN SEED</small><b id="seed-count">0</b></span></div>
+      <div id="materials" class="materials-card">
+        <span class="material-chip wood"><i>▰</i><small>WOOD</small><b id="wood-count">0</b></span>
+        <span class="material-chip stone"><i>◆</i><small>STONE</small><b id="stone-count">0</b></span>
+        <span class="material-chip clay"><i>●</i><small>CLAY</small><b id="clay-count">0</b></span>
+        <span class="material-chip fiber"><i>≋</i><small>FIBER</small><b id="fiber-count">0</b></span>
+      </div>
+    </div>
+  </div>
+  <div id="objective" class="objective-card">
+    <small id="objective-kicker">FIRST DISCOVERY</small>
+    <b id="objective-title">Find the Golden Seed</b>
+    <span id="objective-copy">Follow the glow. It reacts when you get close.</span>
+  </div>
+
+  <div id="choice-panel" class="choice-panel" role="dialog" aria-modal="true" aria-labelledby="choice-title">
+    <div class="choice-shell">
+      <small>GOLDEN DISCOVERY</small>
+      <h2 id="choice-title">What will you do with it?</h2>
+      <p>One Golden Seed. Two different consequences.</p>
+      <div class="choice-grid">
+        <button id="choice-plant" class="choice-card plant" type="button">
+          <span class="choice-key">1</span><span class="choice-icon">✦</span>
+          <b>PLANT IT</b><em>Grow a rare specimen in your own plot.</em>
+        </button>
+        <button id="choice-donate" class="choice-card donate" type="button">
+          <span class="choice-key">2</span><span class="choice-icon">⌁</span>
+          <b>DONATE IT</b><em>Advance the shared Community Bloom project.</em>
+        </button>
+      </div>
+      <span class="choice-note">This Golden Seed can only be used once.</span>
+    </div>
+  </div>
+
+  <div id="fishing-v1" class="fishing-v1" aria-live="polite">
+    <div id="fishing-mini-hud" class="fishing-mini-hud">
+      <button id="fishing-gear-btn" class="fishing-pill fishing-glass" type="button">Gear <b id="fishing-gear-n" class="fishing-badge">0</b></button>
+      <button id="fishing-log-btn" class="fishing-pill fishing-glass" type="button">Catch Log <b id="fishing-log-n" class="fishing-badge">0/5</b></button>
+    </div>
+    <div id="fishing-gear-panel" class="fishing-panel fishing-glass"></div>
+    <div id="fishing-log-panel" class="fishing-panel fishing-glass"></div>
+    <button id="fishing-close" class="fishing-close" type="button"><span class="k">Esc</span><span id="fishing-close-label">Close</span></button>
+    <div id="fishing-ring" class="fishing-ring"></div>
+    <div id="fishing-bubble" class="fishing-bubble"></div>
+    <div id="fishing-dialog" class="fishing-dialog fishing-glass"></div>
+    <div id="fishing-card" class="fishing-card fishing-glass">
+      <div class="fishing-card-top">
+        <button class="fishing-nav" id="fishing-prev" aria-label="Previous" type="button">‹</button>
+        <div><div id="fishing-card-name" class="fishing-card-name"></div><div id="fishing-card-sub" class="fishing-card-sub"></div><div id="fishing-card-index" class="fishing-card-index"></div></div>
+        <button class="fishing-nav" id="fishing-next" aria-label="Next" type="button">›</button>
+      </div>
+      <div id="fishing-card-state" class="fishing-card-state"></div>
+    </div>
+    <div id="fishing-bite" class="fishing-bite"><div class="tgt"></div><div class="shr" id="fishing-shr"></div></div>
+    <div id="fishing-message" class="fishing-message"></div>
+    <div id="fishing-fwrap" class="fishing-fwrap">
+      <div id="fishing-reel-ui" class="fishing-reel-ui fishing-glass"><div class="lbl"><span>Line tension</span><b id="fishing-distance">2.7 m</b></div><div class="bar"><div id="fishing-tension"></div></div><div class="prog"><i id="fishing-progress"></i></div></div>
+      <div class="fishing-fbtn-shell" aria-live="polite">
+        <div class="fishing-fbtn-halo" aria-hidden="true"></div>
+        <div class="fishing-fbtn-ring" aria-hidden="true"></div>
+        <button id="fishing-fbtn" class="fishing-fbtn fish-ready" type="button"><span id="fishing-fbtn-label">Cast</span><small id="fishing-fbtn-sub">Hold</small></button>
+      </div>
+    </div>
+    <div id="fishing-result" class="fishing-result fishing-glass"><div id="fishing-result-kicker">First catch</div><div id="fishing-result-name">Perch</div><div id="fishing-result-size">31 cm</div><div id="fishing-result-line"></div><button id="fishing-result-button" type="button">Keep fishing</button></div>
+  </div>
+
+  <div id="stable-talk" class="fishing-v1 stable-talk-premium" aria-live="polite">
+    <div class="stable-talk-signature" aria-hidden="true"><small>THE NORTH STABLE</small><b>Tidsel-Thora</b><span>Rides · tack · records</span></div>
+    <button id="stable-talk-close" class="fishing-close stable-talk-close" type="button"><span class="k">Esc</span><span id="stable-talk-close-label">Close</span></button>
+    <div id="stable-talk-bubble" class="fishing-bubble stable-talk-bubble"></div>
+    <div id="stable-talk-dialog" class="fishing-dialog fishing-glass stable-talk-dialog"></div>
+    <div id="stable-side-panel" class="stable-side-panel fishing-glass"></div>
+  </div>
+  <div id="stable-status-bubble" class="stable-status-bubble" aria-live="polite"></div>
+
+  <div id="stable-ride-setup" class="stable-ride-setup" aria-live="polite">
+    <div class="stable-setup-card fishing-glass">
+      <button id="stable-setup-close" class="stable-setup-close" type="button"><span>Esc</span> Exit</button>
+      <div class="stable-setup-heading">
+        <div class="stable-setup-mark" aria-hidden="true"><i></i><i></i><i></i></div>
+        <div>
+          <small class="stable-setup-kicker">THORA'S STABLE · TIMED RIDE</small>
+          <h2 id="stable-setup-name">Fastest lap</h2>
+          <p id="stable-setup-sub">Pace Reserve · cornering · checkpoint gates</p>
+        </div>
+      </div>
+      <div class="stable-setup-section stable-setup-performance">
+        <div class="stable-setup-section-title"><span>Challenge</span><em>Personal run</em></div>
+        <div id="stable-setup-stats" class="stable-setup-stats"></div>
+      </div>
+      <div class="stable-setup-section">
+        <div class="stable-setup-section-title"><span>Choose your horse</span><em>Equal ranked stats</em></div>
+        <div id="stable-setup-horses" class="stable-setup-horses"></div>
+      </div>
+      <div class="stable-setup-footer">
+        <div class="stable-setup-ready"><small>READY WHEN YOU ARE</small><span>Thora will put you straight on the start.</span></div>
+        <button id="stable-setup-start" class="stable-setup-start" type="button">Start ride</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="stable-race-ui" class="stable-race-ui" aria-live="polite">
+    <div class="stable-letterbox top"></div><div class="stable-letterbox bottom"></div>
+    <div id="stable-race-title" class="stable-race-title"><small>Timed ride</small><b id="stable-race-name">Fastest lap</b><span id="stable-race-sub">Horse</span></div>
+    <div id="stable-race-message" class="stable-race-message"></div>
+    <div id="stable-race-hud" class="stable-race-hud fishing-glass">
+      <div><span>Time</span><b id="stable-race-time">0.00</b></div>
+      <div id="stable-race-pen-wrap"><span>Penalties</span><b id="stable-race-pen">0</b></div>
+      <div><span id="stable-race-next-label">Next</span><b id="stable-race-next">–</b></div>
+      <div><span id="stable-race-ghost-label">Ghost</span><b id="stable-race-ghost">–</b></div>
+      <div class="stable-race-stamina"><span>Pace Reserve</span><b id="stable-race-stamina">100%</b><div><i id="stable-race-stamina-bar"></i></div></div>
+    </div>
+    <div class="stable-race-controls">
+      <button id="stable-race-restart" type="button">↺ Restart <kbd>R</kbd></button>
+      <button id="stable-race-quit" type="button">✕ Quit <kbd>Esc</kbd></button>
+    </div>
+    <div id="stable-race-result" class="stable-race-result stable-result-stage stable-podie-result" aria-live="polite">
+      <iframe id="stable-result-stage-frame" class="stable-podie-stage-frame" src="./result-podie/Result Stage.html" title="Stable result podium and chalkboard" tabindex="-1"></iframe>
+      <div class="stable-podie-vignette" aria-hidden="true"></div>
+      <div id="stable-result-flash" class="stable-podie-flash" aria-hidden="true"></div>
+      <button id="stable-result-back" class="stable-podie-back" type="button">← Result</button>
+      <div class="stable-result-scene-label"><b>THORA'S STABLE</b><span id="stable-result-scene-disc">Jumping · Horse</span></div>
+
+      <div id="stable-result-thora-bubble" class="stable-podie-thora-bubble" aria-live="polite">
+        <div><span>TIDSEL-THORA</span><small id="stable-result-thora-mood">is beaming</small></div>
+        <p id="stable-result-quote"></p>
+      </div>
+
+      <div class="stable-result-main stable-podie-main">
+        <div class="stable-result-medal-wrap stable-podie-medal-wrap">
+          <div id="stable-result-rays" class="stable-result-rays" aria-hidden="true"></div>
+          <div id="stable-result-medal-pop" class="stable-result-medal-pop">
+            <div class="stable-result-ribbon left" aria-hidden="true"></div><div class="stable-result-ribbon right" aria-hidden="true"></div>
+            <div id="stable-result-kick" class="stable-result-medal"><i class="stable-result-medal-shine" aria-hidden="true"></i><span id="stable-result-medal-label"></span></div>
+          </div>
+        </div>
+        <div class="stable-result-card stable-podie-card">
+          <div class="stable-result-head"><div id="stable-result-disc"></div><span id="stable-result-best" class="stable-result-best">New best</span></div>
+          <div id="stable-result-time"></div>
+          <div id="stable-result-penalty" class="stable-result-penalty"></div>
+          <div id="stable-result-sub"></div>
+          <div id="stable-result-pb" class="stable-result-pb"></div>
+          <div id="stable-result-ranks" class="stable-result-rankchips"></div>
+          <div id="stable-result-unlock"></div>
+          <div class="stable-result-actions">
+            <button id="stable-race-again" class="primary" type="button">↺ Ride again</button>
+            <button id="stable-result-standings" type="button">Standings</button>
+            <button id="stable-race-done" class="quiet" type="button">Done</button>
+          </div>
+        </div>
+      </div>
+
+      <section id="stable-result-board" class="stable-podie-board-controls" aria-label="Standings controls">
+        <div class="stable-result-board-head"><div><small>Standings · in chalk and carved</small><h3 id="stable-result-board-title">Jumping · Horse</h3></div></div>
+        <div id="stable-result-tabs" class="stable-result-tabs"></div>
+        <div id="stable-result-podium" hidden></div><div id="stable-result-list" hidden></div>
+      </section>
+      <div id="stable-result-board-scrim" class="stable-result-board-scrim"></div>
+      <div id="stable-result-ghostbar" class="stable-podie-ghostbar">
+        <div id="stable-result-you" class="stable-result-you"></div>
+        <div id="stable-result-ghost-note" class="stable-result-ghost-note"></div>
+        <div class="stable-podie-ghost-actions">
+          <button id="stable-result-race-ghost" type="button">Race the ghost →</button>
+          <button id="stable-result-board-done" class="quiet" type="button">Done</button>
+        </div>
+      </div>
+      <button id="stable-result-board-close" type="button" hidden aria-label="Close standings">×</button>
+      <button id="stable-result-skip" class="stable-result-skip" type="button" aria-label="Skip result animation"><span>Click to skip</span></button>
+    </div>
+  <button id="stable-jump" class="stable-jump" type="button"><b>Jump</b><span>Space</span></button>
+
+  <div id="joy" aria-hidden="true"><div id="joy-knob"></div></div>
+  <button id="action" type="button"><span class="key">E</span><span id="action-label">Collect</span></button>
+  <div id="toast" role="status">Golden Seed collected</div>
+  <div id="hint">WASD to move · Shift to run · Space to hop · camera follows your back</div>
+  <div id="loading"><span>Growing the world…</span></div>
+  <script>
+    (() => {
+      const showStartupError = (message) => {
+        const loading = document.getElementById('loading');
+        if (!loading || loading.classList.contains('hide')) return;
+        loading.innerHTML = '<span style="max-width:520px;padding:24px;text-align:center;line-height:1.7">Startup error: ' + String(message).replace(/[&<>]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[c])) + '<br><small style="opacity:.7">Press F12 and open Console for details.</small></span>';
+      };
+      window.addEventListener('error', event => showStartupError(event.message || 'A module failed to load.'));
+      window.addEventListener('unhandledrejection', event => showStartupError(event.reason?.message || event.reason || 'Unhandled startup error.'));
+      window.setTimeout(() => {
+        const loading = document.getElementById('loading');
+        if (loading && !loading.classList.contains('hide')) showStartupError('The game did not finish loading within 12 seconds.');
+      }, 12000);
+    })();
+  </script>
+  <script>window.__DYM_BUILD='ENTRY-R29-20260929A';</script>
+  <script type="module">
+    const __p=new URLSearchParams(location.search);
+    const __run=__p.get('run')||String(Date.now());
+    import('./js/main.js?build=STABLE-R42-20261001A&run='+encodeURIComponent(__run)).catch(error => {
+      console.error(error);
+      const loading = document.getElementById('loading');
+      if (loading) {
+        const message = error && error.message ? error.message : String(error);
+        loading.innerHTML = '<span style="max-width:560px;padding:24px;text-align:center;line-height:1.7">Startup error: ' + message.replace(/[&<>]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[c])) + '<br><small style="opacity:.7">Open Console for details.</small></span>';
+      }
+    });
+  </script>
+</body>
+</html>

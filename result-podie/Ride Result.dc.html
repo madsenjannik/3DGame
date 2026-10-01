@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+<style>html,body{margin:0;min-height:100%;background:#e7e0d2;font-family:'Manrope',system-ui,sans-serif;color:#2f2a22}a{color:#2f2a22}a:hover{color:#5f6e30}button{font-family:inherit;color:inherit}
+@keyframes rrSpin{to{transform:rotate(360deg)}}@keyframes rrShine{0%{transform:translateX(-160%) skewX(-22deg)}55%,100%{transform:translateX(260%) skewX(-22deg)}}@keyframes rrSwayL{from{transform:rotate(9deg)}to{transform:rotate(19deg)}}@keyframes rrSwayR{from{transform:rotate(-9deg)}to{transform:rotate(-19deg)}}@keyframes rrGlow{0%,100%{opacity:.35}50%{opacity:1}}@keyframes rrBlink{0%,100%{opacity:.55}50%{opacity:1}}</style>
+</helmet>
+<div style="min-height:100vh;display:flex;flex-direction:column;gap:18px;padding:18px 18px 40px;box-sizing:border-box;background:#e7e0d2;">
+  <div style="display:flex;flex-wrap:wrap;align-items:center;gap:10px 18px;">
+    <div style="display:flex;flex-direction:column;gap:4px;margin-right:6px;">
+      <div style="font:800 10px/1 'Manrope';letter-spacing:.2em;text-transform:uppercase;color:#5f6e30;">R39A + R39B · Thora's stable</div>
+      <div style="font:800 18px/1.1 'Manrope';">Ride result + standings</div>
+    </div>
+    <div style="display:flex;flex-wrap:wrap;gap:4px;padding:4px;border-radius:14px;background:rgba(255,255,255,.55);border:1px solid rgba(47,42,34,.1);">
+      <sc-for list="{{ stateTabs }}" as="t" hint-placeholder-count="7">
+        <button onClick="{{ t.pick }}" style="min-height:32px;padding:0 11px;border-radius:10px;border:0;background:{{ t.bg }};color:{{ t.c }};font:700 12px/1 'Manrope';cursor:pointer;white-space:nowrap;">{{ t.label }}</button>
+      </sc-for>
+    </div>
+    <div style="display:flex;gap:4px;padding:4px;border-radius:14px;background:rgba(255,255,255,.55);border:1px solid rgba(47,42,34,.1);">
+      <sc-for list="{{ variantTabs }}" as="t" hint-placeholder-count="2">
+        <button onClick="{{ t.pick }}" style="min-height:32px;padding:0 11px;border-radius:10px;border:0;background:{{ t.bg }};color:{{ t.c }};font:700 12px/1 'Manrope';cursor:pointer;white-space:nowrap;">{{ t.label }}</button>
+      </sc-for>
+    </div>
+    <div style="display:flex;gap:4px;padding:4px;border-radius:14px;background:rgba(255,255,255,.55);border:1px solid rgba(47,42,34,.1);">
+      <sc-for list="{{ deviceTabs }}" as="t" hint-placeholder-count="2">
+        <button onClick="{{ t.pick }}" style="min-height:32px;padding:0 11px;border-radius:10px;border:0;background:{{ t.bg }};color:{{ t.c }};font:700 12px/1 'Manrope';cursor:pointer;white-space:nowrap;">{{ t.label }}</button>
+      </sc-for>
+    </div>
+    <button onClick="{{ replay }}" style="min-height:40px;padding:0 14px;border-radius:12px;border:1px solid rgba(47,42,34,.14);background:rgba(255,255,255,.7);font:700 12px/1 'Manrope';cursor:pointer;">↺ Replay sequence</button>
+  </div>
+
+  <div style="display:flex;justify-content:center;overflow:auto;padding:14px 4px;">
+    <div ref="{{ boxRef }}" style="{{ frameStyle }}">
+      <iframe src="Result Stage.html" title="Cinematic finish" ref="{{ frameRef }}" onLoad="{{ onFrameLoad }}" style="position:absolute;inset:0;width:100%;height:100%;border:0;pointer-events:none;"></iframe>
+      <div style="position:absolute;inset:0;pointer-events:none;background:linear-gradient(to top,rgba(34,28,20,.42) 0%,rgba(34,28,20,.1) 40%,rgba(34,28,20,0) 62%);"></div>
+      <div style="position:absolute;inset:0;pointer-events:none;background:radial-gradient(circle at 40% 45%,rgba(255,236,170,.85),rgba(255,236,170,0) 60%);opacity:{{ flashO }};"></div>
+
+      <sc-if value="{{ showCaption }}" hint-placeholder-val="{{ true }}">
+        <div style="position:absolute;top:{{ topInset }};left:22px;display:flex;flex-direction:column;gap:6px;pointer-events:none;">
+          <div style="font:700 11px/1 'Manrope';letter-spacing:.22em;text-transform:uppercase;color:rgba(47,42,34,.78);">Thora's stable</div>
+          <div style="font:500 11px/1.5 'JetBrains Mono',monospace;color:rgba(47,42,34,.62);">{{ discName }}</div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ showBubble }}" hint-placeholder-val="{{ false }}">
+        <div style="position:absolute;left:{{ thX }};top:{{ thY }};width:0;height:0;z-index:4;pointer-events:none;transition:left .12s linear,top .12s linear;">
+          <div style="position:absolute;left:0;bottom:14px;width:{{ bubW }};transform:translateX(-50%) scale({{ bubS }});transform-origin:50% 100%;opacity:{{ bubO }};transition:transform .4s cubic-bezier(.3,1.6,.5,1),opacity .2s ease;">
+            <div style="position:relative;display:flex;flex-direction:column;gap:6px;padding:12px 16px 14px;border-radius:20px;background:#fbf8f2;box-shadow:0 14px 34px rgba(40,30,15,.28),0 0 0 1px rgba(47,42,34,.06);">
+              <div style="display:flex;align-items:center;gap:8px;">
+                <span style="font:800 10px/1 'Manrope';letter-spacing:.16em;text-transform:uppercase;padding:5px 8px;border-radius:999px;background:#5f6e30;color:#f4f1e8;">Tidsel-Thora</span>
+                <span style="font:700 11px/1 'Manrope';color:rgba(47,42,34,.62);">{{ moodLabel }}</span>
+              </div>
+              <div style="font:700 16px/1.4 'Manrope';text-wrap:pretty;min-height:22px;">{{ bubText }}</div>
+              <div style="position:absolute;left:50%;bottom:-7px;width:16px;height:16px;margin-left:-8px;background:#fbf8f2;transform:rotate(45deg);border-radius:0 0 4px 0;"></div>
+            </div>
+          </div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ isAD }}" hint-placeholder-val="{{ true }}">
+        <div style="position:absolute;right:44px;top:50%;width:min(400px,40%);transform:translate({{ cardX }},-50%);opacity:{{ cardO }};pointer-events:{{ cardPE }};transition:opacity .5s ease,transform .7s cubic-bezier(.2,.7,.2,1);z-index:3;">
+          <div style="position:relative;width:120px;height:120px;margin:0 auto -58px;z-index:2;">
+            {{ rays }}
+            <div style="position:absolute;inset:0;transform:scale({{ medS }}) rotate({{ medR }});opacity:{{ medO }};transition:transform .55s cubic-bezier(.3,1.7,.5,1),opacity .18s ease;">
+              {{ medalEl }}
+            </div>
+          </div>
+          <div style="display:flex;flex-direction:column;align-items:center;gap:14px;padding:74px 24px 20px;border-radius:30px;background:rgba(251,248,242,.9);backdrop-filter:blur(18px) saturate(1.2);-webkit-backdrop-filter:blur(18px) saturate(1.2);border:1px solid rgba(255,255,255,.7);box-shadow:0 24px 60px rgba(40,30,15,.28);text-align:center;transform:translateX({{ shakeX }});">
+            <div style="display:flex;flex-wrap:wrap;justify-content:center;align-items:center;gap:8px;min-height:24px;">
+              <span style="font:800 10px/1 'Manrope';letter-spacing:.2em;text-transform:uppercase;color:rgba(47,42,34,.62);opacity:{{ lblO }};transition:opacity .4s ease;">{{ discName }}</span>
+              <sc-if value="{{ s.newBest }}" hint-placeholder-val="{{ false }}"><span style="font:800 10px/1 'Manrope';letter-spacing:.14em;text-transform:uppercase;padding:7px 10px;border-radius:999px;background:#5f6e30;color:#f4f1e8;transform:scale({{ stampS }}) rotate(-4deg);opacity:{{ stampO }};transition:transform .4s cubic-bezier(.3,1.8,.5,1),opacity .15s ease;">New best</span></sc-if>
+              <sc-if value="{{ s.first }}" hint-placeholder-val="{{ false }}"><span style="font:800 10px/1 'Manrope';letter-spacing:.14em;text-transform:uppercase;padding:7px 10px;border-radius:999px;background:#2f2a22;color:#f4f1e8;transform:scale({{ stampS }}) rotate(-4deg);opacity:{{ stampO }};transition:transform .4s cubic-bezier(.3,1.8,.5,1),opacity .15s ease;">First ride</span></sc-if>
+            </div>
+            <sc-if value="{{ s.isDQ }}" hint-placeholder-val="{{ false }}">
+              <div style="font:800 38px/1.08 'Manrope';letter-spacing:-.02em;color:#8f3f22;text-wrap:balance;transform:scale({{ dqS }});opacity:{{ dqO }};transition:transform .35s cubic-bezier(.3,1.8,.5,1),opacity .15s ease;">{{ s.reason }}</div>
+            </sc-if>
+            <sc-if value="{{ s.hasTime }}" hint-placeholder-val="{{ true }}">
+              <div style="display:flex;flex-direction:column;align-items:center;gap:8px;">
+                <div style="font:800 88px/.92 'Manrope';letter-spacing:-.045em;font-variant-numeric:tabular-nums;color:{{ timeC }};transform:scale({{ timeS }});transition:color .4s ease;">{{ tTime }}</div>
+                <sc-if value="{{ s.hasPen }}" hint-placeholder-val="{{ false }}">
+                  <span style="font:800 13px/1 'Manrope';padding:8px 12px;border-radius:10px;background:#8f3f22;color:#fbf3ea;transform:scale({{ penS }}) rotate(2deg);opacity:{{ penO }};transition:transform .3s cubic-bezier(.3,1.8,.5,1),opacity .12s ease;">{{ s.penTxt }}</span>
+                </sc-if>
+              </div>
+            </sc-if>
+            <div style="display:flex;flex-direction:column;gap:4px;opacity:{{ pbO }};transform:translateY({{ pbY }});transition:opacity .4s ease,transform .4s ease;">
+              <div style="font:600 13px/1.4 'Manrope';color:rgba(47,42,34,.66);">{{ s.sub }}</div>
+              <div style="font:700 14px/1.4 'Manrope';color:{{ s.pbC }};">{{ s.pb }}</div>
+            </div>
+            <sc-if value="{{ s.hasTime }}" hint-placeholder-val="{{ true }}">
+              <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;width:100%;opacity:{{ rkO }};transform:translateY({{ rkY }});transition:opacity .35s ease,transform .45s cubic-bezier(.2,.7,.2,1);">
+                <sc-for list="{{ ranksLive }}" as="k" hint-placeholder-count="3">
+                  <div style="display:flex;flex-direction:column;align-items:center;gap:5px;padding:10px 6px;border-radius:14px;background:{{ k.bg }};">
+                    <b style="font:800 26px/1 'Manrope';font-variant-numeric:tabular-nums;color:{{ k.c }};">#{{ k.n }}</b>
+                    <span style="font:700 11px/1 'Manrope';color:rgba(47,42,34,.62);">{{ k.l }}</span>
+                  </div>
+                </sc-for>
+              </div>
+            </sc-if>
+            <sc-if value="{{ s.hasUnlock }}" hint-placeholder-val="{{ false }}">
+              <div style="display:flex;align-items:center;gap:12px;width:100%;box-sizing:border-box;padding:10px 12px;border-radius:16px;background:rgba(201,162,74,.16);border:1px solid rgba(201,162,74,.45);text-align:left;opacity:{{ unO }};transform:scale({{ unS }});transition:transform .45s cubic-bezier(.3,1.6,.5,1),opacity .2s ease;">
+                <span style="width:40px;height:40px;flex:none;border-radius:11px;background:{{ s.unlockHex }};box-shadow:inset 0 0 0 1px rgba(0,0,0,.12),inset 0 -8px 12px rgba(0,0,0,.14),0 0 0 4px rgba(201,162,74,.25);"></span>
+                <span style="display:flex;flex-direction:column;gap:4px;">
+                  <span style="font:800 10px/1 'Manrope';letter-spacing:.16em;text-transform:uppercase;color:#7a5f1e;">Unlocked · equipped</span>
+                  <span style="font:700 15px/1.2 'Manrope';">{{ s.unlockName }}</span>
+                </span>
+              </div>
+            </sc-if>
+            <div style="display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,1fr) minmax(0,.8fr);gap:8px;width:100%;opacity:{{ btnO }};transform:translateY({{ btnY }});transition:opacity .4s ease,transform .45s cubic-bezier(.2,.7,.2,1);">
+              <button onClick="{{ replay }}" style="min-height:52px;border-radius:16px;border:0;background:#2f2a22;color:#f4efe5;font:800 14px/1 'Manrope';cursor:pointer;" style-hover="background:#3e372c;">↺ Ride again</button>
+              <button onClick="{{ toggleBoard }}" style="min-height:52px;border-radius:16px;border:1px solid rgba(47,42,34,.16);background:rgba(255,255,255,.75);font:800 14px/1 'Manrope';cursor:pointer;" style-hover="background:#fff;">Standings</button>
+              <button style="min-height:52px;border-radius:16px;border:0;background:transparent;font:700 14px/1 'Manrope';color:rgba(47,42,34,.7);cursor:pointer;" style-hover="background:rgba(47,42,34,.06);">Done</button>
+            </div>
+          </div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ isAM }}" hint-placeholder-val="{{ false }}">
+        <div style="position:absolute;left:50%;bottom:18px;width:calc(100% - 28px);transform:translate(-50%,{{ ty }});opacity:{{ op }};transition:opacity .7s ease,transform .7s cubic-bezier(.2,.7,.2,1);">
+          <div style="position:relative;width:96px;height:108px;margin:0 auto -54px;z-index:2;">
+            {{ rays }}
+            <div style="position:absolute;inset:0;transform:scale({{ medS }}) rotate({{ medR }});opacity:{{ medO }};transition:transform .55s cubic-bezier(.3,1.7,.5,1),opacity .18s ease;">
+              {{ medalElS }}
+            </div>
+          </div>
+          <div style="display:flex;flex-direction:column;align-items:center;gap:14px;padding:68px 20px 18px;border-radius:28px;background:rgba(251,248,242,.88);backdrop-filter:blur(18px) saturate(1.2);-webkit-backdrop-filter:blur(18px) saturate(1.2);border:1px solid rgba(255,255,255,.7);box-shadow:0 24px 60px rgba(40,30,15,.28);text-align:center;transform:translateX({{ shakeX }});">
+            <div style="display:flex;flex-direction:column;align-items:center;gap:8px;">
+              <div style="display:flex;flex-wrap:wrap;justify-content:center;align-items:center;gap:8px;">
+                <span style="font:800 10px/1 'Manrope';letter-spacing:.2em;text-transform:uppercase;color:rgba(47,42,34,.62);">{{ discName }}</span>
+                <sc-if value="{{ s.newBest }}" hint-placeholder-val="{{ false }}"><span style="font:800 10px/1 'Manrope';letter-spacing:.14em;text-transform:uppercase;padding:6px 9px;border-radius:999px;background:#5f6e30;color:#f4f1e8;transform:scale({{ stampS }});opacity:{{ stampO }};transition:transform .4s cubic-bezier(.3,1.8,.5,1),opacity .15s ease;">New best</span></sc-if>
+                <sc-if value="{{ s.first }}" hint-placeholder-val="{{ false }}"><span style="font:800 10px/1 'Manrope';letter-spacing:.14em;text-transform:uppercase;padding:6px 9px;border-radius:999px;background:#2f2a22;color:#f4f1e8;transform:scale({{ stampS }});opacity:{{ stampO }};transition:transform .4s cubic-bezier(.3,1.8,.5,1),opacity .15s ease;">First ride</span></sc-if>
+              </div>
+              <sc-if value="{{ s.isDQ }}" hint-placeholder-val="{{ false }}">
+                <div style="font:800 34px/1.1 'Manrope';letter-spacing:-.02em;color:#8f3f22;text-wrap:balance;opacity:{{ dqO }};">{{ s.reason }}</div>
+              </sc-if>
+              <sc-if value="{{ s.hasTime }}" hint-placeholder-val="{{ true }}">
+                <div style="font:800 76px/.95 'Manrope';letter-spacing:-.04em;font-variant-numeric:tabular-nums;color:{{ timeC }};">{{ tTime }}</div>
+              </sc-if>
+              <div style="font:600 13px/1.4 'Manrope';color:rgba(47,42,34,.66);">{{ s.sub }}</div>
+              <div style="font:700 13px/1.4 'Manrope';color:{{ s.pbC }};opacity:{{ pbO }};">{{ s.pb }}</div>
+            </div>
+            <sc-if value="{{ s.hasTime }}" hint-placeholder-val="{{ true }}">
+              <div style="display:flex;gap:6px;justify-content:center;flex-wrap:wrap;opacity:{{ rkO }};">
+                <sc-for list="{{ ranksLive }}" as="k" hint-placeholder-count="3">
+                  <span style="display:flex;align-items:baseline;gap:5px;padding:7px 10px;border-radius:12px;background:rgba(47,42,34,.06);">
+                    <b style="font:800 14px/1 'Manrope';">#{{ k.n }}</b>
+                    <span style="font:600 11px/1 'Manrope';color:rgba(47,42,34,.62);">{{ k.l }}</span>
+                  </span>
+                </sc-for>
+              </div>
+            </sc-if>
+            <sc-if value="{{ s.hasUnlock }}" hint-placeholder-val="{{ false }}">
+              <div style="display:flex;align-items:center;gap:12px;width:100%;box-sizing:border-box;padding:10px 12px;border-radius:16px;background:rgba(201,162,74,.16);border:1px solid rgba(201,162,74,.45);text-align:left;opacity:{{ unO }};">
+                <span style="width:36px;height:36px;flex:none;border-radius:10px;background:{{ s.unlockHex }};box-shadow:inset 0 0 0 1px rgba(0,0,0,.12),inset 0 -8px 12px rgba(0,0,0,.14);"></span>
+                <span style="display:flex;flex-direction:column;gap:4px;">
+                  <span style="font:800 10px/1 'Manrope';letter-spacing:.16em;text-transform:uppercase;color:#7a5f1e;">Unlocked · equipped</span>
+                  <span style="font:700 14px/1.2 'Manrope';">{{ s.unlockName }}</span>
+                </span>
+              </div>
+            </sc-if>
+            <div style="display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,1fr) minmax(0,.8fr);gap:8px;width:100%;opacity:{{ btnO }};">
+              <button onClick="{{ replay }}" style="min-height:50px;border-radius:16px;border:0;background:#2f2a22;color:#f4efe5;font:800 14px/1 'Manrope';cursor:pointer;" style-hover="background:#3e372c;">↺ Ride again</button>
+              <button onClick="{{ toggleBoard }}" style="min-height:50px;border-radius:16px;border:1px solid rgba(47,42,34,.16);background:rgba(255,255,255,.75);font:800 14px/1 'Manrope';cursor:pointer;" style-hover="background:#fff;">Standings</button>
+              <button style="min-height:50px;border-radius:16px;border:0;background:transparent;font:700 14px/1 'Manrope';color:rgba(47,42,34,.7);cursor:pointer;" style-hover="background:rgba(47,42,34,.06);">Done</button>
+            </div>
+          </div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ isB }}" hint-placeholder-val="{{ false }}">
+        <div style="position:absolute;top:{{ bBubbleTop }};left:{{ bLeft }};max-width:min(calc(100% - 32px),420px);display:flex;gap:10px;align-items:flex-start;padding:12px 16px 13px 12px;border-radius:18px 18px 18px 6px;background:rgba(251,248,242,.9);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);box-shadow:0 12px 30px rgba(40,30,15,.2);opacity:{{ op }};transform:translateY({{ ty }});transition:opacity .7s ease .1s,transform .7s cubic-bezier(.2,.7,.2,1) .1s;">
+          <span style="width:30px;height:30px;flex:none;border-radius:50%;background:#5f6e30;color:#f4f1e8;display:grid;place-items:center;font:800 12px/1 'Manrope';">T</span>
+          <span style="display:flex;flex-direction:column;gap:4px;">
+            <span style="font:800 10px/1 'Manrope';letter-spacing:.14em;text-transform:uppercase;color:#5f6e30;">Tidsel-Thora</span>
+            <span style="font:600 14px/1.45 'Manrope';text-wrap:pretty;">{{ s.quote }}</span>
+          </span>
+        </div>
+        <div style="position:absolute;left:{{ bLeft }};right:{{ bRight }};bottom:16px;max-width:760px;display:flex;flex-direction:column;gap:14px;padding:18px 18px 16px 24px;border-radius:26px;background:rgba(38,32,24,.86);backdrop-filter:blur(18px) saturate(1.2);-webkit-backdrop-filter:blur(18px) saturate(1.2);color:#f4efe5;box-shadow:0 24px 60px rgba(20,15,8,.4);overflow:hidden;opacity:{{ op }};transform:translateY({{ ty }});transition:opacity .7s ease,transform .7s cubic-bezier(.2,.7,.2,1),right .45s cubic-bezier(.2,.7,.2,1);">
+          <div style="position:absolute;left:0;top:0;bottom:0;width:7px;background:{{ r.bg }};"></div>
+          <div style="display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:14px 24px;">
+            <div style="display:flex;flex-direction:column;gap:8px;min-width:0;">
+              <div style="display:flex;flex-wrap:wrap;align-items:center;gap:8px;">
+                <span style="font:800 10px/1 'Manrope';letter-spacing:.14em;text-transform:uppercase;padding:6px 9px;border-radius:999px;background:{{ r.bg }};color:{{ r.ink }};">{{ r.label }}</span>
+                <sc-if value="{{ s.newBest }}" hint-placeholder-val="{{ false }}"><span style="font:800 10px/1 'Manrope';letter-spacing:.14em;text-transform:uppercase;padding:6px 9px;border-radius:999px;background:#b7c77a;color:#2a3012;">New best</span></sc-if>
+                <sc-if value="{{ s.first }}" hint-placeholder-val="{{ false }}"><span style="font:800 10px/1 'Manrope';letter-spacing:.14em;text-transform:uppercase;padding:6px 9px;border-radius:999px;background:rgba(244,239,229,.16);color:#f4efe5;">First ride</span></sc-if>
+                <span style="font:800 10px/1 'Manrope';letter-spacing:.2em;text-transform:uppercase;color:rgba(244,239,229,.7);">{{ discName }}</span>
+              </div>
+              <sc-if value="{{ s.isDQ }}" hint-placeholder-val="{{ false }}">
+                <div style="font:800 36px/1.05 'Manrope';letter-spacing:-.02em;color:#f0a080;">{{ s.reason }}</div>
+              </sc-if>
+              <sc-if value="{{ s.hasTime }}" hint-placeholder-val="{{ true }}">
+                <div style="font:800 {{ bTimeSize }}/.9 'Manrope';letter-spacing:-.045em;font-variant-numeric:tabular-nums;">{{ s.time }}</div>
+              </sc-if>
+              <div style="display:flex;flex-wrap:wrap;align-items:center;gap:6px 12px;">
+                <span style="font:600 13px/1.3 'Manrope';color:rgba(244,239,229,.72);">{{ s.sub }}</span>
+                <span style="font:800 12px/1 'Manrope';padding:6px 9px;border-radius:9px;background:{{ s.deltaBg }};color:{{ s.deltaC }};font-variant-numeric:tabular-nums;">{{ s.pb }}</span>
+              </div>
+            </div>
+            <sc-if value="{{ s.hasTime }}" hint-placeholder-val="{{ true }}">
+              <div style="display:flex;align-items:flex-end;gap:16px;">
+                <div style="display:flex;flex-direction:column;gap:6px;">
+                  <span style="font:800 10px/1 'Manrope';letter-spacing:.2em;text-transform:uppercase;color:rgba(244,239,229,.7);">Today</span>
+                  <span style="font:800 58px/.85 'Manrope';letter-spacing:-.04em;">#{{ rd }}</span>
+                  <span style="font:600 12px/1 'Manrope';color:rgba(244,239,229,.62);">of {{ nDay }} riders</span>
+                </div>
+                <div style="display:flex;flex-direction:column;gap:8px;padding-left:16px;border-left:1px solid rgba(244,239,229,.16);">
+                  <span style="font:700 13px/1 'Manrope';"><b>#{{ rw }}</b> <span style="color:rgba(244,239,229,.62);">this week</span></span>
+                  <span style="font:700 13px/1 'Manrope';"><b>#{{ ra }}</b> <span style="color:rgba(244,239,229,.62);">all time</span></span>
+                </div>
+              </div>
+            </sc-if>
+          </div>
+          <sc-if value="{{ s.hasUnlock }}" hint-placeholder-val="{{ false }}">
+            <div style="display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:14px;background:rgba(201,162,74,.18);border:1px solid rgba(224,192,96,.4);">
+              <span style="width:32px;height:32px;flex:none;border-radius:9px;background:{{ s.unlockHex }};box-shadow:inset 0 0 0 1px rgba(255,255,255,.2),inset 0 -8px 12px rgba(0,0,0,.18);"></span>
+              <span style="font:800 10px/1 'Manrope';letter-spacing:.16em;text-transform:uppercase;color:#e8cf86;">Unlocked · equipped</span>
+              <span style="font:700 14px/1.2 'Manrope';">{{ s.unlockName }}</span>
+            </div>
+          </sc-if>
+          <div style="display:flex;flex-wrap:wrap;gap:8px;">
+            <button onClick="{{ replay }}" style="flex:1 1 140px;min-height:50px;border-radius:15px;border:0;background:#f4efe5;color:#2f2a22;font:800 14px/1 'Manrope';cursor:pointer;" style-hover="background:#fff;">↺ Ride again</button>
+            <button onClick="{{ toggleBoard }}" style="flex:1 1 110px;min-height:50px;border-radius:15px;border:1px solid rgba(244,239,229,.22);background:rgba(244,239,229,.08);color:#f4efe5;font:800 14px/1 'Manrope';cursor:pointer;" style-hover="background:rgba(244,239,229,.16);">Standings</button>
+            <button style="flex:0 1 90px;min-height:50px;border-radius:15px;border:0;background:transparent;color:rgba(244,239,229,.75);font:700 14px/1 'Manrope';cursor:pointer;" style-hover="background:rgba(244,239,229,.08);">Done</button>
+          </div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ isSceneBoard }}" hint-placeholder-val="{{ false }}">
+        <div style="position:absolute;inset:0;pointer-events:none;opacity:{{ sbO }};transition:opacity .5s ease .5s;z-index:3;">
+          <div style="position:absolute;top:22px;left:22px;right:22px;display:flex;flex-wrap:wrap;align-items:flex-start;justify-content:space-between;gap:12px;">
+            <button onClick="{{ toggleBoard }}" style="pointer-events:auto;min-height:44px;padding:0 16px;border-radius:14px;border:1px solid rgba(255,255,255,.7);background:rgba(251,248,242,.88);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);font:800 13px/1 'Manrope';cursor:pointer;box-shadow:0 10px 26px rgba(40,30,15,.18);" style-hover="background:#fff;">← Result</button>
+            <div style="pointer-events:auto;display:flex;flex-direction:column;gap:10px;padding:14px;border-radius:20px;background:rgba(251,248,242,.88);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border:1px solid rgba(255,255,255,.7);box-shadow:0 14px 34px rgba(40,30,15,.2);">
+              <div style="display:flex;flex-direction:column;gap:5px;padding:0 4px;">
+                <div style="font:800 10px/1 'Manrope';letter-spacing:.2em;text-transform:uppercase;color:#5f6e30;">Standings · in chalk and carved</div>
+                <div style="font:800 18px/1.1 'Manrope';">{{ discName }}</div>
+              </div>
+              <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:4px;padding:4px;border-radius:14px;background:rgba(47,42,34,.07);">
+                <sc-for list="{{ scopeTabs }}" as="t" hint-placeholder-count="3">
+                  <button onClick="{{ t.pick }}" style="min-height:36px;padding:0 12px;border-radius:10px;border:0;background:{{ t.bg }};color:{{ t.c }};box-shadow:{{ t.sh }};font:800 12px/1 'Manrope';cursor:pointer;white-space:nowrap;">{{ t.label }}</button>
+                </sc-for>
+              </div>
+            </div>
+          </div>
+          <div style="position:absolute;left:50%;bottom:22px;transform:translateX(-50%);width:min(640px,calc(100% - 44px));display:flex;flex-wrap:wrap;align-items:center;gap:10px 14px;padding:10px 10px 10px 18px;box-sizing:border-box;border-radius:20px;background:rgba(38,32,24,.86);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);color:#f4efe5;box-shadow:0 18px 44px rgba(20,15,8,.35);pointer-events:auto;">
+            <span style="font:800 22px/1 'Manrope';font-variant-numeric:tabular-nums;color:#f4e27a;">{{ you.rank }}</span>
+            <span style="display:flex;flex-direction:column;gap:4px;flex:1 1 220px;min-width:0;">
+              <span style="font:800 14px/1.2 'Manrope';">{{ you.label }} <span style="font-weight:600;color:rgba(244,239,229,.7);">{{ you.t }}</span></span>
+              <span style="font:600 12px/1.35 'Manrope';color:rgba(244,239,229,.72);">{{ ghostNote }}</span>
+            </span>
+            <button onClick="{{ replay }}" style="min-height:48px;padding:0 18px;border-radius:14px;border:0;background:#f4efe5;color:#2f2a22;font:800 14px/1 'Manrope';cursor:pointer;" style-hover="background:#fff;">Race the ghost →</button>
+          </div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ skipOn }}" hint-placeholder-val="{{ false }}">
+        <div onClick="{{ skip }}" style="position:absolute;inset:0;z-index:6;cursor:pointer;">
+          <div style="position:absolute;left:50%;bottom:18px;transform:translateX(-50%);font:700 11px/1 'Manrope';letter-spacing:.18em;text-transform:uppercase;color:rgba(251,248,242,.95);text-shadow:0 1px 6px rgba(20,15,8,.5);animation:rrBlink 1.4s ease-in-out infinite;">Click to skip</div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ sheetScrim }}" hint-placeholder-val="{{ false }}">
+        <div onClick="{{ toggleBoard }}" style="position:absolute;inset:0;background:rgba(34,28,20,.3);"></div>
+      </sc-if>
+      <div style="{{ lbStyle }}">
+        <sc-if value="{{ isMobile }}" hint-placeholder-val="{{ true }}">
+          <div style="width:40px;height:5px;border-radius:3px;background:rgba(47,42,34,.2);margin:0 auto -4px;"></div>
+        </sc-if>
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;">
+          <div style="display:flex;flex-direction:column;gap:6px;">
+            <div style="font:800 10px/1 'Manrope';letter-spacing:.2em;text-transform:uppercase;color:#5f6e30;">Standings · in chalk and carved</div>
+            <div style="font:800 21px/1.1 'Manrope';letter-spacing:-.01em;">{{ discName }}</div>
+          </div>
+          <button onClick="{{ toggleBoard }}" aria-label="Close" style="width:40px;height:40px;flex:none;border-radius:50%;border:1px solid rgba(47,42,34,.14);background:rgba(255,255,255,.7);font:600 18px/1 'Manrope';cursor:pointer;" style-hover="background:#fff;">×</button>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:4px;padding:4px;border-radius:14px;background:rgba(47,42,34,.07);">
+          <sc-for list="{{ scopeTabs }}" as="t" hint-placeholder-count="3">
+            <button onClick="{{ t.pick }}" style="min-height:36px;border-radius:10px;border:0;background:{{ t.bg }};color:{{ t.c }};box-shadow:{{ t.sh }};font:800 12px/1 'Manrope';cursor:pointer;">{{ t.label }}</button>
+          </sc-for>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));align-items:end;gap:8px;">
+          <sc-for list="{{ podium }}" as="p" hint-placeholder-count="3">
+            <div style="display:flex;flex-direction:column;align-items:center;gap:6px;min-width:0;">
+              <span style="font:800 13px/1.1 'Manrope';max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:{{ p.nameC }};">{{ p.name }}</span>
+              <span style="font:600 12px/1 'Manrope';color:rgba(47,42,34,.62);font-variant-numeric:tabular-nums;">{{ p.t }}</span>
+              <div style="width:100%;height:{{ p.h }};border-radius:14px 14px 6px 6px;background:{{ p.bg }};color:{{ p.c }};box-shadow:{{ p.ring }};display:grid;place-items:center;font:800 24px/1 'Manrope';">{{ p.rank }}</div>
+            </div>
+          </sc-for>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:2px;flex:1;min-height:0;overflow:auto;">
+          <sc-for list="{{ rows }}" as="w" hint-placeholder-count="6">
+            <div style="display:grid;grid-template-columns:30px minmax(0,1fr) auto;align-items:center;gap:8px;min-height:40px;padding:0 12px;border-radius:12px;background:{{ w.bg }};">
+              <span style="font:800 12px/1 'Manrope';color:rgba(47,42,34,.55);font-variant-numeric:tabular-nums;">{{ w.rank }}</span>
+              <span style="font:{{ w.weight }} 14px/1 'Manrope';color:{{ w.c }};">{{ w.name }}</span>
+              <span style="font:600 13px/1 'Manrope';font-variant-numeric:tabular-nums;color:rgba(47,42,34,.72);">{{ w.t }}</span>
+            </div>
+          </sc-for>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:8px;padding-top:10px;border-top:1px solid rgba(47,42,34,.1);">
+          <div style="display:grid;grid-template-columns:30px minmax(0,1fr) auto;align-items:center;gap:8px;min-height:46px;padding:0 12px;border-radius:14px;background:#5f6e30;color:#f4f1e8;">
+            <span style="font:800 13px/1 'Manrope';">{{ you.rank }}</span>
+            <span style="font:800 14px/1 'Manrope';">{{ you.label }}</span>
+            <span style="font:700 14px/1 'Manrope';font-variant-numeric:tabular-nums;">{{ you.t }}</span>
+          </div>
+          <div style="font:600 12px/1.4 'Manrope';color:rgba(47,42,34,.62);padding:0 4px;">{{ ghostNote }}</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;variant&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;A&quot;,&quot;B&quot;],&quot;default&quot;:&quot;A&quot;,&quot;tsType&quot;:&quot;'A'|'B'&quot;},&quot;device&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;mobile&quot;,&quot;desktop&quot;],&quot;default&quot;:&quot;desktop&quot;,&quot;tsType&quot;:&quot;'mobile'|'desktop'&quot;}}">
+const DISC={lap_horse:{n:'Fastest lap',m:'Horse',mount:'horse',med:[24.5,27,31]},lap_bike:{n:'Fastest lap',m:'Bike',mount:'bike',med:[29,32,36]},jump:{n:'Jumping',m:'Horse',mount:'horse',med:[12,15,19]}};
+const NAMES=['Aloe','Cactus','Daisy','Fern','Tulip','Hyacinth','Succulent','Spire'];
+function rng(s){let h=2166136261;for(const c of s)h=Math.imul(h^c.charCodeAt(0),16777619);return()=>{h+=0x6D2B79F5;let t=h;t=Math.imul(t^t>>>15,t|1);t^=t+Math.imul(t^t>>>7,t|61);return((t^t>>>14)>>>0)/4294967296;};}
+function rivals(disc,key,fast){const r=rng(disc+'|'+key),g=DISC[disc].med,pool=NAMES.slice(),n=5+Math.floor(r()*3),out=[];const lo=g[0]*(fast?0.93:0.98),hi=g[2]*(fast?0.96:1.12);
+  for(let i=0;i<n;i++){const name=pool.splice(Math.floor(r()*pool.length),1)[0],q=r();out.push({name,t:Math.round((lo+(hi-lo)*q*q)*100)/100});}return out;}
+const bestBy=l=>{const m=new Map();l.forEach(e=>{const k=e.you?'__you':e.name;if(!m.has(k)||e.t<m.get(k).t)m.set(k,e);});return[...m.values()].sort((a,b)=>a.t-b.t);};
+function board(disc,scope,you){const l=[];if(scope==='day')l.push(...rivals(disc,'d0'));else{for(let i=0;i<5;i++)l.push(...rivals(disc,'d'+i));if(scope==='all')for(let i=0;i<5;i++)l.push(...rivals(disc,'legend'+i,1));}
+  const y=you[scope];if(y!=null)l.push({name:'You',t:y,you:true});return bestBy(l);}
+const medalOf=(d,t)=>{const g=DISC[d].med;return t<=g[0]?'gold':t<=g[1]?'silver':t<=g[2]?'bronze':null;};
+const fmt=t=>t==null||!isFinite(t)?'–':t<60?t.toFixed(2):Math.floor(t/60)+':'+(t%60).toFixed(2).padStart(5,'0');
+const ROS={gold:{bg:'#c9a24a',tail:'#a8842f',ink:'#3a2c0c',label:'Gold',tails:true},silver:{bg:'#b4b6b0',tail:'#8f918b',ink:'#2f2a22',label:'Silver',tails:true},
+  bronze:{bg:'#b27a4c',tail:'#8f5c33',ink:'#2a1a0c',label:'Bronze',tails:true},none:{bg:'#e4dccd',tail:'#e4dccd',ink:'#2f2a22',label:'Finished',tails:false},dq:{bg:'#a8542e',tail:'#a8542e',ink:'#fbf3ea',label:'DQ',tails:false}};
+const ST=[
+  {id:'gold',label:'Gold · New best',disc:'jump',ride:11.62,pen:0,prev:11.88},
+  {id:'silver',label:'Silver',disc:'lap_horse',ride:26.31,pen:0,prev:25.8},
+  {id:'bronze',label:'Bronze',disc:'jump',ride:13.84,pen:4,penTxt:'+4 · 1 pole down',prev:16.2},
+  {id:'none',label:'No medal',disc:'jump',ride:15.1,pen:8,penTxt:'+8 · 2 poles down',prev:17.84},
+  {id:'dq',label:'Disqualified',disc:'jump',dq:'Jumped 3 before 2',prev:17.84},
+  {id:'unlock',label:'Unlock',disc:'lap_horse',ride:24.92,pen:0,prev:27.4,unlock:['Moss saddle blanket','#5f7a44']},
+  {id:'first',label:'First run',disc:'lap_bike',ride:34.8,pen:0,prev:null,unlock:['Butter bike colour','#e0c060']}];
+const SCOPES=[['day','Today'],['week','This week'],['all','All time']];
+const Q={
+  record:['Best time anyone has ridden here. Fine. I\'m impressed.','Carve it in the beam. Somebody fetch me a knife.','Forty years running this stable. That was the one.'],
+  dayTop:['Fastest today. Don\'t let it go to your head.','Top of the board. The horse is smiling. I am not.','First today. Tomorrow someone comes for it.'],
+  podium:['On the podium today. Not bad.','Medal\'s a medal. Now do it without the wobble.','Decent. I\'ve seen worse. I\'ve seen better, too.'],
+  mid:['Middle of the pack. The horse did most of the work.','Average. Average is a start.','Not slow. Not fast. Honest, though.'],
+  slow:['Slow. But you finished, which is more than most.','I\'ve seen snails with more urgency.','Nice day out for you and the horse, was it?'],
+  poles:[' And stop knocking my poles down.',' My poles are not suggestions.',' I\'ll be billing you for the poles.'],
+  dqJump:['Disqualified. The numbers on the jumps aren\'t decoration.','Three before two? Count with me. One. Two.','Wrong order. The horse knew. You didn\'t.'],
+  dqLap:['Disqualified. The track goes around, not through.']};
+const MOOD={cheer:'is beaming',nod:'nods, once',shrug:'shrugs',scold:'is not amused'};
+const END=2400;
+const cl=(e,a,b)=>Math.min(1,Math.max(0,(e-a)/(b-a))),eo=x=>1-Math.pow(1-x,3),bump=(e,a,w)=>e<a||e>a+w?0:Math.sin((e-a)/w*Math.PI);
+class Component extends DCLogic {
+  state={st:'gold',variant:null,device:null,board:false,scope:'day',shown:false,e:0,run:0,skip:0,th:{x:.5,y:.3},boardAt:0};
+  frameRef=React.createRef();boxRef=React.createRef();
+  componentDidMount(){this._onMsg=ev=>{const f=this.frameRef.current;if(!f||ev.source!==f.contentWindow||!ev.data||!ev.data.thoraHead)return;this.setState({th:ev.data.thoraHead});};
+    addEventListener('message',this._onMsg);if(window.ResizeObserver){this._ro=new ResizeObserver(([en])=>{const w=Math.round(en.contentRect.width);if(w!==this.state.fw)this.setState({fw:w});});if(this.boxRef.current)this._ro.observe(this.boxRef.current);}this.fade();}
+  componentWillUnmount(){removeEventListener('message',this._onMsg);if(this._ro)this._ro.disconnect();cancelAnimationFrame(this._raf);clearTimeout(this._t);clearTimeout(this._bt);}
+  componentDidUpdate(){this.post();}
+  post(){const f=this.frameRef.current,j=JSON.stringify(this._shot);if(!f||!f.contentWindow||j===this._sent)return;this._sent=j;f.contentWindow.postMessage({resultShot:this._shot},'*');}
+  fade(){cancelAnimationFrame(this._raf);clearTimeout(this._raf);this.setState(p=>({shown:false,e:0,run:p.run+1}));clearTimeout(this._t);this._t=setTimeout(()=>this.setState({shown:true}),60);
+    const t0=performance.now(),nx=f=>document.visibilityState==='hidden'?setTimeout(f,32):requestAnimationFrame(f),tick=()=>{const e=performance.now()-t0;if(e>=END){this.setState({e:END});return;}this.setState({e});this._raf=nx(tick);};this._raf=nx(tick);}
+  skip(){cancelAnimationFrame(this._raf);clearTimeout(this._raf);this.setState(p=>({e:END,skip:p.skip+1,shown:true}));}
+  renderVals(){
+    const S=this.state,variant=S.variant||this.props.variant||'A',device=S.device||this.props.device||'desktop',mob=device==='mobile',e=S.e;
+    const st=ST.find(x=>x.id===S.st),D=DISC[st.disc],isDQ=!!st.dq,final=isDQ?null:Math.round((st.ride+st.pen)*100)/100;
+    const md=isDQ?null:medalOf(st.disc,final),newBest=!isDQ&&st.prev!=null&&final<st.prev,first=st.prev==null;
+    const best=isDQ?st.prev:first?final:Math.min(st.prev,final);
+    const you={day:final,week:best,all:best};
+    const rk=sc=>board(st.disc,sc,you).findIndex(e=>e.you)+1,rd=rk('day'),rw=rk('week'),ra=rk('all'),nDay=board(st.disc,'day',you).length;
+    const pick=a=>a[(S.run+st.id.length)%a.length];
+    let quote,react;
+    if(isDQ){quote=pick(st.disc==='jump'?Q.dqJump:Q.dqLap);react='scold';}
+    else{if(ra===1){quote=pick(Q.record);react='cheer';}else if(rd===1){quote=pick(Q.dayTop);react='cheer';}else if(rd<=3){quote=pick(Q.podium);react='nod';}
+      else if(rd<=Math.ceil(nDay/2)){quote=pick(Q.mid);react='shrug';}else{quote=pick(Q.slow);react='shrug';}
+      if(md==='gold')react='cheer';if(st.pen>=8)quote+=pick(Q.poles);}
+    const sub=isDQ?'No time recorded':st.disc==='jump'?'Ride '+fmt(st.ride)+' · '+(st.pen?st.penTxt.split(' · ')[1]:'clear round'):'Standing start, one lap';
+    let pb,pbC='rgba(47,42,34,.66)',deltaBg='rgba(244,239,229,.12)',deltaC='rgba(244,239,229,.85)';
+    if(isDQ)pb='Your best stays '+fmt(st.prev);else if(first)pb='First time on the board';
+    else if(newBest){pb='−'+(st.prev-final).toFixed(2)+' on your best';pbC='#5f6e30';deltaBg='#b7c77a';deltaC='#2a3012';}
+    else pb='+'+(final-st.prev).toFixed(2)+' off your best '+fmt(st.prev);
+    const medKey=isDQ?'dq':md||'none',r=ROS[medKey];
+    const s={isDQ,hasTime:!isDQ,reason:st.dq,time:fmt(final),sub,pb,pbC,deltaBg,deltaC,newBest,first,quote,hasPen:!!st.pen,penTxt:st.penTxt||'',
+      hasUnlock:!!st.unlock,unlockName:st.unlock?st.unlock[0]:'',unlockHex:st.unlock?st.unlock[1]:'#000'};
+    const list=board(st.disc,S.scope,you);
+    const pod=[1,0,2].map(i=>{const x=list[i];if(!x)return null;return{name:x.you?'You':x.name,t:fmt(x.t),rank:i+1,h:['92px','70px','54px'][i],
+      bg:i===0?'#2f2a22':'rgba(255,255,255,.75)',c:i===0?'#f4efe5':'#2f2a22',nameC:x.you?'#5f6e30':'#2f2a22',ring:x.you?'inset 0 0 0 2px #5f6e30':'inset 0 0 0 1px rgba(47,42,34,.1)'};}).filter(Boolean);
+    const rows=list.slice(3,12).map((x,i)=>({rank:i+4,name:x.you?'You':x.name,t:fmt(x.t),bg:x.you?'rgba(95,110,48,.14)':'transparent',c:x.you?'#4a5724':'#2f2a22',weight:x.you?800:600}));
+    const yi=list.findIndex(x=>x.you);
+    const scopeLbl=SCOPES.find(x=>x[0]===S.scope)[1];
+    const youRow=yi<0?{rank:'–',label:'Not on the board yet',t:''}:{rank:'#'+(yi+1),label:'You · '+scopeLbl.toLowerCase(),t:fmt(list[yi].t)};
+    const top=board(st.disc,'day',you)[0];
+    const ghostNote=top?(top.you?'Next ride: you race your own ghost, today\'s #1.':'Next ride: you race '+top.name+'\'s ghost, today\'s #1 at '+fmt(top.t)+'.'):'';
+    const isA=variant==='A',sceneBoard=isA&&!mob,open=S.board,lbOpen=open&&!sceneBoard,inBoard=sceneBoard&&open;
+    const mapRow=(x,i)=>({rank:i+1,name:x.you?'You':x.name,t:fmt(x.t),you:!!x.you});
+    const bRows=yi<9?list.slice(0,9).map(mapRow):[...list.slice(0,7).map(mapRow),{gap:true},mapRow(list[yi],yi)];
+    const frameStyle=mob?'position:relative;flex:none;width:390px;height:844px;border-radius:46px;overflow:hidden;background:#cfc6b3;box-shadow:0 0 0 10px #2f2a22,0 30px 80px rgba(47,42,34,.35);'
+      :'position:relative;width:min(100%,1280px);aspect-ratio:16/10;min-height:560px;border-radius:18px;overflow:hidden;background:#cfc6b3;box-shadow:0 30px 80px rgba(47,42,34,.3);';
+    const glass='display:flex;flex-direction:column;gap:14px;box-sizing:border-box;background:rgba(251,248,242,.93);backdrop-filter:blur(20px) saturate(1.2);-webkit-backdrop-filter:blur(20px) saturate(1.2);border:1px solid rgba(255,255,255,.7);box-shadow:0 24px 60px rgba(40,30,15,.3);transition:transform .45s cubic-bezier(.2,.7,.2,1);z-index:5;';
+    const lbStyle=mob?'position:absolute;left:0;right:0;bottom:0;height:80%;padding:12px 18px 26px;border-radius:30px 30px 0 0;transform:translateY('+(lbOpen?'0':'105%')+');'+glass
+      :'position:absolute;top:16px;right:16px;bottom:16px;width:380px;padding:20px;border-radius:26px;transform:translateX('+(lbOpen?'0':'calc(100% + 30px)')+');'+glass;
+    let fx=.5,fy;
+    if(mob){fy=lbOpen?.12:isA?.3:.44;}else if(isA){fx=inBoard?.5:.42;fy=inBoard?.5:.52;}else{fx=lbOpen?.36:.5;fy=.36;}
+    const party=isDQ?'none':md&&isA?md:'none';
+    this._shot={mount:D.mount,shot:st.disc==='jump'?'jump':st.disc==='lap_bike'?'bike_lap':'horse_lap',fx,fy,
+      blanket:st.id==='unlock'?st.unlock[1]:null,frame:st.id==='first'?st.unlock[1]:null,k:st.id+'|'+S.run,skip:S.skip,
+      party,react:isA?react:'nod',podium:{slots:(()=>{const yr=isDQ?0:{gold:1,silver:2,bronze:3}[md]||0,rv=board(st.disc,'day',you).filter(x=>!x.you);let j=0;return[1,2,3].map(n=>n===yr?{rank:n,name:'You',you:true}:{rank:n,name:(rv[j++]||{name:'Aloe'}).name,you:false});})()},board:inBoard?{key:st.id+'|'+S.scope,title:scopeLbl+'\u2019s standings',sub:D.n+' \u00b7 '+D.m,rows:bRows}:null};
+    // live timeline
+    const done=e>=END,gold=md==='gold';
+    let tv=0;if(!isDQ){tv=st.ride*eo(cl(e,200,950));if(st.pen&&e>=1050)tv=st.ride+st.pen*cl(e,1050,1180);if(done)tv=final;}
+    const medIn=e>=(isDQ?550:1250),penIn=e>=1050,dqIn=e>=500,stamp=e>=1450,rkIn=e>=1550,unIn=e>=1800,btnIn=e>=1950,bubIn=e>=1300;
+    const rkK=eo(cl(e,1550,1900)),liveR=n=>Math.max(n,Math.round(nDay+4-(nDay+4-n)*rkK));
+    const rkC=n=>n===1?{bg:'rgba(201,162,74,.22)',c:'#7a5f1e'}:{bg:'rgba(47,42,34,.06)',c:'#2f2a22'};
+    const ranksLive=[{n:liveR(rd),l:'today',...rkC(rd)},{n:liveR(rw),l:'this week',...rkC(rw)},{n:liveR(ra),l:'all time',...rkC(ra)}];
+    const shake=isDQ&&e>=500&&e<850?Math.sin(e/14)*12*(1-(e-500)/350):0;
+    const boardQuote=yi===0?pick(['Look at that. Top of my board.','Top line. In chalk, for now.']):pick(['There\'s your name. Chalk washes off.','Find yourself. Then find '+(list[0]?list[0].name:'the top')+' and pass them.']);
+    const boardReady=inBoard&&Date.now()-S.boardAt>1500,boardWalk=inBoard&&!boardReady;
+    const nChars=Math.floor((e-1300)/12),bubText=inBoard?(boardWalk?pick(['Right. Let\'s see the board.','Hold on. Board\'s over here.']):boardQuote):done?quote:quote.slice(0,Math.max(0,nChars));
+    const th=S.th,thOk=th.x>0.04&&th.x<0.96&&th.y>0.08&&th.y<1;
+    const showBubble=isA&&(inBoard||!open||!mob)&&thOk;
+    const bubOn=inBoard?true:bubIn;
+    const rays=gold&&isA?React.createElement('div',{style:{position:'absolute',left:'50%',top:'45%',width:340,height:340,marginLeft:-170,marginTop:-170,borderRadius:'50%',pointerEvents:'none',
+      background:'repeating-conic-gradient(from 0deg,rgba(236,204,110,.75) 0deg 7deg,rgba(236,204,110,0) 7deg 20deg)',WebkitMaskImage:'radial-gradient(circle,#000 18%,transparent 68%)',maskImage:'radial-gradient(circle,#000 18%,transparent 68%)',
+      animation:'rrSpin 16s linear infinite',opacity:medIn?1:0,transition:'opacity .6s ease'}}):null;
+    const MT={gold:{face:'radial-gradient(circle at 34% 28%,#fff4c8 0%,#ecc964 22%,#c3962f 58%,#8a6418 100%)',rim:'conic-gradient(from 200deg,#8a6418,#f6dc8a,#b8892c,#fff0b8,#8a6418,#e3bd58,#8a6418)',ink:'#5a420e',hi:'rgba(255,246,210,.7)',rib:'#5f6e30',shine:2.6,shO:.85,sway:2.1,glow:'rgba(240,206,100,.75)'},
+      silver:{face:'radial-gradient(circle at 34% 28%,#ffffff 0%,#e4e6e1 24%,#a9aba5 62%,#74766f 100%)',rim:'conic-gradient(from 200deg,#74766f,#f4f5f2,#9a9c96,#ffffff,#74766f,#d4d6d1,#74766f)',ink:'#3c3e39',hi:'rgba(255,255,255,.75)',rib:'#2f2a22',shine:3.6,shO:.6,sway:2.8,glow:'rgba(230,232,228,.55)'},
+      bronze:{face:'radial-gradient(circle at 34% 28%,#f8d4ad 0%,#d79a63 24%,#a5653a 62%,#6e3f1c 100%)',rim:'conic-gradient(from 200deg,#6e3f1c,#f0c296,#9a5f32,#f8d4ad,#6e3f1c,#c98650,#6e3f1c)',ink:'#4a2810',hi:'rgba(255,226,196,.6)',rib:'#8f3f22',shine:5,shO:.4,sway:3.4,glow:null}};
+    const mkMedal=(big)=>{const E=React.createElement,sz=big?108:88,box=big?120:96,mt=MT[md];
+      if(!mt||isDQ)return E('div',{style:{position:'absolute',left:(box-sz)/2,top:0,width:sz,height:sz,borderRadius:'50%',background:r.bg,boxShadow:'0 0 0 '+(big?6:5)+'px rgba(251,248,242,.95),0 14px 30px rgba(40,30,15,.3)',display:'grid',placeItems:'center'}},
+        E('div',{style:{position:'absolute',inset:big?9:8,borderRadius:'50%',border:'2px dashed rgba(255,255,255,.55)'}}),E('div',{style:{font:"800 "+(big?14:12)+"px/1 'Manrope'",letterSpacing:'.18em',textTransform:'uppercase',color:r.ink}},r.label));
+      const tw=big?26:22,th=big?58:48,tail=s=>E('div',{style:{position:'absolute',top:sz*0.62,[s<0?'left':'right']:box/2-tw-(big?2:1),width:tw,height:th,transformOrigin:'50% 0',animation:(s<0?'rrSwayL ':'rrSwayR ')+mt.sway+'s ease-in-out '+(s<0?'0s':'-.7s')+' infinite alternate'}},
+        E('div',{style:{width:'100%',height:'100%',background:'linear-gradient(90deg,rgba(0,0,0,.18),rgba(255,255,255,.12) 45%,rgba(0,0,0,.12)),linear-gradient(90deg,'+mt.rib+' 0 32%,#f1e6c8 32% 42%,'+mt.rib+' 42% 58%,#f1e6c8 58% 68%,'+mt.rib+' 68%)',clipPath:'polygon(0 0,100% 0,100% 100%,50% 80%,0 100%)'}}));
+      return E('div',{style:{position:'absolute',inset:0}},tail(-1),tail(1),
+        mt.glow?E('div',{style:{position:'absolute',left:(box-sz)/2-10,top:-10,width:sz+20,height:sz+20,borderRadius:'50%',boxShadow:'0 0 34px 8px '+mt.glow,animation:'rrGlow '+(md==='gold'?1.8:2.6)+'s ease-in-out infinite'}}):null,
+        E('div',{style:{position:'absolute',left:(box-sz)/2,top:0,width:sz,height:sz,borderRadius:'50%',background:mt.rim,padding:big?7:6,boxSizing:'border-box',boxShadow:'0 0 0 '+(big?5:4)+'px rgba(251,248,242,.95),0 16px 34px rgba(40,30,15,.34)'}},
+          E('div',{style:{position:'relative',width:'100%',height:'100%',borderRadius:'50%',background:mt.face,overflow:'hidden',display:'grid',placeItems:'center',boxShadow:'inset 0 3px 4px '+mt.hi+',inset 0 -4px 6px rgba(0,0,0,.35),0 0 0 1px rgba(0,0,0,.25)'}},
+            E('div',{style:{position:'absolute',inset:big?7:6,borderRadius:'50%',border:'2px dashed rgba(0,0,0,.22)',boxShadow:'0 1px 0 '+mt.hi+',inset 0 1px 0 '+mt.hi}}),
+            E('div',{style:{position:'relative',font:"800 "+(big?15:12)+"px/1 'Manrope'",letterSpacing:'.18em',textTransform:'uppercase',color:mt.ink,textShadow:'0 1px 0 '+mt.hi+',0 -1px 0 rgba(0,0,0,.28)'}},r.label),
+            E('div',{style:{position:'absolute',top:'-20%',bottom:'-20%',left:0,width:'38%',background:'linear-gradient(90deg,rgba(255,255,255,0),rgba(255,255,255,'+mt.shO+'),rgba(255,255,255,0))',mixBlendMode:'screen',animation:'rrShine '+mt.shine+'s ease-in-out 1.4s infinite',transform:'translateX(-160%) skewX(-22deg)'}}))));};
+    const tab=(on)=>({bg:on?'#2f2a22':'transparent',c:on?'#f4efe5':'#2f2a22'});
+    return {medalEl:mkMedal(true),medalElS:mkMedal(false),s,r,rd,rw,ra,nDay,discName:D.n+' · '+D.m,
+      isA,isB:variant==='B',isAD:isA&&!mob,isAM:isA&&mob,isMobile:mob,boxRef:this.boxRef,isSceneBoard:sceneBoard,sbO:inBoard?1:0,
+      frameStyle,lbStyle,sheetScrim:mob&&lbOpen,showCaption:!inBoard,
+      topInset:mob?'62px':'22px',bLeft:mob?'12px':'28px',bRight:mob?'12px':lbOpen?'420px':'28px',bBubbleTop:mob?'118px':'70px',bTimeSize:mob?'78px':'112px',
+      op:S.shown?1:0,ty:S.shown?'0px':'22px',
+      cardX:inBoard?'80px':S.shown?'0px':'40px',cardO:inBoard?0:S.shown?1:0,cardPE:inBoard?'none':'auto',
+      lblO:e>=80?1:0,tTime:fmt(tv),timeC:gold&&medIn?'#7a5f1e':'#2f2a22',timeS:1+0.07*bump(e,900,220)+0.05*bump(e,1180,200),
+      penS:penIn?1:1.9,penO:penIn?1:0,dqS:dqIn?1:1.8,dqO:dqIn?1:0,shakeX:shake.toFixed(1)+'px',
+      medS:medIn?1:2.4,medR:medIn?'0deg':'-28deg',medO:medIn?1:0,rays,flashO:gold&&isA?(0.9*bump(e,1250,400)).toFixed(3):0,
+      stampS:stamp?1:1.8,stampO:stamp?1:0,pbO:stamp?1:0,pbY:stamp?'0px':'8px',
+      ranksLive,rkO:rkIn?1:0,rkY:rkIn?'0px':'10px',unO:unIn?1:0,unS:unIn?1:0.6,btnO:btnIn?1:0,btnY:btnIn?'0px':'12px',
+      showBubble,bubText,bubS:bubOn?1:0.3,bubO:bubOn?1:0,bubW:mob?'230px':'290px',moodLabel:inBoard?(boardWalk?'on her way':'at the board'):MOOD[react],
+      thX:(()=>{const bw=mob?230:290,half=bw/2+12,p=(Math.min(.97,Math.max(.03,th.x))*100).toFixed(2)+'%';return inBoard||mob?'clamp('+half+'px, '+p+', calc(100% - '+half+'px))':'clamp('+half+'px, '+p+', calc(100% - '+(44+16+bw/2)+'px - min(400px, 40%)))';})(),thY:(th.y*100).toFixed(2)+'%',
+      skipOn:!done&&!open,skip:()=>this.skip(),
+      podium:pod,rows,you:youRow,ghostNote,
+      scopeTabs:SCOPES.map(([k,l])=>{const on=S.scope===k;return{label:l,bg:on?'#fff':'transparent',c:'#2f2a22',sh:on?'0 1px 3px rgba(47,42,34,.15)':'none',pick:()=>this.setState({scope:k})};}),
+      stateTabs:ST.map(x=>({label:x.label,...tab(x.id===S.st),pick:()=>{this.setState({st:x.id,board:false,scope:'day'});this.fade();}})),
+      variantTabs:[['A','A · Cinematic card'],['B','B · Competition']].map(([k,l])=>({label:l,...tab(variant===k),pick:()=>{this.setState({variant:k});this.fade();}})),
+      deviceTabs:[['mobile','Mobile'],['desktop','Desktop']].map(([k,l])=>({label:l,...tab(device===k),pick:()=>this.setState({device:k})})),
+      toggleBoard:()=>{const nb=!this.state.board;this.setState({board:nb,boardAt:Date.now(),scope:'day'});clearTimeout(this._bt);if(nb)this._bt=setTimeout(()=>this.forceUpdate(),1550);},
+      replay:()=>{this.setState({board:false});this.fade();},
+      frameRef:this.frameRef,
+      onFrameLoad:()=>{this._sent=null;this.post();}
+    };
+  }
+}
+</script>
+</body>
+</html>

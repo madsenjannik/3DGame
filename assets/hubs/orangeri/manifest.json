@@ -1,0 +1,140 @@
+{
+  "building": "building/orangeri_A_building.glb",
+  "stages": [
+    {
+      "index": 0,
+      "name": "Jord",
+      "growth": 0,
+      "milestone": 0,
+      "file": "tree/tree_00_jord.glb",
+      "topY": 0.44,
+      "lanternBroken": false
+    },
+    {
+      "index": 1,
+      "name": "Frø",
+      "growth": 0.08,
+      "milestone": 0,
+      "file": "tree/tree_01_froe.glb",
+      "topY": 0.84,
+      "lanternBroken": false
+    },
+    {
+      "index": 2,
+      "name": "Spire",
+      "growth": 0.22,
+      "milestone": 0,
+      "file": "tree/tree_02_spire.glb",
+      "topY": 1.37,
+      "lanternBroken": false
+    },
+    {
+      "index": 3,
+      "name": "Ungtræ",
+      "growth": 0.42,
+      "milestone": 0,
+      "file": "tree/tree_03_ungtrae.glb",
+      "topY": 3.25,
+      "lanternBroken": false
+    },
+    {
+      "index": 4,
+      "name": "Træ",
+      "growth": 0.62,
+      "milestone": 0,
+      "file": "tree/tree_04_trae.glb",
+      "topY": 8.16,
+      "lanternBroken": false
+    },
+    {
+      "index": 5,
+      "name": "Fylder kuplen",
+      "growth": 0.8,
+      "milestone": 0,
+      "file": "tree/tree_05_fylder_kuplen.glb",
+      "topY": 11.7,
+      "lanternBroken": false
+    },
+    {
+      "index": 6,
+      "name": "Gennem lanternen",
+      "growth": 0.9,
+      "milestone": 0,
+      "file": "tree/tree_06_gennem_lanternen.glb",
+      "topY": 17.53,
+      "lanternBroken": true
+    },
+    {
+      "index": 7,
+      "name": "Over taget",
+      "growth": 1,
+      "milestone": 0,
+      "file": "tree/tree_07_over_taget.glb",
+      "topY": 22.91,
+      "lanternBroken": true
+    },
+    {
+      "index": 8,
+      "name": "Milestone 1 blomster",
+      "growth": 1.25,
+      "milestone": 1,
+      "file": "tree/tree_08_milestone_1_blomster.glb",
+      "topY": 24.6,
+      "lanternBroken": true
+    },
+    {
+      "index": 9,
+      "name": "Milestone 2 guldfrugter",
+      "growth": 1.5,
+      "milestone": 2,
+      "file": "tree/tree_09_milestone_2_guldfrugter.glb",
+      "topY": 26.3,
+      "lanternBroken": true
+    },
+    {
+      "index": 10,
+      "name": "Milestone 3 lys",
+      "growth": 1.75,
+      "milestone": 3,
+      "file": "tree/tree_10_milestone_3_lys.glb",
+      "topY": 27.99,
+      "lanternBroken": true
+    }
+  ],
+  "fx": {
+    "lanternShatter": {
+      "file": "fx/lantern_shatter.glb",
+      "clip": "LanternShatter",
+      "duration": 6,
+      "trigger": "første stage med lanternBroken=true",
+      "onStart": [
+        "skjul OR_Lantern",
+        "vis OR_Lantern_Broken"
+      ],
+      "debris": 68,
+      "sparks": 60,
+      "cameraShakeNode": "FX_CameraShake"
+    },
+    "ambient": {
+      "file": "fx/ambient_butterflies_leaves.glb",
+      "clip": "Ambient",
+      "duration": 24,
+      "loop": true,
+      "butterflies": 12,
+      "leaves": 34
+    },
+    "glassGlint": {
+      "file": "shaders/glass_glint.js",
+      "materials": {
+        "OR_Glass": 0.55,
+        "OR_Glass_Roof": 0.45,
+        "OR_Glass_Cracked": 0.2
+      },
+      "note": "glTF kan ikke bære shaders – anvendes i engine"
+    }
+  },
+  "growth": {
+    "transition": "swap/crossfade mellem stages + 8 % scale-pop på CommunityTree + gylden partikel-burst",
+    "origin": "træ og bygning deler origin (0,0,0), 1 enhed = 1 m"
+  }
+}

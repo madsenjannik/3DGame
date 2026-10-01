@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1"><title>The Growing Wilds - Vælg din karakter</title>
+<script src="./character-roster.js"></script>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,400;6..72,500&family=Manrope:wght@400;500;600&display=swap" rel="stylesheet">
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.165.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.165.0/examples/jsm/"}}</script>
+<script type="module" src="./selector-stage.js"></script>
+<style>html,body{margin:0;height:100%;background:#e9e2d5;overflow:hidden}a{color:#2e2b26;text-decoration:none}a:hover{color:#5e6b4a}
+.dym-selector-mobile-nav,.dym-selector-mobile-actions,.dym-selector-mobile-walk,.dym-selector-swipe-coach{display:none}
+@keyframes dymSwipeCoachNudge{0%,100%{transform:translateX(0)}35%{transform:translateX(-7px)}70%{transform:translateX(7px)}}
+@keyframes dymSwipeCoachFade{0%,72%{opacity:1}100%{opacity:0}}
+@media (max-width:520px) and (orientation:portrait){
+  /* v0.3.27 mobile-only: one large hero, real swipe navigation, tighter identity stack. */
+  .dym-selector-screen{--hero-top:38px;--hero-h:40vh;--copy-gap:40px;background:#e9e2d5!important}
+  .dym-selector-screen char-stage{position:absolute!important;inset:var(--hero-top) 0 auto 0!important;width:100%!important;height:var(--hero-h)!important;transform:none!important;transform-origin:center center!important;z-index:1!important;background:transparent!important}
+  .dym-selector-screen char-stage canvas{background:transparent!important}
+  .dym-selector-fade{display:none!important}
+  .dym-selector-layout{display:block!important;padding:max(14px,env(safe-area-inset-top)) 18px max(12px,env(safe-area-inset-bottom)) 18px!important;pointer-events:none!important;z-index:2!important;background:transparent!important}
+  .dym-selector-topbar{display:flex!important;align-items:flex-start!important;justify-content:space-between!important;gap:8px!important;pointer-events:none!important}
+  .dym-selector-kicker{max-width:none!important;font-size:8.5px!important;line-height:1.25!important;letter-spacing:.17em!important}
+  .dym-selector-loading,.dym-selector-hint{display:none!important}
+
+  /* Identity follows immediately after the hero controls. */
+  .dym-selector-copy{position:absolute!important;left:50%!important;right:auto!important;top:calc(var(--hero-top) + var(--hero-h) + var(--copy-gap))!important;bottom:78px!important;width:min(356px,calc(100% - 36px))!important;transform:translateX(-50%)!important;display:flex!important;flex-direction:column!important;justify-content:flex-start!important;gap:0!important;pointer-events:auto!important;min-height:0!important}
+  .dym-selector-counter{display:none!important}
+  .dym-selector-titleblock{gap:7px!important}
+  .dym-selector-name{font-size:clamp(40px,11vw,46px)!important;line-height:.90!important;letter-spacing:-.015em!important}
+  .dym-selector-role{font-size:8.4px!important;line-height:1.2!important;letter-spacing:.16em!important}
+  .dym-selector-desc{max-width:344px!important;font-size:10.4px!important;line-height:1.38!important;margin-top:10px!important;text-wrap:balance!important;color:#504b43!important}
+  .dym-selector-stats{gap:6px!important;margin-top:12px!important;width:max-content!important}
+  .dym-selector-statrow{grid-template-columns:54px 168px!important;gap:10px!important;justify-content:start!important;align-items:center!important}
+  .dym-selector-statlabel{font-size:7.7px!important;line-height:1!important;letter-spacing:.075em!important;color:#6f685e!important}
+  .dym-selector-meter{width:168px!important;gap:3px!important}
+  .dym-selector-poles{width:168px!important;font-size:7.25px!important;line-height:1!important;color:#91887b!important}
+  .dym-selector-segments{width:168px!important;gap:5px!important}
+  .dym-selector-segments>div{height:4px!important;border-radius:999px!important}
+  .dym-selector-actions,.dym-selector-nav{display:none!important}
+
+  /* Mobile navigation is swipe-only. Counter and walk sit together under the hero. */
+  .dym-selector-mobile-nav{position:absolute;left:0;right:0;top:calc(var(--hero-top) + var(--hero-h) - 22px);display:flex!important;flex-direction:column;align-items:center;justify-content:center;gap:7px;pointer-events:none;z-index:7}
+  .dym-selector-mobile-nav>button:not(.dym-selector-mobile-walk){display:none!important}
+  .dym-selector-mobile-nav-count{font-size:8.9px;font-weight:600;letter-spacing:.105em;color:#6b645a;font-variant-numeric:tabular-nums;background:transparent;padding:0;border-radius:0}
+  .dym-selector-mobile-nav-count span{color:#968d80;font-weight:500}
+  .dym-selector-mobile-walk{display:inline-flex!important;position:static!important;align-items:center;justify-content:center;min-height:27px;padding:0 13px!important;margin:0!important;border:1px solid rgba(185,173,154,.78)!important;border-radius:999px!important;background:rgba(246,242,234,.92)!important;color:#5f584e!important;font-family:'Manrope',system-ui,sans-serif;font-size:7.9px!important;font-weight:600!important;letter-spacing:.045em!important;text-decoration:none!important;cursor:pointer;pointer-events:auto!important;box-shadow:0 5px 14px rgba(74,64,49,.07)!important;-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);transition:transform .16s ease,background .16s ease,border-color .16s ease}
+  .dym-selector-mobile-walk::before{content:'';width:4px;height:4px;border-radius:50%;background:#65734f;box-shadow:0 0 0 3px rgba(101,115,79,.10);margin-right:7px;flex:none}
+  .dym-selector-mobile-walk:active{transform:scale(.97)!important;background:#fffaf2!important;border-color:#a99f90!important}
+
+  /* One-time coach over the first hero. It also disappears immediately on first swipe intent. */
+  .dym-selector-swipe-coach{position:absolute;left:50%;top:calc(var(--hero-top) + 20vh);transform:translate(-50%,-50%);display:flex!important;align-items:center;justify-content:center;gap:8px;min-height:26px;padding:0 11px;border:1px solid rgba(190,179,161,.68);border-radius:999px;background:rgba(246,242,234,.84);color:#766e62;font-family:'Manrope',system-ui,sans-serif;font-size:7.5px;font-weight:600;letter-spacing:.035em;pointer-events:none;z-index:8;box-shadow:0 5px 16px rgba(74,64,49,.06);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);animation:dymSwipeCoachFade 3.2s ease forwards}
+  .dym-selector-swipe-coach-arrows{display:inline-block;font-size:11px;letter-spacing:.20em;animation:dymSwipeCoachNudge 1.15s ease-in-out 2}
+
+  .dym-selector-mobile-actions{position:absolute;left:18px;right:18px;bottom:max(14px,env(safe-area-inset-bottom));height:46px;display:grid!important;grid-template-columns:minmax(0,1.45fr) minmax(116px,.85fr);gap:10px;pointer-events:auto;z-index:10}
+  .dym-selector-mobile-start,.dym-selector-mobile-grid{height:46px;border-radius:999px;display:flex;align-items:center;justify-content:center;gap:9px;font-family:'Manrope',system-ui,sans-serif;font-size:10.5px;font-weight:600;letter-spacing:.015em;white-space:nowrap;box-sizing:border-box}
+  .dym-selector-mobile-start{background:#2e2b26;color:#f6f2ea;padding:0 18px;border:1px solid #2e2b26}
+  .dym-selector-mobile-grid{background:#f6f2ea;color:#2e2b26;padding:0 14px;border:1px solid #cfc5b3}
+  .dym-selector-mobile-grid-icon{display:grid;grid-template-columns:repeat(3,3px);gap:2px}
+  .dym-selector-mobile-grid-icon span{width:3px;height:3px;background:#2e2b26;border-radius:1px}
+
+  .dym-selector-grid-overlay{padding:max(18px,env(safe-area-inset-top)) 14px max(18px,env(safe-area-inset-bottom))!important}
+  .dym-selector-grid-inner{gap:16px!important}
+  .dym-selector-grid-head{gap:10px!important}
+  .dym-selector-grid-title{font-size:30px!important}
+  .dym-selector-grid-close{height:36px!important;padding:0 13px!important;font-size:11px!important}
+  .dym-selector-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:10px!important}
+  .dym-selector-tile{gap:7px!important;padding:6px 6px 11px!important}
+}
+@media (max-width:390px) and (orientation:portrait){
+  .dym-selector-screen{--hero-top:36px;--hero-h:39.5vh;--copy-gap:39px}
+  .dym-selector-layout{padding-left:14px!important;padding-right:14px!important}
+  .dym-selector-copy{width:min(344px,calc(100% - 28px))!important;bottom:76px!important}
+  .dym-selector-name{font-size:42px!important}
+  .dym-selector-desc{font-size:10.1px!important;max-width:336px!important;margin-top:9px!important}
+  .dym-selector-stats{margin-top:11px!important}
+  .dym-selector-statrow{grid-template-columns:52px 160px!important;gap:9px!important}
+  .dym-selector-meter,.dym-selector-poles,.dym-selector-segments{width:160px!important}
+  .dym-selector-mobile-actions{left:14px;right:14px;grid-template-columns:minmax(0,1.4fr) minmax(108px,.82fr);gap:8px}
+  .dym-selector-mobile-start,.dym-selector-mobile-grid{font-size:10px!important}
+}
+@media (max-height:680px) and (max-width:520px) and (orientation:portrait){
+  .dym-selector-screen{--hero-top:30px;--hero-h:37.5vh;--copy-gap:36px}
+  .dym-selector-copy{bottom:70px!important}
+  .dym-selector-name{font-size:38px!important}
+  .dym-selector-titleblock{gap:5px!important}
+  .dym-selector-desc{font-size:9.5px!important;line-height:1.30!important;margin-top:7px!important}
+  .dym-selector-stats{gap:4px!important;margin-top:8px!important}
+  .dym-selector-statrow{grid-template-columns:50px 148px!important;gap:8px!important}
+  .dym-selector-meter,.dym-selector-poles,.dym-selector-segments{width:148px!important}
+  .dym-selector-mobile-nav{gap:5px!important}
+  .dym-selector-mobile-walk{min-height:23px!important;padding:0 10px!important;font-size:7.4px!important}
+  .dym-selector-mobile-actions{height:42px;bottom:max(10px,env(safe-area-inset-bottom))}
+  .dym-selector-mobile-start,.dym-selector-mobile-grid{height:42px}
+}
+</style>
+</helmet>
+<div class="dym-selector-screen" data-screen-label="Character selector" style="position:fixed;inset:0;background:#e9e2d5;font-family:'Manrope',system-ui,sans-serif;color:#2e2b26;">
+  <x-import component-from-global-scope="char-stage" index="{{ idxStr }}" walk="{{ walkStr }}" variant="{{ variant }}" style="position:absolute;inset:0;" hint-size="100%,100%"></x-import>
+  <div class="dym-selector-fade" aria-hidden="true" style="position:absolute;left:0;top:0;bottom:0;width:clamp(330px,29vw,510px);pointer-events:none;background:linear-gradient(90deg,#e9e2d5 0%,#e9e2d5 66%,rgba(233,226,213,.96) 73%,rgba(233,226,213,.74) 82%,rgba(233,226,213,0) 100%);"></div>
+
+  <div class="dym-selector-layout" style="position:absolute;inset:0;display:grid;grid-template-rows:auto minmax(0,1fr) auto;padding:clamp(18px,4vh,36px) clamp(24px,4vw,56px);gap:clamp(12px,3vh,28px);pointer-events:none;">
+  <div class="dym-selector-topbar" style="display:flex;justify-content:space-between;align-items:center;gap:16px;">
+    <div class="dym-selector-kicker" style="font-size:12px;font-weight:600;letter-spacing:.18em;text-transform:uppercase;color:#6b645a;">Vælg din karakter</div>
+    <sc-if value="{{ loading }}" hint-placeholder-val="{{ true }}">
+      <div class="dym-selector-loading" style="font-size:12px;color:#6b645a;letter-spacing:.04em;">Indlæser…</div>
+    </sc-if>
+    <div class="dym-selector-hint" style="font-size:12px;color:#8a8275;letter-spacing:.02em;">Træk for at dreje · ← → for at skifte</div>
+  </div>
+
+  <div class="dym-selector-mobile-nav" aria-label="Karakter-navigation">
+    <button onClick="{{ prev }}" aria-label="Forrige karakter">←</button>
+    <div class="dym-selector-mobile-nav-count">{{ num }} <span>/ {{ total }}</span></div>
+    <button onClick="{{ next }}" aria-label="Næste karakter">→</button>
+    <button class="dym-selector-mobile-walk" onClick="{{ toggleWalk }}">{{ walkLabel }}</button>
+  </div>
+  <sc-if value="{{ swipeHint }}" hint-placeholder-val="{{ false }}">
+    <div class="dym-selector-swipe-coach" aria-hidden="true"><span class="dym-selector-swipe-coach-arrows">← →</span><span>Swipe for at skifte</span></div>
+  </sc-if>
+
+  <div class="dym-selector-copy" style="align-self:center;width:min(340px,36vw);display:flex;flex-direction:column;gap:clamp(10px,2.4vh,22px);pointer-events:auto;min-height:0;">
+    <div class="dym-selector-counter" style="font-size:13px;font-weight:500;color:#6b645a;letter-spacing:.08em;">{{ num }} / {{ total }}</div>
+    <div class="dym-selector-titleblock" style="display:flex;flex-direction:column;gap:10px;">
+      <div class="dym-selector-name" style="font-family:'Newsreader',Georgia,serif;font-size:clamp(40px,8vh,76px);line-height:.95;font-weight:400;letter-spacing:-.01em;">{{ cur.name }}</div>
+      <div class="dym-selector-role" style="font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;color:#5e6b4a;">{{ cur.role }}</div>
+    </div>
+    <div class="dym-selector-desc" style="font-size:clamp(14px,1.9vh,16px);line-height:1.5;color:#4a453e;text-wrap:pretty;max-width:320px;">{{ cur.desc }}</div>
+    <sc-if value="{{ showStats }}" hint-placeholder-val="{{ true }}">
+      <div class="dym-selector-stats" style="display:flex;flex-direction:column;gap:clamp(6px,1.2vh,11px);">
+        <sc-for list="{{ stats }}" as="st" hint-placeholder-count="4">
+          <div class="dym-selector-statrow" style="display:grid;grid-template-columns:72px 1fr;align-items:center;gap:12px;">
+            <div class="dym-selector-statlabel" style="font-size:11px;font-weight:600;letter-spacing:.08em;color:#6b645a;text-transform:uppercase;">{{ st.label }}</div>
+            <div class="dym-selector-meter" style="display:flex;flex-direction:column;gap:5px;min-width:0;width:172px;">
+              <div class="dym-selector-poles" style="display:flex;justify-content:space-between;gap:8px;font-size:9px;color:#8a8275;letter-spacing:.02em;width:172px;"><span>{{ st.left }}</span><span>{{ st.right }}</span></div>
+              <div class="dym-selector-segments" aria-label="{{ st.label }}: {{ st.activeLabel }}, niveau {{ st.value }} af 5" style="display:flex;gap:6px;align-items:center;width:172px;">
+                <sc-for list="{{ st.segments }}" as="p" hint-placeholder-count="5">
+                  <div title="{{ p.label }}" style="{{ p.style }}"></div>
+                </sc-for>
+              </div>
+            </div>
+          </div>
+        </sc-for>
+      </div>
+    </sc-if>
+    <div class="dym-selector-actions" style="display:flex;flex-wrap:wrap;gap:10px;">
+      <a class="dym-selector-start" href="{{ gardenHref }}" style="height:48px;padding:0 26px;border-radius:999px;background:#2e2b26;color:#f6f2ea;display:flex;align-items:center;gap:10px;font-size:14px;font-weight:600;letter-spacing:.02em;" style-hover="background:#46423b;color:#f6f2ea;" onClick="{{ startGame }}">{{ startLabel }} <span>→</span></a>
+      <button class="dym-selector-walk" onClick="{{ toggleWalk }}" style="{{ walkBtnStyle }}">{{ walkLabel }}</button>
+    </div>
+  </div>
+
+  <div class="dym-selector-nav" style="display:flex;justify-content:center;align-items:center;gap:12px;min-width:0;pointer-events:auto;">
+    <button class="dym-selector-nav-arrow" onClick="{{ prev }}" aria-label="Forrige" style="flex:none;width:44px;height:44px;border-radius:50%;border:1px solid #cfc5b3;background:#f6f2ea;color:#2e2b26;font-size:18px;cursor:pointer;" style-hover="background:#fff;">←</button>
+    <div class="dym-selector-nav-count" style="min-width:88px;text-align:center;font-size:14px;font-weight:600;letter-spacing:.06em;font-variant-numeric:tabular-nums;">{{ num }} <span style="color:#8a8275;font-weight:500;">/ {{ total }}</span></div>
+    <button class="dym-selector-nav-arrow" onClick="{{ next }}" aria-label="Næste" style="flex:none;width:44px;height:44px;border-radius:50%;border:1px solid #cfc5b3;background:#f6f2ea;color:#2e2b26;font-size:18px;cursor:pointer;" style-hover="background:#fff;">→</button>
+    <button class="dym-selector-grid-btn" onClick="{{ openGrid }}" style="flex:none;height:44px;padding:0 20px;margin-left:10px;border-radius:999px;border:1px solid #cfc5b3;background:#f6f2ea;color:#2e2b26;font-family:inherit;font-size:13px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:10px;" style-hover="background:#fff;"><span style="display:grid;grid-template-columns:repeat(3,4px);gap:2px;"><span style="width:4px;height:4px;background:#2e2b26;border-radius:1px;"></span><span style="width:4px;height:4px;background:#2e2b26;border-radius:1px;"></span><span style="width:4px;height:4px;background:#2e2b26;border-radius:1px;"></span><span style="width:4px;height:4px;background:#2e2b26;border-radius:1px;"></span><span style="width:4px;height:4px;background:#2e2b26;border-radius:1px;"></span><span style="width:4px;height:4px;background:#2e2b26;border-radius:1px;"></span></span>Se alle</button>
+  </div>
+
+  <div class="dym-selector-mobile-actions">
+    <a class="dym-selector-mobile-start" href="{{ gardenHref }}" onClick="{{ startGame }}">{{ startLabel }} <span>→</span></a>
+    <button class="dym-selector-mobile-grid" onClick="{{ openGrid }}">
+      <span class="dym-selector-mobile-grid-icon"><span></span><span></span><span></span><span></span><span></span><span></span></span>
+      <span>Se alle</span>
+    </button>
+  </div>
+  </div>
+  <sc-if value="{{ gridOpen }}" hint-placeholder-val="{{ false }}">
+    <div class="dym-selector-grid-overlay" onClick="{{ closeGrid }}" style="position:absolute;inset:0;background:rgba(233,226,213,.72);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);display:flex;justify-content:center;align-items:flex-start;padding:clamp(24px,6vh,72px) clamp(24px,5vw,72px);overflow-y:auto;">
+      <div class="dym-selector-grid-inner" onClick="{{ stop }}" style="width:100%;max-width:1100px;display:flex;flex-direction:column;gap:28px;">
+        <div class="dym-selector-grid-head" style="display:flex;justify-content:space-between;align-items:baseline;gap:16px;">
+          <div class="dym-selector-grid-title" style="font-family:'Newsreader',Georgia,serif;font-size:44px;line-height:1;">Alle karakterer <span style="font-family:'Manrope',sans-serif;font-size:14px;color:#8a8275;letter-spacing:.06em;">{{ total }}</span></div>
+          <button class="dym-selector-grid-close" onClick="{{ closeGrid }}" style="height:40px;padding:0 18px;border-radius:999px;border:1px solid #cfc5b3;background:#f6f2ea;color:#2e2b26;font-family:inherit;font-size:13px;font-weight:600;cursor:pointer;" style-hover="background:#fff;">Luk · Esc</button>
+        </div>
+        <div class="dym-selector-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:14px;">
+          <sc-for list="{{ tiles }}" as="t" hint-placeholder-count="9">
+            <button class="dym-selector-tile" onClick="{{ t.pick }}" style="{{ t.style }}" style-hover="border-color:#8a8275;">
+              <span style="{{ t.picStyle }}">
+                <span style="position:absolute;top:8px;left:10px;font-size:11px;color:#6b645a;letter-spacing:.08em;font-variant-numeric:tabular-nums;">{{ t.num }}</span>
+              </span>
+              <span style="display:flex;flex-direction:column;gap:5px;padding:2px 4px 0;">
+                <span style="font-family:'Newsreader',Georgia,serif;font-size:24px;line-height:1.05;">{{ t.name }}</span>
+                <span style="font-size:10px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:#5e6b4a;">{{ t.role }}</span>
+              </span>
+            </button>
+          </sc-for>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;variant&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;ring&quot;,&quot;cards&quot;],&quot;default&quot;:&quot;ring&quot;,&quot;tsType&quot;:&quot;'ring'|'cards'&quot;},&quot;showStats&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;}}">
+class Component extends DCLogic {
+  state = { idx: 0, walk: false, ready: false, gridOpen: false, pics: {}, swipeHint: true };
+  chars = globalThis.DYM_CHARACTER_ROSTER || [];
+  axes = [
+    { label:'Energi', left:'Sløv', right:'Energisk', levels:['Sløv','Doven','Rolig','Livlig','Energisk'] },
+    { label:'Mod', left:'Forsigtig', right:'Modig', levels:['Forsigtig','Varsom','Afbalanceret','Dristig','Modig'] },
+    { label:'Social', left:'Solist', right:'Social', levels:['Solist','Reserveret','Åben','Udadvendt','Social'] },
+    { label:'Stil', left:'Planlagt', right:'Spontan', levels:['Planlagt','Struktureret','Fleksibel','Fri','Spontan'] }
+  ];
+  componentDidMount() {
+    const wanted = new URLSearchParams(location.search).get('char');
+    const found = wanted ? this.chars.findIndex(c => c.id === wanted) : -1;
+    if (found >= 0) this.setState({ idx: found });
+    this.onKey = e => { if (e.key === 'Escape') return this.setState({ gridOpen: false }); if (this.state.gridOpen) return; if (e.key === 'ArrowRight') this.go(1); if (e.key === 'ArrowLeft') this.go(-1); if (e.key === 'Enter' && this.chars[this.state.idx]?.playable) this.commitAndGo(); };
+    addEventListener('keydown', this.onKey);
+    this.poll = setInterval(() => {
+      const el = document.querySelector('char-stage');
+      if (!el) return;
+      clearInterval(this.poll);
+      el.addEventListener('select', e => this.setState({ idx: e.detail }));
+      this.stage = el;
+      this.onSwipeIntent = () => this.setState({ swipeHint: false });
+      el.addEventListener('swipeintent', this.onSwipeIntent);
+      this.hintTimer = setTimeout(() => this.setState({ swipeHint: false }), 3200);
+      el.addEventListener('portrait', e => this.setState(s => ({ pics: { ...s.pics, [e.detail.i]: e.detail.url } })));
+      el.addEventListener('progress', e => { if (e.detail.near) this.setState({ ready: true }); });
+    }, 100);
+  }
+  componentWillUnmount() { removeEventListener('keydown', this.onKey); clearInterval(this.poll); clearTimeout(this.hintTimer); if(this.stage&&this.onSwipeIntent)this.stage.removeEventListener('swipeintent',this.onSwipeIntent); }
+  go(d) { const N = this.chars.length; this.setState(s => ({ idx: (s.idx + d + N) % N })); }
+  href() { const c=this.chars[this.state.idx]; return c?.playable ? './game.html?char=' + encodeURIComponent(c.id) : '#'; }
+  commitAndGo() { const c=this.chars[this.state.idx]; if(!c?.playable) return; const embed=new URLSearchParams(location.search).get('embed')==='1'; if(embed&&parent!==window){parent.postMessage({type:'dym-selector-start',characterId:c.id},'*');return;} location.href=this.href(); }
+  renderVals() {
+    const { idx, walk, ready, gridOpen, swipeHint } = this.state; const N = this.chars.length, pad = n => String(n).padStart(2, '0');
+    const cur = this.chars[idx];
+    const segment = (filled, active, label) => ({ label, style: { flex: '1 1 0', height: '6px', borderRadius: '999px', background: filled ? '#5e6b4a' : '#d6ccba', opacity: filled ? 1 : .72, transition: 'background .18s ease, opacity .18s ease' } });
+    return {
+      cur, idxStr: String(idx), walkStr: walk ? '1' : '0', variant: this.props.variant ?? 'ring',
+      num: pad(idx + 1), total: pad(N),
+      loading: !ready, gridOpen, swipeHint,
+      openGrid: () => { this.setState({ gridOpen: true }); this.stage && this.stage.portraits && this.stage.portraits(); }, closeGrid: () => this.setState({ gridOpen: false }), stop: e => e.stopPropagation(),
+      tiles: this.chars.map((c, i) => ({ picStyle: { position: 'relative', width: '100%', aspectRatio: '4/5', borderRadius: '10px', overflow: 'hidden', display: 'block', backgroundColor: '#e4dccd', backgroundImage: this.state.pics[i] ? 'url(' + this.state.pics[i] + ')' : 'none', backgroundSize: 'cover', backgroundPosition: 'center' }, name: c.name, role: c.role, num: pad(i + 1), pick: () => this.setState({ idx: i, gridOpen: false }),
+        style: { display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '10px', padding: '8px 8px 14px', borderRadius: '14px', textAlign: 'left', cursor: 'pointer', fontFamily: 'inherit', color: '#2e2b26', background: i === idx ? '#f6f2ea' : 'rgba(246,242,234,.55)', border: '1px solid ' + (i === idx ? '#2e2b26' : '#d6ccba') } })),
+      showStats: this.props.showStats ?? true,
+      stats: this.axes.map((axis, k) => { const value=cur.personality[k]; return { ...axis, value, activeLabel: axis.levels[value-1], segments: [1,2,3,4,5].map(n => segment(n <= value, n === value, axis.levels[n-1])) }; }),
+      gardenHref: this.href(),
+      startLabel: cur.playable ? 'Start i verden' : 'Kommer snart',
+      startGame: e => { e?.preventDefault?.(); if(!cur.playable) return; this.commitAndGo(); },
+      walkLabel: walk ? 'Stop gang' : 'Se gang',
+      walkBtnStyle: { height: '48px', padding: '0 22px', borderRadius: '999px', border: '1px solid ' + (walk ? '#5e6b4a' : '#cfc5b3'), background: walk ? '#e3e6d8' : '#f6f2ea', color: '#2e2b26', fontFamily: 'inherit', fontSize: '14px', fontWeight: 600, cursor: 'pointer' },
+      toggleWalk: () => this.setState(s => ({ walk: !s.walk })),
+      prev: () => this.go(-1), next: () => this.go(1)
+    };
+  }
+}
+</script>
+</body>
+</html>
