@@ -21,6 +21,9 @@ import { GardenEnvironment } from '../world/GardenEnvironment.js?build=CAMERA-CU
 import { WildlifeSystem } from '../world/WildlifeSystem.js?build=CAMERA-CUTAWAY-CONTEXT-R21D-20260928E';
 import { PlayerHomePortalSystem } from '../world/PlayerHomePortalSystem.js?build=ENTRY-R29-20260929A';
 import { NorthStableSystem } from '../world/NorthStableSystem.js?build=STABLE-R42-20261001A';
+import { SaveGame } from './SaveGame.js';
+import { WildsLoopSystem } from '../gameplay/WildsLoopSystem.js';
+import { WorkbenchPanel } from '../ui/WorkbenchPanel.js';
 
 export class Game {
   async init({characterId='succulent',devMode=false}={}){
@@ -73,6 +76,12 @@ export class Game {
     this.stable.bindRuntime({input:this.input,hud:this.hud,followCamera:this.followCamera});
     const fishingPromise=new FishingV1System(this.scene,{state:this.state,world:this.world,input:this.input,hud:this.hud,renderer:this.renderer,character:this.character}).init();
     [this.fishing]=await Promise.all([fishingPromise,this.worldMap.ready]).then(([fishing])=>[fishing]);mark('uiAndFishingReadyMs');
+    // Core loop v1 (shared world). DEV routes use a throwaway profile that is never written.
+    this.save=new SaveGame({characterId:this.state.player.characterId,ephemeral:devMode});
+    this.wilds=new WildsLoopSystem({world:this.world,state:this.state,save:this.save,hud:this.hud}).init();
+    this.workbenchPanel=new WorkbenchPanel({wilds:this.wilds,state:this.state});
+    this.wilds.onOpenWorkbench=()=>{this.workbenchPanel.show();this.input.resetTouchPointers?.();};
+    mark('wildsReadyMs');
     this.cameraOcclusion=new CameraOcclusionSystem({world:this.world,homePortal:this.homePortal,greenhouse:this.greenhouse,orangery:this.orangery,stable:this.stable});
     this.followCamera.setOcclusionSystem(this.cameraOcclusion);
     this.structureVisibility=new StructureVisibilitySystem({world:this.world,greenhouse:this.greenhouse,orangery:this.orangery,stable:this.stable,cameraOcclusion:this.cameraOcclusion});
@@ -97,10 +106,11 @@ export class Game {
     const fishingBusy=!gardenSpace&&(this.fishing?.isBusy?.()||false);
     const stableBusy=!gardenSpace&&(this.stable?.isBusy?.()||false);
     const specialBusy=fishingBusy||stableBusy;
+    const wildsPanel=this.workbenchPanel?.open||false;
     const mapOpen=this.worldMap?.isOpen||false,mapOverlay=mapOpen&&(this.worldMap?.overlayMode||false);
     const touchLook=this.input.isTouch?this.input.consumeLook?.():null;
-    if(!this.state.choice.open&&!specialBusy&&!portalBusy&&!mapOpen)this.followCamera.applyTouchLook?.(touchLook);
-    if(!this.state.choice.open&&!specialBusy&&!portalBusy&&!this.mapBlocking){this.character.update(dt,this.time,this.input,this.followCamera);}else if(!(stableBusy&&this.stable?.usesMovementInput?.())){this.input.consumeHop?.();}
+    if(!this.state.choice.open&&!specialBusy&&!portalBusy&&!mapOpen&&!wildsPanel)this.followCamera.applyTouchLook?.(touchLook);
+    if(!this.state.choice.open&&!specialBusy&&!portalBusy&&!this.mapBlocking&&!wildsPanel){this.character.update(dt,this.time,this.input,this.followCamera);}else if(!(stableBusy&&this.stable?.usesMovementInput?.())){this.input.consumeHop?.();}
     // Evaluate the Stable tunnel after character movement so Claude's drive-through
     // camera owns the very first frame that crosses the tunnel boundary.
     const stableTunnelCamera=!gardenSpace&&(this.stable?.usesTunnelCamera?.(this.character?.position)||false);
@@ -128,12 +138,14 @@ export class Game {
     }
 
     let interaction=null;
-    if(!this.state.choice.open&&!portalBusy){
+    if(!this.state.choice.open&&!portalBusy&&!wildsPanel){
       if(gardenSpace){
         if(seed.near)interaction={type:'first-seed',label:'Collect Golden Seed'};
         if(loop.interaction)interaction=loop.interaction;
         if(greenhouse.interaction)interaction=greenhouse.interaction;
       }
+      // Wilds go first so locked Stable/Fishing/Home interactions keep priority when they overlap.
+      if(!gardenSpace&&!specialBusy){const wildsHit=this.wilds?.update(dt,this.time,this.character).interaction;if(wildsHit)interaction=wildsHit;}
       if(!specialBusy){
         const homeInteraction=this.homePortal?.interaction?.(this.character.position);if(homeInteraction)interaction=homeInteraction;
       }
@@ -144,13 +156,14 @@ export class Game {
         const fishInteraction=this.fishing?.interaction?.(this.character.position);if(fishInteraction)interaction=fishInteraction;
       }
     }
-    this.hud.setActionVisible(!!interaction,interaction?.label||'Collect');
+    this.hud.setActionVisible(!!interaction,interaction?.label||'Collect');this.hud.action.classList.toggle('wilds-locked',!!(interaction?.disabled&&interaction.type?.startsWith?.('wilds-')));
     const action=this.input.consumeAction();
     if(!this.state.choice.open&&action&&interaction&&!interaction.disabled){
       if(interaction.type==='home-enter'||interaction.type==='home-exit')this.homePortal.interact(interaction.type,this.character,this.followCamera,this.hud);
       else if(interaction.type==='first-seed')this.collectible.collect(this.character);
       else if(interaction.type==='greenhouse')this.greenhouse.interact(this.character);
       else if(interaction.type?.startsWith?.('stable-'))this.stable.interact(interaction);
+      else if(interaction.type?.startsWith?.('wilds-'))this.wilds.interact(interaction,this.character);
       else if(['fish-board','fishing-shop','fishing-spot','boat-board','boat-fish','boat-dock'].includes(interaction.type))this.fishing.interact(interaction.type);
       else this.resourceLoop.interact(this.character);
     }
