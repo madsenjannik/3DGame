@@ -4,7 +4,8 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover" />
   <meta name="theme-color" content="#dfe6d6" />
-  <title>The Growing Wilds v0.3.96 - R45 Holo Indicator Locked</title>
+  <title>The Growing Wilds</title>
+  <script src="./version.js"></script>
   <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="./styles.css?v=STABLE-R42-20261001A" />
   <!-- Vendored three@0.165.0, MIT license in vendor/LICENSE -->
@@ -13,14 +14,6 @@
     "imports": {
       "three": "./vendor/three.module.js",
       "three/addons/": "./vendor/"
-    },
-    "scopes": {
-      "./characters/": {
-        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.165.0/examples/jsm/"
-      },
-      "./character-rig.js": {
-        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.165.0/examples/jsm/"
-      }
     }
   }
   </script>
@@ -60,7 +53,7 @@
   <div id="app" aria-label="Playable 3D garden prototype"></div>
   <div id="vignette" aria-hidden="true"></div>
   <div id="hud">
-    <div class="dev-badge"><b>CORE v0.3.72</b><span>THE GROWING WILDS · R29 DEV MENU</span></div>
+    <div id="dev-badge" class="dev-badge" hidden><b id="dev-badge-version"></b><span>THE GROWING WILDS · DEV</span></div>
     <div id="inventory" class="inventory-stack" aria-live="polite">
       <div class="inventory-card seed-card"><span class="inventory-icon">✦</span><span><small>GOLDEN SEED</small><b id="seed-count">0</b></span></div>
       <div id="materials" class="materials-card">

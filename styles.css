@@ -5,6 +5,7 @@ button{font:inherit}
 #app,#app canvas{position:fixed;inset:0;display:block;width:100%;height:100%}
 #vignette{position:fixed;inset:0;pointer-events:none;background:radial-gradient(ellipse 80% 75% at 50% 45%,rgba(0,0,0,0) 54%,rgba(26,34,20,.30) 100%)}
 #hud{position:fixed;left:max(18px,env(safe-area-inset-left));right:max(18px,env(safe-area-inset-right));top:max(18px,env(safe-area-inset-top));display:flex;justify-content:space-between;align-items:flex-start;pointer-events:none}
+.dev-badge[hidden]{visibility:hidden}
 .dev-badge{display:flex;flex-direction:column;gap:2px;color:rgba(250,248,240,.92);text-shadow:0 1px 12px rgba(20,30,15,.38)}
 .dev-badge b{font-size:12px;letter-spacing:.18em}.dev-badge span{font-size:8px;letter-spacing:.19em;opacity:.72}
 .inventory-card{display:flex;align-items:center;gap:10px;padding:8px 12px;border:1px solid var(--border);border-radius:16px;background:var(--glass);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);color:var(--cream);box-shadow:0 10px 30px rgba(25,35,18,.12)}

@@ -131,7 +131,7 @@ export class NorthStableSystem{
     },true);
   }
 
-  save(){try{localStorage.setItem(SAVE_KEY,JSON.stringify(this.saveData));}catch(e){}}
+  save(){try{localStorage.setItem(SAVE_KEY,JSON.stringify(this.saveData));}catch(e){console.warn('[TGW] Stable progress could not be saved',e);}}
   localToWorld(x,z){const c=Math.cos(ROOT.rotation),s=Math.sin(ROOT.rotation);return{x:ROOT.x+c*x+s*z,z:ROOT.z-s*x+c*z};}
   localGroundY(x,z){const w=this.localToWorld(x,z);return (this.world?.groundHeight?.(w.x,w.z)??0)-this.root.position.y;}
   worldToLocal(pos){const c=Math.cos(ROOT.rotation),s=Math.sin(ROOT.rotation),dx=pos.x-ROOT.x,dz=pos.z-ROOT.z;return{x:c*dx-s*dz,z:s*dx+c*dz};}

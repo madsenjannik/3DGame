@@ -106,7 +106,7 @@ export class PlayerHomePortalSystem{
 
   assetUrl(){return `./assets/homes/shed_${this.characterId}.glb`;}
   hasMovedIn(){try{return localStorage.getItem(this.moveInKey)==='1';}catch{return false;}}
-  markMovedIn(){try{localStorage.setItem(this.moveInKey,'1');}catch{}}
+  markMovedIn(){try{localStorage.setItem(this.moveInKey,'1');}catch(e){console.warn('[TGW] MoveIn state could not be saved',e);}}
   usesMoveInCamera(){return this.moveInActive;}
   canEnter(visitor='self'){
     if(visitor==='self'||visitor?.isOwner)return true;const id=typeof visitor==='string'?visitor:visitor?.id;

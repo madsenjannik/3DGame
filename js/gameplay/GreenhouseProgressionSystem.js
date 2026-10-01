@@ -100,7 +100,7 @@ export class GreenhouseProgressionSystem {
   readInitialLevel(){
     const params=new URLSearchParams(location.search);
     if(this.devMode&&params.get('ghreset')==='1'){
-      try{localStorage.removeItem(STORAGE_KEY);}catch(_){ }
+      try{localStorage.removeItem(STORAGE_KEY);}catch(e){console.warn('[TGW] Greenhouse save could not be cleared',e);}
       return 0;
     }
     const query=this.devMode?params.get('ghlevel'):null;
@@ -159,7 +159,7 @@ export class GreenhouseProgressionSystem {
     else this.playLoop(entry,'Idle');
   }
 
-  persist(){if(this.devEphemeral||this.levelOverride)return;try{localStorage.setItem(STORAGE_KEY,String(this.level));}catch(_){ }}
+  persist(){if(this.devEphemeral||this.levelOverride)return;try{localStorage.setItem(STORAGE_KEY,String(this.level));}catch(e){console.warn('[TGW] Greenhouse progress could not be saved',e);}}
 
   startUpgrade(){
     if(this.anim||this.level>=3)return false;

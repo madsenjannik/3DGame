@@ -9,6 +9,10 @@ async function start() {
   document.getElementById('character-selector')?.remove();
 
   const devMode=params.get('dev')==='1';
+  if(devMode){
+    const badge=document.getElementById('dev-badge');
+    if(badge){document.getElementById('dev-badge-version').textContent='v'+(window.TGW_VERSION?.version||'?')+' · '+(window.TGW_VERSION?.build||'');badge.hidden=false;}
+  }
   const game=new Game();
   await game.init({characterId:selectedCharacter,devMode});
 
