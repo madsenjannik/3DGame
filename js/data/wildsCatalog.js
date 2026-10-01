@@ -9,7 +9,8 @@ export const MATERIALS = {
   fiber: { id: 'fiber', name: 'Fiber', icon: '≋' },
   amber: { id: 'amber', name: 'Amber', icon: '⬣' },
   shell: { id: 'shell', name: 'Snail Shell', icon: '◎' },
-  golden_seed: { id: 'golden_seed', name: 'Golden Seed', icon: '✦' }
+  golden_seed: { id: 'golden_seed', name: 'Golden Seed', icon: '✦' },
+  wild_seed: { id: 'wild_seed', name: 'Wild Seed', icon: '❀' }
 };
 
 // kind -> gather rules. `tool` boosts yield by +1; `requires` gates the node entirely.
@@ -19,13 +20,14 @@ export const NODE_KINDS = {
   stone:   { material: 'stone', name: 'Loose Stones',    tool: 'pickaxe', yield: 1, regrowSec: 120 },
   boulder: { material: 'stone', name: 'Boulder',         requires: 'pickaxe', yield: 3, regrowSec: 300 },
   clay:    { material: 'clay',  name: 'Clay Bank',       tool: 'pickaxe', yield: 1, regrowSec: 150 },
-  fiber:   { material: 'fiber', name: 'Wild Grass',      tool: 'sickle',  yield: 1, regrowSec: 100 },
-  bed:     { material: 'fiber', name: 'Planter Bed',     tool: 'sickle',  yield: 2, regrowSec: 90, bonus: { clay: 1 } }
+  fiber:   { material: 'fiber', name: 'Wild Grass',      tool: 'sickle',  yield: 1, regrowSec: 100, seedChance: .35 }
 };
 
 export const TOOLS = [
   { id: 'axe',     name: 'Stone Axe',     icon: '🪓', cost: { wood: 4, stone: 2, fiber: 2 },
     effect: '+1 Wood from branches. Lets you chop Old Logs.' },
+  { id: 'can',     name: 'Watering Can',  icon: '💧', cost: { wood: 2, clay: 3 },
+    effect: 'Fill it at your garden pond to water the pots in your greenhouse.' },
   { id: 'pickaxe', name: 'Stone Pickaxe', icon: '⛏', cost: { wood: 3, stone: 4, fiber: 2 },
     effect: '+1 Stone and Clay. Lets you break Boulders.' },
   { id: 'sickle',  name: 'Sickle',        icon: '☾', cost: { wood: 2, stone: 3, fiber: 3, clay: 2 },
@@ -33,15 +35,20 @@ export const TOOLS = [
 ];
 
 export const HOME_UPGRADES = [
-  { level: 1, name: 'Planter Beds',  cost: { wood: 6, clay: 4, fiber: 3 },
-    effect: 'Two beds by your workbench regrow Fiber and a little Clay.' },
-  { level: 2, name: 'Rain Barrel & Compost', cost: { wood: 8, stone: 6, clay: 4, amber: 1 },
-    effect: 'Everything in the wilds regrows 40% faster.' },
-  { level: 3, name: 'Seed Shrine', cost: { stone: 10, clay: 8, fiber: 6, amber: 4 },
-    effect: '+1 to every gather. Your home is now a true wild garden.' },
-  { level: 4, name: 'Thorn Hedge Fence', cost: { wood: 12, fiber: 10, shell: 6 },
-    effect: 'Overgrowth and snails reach your home half as often.' }
+  { level: 1, name: 'Rain Barrel & Compost', cost: { wood: 8, stone: 6, clay: 4, amber: 1 },
+    effect: 'Wild nodes regrow 40% faster and potted plants grow 25% faster.' },
+  { level: 2, name: 'Seed Shrine', cost: { stone: 10, clay: 8, fiber: 6, amber: 4 },
+    effect: '+1 to every gather. Plant Golden Seeds here for perks.' },
+  { level: 3, name: 'Thorn Hedge Fence', cost: { wood: 12, fiber: 10, shell: 6 },
+    effect: 'Overgrowth and snails reach your garden half as often.' }
 ];
+
+// Greenhouse pots (greenhouse level 1+). Pots sit on the greenhouse's own furniture.
+export const POTS = {
+  max: 3, cost: { clay: 3, fiber: 1 },
+  stageSec: 240, barrelGrowFactor: .75, canCharges: 3,
+  harvest: { fiber: 3, clay: 2 }, amberChance: .25, seedBackChance: .6
+};
 
 // Nature fights back once you own your first tool. Timers run on real time, also offline.
 export const THREAT = {
@@ -49,19 +56,19 @@ export const THREAT = {
   weedEverySec: 210, weedStageSec: 240, maxWeeds: 8, offlineCatchUp: 5,
   weedReward: [1, 2, 3],          // fiber per stage when pulled
   sickleStage: 3,                 // stage 3 is thorny and needs the Sickle
-  bedChokeRadius: 4.2,            // a stage 2+ weed this close stops a planter bed regrowing
-  snailEverySec: 150, maxSnails: 3, snailHp: 2, snailSpeed: .32, snailShells: 1,
+  potChokeRadius: 4.4,            // a stage 2+ weed this close (outside or by the greenhouse) pauses potted plants
+  snailEverySec: 150, maxSnails: 3, snailHp: 2, snailSpeed: .32, snailShells: 1, // snails only come once a pot has a plant
   fenceFactor: 2                  // Thorn Hedge Fence: intervals x2
 };
 
 // Each character brings one gameplay trait (identity, not power creep).
 export const PASSIVES = {
-  tulip:     { name: 'First Bloom',   text: '+1 Fiber from Wild Grass and Planter Beds.', bonus: { fiber: 1 } },
+  tulip:     { name: 'First Bloom',   text: '+1 Fiber from Wild Grass.', bonus: { fiber: 1 } },
   daisy:     { name: 'Sunny Disposition', text: 'Nodes near your home regrow 30% faster.', homeRegrow: .7 },
   hyacinth:  { name: 'Deep Bulb',     text: '+1 Clay from Clay Banks.', bonus: { clay: 1 } },
   cactus:    { name: 'Prickly Skin',  text: 'Cuts Thornbrush and thorny overgrowth without a Sickle.', thornHands: true },
   fern:      { name: 'Forest Kin',    text: '+1 Wood from branches and Old Logs.', bonus: { wood: 1 } },
-  succulent: { name: 'Water Keeper',  text: 'Overgrowth grows 40% slower around your home.', weedSlow: 1.4 },
+  succulent: { name: 'Water Keeper',  text: 'Overgrowth grows 40% slower in your garden.', weedSlow: 1.4 },
   spire:     { name: 'Reach Higher',  text: 'Sees every Thornbrush cache on the map from the start.', revealThorns: true },
   swamp:     { name: 'Muck Friend',   text: 'Snails drop an extra Shell.', shellBonus: 1 },
   aloe:      { name: 'Soothing Sap',  text: '+1 Stone from Loose Stones and Boulders.', bonus: { stone: 1 } }
@@ -86,7 +93,8 @@ export const DAILY = {
     { id: 'fiber',  text: 'Gather 10 Fiber',        stat: 'fiber', goal: 10, reward: { amber: 1 } },
     { id: 'weeds',  text: 'Pull 4 overgrowth weeds', stat: 'weeds', goal: 4, reward: { amber: 1, wood: 3 } },
     { id: 'snails', text: 'Chase off 2 snails',     stat: 'snails', goal: 2, reward: { amber: 1, shell: 1 } },
-    { id: 'nodes',  text: 'Gather from 12 nodes',   stat: 'nodes', goal: 12, reward: { amber: 2 } }
+    { id: 'nodes',  text: 'Gather from 12 nodes',   stat: 'nodes', goal: 12, reward: { amber: 2 } },
+    { id: 'harvest', text: 'Harvest a potted plant', stat: 'harvest', goal: 1, reward: { amber: 1, wild_seed: 1 } }
   ],
   streakBonusEvery: 3, streakBonus: { golden_seed: 1 } // every 3rd full day in a row
 };

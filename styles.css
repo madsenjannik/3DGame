@@ -987,3 +987,5 @@ body.stable-race-result-active .stable-race-controls,body.stable-race-result-act
   .wilds-item{padding:8px}
 }
 @media (max-width:380px){.wilds-card{padding:16px}.wilds-tabs button{font-size:10px}.wilds-item{grid-template-columns:34px 1fr auto;gap:8px}.wilds-icon{width:34px;height:34px;font-size:17px}.wilds-item button{min-width:62px;padding:0 10px}}
+.materials-card{grid-template-columns:repeat(7,auto)}
+.material-chip.wild_seed i{color:#e7a3b4}

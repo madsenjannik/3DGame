@@ -1,5 +1,5 @@
 // @ts-nocheck
-import { MATERIALS, TOOLS, HOME_UPGRADES, PERKS } from '../data/wildsCatalog.js';
+import { MATERIALS, TOOLS, HOME_UPGRADES, PERKS, POTS } from '../data/wildsCatalog.js';
 
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 
@@ -23,6 +23,7 @@ export class WorkbenchPanel {
       if (e.target === el || e.target.closest('.wilds-close')) return this.hide();
       const tab = e.target.closest('[data-tab]'); if (tab) { this.tab = tab.dataset.tab; return this.render(); }
       const craft = e.target.closest('[data-craft]'); if (craft) { this.wilds.craft(craft.dataset.craft); return; }
+      if (e.target.closest('[data-pot]')) { this.wilds.pots.craftPot(); return; }
       const plant = e.target.closest('[data-plant]'); if (plant) { this.wilds.plantSeed(plant.dataset.plant); return; }
       if (e.target.closest('[data-upgrade]')) this.wilds.upgradeHome();
     });
@@ -41,15 +42,23 @@ export class WorkbenchPanel {
 
   nextGoal() {
     const w = this.wilds, p = w.profile;
+    const inv = id => this.state.inventory.get(id) || 0, pots = w.pots;
+    if (!w.has('axe')) return 'Craft the Stone Axe. Gather Wood, Stone and Fiber out in the wilds (through the garden gate).';
+    if (!pots.available()) return 'Build your greenhouse at the back of the garden. Pots and plants live there.';
+    if (pots.owned() < 1) return 'Craft a Terracotta Pot (Tools tab). It goes straight onto your greenhouse shelf.';
+    if (!w.has('can')) return 'Craft a Watering Can. Fill it at the garden pond.';
+    if (p.pots.slots.every((x, i) => i >= pots.owned() || !x) && inv('wild_seed') < 1) return 'Gather Wild Grass in the wilds; it sometimes drops Wild Seeds for your pots.';
+    if (p.pots.slots.some((x, i) => i < pots.owned() && !x) && inv('wild_seed') > 0) return 'Plant a Wild Seed in an empty pot in your greenhouse.';
+    if (p.pots.slots.some(x => x && !x.wet && x.stage < 3)) return p.water > 0 ? 'A plant is thirsty. Water it.' : 'A plant is thirsty. Fill your can at the pond.';
+    if (w.threat?.weeds.some(x => x.state === 'alive')) return 'Overgrowth is creeping in. Pull it before it reaches your greenhouse.';
     const tool = TOOLS.find(t => !w.has(t.id));
     if (tool) return `Craft the ${tool.name}. Gather what you are missing out in the wilds.`;
-    if ((this.state.inventory.get('amber') || 0) < 1 && p.homeLevel < 3 && Object.values(p.thorns).filter(v => v === 'looted').length < w.thorns.length)
+    if (inv('amber') < 1 && p.homeLevel < 2 && Object.values(p.thorns).filter(v => v === 'looted').length < w.thorns.length)
       return 'Find Thornbrush in the wilds. Cut it with your Sickle to reach hidden amber caches.';
-    if (w.threat?.weeds.some(x => x.state === 'alive')) return 'Overgrowth is creeping in. Pull it before it chokes your beds.';
     const up = HOME_UPGRADES[p.homeLevel];
-    if (up) return `Build ${up.name} to grow your home.`;
+    if (up) return `Build ${up.name} to grow your garden.`;
     if ((this.state.inventory.get('golden_seed') || 0) > 0 && PERKS.some(k => !p.perks[k.id])) return 'Plant your Golden Seed at the shrine (Seeds tab).';
-    return 'Your home garden is complete. More of the wilds will open with the seasons.';
+    return 'Your garden is complete. Keep your pots growing; more of the wilds will open with the seasons.';
   }
 
   render() {
@@ -64,8 +73,11 @@ export class WorkbenchPanel {
         html += `<article class="wilds-item${owned ? ' owned' : ''}"><div class="wilds-icon">${t.icon}</div><div class="wilds-body"><b>${esc(t.name)}</b><p>${esc(t.effect)}</p>${owned ? '' : `<div class="wilds-costs">${this.costHtml(t.cost)}</div>`}</div>
           <button type="button" data-craft="${t.id}" ${can ? '' : 'disabled'}>${owned ? 'Owned' : 'Craft'}</button></article>`;
       }
+      const pots = w.pots, n = pots.owned(), full = n >= POTS.max, gh = pots.available(), canPot = gh && !full && this.affordable(POTS.cost);
+      html += `<article class="wilds-item${full ? ' owned' : ''}"><div class="wilds-icon">🪴</div><div class="wilds-body"><b>Terracotta Pot · ${n}/${POTS.max}</b><p>${gh ? 'Goes on your greenhouse shelf. Plant Wild Seeds, water from the pond, harvest.' : 'Build your greenhouse first (back of the garden).'}</p>${full ? '' : `<div class="wilds-costs">${this.costHtml(POTS.cost)}</div>`}</div>
+        <button type="button" data-pot ${canPot ? '' : 'disabled'}>${full ? 'Full' : 'Craft'}</button></article>`;
     } else if (this.tab === 'seeds') {
-      const seeds = this.state.inventory.get('golden_seed') || 0, shrine = w.profile.homeLevel >= 3;
+      const seeds = this.state.inventory.get('golden_seed') || 0, shrine = w.profile.homeLevel >= 2;
       html += `<p class="wilds-note">${shrine ? `You have <b>${seeds}</b> Golden Seed${seeds === 1 ? '' : 's'}. Each one grows into a permanent perk.` : 'Build the Seed Shrine (Home tab) to plant Golden Seeds. Seeds hide in some caches and reward daily streaks.'}</p>`;
       for (const k of PERKS) {
         const owned = !!w.profile.perks[k.id], can = shrine && !owned && seeds > 0;
@@ -83,7 +95,7 @@ export class WorkbenchPanel {
     } else {
       HOME_UPGRADES.forEach((u, i) => {
         const done = w.profile.homeLevel > i, isNext = w.profile.homeLevel === i, can = isNext && this.affordable(u.cost);
-        html += `<article class="wilds-item${done ? ' owned' : ''}${!done && !isNext ? ' locked' : ''}"><div class="wilds-icon">${['🌱', '🛢', '✦', '🌿'][i]}</div><div class="wilds-body"><b>${esc(u.name)}</b><p>${esc(u.effect)}</p>${done ? '' : `<div class="wilds-costs">${this.costHtml(u.cost)}</div>`}</div>
+        html += `<article class="wilds-item${done ? ' owned' : ''}${!done && !isNext ? ' locked' : ''}"><div class="wilds-icon">${['🛢', '✦', '🌿'][i]}</div><div class="wilds-body"><b>${esc(u.name)}</b><p>${esc(u.effect)}</p>${done ? '' : `<div class="wilds-costs">${this.costHtml(u.cost)}</div>`}</div>
           ${isNext ? `<button type="button" data-upgrade ${can ? '' : 'disabled'}>Build</button>` : `<button type="button" disabled>${done ? 'Built' : 'Later'}</button>`}</article>`;
       });
     }

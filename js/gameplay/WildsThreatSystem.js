@@ -1,17 +1,21 @@
 // @ts-nocheck
-// Nature fights back: overgrowth creeps toward the home and snails go for the planter beds.
-// Both run on real time (overgrowth also while offline). Owned by WildsLoopSystem.
+// Nature fights back inside the private garden: overgrowth creeps between the beds and around
+// the greenhouse, and snails go for the potted plants. Overgrowth runs on real time (also offline).
 import * as THREE from 'three';
 import { THREAT } from '../data/wildsCatalog.js';
 
-const HOME_C = { x: 2.5, z: 16.5 };
+const GH = { x: 6.5, z: -11.2 };
+// Garden layout to keep weeds off (from GardenEnvironment / MeaningfulChoiceSystem).
+const FLOWER_BEDS = [[5.1, -8.3, 2.3], [7.4, -8.0, 1.8], [3.1, -5.6, 2.5], [-4.7, 6.4, 2.7], [-7.6, -6.0, 2.5], [8.7, 8.4, 2.3], [-9.0, 8.6, 2.2]];
+const GARDEN_PROPS = [[-9.35, -5.15, 1.5], [-5.05, -5.9, 1.5]];
+const pathX = z => Math.sin((10.8 - z) * .34) * .52;
 const ease = p => p * p * (3 - 2 * p);
 function rng(seed) { let a = seed >>> 0; return () => { a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
 
 export class WildsThreatSystem {
   constructor(wilds) {
     this.w = wilds; this.p = wilds.profile.threat; this.weeds = []; this.snails = []; this.snailSeq = 0;
-    this.root = new THREE.Group(); this.root.name = 'WILDS_THREAT'; wilds.root.add(this.root);
+    this.root = new THREE.Group(); this.root.name = 'WILDS_THREAT'; wilds.gardenRoot.add(this.root);
     this.buildAssets(); this.buildSpots();
     for (const rec of this.p.weeds) if (this.spots[rec.spot]) this.weeds.push(this.makeWeed(rec));
     this.catchUp();
@@ -25,13 +29,19 @@ export class WildsThreatSystem {
   }
 
   buildSpots() {
-    const rand = rng(2024), L = this.w.L, avoid = this.w.homeProps(), spots = [];
-    for (let i = 0; i < 900 && spots.length < 22; i++) {
-      const a = rand() * 6.283, r = 5 + rand() * 14, x = HOME_C.x + Math.cos(a) * r, z = HOME_C.z + Math.sin(a) * r * .85;
-      if (Math.abs(x) < 5.4 && z > -4 && z < 13) continue;            // inside the yard fence
-      if (avoid.some(o => Math.hypot(x - o.x, z - o.z) < o.r + 1.1)) continue;
-      if (spots.some(s => Math.hypot(x - s.x, z - s.z) < 2.2)) continue;
-      const h = L.worldHeight(x, z); if (h < L.WL + .4 || L.terrainSlope(x, z) > .55) continue;
+    const rand = rng(2024), avoid = this.w.homeProps(), spots = [];
+    for (let i = 0; i < 2400 && spots.length < 22; i++) {
+      // Half the candidates hug the greenhouse so the threat reaches the pots.
+      const near = i % 2 === 0, a = rand() * 6.283, r = 3.3 + rand() * 2.2;
+      const x = near ? GH.x + Math.cos(a) * r : -10.6 + rand() * 21.2, z = near ? GH.z + Math.sin(a) * r : -12.4 + rand() * 20.4;
+      if (Math.abs(x) > 10.9 || z < -12.8 || z > 8.4) continue;
+      if (x > 3.2 && x < 9.8 && z > -14 && z < -8.4) continue;              // greenhouse footprint (all levels)
+      if (Math.abs(x - pathX(z)) < 1.2) continue;                             // garden path
+      if (Math.hypot((x + 3.85) / 2.1, (z + 1.6) / 2.8) < 1) continue;        // pond
+      if (FLOWER_BEDS.some(([bx, bz, br]) => Math.hypot(x - bx, z - bz) < br + .3)) continue;
+      if (GARDEN_PROPS.some(([bx, bz, br]) => Math.hypot(x - bx, z - bz) < br)) continue;
+      if (avoid.some(o => Math.hypot(x - o.x, z - o.z) < o.r + .6)) continue;
+      if (spots.some(s => Math.hypot(x - s.x, z - s.z) < 1.8)) continue;
       spots.push({ x, z });
     }
     this.spots = spots;
@@ -47,7 +57,7 @@ export class WildsThreatSystem {
 
   start(now) {
     this.p.started = now; this.p.lastSpawn = now - this.weedEveryMs() + 60000; this.p.lastSnail = now; this.w.save.persist();
-    this.w.hud?.showToast('The wilds noticed you. Watch your home.');
+    this.w.hud?.showToast('The wilds noticed you. Watch your garden.');
   }
 
   // Offline: weeds that would have appeared while away appear now (capped), already aged.
@@ -61,8 +71,8 @@ export class WildsThreatSystem {
 
   // ---------- weeds ----------
   makeWeed(rec) {
-    const s = this.spots[rec.spot], L = this.w.L, root = new THREE.Group(), rand = rng(rec.spot * 97 + 3);
-    root.position.set(s.x, L.groundHeight(s.x, s.z), s.z); root.rotation.y = rand() * 6.28; this.root.add(root);
+    const s = this.spots[rec.spot], root = new THREE.Group(), rand = rng(rec.spot * 97 + 3);
+    root.position.set(s.x, 0, s.z); root.rotation.y = rand() * 6.28; this.root.add(root);
     const stages = [new THREE.Group(), new THREE.Group(), new THREE.Group()];
     for (let i = 0; i < 5; i++) { const a = i / 5 * 6.28; stages[0].add(this.mesh(this.g.leaf, this.m.sprout, [Math.cos(a) * .12, .14, Math.sin(a) * .12], [(Math.cos(a)) * .3, 0, (Math.sin(a)) * .3])); }
     for (let i = 0; i < 6; i++) { const a = i / 6 * 6.28 + .3, r = .25 + rand() * .2; stages[1].add(this.mesh(this.g.vine, this.m.vine, [Math.cos(a) * r, .3, Math.sin(a) * r], [Math.cos(a) * .35, rand(), Math.sin(a) * .35])); }
@@ -83,7 +93,7 @@ export class WildsThreatSystem {
     if (!free.length) return null;
     const rec = { id: `weed-${bornAt}`, spot: free[Math.floor(Math.random() * free.length)], bornAt };
     this.p.weeds.push(rec); const weed = this.makeWeed(rec); this.weeds.push(weed);
-    if (announce) this.w.hud?.showToast('Overgrowth is creeping toward your home');
+    if (announce) this.w.hud?.showToast('Overgrowth is creeping into your garden');
     return weed;
   }
 
@@ -98,17 +108,18 @@ export class WildsThreatSystem {
     return true;
   }
 
-  // A bed cannot regrow while stage 2+ overgrowth is close to it.
-  chokes(node) { const now = Date.now(); return this.weeds.some(w => w.state === 'alive' && this.stage(w.rec, now) >= 2 && Math.hypot(w.x - node.x, w.z - node.z) < THREAT.bedChokeRadius); }
+  // Potted plants stop growing while stage 2+ overgrowth is close to them.
+  chokesAt(x, z) { const now = Date.now(); return this.weeds.some(w => w.state === 'alive' && this.stage(w.rec, now) >= 2 && Math.hypot(w.x - x, w.z - z) < THREAT.potChokeRadius); }
 
   // ---------- snails ----------
   spawnSnail() {
-    const beds = this.w.beds.map(b => b.node); if (!beds.length || this.w.profile.homeLevel < 1) return;
-    const L = this.w.L;
+    if (!this.w.pots?.targets().length) return;
     for (let i = 0; i < 30; i++) {
-      const a = Math.random() * 6.28, r = 16 + Math.random() * 6, x = HOME_C.x + Math.cos(a) * r, z = HOME_C.z + Math.sin(a) * r;
-      if (L.worldHeight(x, z) < L.WL + .4 || (Math.abs(x) < 5.4 && z > -4 && z < 13)) continue;
-      const root = new THREE.Group(); root.position.set(x, L.groundHeight(x, z), z); this.root.add(root);
+      // Snails creep in along the garden fence.
+      const side = Math.floor(Math.random() * 3), t = Math.random();
+      const x = side === 0 ? -11 : side === 1 ? 11 : -10 + t * 20, z = side === 2 ? -12.6 : -12 + t * 18;
+      if (x > 3 && x < 10 && z < -8) continue;
+      const root = new THREE.Group(); root.position.set(x, 0, z); this.root.add(root);
       const body = this.mesh(new THREE.CapsuleGeometry(.11, .42, 3, 8), this.m.body, [0, .1, 0], [0, 0, Math.PI / 2]); root.add(body);
       const shell = new THREE.Group(); shell.position.set(-.06, .27, 0); root.add(shell);
       shell.add(this.mesh(new THREE.SphereGeometry(.2, 10, 8), this.m.shell, [0, 0, 0], [0, 0, 0], [1, 1, .8]));
@@ -135,11 +146,16 @@ export class WildsThreatSystem {
   }
 
   // ---------- frame ----------
+  // Timers run every frame in both spaces; visuals and interaction only while you're home.
+  tick(now) {
+    if (!this.active()) { if (this.w.has(THREAT.startsWithTool)) this.start(now); else return; }
+    if (now - this.p.lastSpawn >= this.weedEveryMs()) { this.p.lastSpawn = now; if (this.spawnWeed(now, this.w.world.isGardenSpace())) this.w.save.persist(); }
+    if (now - this.p.lastSnail >= this.snailEveryMs()) { this.p.lastSnail = now; if (this.snails.length < THREAT.maxSnails) this.spawnSnail(); }
+  }
+
   update(dt, time, character, offer) {
     const now = Date.now(), px = character.position.x, pz = character.position.z;
-    if (!this.active()) { if (this.w.has(THREAT.startsWithTool)) this.start(now); else return; }
-    if (now - this.p.lastSpawn >= this.weedEveryMs()) { this.p.lastSpawn = now; if (this.spawnWeed(now, Math.hypot(px - HOME_C.x, pz - HOME_C.z) < 45)) this.w.save.persist(); }
-    if (this.w.profile.homeLevel >= 1 && now - this.p.lastSnail >= this.snailEveryMs()) { this.p.lastSnail = now; if (this.snails.length < THREAT.maxSnails) this.spawnSnail(); }
+    if (!this.active()) return;
 
     for (const w of this.weeds) {
       if (w.state === 'alive') {
@@ -167,20 +183,20 @@ export class WildsThreatSystem {
         if (p >= 1) { s.state = 'gone'; this.root.remove(s.root); }
         continue;
       }
-      // Head for the nearest bed that still has something to eat (else the nearest bed).
-      const beds = this.w.beds.map(b => b.node); if (!beds.length) continue;
-      const food = beds.filter(b => b.state === 'ready'), pool = food.length ? food : beds;
+      // Head for the nearest potted plant.
+      const pool = this.w.pots?.targets() || [];
+      if (!pool.length) { s.state = 'dying'; s.t = 0; continue; }
       let tgt = pool[0], best = 1e9; for (const b of pool) { const d = Math.hypot(b.x - s.x, b.z - s.z); if (d < best) { best = d; tgt = b; } }
-      if (best > .95) {
+      if (best > .55) {
         const sp = THREAT.snailSpeed * (s.hitT > 0 ? 0 : 1), dx = tgt.x - s.x, dz = tgt.z - s.z;
         s.x += dx / best * sp * dt; s.z += dz / best * sp * dt; s.root.rotation.y = Math.atan2(-dz, dx);
-      } else if (tgt.state === 'ready') {
+      } else {
         s.eatT += dt;
-        if (s.eatT > 4) { s.eatT = 0; this.w.eatBed(tgt); if (Math.hypot(px - s.x, pz - s.z) < 45) this.w.hud?.showToast('A snail ate your planter bed!'); }
+        if (s.eatT > 5) { s.eatT = 0; if (this.w.pots.eat(tgt.i)) this.w.hud?.showToast('A snail is eating your plant!'); }
       }
       s.hitT = Math.max(0, s.hitT - dt);
       const wob = Math.sin(time * 6 + s.ph) * .04;
-      s.root.position.set(s.x, this.w.L.groundHeight(s.x, s.z) + (s.hitT > 0 ? Math.sin(s.hitT * 30) * .05 : 0), s.z);
+      s.root.position.set(s.x, s.hitT > 0 ? Math.sin(s.hitT * 30) * .05 : 0, s.z);
       s.shell.scale.set(1 + wob, 1 - wob, 1);
       const d = Math.hypot(px - s.x, pz - s.z);
       if (d < 1.5) offer({ type: 'wilds-snail', snail: s, distance: d, label: 'Swat Snail' });
@@ -188,9 +204,4 @@ export class WildsThreatSystem {
     this.snails = this.snails.filter(s => s.state !== 'gone');
   }
 
-  markers() {
-    const out = [];
-    for (const s of this.snails) if (s.state !== 'dying') out.push({ type: 'enemy', x: s.x, z: s.z });
-    return out;
-  }
 }

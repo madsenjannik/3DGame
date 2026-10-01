@@ -10,7 +10,6 @@ import { StructureVisibilitySystem } from '../visual/StructureVisibilitySystem.j
 import { characterCatalog, resourceCatalog, buildingCatalog } from '../data/assetCatalog.js';
 import { CollectibleSystem } from '../gameplay/CollectibleSystem.js';
 import { MeaningfulChoiceSystem } from '../gameplay/MeaningfulChoiceSystem.js';
-import { ResourceBuildLoopSystem } from '../gameplay/ResourceBuildLoopSystem.js';
 import { GreenhouseProgressionSystem } from '../gameplay/GreenhouseProgressionSystem.js?build=CAMERA-CUTAWAY-CONTEXT-R21D-20260928E';
 import { OrangeryHubSystem } from '../gameplay/OrangeryHubSystem.js?build=CAMERA-CUTAWAY-CONTEXT-R21D-20260928E';
 import { FishingV1System } from '../gameplay/FishingV1System.js?build=DEV-CLEAN-R16-SLIM-ASSETS-HUB-20260928A';
@@ -58,7 +57,7 @@ export class Game {
     // exact same ready gate, but overlap their asset I/O instead of serialising it.
     const collectiblePromise=new CollectibleSystem(this.world.privateRoot,{state:this.state,resourceCatalog,uTime:this.uTime}).init();
     const choicePromise=new MeaningfulChoiceSystem(this.world.privateRoot,{state:this.state}).init();
-    this.resourceLoop=new ResourceBuildLoopSystem(this.world.privateRoot,{state:this.state,resourceCatalog,buildingCatalog,uTime:this.uTime});
+    // The old Lookout resource loop is retired: building now happens at the wilds workbench in this garden.
     const greenhousePromise=new GreenhouseProgressionSystem(this.world.privateRoot,{state:this.state,world:this.world}).init();
     const orangeryPromise=new OrangeryHubSystem(this.scene,{state:this.state,world:this.world,uTime:this.uTime}).init();
     [this.collectible,this.choiceWorld,this.greenhouse,this.orangery]=await Promise.all([collectiblePromise,choicePromise,greenhousePromise,orangeryPromise]);mark('progressionSystemsReadyMs');
@@ -78,7 +77,7 @@ export class Game {
     [this.fishing]=await Promise.all([fishingPromise,this.worldMap.ready]).then(([fishing])=>[fishing]);mark('uiAndFishingReadyMs');
     // Core loop v1 (shared world). DEV routes use a throwaway profile that is never written.
     this.save=new SaveGame({characterId:this.state.player.characterId,ephemeral:devMode});
-    this.wilds=new WildsLoopSystem({world:this.world,state:this.state,save:this.save,hud:this.hud}).init();
+    this.wilds=new WildsLoopSystem({world:this.world,state:this.state,save:this.save,hud:this.hud,greenhouse:this.greenhouse}).init();
     this.workbenchPanel=new WorkbenchPanel({wilds:this.wilds,state:this.state});
     this.wilds.onOpenWorkbench=()=>{this.workbenchPanel.show();this.input.resetTouchPointers?.();};
     mark('wildsReadyMs');
@@ -132,7 +131,6 @@ export class Game {
     let seed={near:false},loop={interaction:null},greenhouse={interaction:null};
     if(gardenSpace){
       seed=this.collectible.update(dt,this.time,this.character);
-      loop=this.resourceLoop.update(dt,this.time,this.character);
       greenhouse=this.greenhouse.update(dt,this.time,this.character);
       this.greenhouse.applyCamera(this.camera,this.followCamera);
     }
@@ -140,12 +138,14 @@ export class Game {
     let interaction=null;
     if(!this.state.choice.open&&!portalBusy&&!wildsPanel){
       if(gardenSpace){
+        // Wilds garden props first; the locked seed/greenhouse interactions override where they overlap.
+        const gardenHit=this.wilds?.update(dt,this.time,this.character,'garden').interaction;if(gardenHit)interaction=gardenHit;
         if(seed.near)interaction={type:'first-seed',label:'Collect Golden Seed'};
         if(loop.interaction)interaction=loop.interaction;
         if(greenhouse.interaction)interaction=greenhouse.interaction;
       }
       // Wilds go first so locked Stable/Fishing/Home interactions keep priority when they overlap.
-      if(!gardenSpace&&!specialBusy){const wildsHit=this.wilds?.update(dt,this.time,this.character).interaction;if(wildsHit)interaction=wildsHit;}
+      if(!gardenSpace&&!specialBusy){const wildsHit=this.wilds?.update(dt,this.time,this.character,'world').interaction;if(wildsHit)interaction=wildsHit;}
       if(!specialBusy){
         const homeInteraction=this.homePortal?.interaction?.(this.character.position);if(homeInteraction)interaction=homeInteraction;
       }
@@ -165,7 +165,6 @@ export class Game {
       else if(interaction.type?.startsWith?.('stable-'))this.stable.interact(interaction);
       else if(interaction.type?.startsWith?.('wilds-'))this.wilds.interact(interaction,this.character);
       else if(['fish-board','fishing-shop','fishing-spot','boat-board','boat-fish','boat-dock'].includes(interaction.type))this.fishing.interact(interaction.type);
-      else this.resourceLoop.interact(this.character);
     }
 
     // Fishing owns camera only in the shared world. The private garden keeps the

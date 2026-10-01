@@ -2,7 +2,7 @@
 export class Hud {
   constructor(state){
     this.seed=document.getElementById('seed-count');this.action=document.getElementById('action');this.toast=document.getElementById('toast');this.objective=document.getElementById('objective');this.kicker=document.getElementById('objective-kicker');this.title=document.getElementById('objective-title');this.copy=document.getElementById('objective-copy');this.hint=document.getElementById('hint');this.loading=document.getElementById('loading');this.materials=document.getElementById('materials');
-    this.materialIds=['wood','stone','clay','fiber','amber','shell'];
+    this.materialIds=['wood','stone','clay','fiber','amber','shell','wild_seed'];
     this.seed.textContent=String(state.inventory.get('rare_seed')||0);
     this.materialIds.forEach(id=>this.setMaterial(id,state.inventory.get(id)||0));
     // Golden Seeds from the wilds (golden_seed) and the first-discovery seed share one counter.

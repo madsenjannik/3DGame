@@ -1,16 +1,20 @@
 // @ts-nocheck
-// Core loop v1 in the shared world:
-//   gather nodes -> craft tools at the home workbench -> cut thornbrush -> loot amber caches
-//   -> upgrade the home garden (which speeds up and boosts gathering) -> repeat.
+// Core loop:
+//   shared world: gather nodes, cut thornbrush, loot amber caches (exploration)
+//   private garden: workbench, garden upgrades, greenhouse pots, overgrowth + snails (home)
 // Visuals are procedural placeholders in the low-poly palette until authored GLBs exist.
 import * as THREE from 'three';
 import { damp, radialTexture } from '../visual/VisualKit.js';
 import { MATERIALS, NODE_KINDS, TOOLS, HOME_UPGRADES, RULES, PASSIVES, PERKS, GOLDEN_CACHES } from '../data/wildsCatalog.js';
 import { WildsThreatSystem } from './WildsThreatSystem.js';
 import { DailyRequests } from './DailyRequests.js';
+import { GardenPotsSystem } from './GardenPotsSystem.js';
 
 const HOME = { x: 0, z: 4.7 };
-const WORKBENCH = { x: 3.9, z: 16.4, ry: -Math.PI / 2 };
+// Private-garden placements (garden space, ground y = 0). The workbench replaces the old Lookout site.
+const WORKBENCH = { x: 6.0, z: 7.6, ry: -Math.PI / 2 };
+const BARREL = { x: -6.6, z: .8 }, SHRINE = { x: -9.2, z: 2.8 };
+const HEDGE = [[-11.3, -9.5], [-11.3, -5.5], [-11.3, -1.5], [-11.3, 2.5], [-11.3, 6.0], [11.3, -5.0], [11.3, -1.0], [11.3, 3.0], [-7.5, -12.9], [-3.0, -12.9]];
 const COMMON = ['wood', 'stone', 'clay', 'fiber'];
 
 function rng(seed) { let a = seed >>> 0; return () => { a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
@@ -31,10 +35,12 @@ function labelSprite(text, width = 420) {
 function costMet(inv, cost) { return Object.entries(cost).every(([id, n]) => (inv.get(id) || 0) >= n); }
 
 export class WildsLoopSystem {
-  constructor({ world, state, save, hud }) {
+  constructor({ world, state, save, hud, greenhouse }) {
     this.world = world; this.L = world.sharedLandscape; this.state = state; this.save = save; this.hud = hud;
     this.profile = save.profile;
     this.root = new THREE.Group(); this.root.name = 'WILDS_CORE_LOOP'; this.L.root.add(this.root);
+    this.gardenRoot = new THREE.Group(); this.gardenRoot.name = 'WILDS_PRIVATE_GARDEN'; world.privateRoot.add(this.gardenRoot);
+    this.greenhouse = greenhouse;
     this.nodes = []; this.thorns = []; this.current = null; this.flashT = 0;
     this.listeners = new Set();
     this.passive = PASSIVES[state.player.characterId] || null;
@@ -48,6 +54,7 @@ export class WildsLoopSystem {
     this.buildHomeUpgrades();
     this.placeThorns();
     this.applyHomeLevel(false);
+    this.pots = new GardenPotsSystem(this, this.greenhouse);
     this.threat = new WildsThreatSystem(this);
     this.daily = new DailyRequests(this);
     if (this.passive?.revealThorns) for (const t of this.thorns) if (!this.profile.thorns[t.id]) this.profile.thorns[t.id] = 'seen';
@@ -83,6 +90,8 @@ export class WildsLoopSystem {
     if (on && !present) lists.forEach(l => l.push(o));
     if (!on && present) lists.forEach(l => { const i = l.indexOf(o); if (i >= 0) l.splice(i, 1); });
   }
+
+  gardenObstacle(x, z, r, kind) { const o = { x, z, r, height: 1, kind, traversal: 'blocked', space: 'garden' }; this.setObstacle(o, true); return o; }
 
   // ---------- shared assets ----------
   buildShared() {
@@ -210,38 +219,34 @@ export class WildsLoopSystem {
 
   regrowMs(def, node) {
     const nearHome = node && Math.hypot(node.x - HOME.x, node.z - HOME.z) < 40;
-    return def.regrowSec * 1000 * (this.profile.homeLevel >= 2 ? RULES.rainBarrelRegrowFactor : 1) * (this.profile.perks.swift ? .75 : 1) * (nearHome && this.passive?.homeRegrow || 1);
+    return def.regrowSec * 1000 * (this.profile.homeLevel >= 1 ? RULES.rainBarrelRegrowFactor : 1) * (this.profile.perks.swift ? .75 : 1) * (nearHome && this.passive?.homeRegrow || 1);
   }
   yieldFor(def) {
-    return def.yield + (def.tool && this.has(def.tool) ? 1 : 0) + (this.profile.homeLevel >= 3 ? RULES.shrineYieldBonus : 0)
+    return def.yield + (def.tool && this.has(def.tool) ? 1 : 0) + (this.profile.homeLevel >= 2 ? RULES.shrineYieldBonus : 0)
       + (this.passive?.bonus?.[def.material] || 0) + (this.profile.perks.roots && (def.material === 'wood' || def.material === 'stone') ? 1 : 0);
   }
   canCut() { return this.has('sickle') || !!this.passive?.thornHands; }
-  // Everything near the home a weed must not sprout on.
+  // Garden props a weed must not sprout on.
   homeProps() {
-    return [{ x: WORKBENCH.x, z: WORKBENCH.z, r: 1 }, { x: 6.2, z: 15, r: 1 }, { x: 6.2, z: 17.9, r: 1 }, { x: -3.4, z: 17.2, r: .8 }, { x: -4.35, z: 17.2, r: .7 }, { x: 7.8, z: 21, r: 1 }];
-  }
-  eatBed(node) {
-    if (node.state !== 'ready') return;
-    node.state = 'regrowing'; node.body.scale.setScalar(.001); node.glow.visible = false; node.ring.material.opacity = 0;
-    this.profile.nodes[node.id] = Date.now() + this.regrowMs(node.def, node); this.save.persist();
+    return [{ x: WORKBENCH.x, z: WORKBENCH.z, r: 1.1 }, { x: BARREL.x, z: BARREL.z, r: .9 }, { x: BARREL.x - .95, z: BARREL.z, r: .8 }, { x: SHRINE.x, z: SHRINE.z, r: 1 }];
   }
   plantSeed(perkId) {
     const perk = PERKS.find(p => p.id === perkId);
-    if (!perk || this.profile.perks[perkId] || this.profile.homeLevel < 3 || !this.pay({ golden_seed: 1 })) return false;
+    if (!perk || this.profile.perks[perkId] || this.profile.homeLevel < 2 || !this.pay({ golden_seed: 1 })) return false;
     this.profile.perks[perkId] = true; this.save.persist(); this.hud?.showToast(`${perk.name} takes root`); this.emit();
     return true;
   }
   mapMarkers() {
-    const out = [{ type: 'poi', x: WORKBENCH.x, z: WORKBENCH.z, label: 'Workbench' }];
+    // The map only shows the shared world, so only discovered caches are marked.
+    const out = [];
     for (const t of this.thorns) if (this.profile.thorns[t.id] === 'seen' || this.profile.thorns[t.id] === 'cleared') out.push({ type: 'quest', x: t.x, z: t.z, label: 'Cache' });
-    return out.concat(this.threat?.markers() || []);
+    return out;
   }
 
   // ---------- workbench + home upgrades ----------
   buildWorkbench() {
     const g = new THREE.Group(), m = this.mat, w = WORKBENCH;
-    g.position.set(w.x, this.L.groundHeight(w.x, w.z), w.z); g.rotation.y = w.ry;
+    g.position.set(w.x, 0, w.z); g.rotation.y = w.ry;
     g.add(this.mesh(new THREE.BoxGeometry(1.5, .1, .72), m.plankLight, [0, .78, 0]));
     for (const x of [-.66, .66]) for (const z of [-.28, .28]) g.add(this.mesh(new THREE.BoxGeometry(.09, .78, .09), m.plank, [x, .39, z]));
     g.add(this.mesh(new THREE.BoxGeometry(1.4, .06, .6), m.plank, [0, .25, 0]));
@@ -249,7 +254,7 @@ export class WildsLoopSystem {
     // Tool silhouettes on the backboard light up as tools are crafted.
     this.rack = {};
     const handle = new THREE.CylinderGeometry(.025, .025, .5, 6);
-    [['axe', -.45, new THREE.BoxGeometry(.18, .12, .04)], ['pickaxe', 0, new THREE.BoxGeometry(.36, .06, .04)], ['sickle', .45, new THREE.TorusGeometry(.1, .02, 5, 12, Math.PI)]].forEach(([id, x, headGeo]) => {
+    [['axe', -.5, new THREE.BoxGeometry(.18, .12, .04)], ['pickaxe', -.15, new THREE.BoxGeometry(.36, .06, .04)], ['sickle', .2, new THREE.TorusGeometry(.1, .02, 5, 12, Math.PI)], ['can', .52, new THREE.CylinderGeometry(.08, .09, .14, 8)]].forEach(([id, x, headGeo]) => {
       const t = new THREE.Group(); t.position.set(x, 1.2, -.3);
       t.add(this.mesh(handle, m.plank, [0, 0, 0], [1, 1, 1], [0, 0, 0], false));
       t.add(this.mesh(headGeo, m.stoneDark, [0, .24, 0], [1, 1, 1], [0, 0, 0], false));
@@ -260,59 +265,46 @@ export class WildsLoopSystem {
     const label = labelSprite('WORKBENCH'); label.position.set(0, 2.05, 0); g.add(label);
     const glow = new THREE.Sprite(new THREE.SpriteMaterial({ map: this.glowTex, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, opacity: .25 }));
     glow.position.y = 1.1; glow.scale.setScalar(2.6); g.add(glow);
-    this.root.add(g); this.workbench = { root: g, glow, near: 0 };
-    this.world.addObstacle({ x: w.x, z: w.z, r: .8, height: 1.4, kind: 'wilds-workbench' });
+    this.gardenRoot.add(g); this.workbench = { root: g, glow, near: 0 };
+    this.gardenObstacle(w.x, w.z, .8, 'wilds-workbench');
   }
 
   buildHomeUpgrades() {
     const m = this.mat, rand = rng(99);
-    const at = (x, z, ry = 0) => { const g = new THREE.Group(); g.position.set(x, this.L.groundHeight(x, z), z); g.rotation.y = ry; g.visible = false; this.root.add(g); return g; };
-    // L1: two planter beds that act as home gather nodes.
-    this.beds = [[6.2, 15.0], [6.2, 17.9]].map(([x, z], i) => {
-      const g = at(x, z, Math.PI / 2);
-      g.add(this.mesh(new THREE.BoxGeometry(1.7, .26, .82), m.plank, [0, .13, 0]));
-      g.add(this.mesh(new THREE.BoxGeometry(1.55, .06, .68), m.soil, [0, .25, 0], [1, 1, 1], [0, 0, 0], false));
-      const node = this.addNode(`bed-${i + 1}`, 'bed', x, z, rand);
-      node.root.rotation.y = 0; node.body.position.y = .22; node.reach = 1.5; node.root.visible = false;
-      for (let k = 0; k < 2; k++) { const extra = this.nodeVisual('fiber', rand); extra.position.set((k ? .45 : -.45), .22, 0); node.body.add(extra); }
-      this.nodes.push(node);
-      return { root: g, node, obstacle: this.world.addObstacle({ x, z, r: .55, height: .3, kind: 'wilds-bed' }) };
-    });
-    // L2: rain barrel + compost bin.
-    const l2 = at(-3.4, 17.2);
-    l2.add(this.mesh(new THREE.CylinderGeometry(.36, .32, .9, 12), m.plank, [0, .45, 0]));
-    l2.add(this.mesh(new THREE.CylinderGeometry(.33, .33, .03, 12), m.water, [0, .88, 0], [1, 1, 1], [0, 0, 0], false));
-    for (const y of [.2, .7]) l2.add(this.mesh(new THREE.TorusGeometry(.355, .018, 5, 16), m.stoneDark, [0, y, 0], [1, 1, 1], [Math.PI / 2, 0, 0], false));
-    l2.add(this.mesh(new THREE.BoxGeometry(.8, .55, .8), m.plank, [-.95, .28, 0]));
-    l2.add(this.mesh(new THREE.SphereGeometry(.38, 8, 6), m.soil, [-.95, .5, 0], [1, .45, 1], [0, 0, 0], false));
-    this.upgradeL2 = l2;
-    // L3: seed shrine with a floating golden seed.
-    const l3 = at(7.8, 21.0);
-    l3.add(this.mesh(new THREE.CylinderGeometry(.55, .7, .4, 8), m.stone, [0, .2, 0]));
-    l3.add(this.mesh(new THREE.CylinderGeometry(.3, .4, .7, 8), m.stoneDark, [0, .75, 0]));
-    const seed = this.mesh(new THREE.SphereGeometry(.16, 14, 10), m.gold, [0, 1.45, 0], [.82, 1.2, .82]); l3.add(seed);
+    const at = (x, z, ry = 0) => { const g = new THREE.Group(); g.position.set(x, 0, z); g.rotation.y = ry; g.visible = false; this.gardenRoot.add(g); return g; };
+    // L1: rain barrel + compost bin by the garden pond.
+    const l1 = at(BARREL.x, BARREL.z);
+    l1.add(this.mesh(new THREE.CylinderGeometry(.36, .32, .9, 12), m.plank, [0, .45, 0]));
+    l1.add(this.mesh(new THREE.CylinderGeometry(.33, .33, .03, 12), m.water, [0, .88, 0], [1, 1, 1], [0, 0, 0], false));
+    for (const y of [.2, .7]) l1.add(this.mesh(new THREE.TorusGeometry(.355, .018, 5, 16), m.stoneDark, [0, y, 0], [1, 1, 1], [Math.PI / 2, 0, 0], false));
+    l1.add(this.mesh(new THREE.BoxGeometry(.8, .55, .8), m.plank, [-.95, .28, 0]));
+    l1.add(this.mesh(new THREE.SphereGeometry(.38, 8, 6), m.soil, [-.95, .5, 0], [1, .45, 1], [0, 0, 0], false));
+    this.upgradeL1 = l1;
+    // L2: seed shrine with a floating golden seed.
+    const l2 = at(SHRINE.x, SHRINE.z);
+    l2.add(this.mesh(new THREE.CylinderGeometry(.55, .7, .4, 8), m.stone, [0, .2, 0]));
+    l2.add(this.mesh(new THREE.CylinderGeometry(.3, .4, .7, 8), m.stoneDark, [0, .75, 0]));
+    const seed = this.mesh(new THREE.SphereGeometry(.16, 14, 10), m.gold, [0, 1.45, 0], [.82, 1.2, .82]); l2.add(seed);
     const halo = new THREE.Sprite(new THREE.SpriteMaterial({ map: this.amberTex, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, opacity: .7 }));
-    halo.position.y = 1.45; halo.scale.setScalar(1.6); l3.add(halo);
-    this.upgradeL3 = l3; this.shrineSeed = seed;
-    // L4: low thorn-hedge fence around the workbench garden corner (visual only, gaps keep it walkable).
-    const l4 = new THREE.Group(); l4.visible = false; this.root.add(l4); this.upgradeL4 = l4;
-    const hedge = [[9.4, 13.2], [9.6, 15.4], [9.7, 17.6], [9.6, 19.8], [9.2, 22.0], [7.0, 23.4], [4.8, 23.6], [-2.4, 19.6], [-5.2, 19.4], [-6.6, 17.6], [-6.4, 15.4]];
-    for (const [hx, hz] of hedge) {
-      const b = new THREE.Group(); b.position.set(hx, this.L.groundHeight(hx, hz), hz); l4.add(b);
+    halo.position.y = 1.45; halo.scale.setScalar(1.6); l2.add(halo);
+    this.upgradeL2 = l2; this.shrineSeed = seed;
+    // L3: thorn-hedge clumps along the inside of the garden fence (visual only).
+    const l3 = new THREE.Group(); l3.visible = false; this.gardenRoot.add(l3); this.upgradeL3 = l3;
+    for (const [hx, hz] of HEDGE) {
+      const b = new THREE.Group(); b.position.set(hx, 0, hz); l3.add(b);
       b.add(this.mesh(new THREE.DodecahedronGeometry(.42, 0), m.thorn, [0, .32, 0], [1.25, .8, .9], [0, rand() * 3, 0]));
       b.add(this.mesh(new THREE.ConeGeometry(.05, .2, 4), m.thornDark, [.3, .5, .1], [1, 1, 1], [0, 0, -1.2], false));
       b.add(this.mesh(new THREE.ConeGeometry(.05, .2, 4), m.thornDark, [-.3, .45, -.1], [1, 1, 1], [0, 0, 1.2], false));
     }
-    this.upgradeObstacles = [this.world.addObstacle({ x: -3.4, z: 17.2, r: .55, height: .9, kind: 'wilds-barrel' }), this.world.addObstacle({ x: -4.35, z: 17.2, r: .5, height: .6, kind: 'wilds-compost' }), this.world.addObstacle({ x: 7.8, z: 21.0, r: .65, height: 1.2, kind: 'wilds-shrine' })];
-
+    const mk = (x, z, r, kind) => { const o = { x, z, r, height: 1, kind, traversal: 'blocked', space: 'garden' }; return o; };
+    this.upgradeObstacles = [mk(BARREL.x, BARREL.z, .55, 'wilds-barrel'), mk(BARREL.x - .95, BARREL.z, .5, 'wilds-compost'), mk(SHRINE.x, SHRINE.z, .65, 'wilds-shrine')];
   }
 
   applyHomeLevel(celebrate) {
     const lvl = this.profile.homeLevel;
-    for (const b of this.beds) { b.root.visible = lvl >= 1; b.node.root.visible = lvl >= 1; this.setObstacle(b.obstacle, lvl >= 1); }
-    this.upgradeL2.visible = lvl >= 2; this.setObstacle(this.upgradeObstacles[0], lvl >= 2); this.setObstacle(this.upgradeObstacles[1], lvl >= 2);
-    this.upgradeL3.visible = lvl >= 3; this.setObstacle(this.upgradeObstacles[2], lvl >= 3);
-    this.upgradeL4.visible = lvl >= 4;
+    this.upgradeL1.visible = lvl >= 1; this.setObstacle(this.upgradeObstacles[0], lvl >= 1); this.setObstacle(this.upgradeObstacles[1], lvl >= 1);
+    this.upgradeL2.visible = lvl >= 2; this.setObstacle(this.upgradeObstacles[2], lvl >= 2);
+    this.upgradeL3.visible = lvl >= 3;
     if (celebrate) this.hud?.showToast(`${HOME_UPGRADES[lvl - 1].name} built`);
   }
 
@@ -320,7 +312,7 @@ export class WildsLoopSystem {
     const tool = TOOLS.find(t => t.id === toolId);
     if (!tool || this.has(toolId) || !this.pay(tool.cost)) return false;
     this.profile.tools[toolId] = true; this.profile.stats.crafted++;
-    this.rack[toolId].visible = true; this.save.persist();
+    if (this.rack[toolId]) this.rack[toolId].visible = true; this.save.persist();
     this.hud?.showToast(`${tool.name} crafted`); this.emit();
     return true;
   }
@@ -375,6 +367,7 @@ export class WildsLoopSystem {
     if (hit.type === 'wilds-cache') return this.loot(hit.thorn, character);
     if (hit.type === 'wilds-weed') return this.threat.pull(hit.weed, character);
     if (hit.type === 'wilds-snail') return this.threat.swat(hit.snail, character);
+    if (hit.type === 'wilds-pot') return this.pots.interact(hit, character);
     return false;
   }
 
@@ -390,6 +383,7 @@ export class WildsLoopSystem {
     this.give(def.material, n);
     let text = `${MATERIALS[def.material].name} +${n}`;
     for (const [id, b] of Object.entries(def.bonus || {})) { this.give(id, b); text += `  ${MATERIALS[id].name} +${b}`; }
+    if (def.seedChance && Math.random() < def.seedChance) { this.give('wild_seed', 1); text += '  Wild Seed +1'; }
     this.hud?.materials?.classList.add('show'); this.hud?.showToast(text);
     node.character?.flash(); this.profile.stats.gathered++;
     node.state = 'regrowing'; node.obstacles.forEach(o => this.setObstacle(o, false)); this.profile.nodes[node.id] = Date.now() + this.regrowMs(def, node); this.save.persist();
@@ -413,15 +407,18 @@ export class WildsLoopSystem {
   }
 
   // ---------- frame ----------
-  update(dt, time, character) {
+  update(dt, time, character, space = 'world') {
     const px = character.position.x, pz = character.position.z, now = Date.now();
     let best = null; const offer = (c) => { if (!best || c.distance < best.distance) best = c; };
+    this.daily?.update();
+    this.threat?.tick(now);
+    if (space === 'garden') return this.updateGarden(dt, time, character, offer, () => best);
 
     for (const node of this.nodes) {
       if (!node.root.visible) continue;
       const d = Math.hypot(px - node.x, pz - node.z);
       // Far away: skip visuals, but never freeze a gather/grow animation that is already running.
-      if (d > 70 && (node.state === 'ready' || node.state === 'regrowing') && !(node.kind === 'bed' && this.threat?.chokes(node))) { if (node.state === 'regrowing' && now >= (this.profile.nodes[node.id] || 0)) this.regrown(node, true); continue; }
+      if (d > 70 && (node.state === 'ready' || node.state === 'regrowing')) { if (node.state === 'regrowing' && now >= (this.profile.nodes[node.id] || 0)) this.regrown(node, true); continue; }
       const inReach = d < node.reach && node.state === 'ready';
       node.near += ((inReach ? 1 : 0) - node.near) * damp(6, dt);
       if (node.state === 'ready') {
@@ -434,13 +431,10 @@ export class WildsLoopSystem {
         }
       } else if (node.state === 'gathering') {
         node.t += dt; const p = Math.min(1, node.t / .45), e = ease(p);
-        node.body.scale.setScalar(Math.max(.001, 1 - e)); node.body.position.y = (node.kind === 'bed' ? .22 : 0) + e * .4; node.glow.material.opacity *= .9;
-        if (p >= 1) { node.body.position.y = node.kind === 'bed' ? .22 : 0; node.glow.visible = false; node.ring.material.opacity = 0; this.finishGather(node); }
+        node.body.scale.setScalar(Math.max(.001, 1 - e)); node.body.position.y = e * .4; node.glow.material.opacity *= .9;
+        if (p >= 1) { node.body.position.y = 0; node.glow.visible = false; node.ring.material.opacity = 0; this.finishGather(node); }
       } else if (node.state === 'regrowing') {
-        if (node.kind === 'bed' && this.threat?.chokes(node)) {
-          if ((this.profile.nodes[node.id] || 0) < now + 1000) this.profile.nodes[node.id] = now + 1000;
-          if (d < node.reach) offer({ type: 'wilds-gather', node, distance: d, disabled: true, label: 'Planter Bed · choked by weeds' });
-        } else if (now >= (this.profile.nodes[node.id] || 0)) this.regrown(node, false);
+        if (now >= (this.profile.nodes[node.id] || 0)) this.regrown(node, false);
       } else if (node.state === 'growing') {
         node.t += dt; const p = Math.min(1, node.t / 1.2), s = ease(p) * (1 + Math.sin(p * Math.PI) * .12);
         node.body.scale.setScalar(Math.max(.001, s)); if (p >= 1) { node.body.scale.setScalar(1); node.state = 'ready'; }
@@ -473,16 +467,21 @@ export class WildsLoopSystem {
       }
     }
 
+    this.current = best;
+    return { interaction: best };
+  }
+
+  updateGarden(dt, time, character, offer, result) {
+    const px = character.position.x, pz = character.position.z;
     this.threat?.update(dt, time, character, offer);
-    this.daily?.update();
+    this.pots?.update(dt, time, character, offer);
     const w = this.workbench, wd = Math.hypot(px - WORKBENCH.x, pz - WORKBENCH.z), wNear = wd < 1.9;
     w.near += ((wNear ? 1 : 0) - w.near) * damp(6, dt);
     w.glow.material.opacity = .16 + w.near * .3 + Math.sin(time * 1.6) * .04;
     if (wNear) offer({ type: 'wilds-workbench', distance: wd, label: 'Use Workbench' });
-    if (this.upgradeL3.visible) { this.shrineSeed.position.y = 1.45 + Math.sin(time * 1.7) * .06; this.shrineSeed.rotation.y += dt * .8; }
-
-    this.current = best;
-    return { interaction: best };
+    if (this.upgradeL2.visible) { this.shrineSeed.position.y = 1.45 + Math.sin(time * 1.7) * .06; this.shrineSeed.rotation.y += dt * .8; }
+    this.current = result();
+    return { interaction: this.current };
   }
 
   regrown(node, instant) {

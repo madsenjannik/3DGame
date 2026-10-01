@@ -3,13 +3,15 @@
 // Older systems (Stable, Greenhouse, MoveIn, Fishing) keep their own locked storage keys;
 // they move in here only under a separately approved scope.
 const SAVE_KEY = 'tgw.save';
-export const SAVE_VERSION = 1;
+export const SAVE_VERSION = 2;
 
 function blankProfile() {
   return {
     inventory: {},        // material id -> count (wood, stone, clay, fiber, amber, shell, golden_seed)
     tools: {},            // tool id -> true
-    homeLevel: 0,         // 0..4 home garden upgrades
+    homeLevel: 0,         // 0..3 garden upgrades (barrel, shrine, hedge)
+    pots: { count: 0, slots: [null, null, null] }, // greenhouse pots: slot -> { stage, wet, readyAt }
+    water: 0,             // watering-can charges
     nodes: {},            // node id -> epoch ms when it has regrown
     thorns: {},           // thornbrush id -> 'cleared' | 'looted'
     stats: { gathered: 0, crafted: 0, weeds: 0, snails: 0 },
@@ -22,7 +24,13 @@ function blankProfile() {
 function migrate(raw) {
   if (!raw || typeof raw !== 'object') return { version: SAVE_VERSION, profiles: {} };
   const save = { version: raw.version | 0, profiles: raw.profiles && typeof raw.profiles === 'object' ? raw.profiles : {} };
-  // Future: if (save.version < 2) { ...; save.version = 2; }
+  // v2: builds moved into the private garden and Planter Beds (old home level 1) became
+  // greenhouse pots. Old levels shift down by one; a paid-for bed level becomes one free pot.
+  if (save.version < 2) for (const p of Object.values(save.profiles)) {
+    if (!p || typeof p !== 'object') continue;
+    const old = p.homeLevel | 0; p.homeLevel = Math.max(0, old - 1);
+    if (old >= 1) p.pots = { count: 1, slots: [null, null, null] };
+  }
   save.version = SAVE_VERSION;
   return save;
 }
@@ -32,7 +40,10 @@ function validProfile(p) {
   if (!p || typeof p !== 'object') return out;
   for (const [k, v] of Object.entries(p.inventory || {})) if (Number.isFinite(v) && v > 0) out.inventory[k] = Math.floor(v);
   for (const [k, v] of Object.entries(p.tools || {})) if (v === true) out.tools[k] = true;
-  out.homeLevel = Math.max(0, Math.min(4, p.homeLevel | 0));
+  out.homeLevel = Math.max(0, Math.min(3, p.homeLevel | 0));
+  out.pots.count = Math.max(0, Math.min(3, p.pots?.count | 0));
+  if (Array.isArray(p.pots?.slots)) out.pots.slots = [0, 1, 2].map(i => { const s = p.pots.slots[i]; return s && Number.isInteger(s.stage) ? { stage: Math.max(0, Math.min(3, s.stage)), wet: s.wet === true, readyAt: Number.isFinite(s.readyAt) ? s.readyAt : 0 } : null; });
+  out.water = Math.max(0, Math.min(9, p.water | 0));
   for (const [k, v] of Object.entries(p.nodes || {})) if (Number.isFinite(v)) out.nodes[k] = v;
   for (const [k, v] of Object.entries(p.thorns || {})) if (v === 'seen' || v === 'cleared' || v === 'looted') out.thorns[k] = v;
   out.stats.gathered = Math.max(0, p.stats?.gathered | 0);
