@@ -36,7 +36,10 @@ export class GardenVegetationMask {
 
   apply() {
     this.collect();
-    const rects = this.rects(), inside = (x, z) => rects.some(r => x > r.x0 && x < r.x1 && z > r.z0 && z < r.z1);
+    // R60.2: a moved greenhouse also clears a strip along its new branch path.
+    const rects = this.rects(), g = this.garden, branch = g.isDefault('greenhouse') ? null : g.currentBranch();
+    const onBranch = (x, z) => { if (!branch) return false; for (let i = 0; i < branch.length - 1; i++) { const a = branch[i], vx = branch[i + 1].x - a.x, vz = branch[i + 1].z - a.z, L = vx * vx + vz * vz || 1; let t = ((x - a.x) * vx + (z - a.z) * vz) / L; t = t < 0 ? 0 : t > 1 ? 1 : t; if (Math.hypot(x - a.x - vx * t, z - a.z - vz * t) < .72) return true; } return false; };
+    const inside = (x, z) => rects.some(r => x > r.x0 && x < r.x1 && z > r.z0 && z < r.z1) || onBranch(x, z);
     for (const e of this.meshes) {
       const arr = e.mesh.instanceMatrix.array; let hidden = 0, changed = false;
       for (let i = 0; i < e.mesh.count; i++) {

@@ -171,8 +171,16 @@ try {
       await p.reload({ waitUntil: 'load' }); await p.waitForFunction(() => window.__tgw?.wilds?.gardenModels && window.__tgw.greenhouse?.entries.size === 3, null, { timeout: 240000 }).catch(() => {});
       Object.assign(r, await step(() => { const g = window.__tgw, persisted = !g.garden.isDefault('shrine') && g.wilds.upgradeL2.position.x === g.garden.transformOf('shrine').x;
         g.garden.resetToDefaults(); return { persisted, resetHidden: g.vegetationMask.meshes.reduce((a, e) => a + e.hidden, 0), resetPos: g.wilds.upgradeL2.position.x === -9.2 && g.wilds.upgradeL2.position.z === 2.8 }; }));
+      // R60.2 paths: spine never buildable; a moved greenhouse gets its own branch (stones + paint) that others must avoid; reset restores the authored branch.
+      Object.assign(r, await step(() => { const g = window.__tgw, gb = g.garden, A = (t, x, z, rot) => gb.anchorFor(t, x, z, rot);
+        const spine = /path/.test(gb.problem('greenhouse', ...Object.values(A('greenhouse', 2.6, -3.5, 3))) || '');
+        const a = A('greenhouse', 6.7, -4, 3), moved = gb.place('greenhouse', a.gx, a.gz, a.rot) === null;
+        const stones = g.world.dynamicBranchStones.length > 0 && g.world.branchStones.every(m => !m.visible) && !!g.world.greenhouseBranch;
+        const s = A('shrine', 2.3, -3.6, 0), branchBlocks = /greenhouse path/.test(gb.problem('shrine', s.gx, s.gz, s.rot) || '');
+        gb.resetToDefaults(); const restored = !g.world.greenhouseBranch && g.world.branchStones.every(m => m.visible) && g.world.dynamicBranchStones.length === 0;
+        return { spine, moved, stones, branchBlocks, restored }; }));
     }
-    check('build mode: invalid blocked, cancel unchanged, place moves + hides vegetation, persists, reset restores', ok && r.pondBlocked && r.cancelSame && r.placed && r.moved && r.follows && r.hidden > 0 && r.persisted && r.resetHidden === 0 && r.resetPos && !errors.length, errors[0] || JSON.stringify(r));
+    check('build mode + paths: invalid blocked, cancel unchanged, place moves + hides vegetation, persists, reset restores, spine reserved, branch follows greenhouse', ok && r.pondBlocked && r.cancelSame && r.placed && r.moved && r.follows && r.hidden > 0 && r.persisted && r.resetHidden === 0 && r.resetPos && r.spine && r.stones && r.branchBlocks && r.restored && !errors.length, errors[0] || JSON.stringify(r));
     await ctx.close(); }
   // 5. DEV disabled: no dev UI or handles leak into normal play
   { const ctx = await context({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true }); const { p, errors, ok } = await startGame(ctx, 'daisy', { dev: false });

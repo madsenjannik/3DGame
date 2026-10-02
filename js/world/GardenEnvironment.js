@@ -183,8 +183,27 @@ export class GardenEnvironment {
   pathDistance(x,z){
     let d=99;
     if(z<=11.5&&z>=-8.9)d=Math.abs(x-this.pathX(z));
-    if(z>-9.55&&z<-8.05&&x>-0.2&&x<6.8)d=Math.min(d,Math.abs(z+8.8));
+    // R60.2: the greenhouse branch follows the placed greenhouse (GardenBuildSystem). null = authored branch.
+    const b=this.greenhouseBranch;
+    if(!b){if(z>-9.55&&z<-8.05&&x>-0.2&&x<6.8)d=Math.min(d,Math.abs(z+8.8));}
+    else for(let i=0;i<b.length-1;i++){const ax=b[i].x,az=b[i].z,vx=b[i+1].x-ax,vz=b[i+1].z-az,L=vx*vx+vz*vz||1;let t=((x-ax)*vx+(z-az)*vz)/L;t=t<0?0:t>1?1:t;d=Math.min(d,Math.hypot(x-ax-vx*t,z-az-vz*t));}
     return d;
+  }
+  // R60.2: move the greenhouse branch path (stones + ground paint). Default (null) restores the authored path.
+  setGreenhouseBranch(points){
+    this.greenhouseBranch=points&&points.length>1?points:null;
+    for(const m of this.branchStones||[])m.visible=!this.greenhouseBranch;
+    for(const m of this.dynamicBranchStones||[])m.parent?.remove(m);
+    this.dynamicBranchStones=[];
+    if(this.greenhouseBranch){
+      let seed=7;const rnd=()=>{seed=(seed*16807)%2147483647;return seed/2147483647;};
+      const b=this.greenhouseBranch;let carry=.6;
+      for(let i=0;i<b.length-1;i++){
+        const ax=b[i].x,az=b[i].z,vx=b[i+1].x-ax,vz=b[i+1].z-az,len=Math.hypot(vx,vz),yaw=Math.atan2(vx,vz);
+        for(let s=carry;s<len;s+=.86){const t=s/len,m=this.makePathStone(ax+vx*t+(rnd()-.5)*.08,az+vz*t+(rnd()-.5)*.08,.30+rnd()*.10,.18+rnd()*.07,yaw+Math.PI/2+(rnd()-.5)*.4,rnd);this.dynamicBranchStones.push(m);carry=s+.86-len;}
+      }
+    }
+    this.repaintGround?.();
   }
 
 vegetationBlocked(x,z,pad=0){
@@ -241,7 +260,8 @@ buildGround(){
       const g=new THREE.PlaneGeometry(size,size,seg,seg);g.rotateX(-Math.PI/2);const p=g.attributes.position;const cols=new Float32Array(p.count*3);
       const dark=color(far?0x667d46:0x4d6d31),mid=color(far?0x7f9156:0x5e793f),dry=color(0x829555),soil=color(0xa56e43),c=new THREE.Color();
       const baseline=new URLSearchParams(location.search).has('baseline');
-      for(let i=0;i<p.count;i++){
+      // R60.2: the colour pass is a function so a moved greenhouse branch can repaint the soil.
+      const shade=()=>{for(let i=0;i<p.count;i++){
         const x=p.getX(i),z=p.getZ(i);const n=(Math.sin(x*.46)+Math.cos(z*.39)+Math.sin((x-z)*1.13)+Math.cos((x+z)*.18))*.125+.50;
         c.copy(dark).lerp(mid,THREE.MathUtils.clamp(n,0,1));
         const dryK=THREE.MathUtils.clamp((Math.sin(x*1.7-z*.8)+1)*.18,0,.28);c.lerp(dry,dryK);
@@ -260,31 +280,34 @@ buildGround(){
           c.lerp(color(0xad784b),trail);
         }
         cols[i*3]=c.r;cols[i*3+1]=c.g;cols[i*3+2]=c.b;
-      }
-      g.setAttribute('color',new THREE.BufferAttribute(cols,3));const m=new THREE.MeshStandardMaterial({vertexColors:true,roughness:1,metalness:0});const mesh=new THREE.Mesh(g,m);mesh.receiveShadow=true;mesh.position.y=far?-.045:-.02;this.scene.add(mesh);
+      }};
+      shade();
+      g.setAttribute('color',new THREE.BufferAttribute(cols,3));
+      if(!far)this.repaintGround=()=>{shade();g.attributes.color.needsUpdate=true;};const m=new THREE.MeshStandardMaterial({vertexColors:true,roughness:1,metalness:0});const mesh=new THREE.Mesh(g,m);mesh.receiveShadow=true;mesh.position.y=far?-.045:-.02;this.scene.add(mesh);
     };
     make(36,216,false);
   }
 
   buildPath(){
     const stonePalette=[0x747167,0x817e74,0x908b81,0x6c6a61];
-    const makeStone=(x,z,rx,rz,rotY=0)=>{
+    const makeStone=(x,z,rx,rz,rotY=0,rand=this.rand)=>{
       const g=new THREE.DodecahedronGeometry(1,0);
-      const mat=new THREE.MeshStandardMaterial({color:stonePalette[Math.floor(this.rand()*stonePalette.length)],roughness:.99,flatShading:true});
+      const mat=new THREE.MeshStandardMaterial({color:stonePalette[Math.floor(rand()*stonePalette.length)],roughness:.99,flatShading:true});
       const m=new THREE.Mesh(g,mat);
-      const sy=.032+this.rand()*.015;
+      const sy=.032+rand()*.015;
       m.position.set(x,sy*.58,z);
       m.scale.set(rx,sy,rz);
-      m.rotation.set((this.rand()-.5)*.05,rotY+(this.rand()-.5)*.22,(this.rand()-.5)*.04);
-      m.castShadow=true;m.receiveShadow=true;this.scene.add(m);
+      m.rotation.set((rand()-.5)*.05,rotY+(rand()-.5)*.22,(rand()-.5)*.04);
+      m.castShadow=true;m.receiveShadow=true;this.privateRoot.add(m);return m;
     };
+    this.makePathStone=makeStone;this.branchStones=[];
     for(let i=0;i<24;i++){
       const z=10.9-i*.86,x=this.pathX(z)+(this.rand()-.5)*.10;
       makeStone(x,z,.34+this.rand()*.12,.20+this.rand()*.09,this.rand()*.55);
     }
     for(let i=0;i<11;i++){
       const t=i/10,x=.05+(this.greenhouse.x-.55)*t+(this.rand()-.5)*.04,z=-8.82+Math.sin(t*Math.PI)*.10;
-      makeStone(x,z,.30+this.rand()*.10,.18+this.rand()*.07,.12+this.rand()*.48);
+      this.branchStones.push(makeStone(x,z,.30+this.rand()*.10,.18+this.rand()*.07,.12+this.rand()*.48));
     }
   }
 

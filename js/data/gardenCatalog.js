@@ -34,6 +34,15 @@ for (const [x, z] of FIXED_HEDGE) {
   RESERVED.push({ id: 'hedge', kind: 'rect', x0: x - (along ? hd : hl), z0: z - (along ? hl : hd), x1: x + (along ? hd : hl), z1: z + (along ? hl : hd) });
 }
 
+// R60.2 garden paths. The spine (gate → house → back of the garden) is fixed and never buildable.
+// The greenhouse branch runs from the spine to the greenhouse door and follows the placed greenhouse;
+// on its default spot it is the authored branch. Other structures keep clear of the branch.
+export const SPINE = { z0: -8.9, z1: 12.0, halfWidth: .85 };
+export const spineX = z => Math.sin((10.8 - z) * .34) * .52;       // = GardenEnvironment.pathX
+export const SPINE_START_EXCLUDE = { z0: 1.6, z1: 8.4 };              // no branch may start inside the house
+export const DEFAULT_BRANCH = [{ x: .05, z: -8.82 }, { x: 5.95, z: -8.82 }];
+export const BRANCH = { doorGap: 2.9, clear: .6, structureClear: .7 }; // door-front point (greenhouse-local z), widths
+
 // Reachability is checked from the gate; these must stay reachable too (watering-can refill, door).
 export const GATE = { x: 0.2, z: 11.75 };
 export const MUST_REACH = [{ id: 'door', x: 0, z: 8.25 }, { id: 'pond-shore', x: -3.85, z: 1.5 }];

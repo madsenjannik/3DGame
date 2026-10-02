@@ -97,9 +97,11 @@ export class Game {
     this.workbenchPanel=new WorkbenchPanel({wilds:this.wilds,state:this.state});
     // R60 step 2: build/move mode + vegetation under moved structures; every move re-places the systems.
     this.buildMode=new GardenBuildMode({game:this});this.workbenchPanel.onMove=id=>this.buildMode.start(id);
+    if(!this.garden.isDefault('greenhouse'))this.world.setGreenhouseBranch?.(this.garden.currentBranch()); // R60.2 path follows a moved greenhouse
     this.vegetationMask=new GardenVegetationMask({world:this.world,garden:this.garden});this.vegetationMask.apply();
     this.garden.onChange(id=>{
       if(id==='greenhouse'&&this.greenhouse){const t=this.garden.transformOf('greenhouse');this.greenhouse.setPlacement(t.x,t.z,t.rot);}
+      if(id==='greenhouse')this.world.setGreenhouseBranch?.(this.garden.isDefault('greenhouse')?null:this.garden.currentBranch());
       this.wilds.applyPlacements();this.vegetationMask.apply();this.save.persist();
     });
     this.wilds.onOpenWorkbench=()=>{this.workbenchPanel.show();this.input.resetTouchPointers?.();};
