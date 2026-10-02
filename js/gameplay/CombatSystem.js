@@ -286,11 +286,12 @@ export class CombatSystem {
     this.updateLoot(dt, ch);
     for (const v of this.pouchViews.values()) v.children[0].position.y = .22 + Math.sin(time * 2) * .02;
     if (!active || this.wilting) return { interaction: null };
+    const fight = this.boss?.fightOffer(ch.position.x, ch.position.z); if (fight) return { interaction: fight };   // R65.1 FIGHT marker
     const wpn = this.weapon(), t = this.target(wpn.reach + .6);
     if (t) return { interaction: { type: 'combat-strike', label: `Strike · ${wpn.name}`, distance: t.d } };
     const p = this.p.pouches.find(q => Math.hypot(q.x - ch.position.x, q.z - ch.position.z) < 1.4);
     if (p) return { interaction: { type: 'combat-pouch', label: 'Pick up your pouch', distance: 0 } };
     return { interaction: null };
   }
-  interact(type) { if (type === 'combat-strike') return this.attack(); if (type === 'combat-pouch') return this.pickUpPouch(); return false; }
+  interact(type) { if (type === 'combat-fight') return this.boss?.startFight(); if (type === 'combat-strike') return this.attack(); if (type === 'combat-pouch') return this.pickUpPouch(); return false; }
 }

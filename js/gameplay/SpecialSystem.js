@@ -104,7 +104,7 @@ export class SpecialSystem {
 
   fire(target) {
     const d = this.def, ch = this.g.character, hand = ch.instance?.socket?.('Hand_Socket_R');
-    ch.root.updateMatrixWorld(true);   // the hand's world matrix must match the character's current position
+    ch.root.position.copy(ch.position); ch.root.updateMatrixWorld(true);   // the hand must match the character's current position
     const from = hand ? hand.getWorldPosition(new THREE.Vector3()) : ch.position.clone().add(new THREE.Vector3(0, 1, 0));
     const dir = new THREE.Vector3(Math.sin(ch.heading), 0, Math.cos(ch.heading));
     const mk = (yawOff = 0, extra = {}) => {

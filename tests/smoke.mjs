@@ -246,7 +246,11 @@ try {
   { const ctx = await context({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true }); const { p, errors, ok } = await startGame(ctx, 'fern');
     const ready = ok && await p.waitForFunction(() => window.__tgw?.combat?.boss?.giant, null, { timeout: 240000 }).then(() => true, () => false);
     const r = ready ? await p.evaluate(() => { const g = window.__tgw, c = g.combat, B = c.boss, ch = g.character, o = {}; g.wilds.profile.tools.axe = true;
-      g.devMenu.teleport('world', B.site.x, B.site.z + 6, Math.PI); B.update(.1, ch); o.wake = B.state === 'wake' && typeof g.followCamera.lockYaw === 'function';
+      // R65.1: walking close no longer wakes it; arena walls collide; the FIGHT marker starts it and the doors close
+      g.devMenu.teleport('world', B.site.x, B.site.z + 6, Math.PI); B.update(.1, ch); o.sleeps = B.state === 'sleep';
+      const wo = B.arenaObstacles[5], q = { x: wo.x + .05, z: wo.z }; g.world.resolveCollisions(q, .3); o.walls = B.arenaObstacles.length > 30 && Math.hypot(q.x - wo.x, q.z - wo.z) >= wo.r + .29 && B.doorObstacles.every(d => d.r < .1);
+      g.devMenu.teleport('world', B.fightPoint.x, B.fightPoint.z, 0); o.offer = c.update(.016, c.time, ch, true).interaction?.type === 'combat-fight';
+      c.interact('combat-fight'); o.wake = o.sleeps && o.offer && B.state === 'wake' && typeof g.followCamera.lockYaw === 'function' && B.doorObstacles.every(d => d.r > .3);
       for (let i = 0; i < 20; i++) B.update(.1, ch);
       let hp0 = c.hp; for (let i = 0; i < 120 && B.state !== 'stuck'; i++) { if (B.state === 'walk') ch.position.set(B.gx, ch.position.y, B.gz + 3.5); else if (B.state === 'stomp' || B.state === 'slam') { const Q = B.local(...(B.state === 'stomp' ? [2.9, -.5] : [0, 3.2])); ch.position.set(Q.x + .3, ch.position.y, Q.z); } B.update(.1, ch); }
       o.stomp = hp0 - c.hp >= 2 && B.state === 'stuck'; c.heal(true); c.invuln = 0;
@@ -263,7 +267,7 @@ try {
       o.win = B.state === 'resting' && B.p.wins === 1 && c.loot.some(l => l.kind === 'golden_seed') && !g.followCamera.bossZoom || g.followCamera.bossZoom === 1;
       o.win = o.win && B.state === 'resting' && B.p.wins === 1 && c.loot.some(l => l.kind === 'golden_seed');
       return o; }) : {};
-    check('wood giant: wake + boss camera lock, stomp hurts, weak window x3, bark 1, roots + weak point, shockwave (hop to dodge), defeat + golden seed + saved', ready && r.wake && r.stomp && r.weak && r.bark && r.roots && r.wave && r.win && !errors.length, errors[0] || JSON.stringify(r));
+    check('wood giant: sleeps when you walk in, arena walls collide, FIGHT marker starts it + doors close, camera lock, stomp hurts, weak window x3, bark 1, roots + weak point, shockwave (hop to dodge), defeat + golden seed + saved', ready && r.walls && r.wake && r.stomp && r.weak && r.bark && r.roots && r.wave && r.win && !errors.length, errors[0] || JSON.stringify(r));
     await ctx.close(); }
   // 17c. R65 character specials: Swing/Throw overlays on the locked character, landed hits fill the meter, all nine
   // specials hurt a Mole, the Giant's bark takes 0 and its weak window takes damage, a garden snail can be hit
@@ -282,7 +286,7 @@ try {
         S.use(); for (let i = 0; i < 150; i++) S.update(1 / 30); dmg[id] = 50 - m.hp;
       }
       o.all = Object.values(dmg).every(v => v >= 2); o.dmg = dmg; m.stunUntil = 0; S.def = SPECIAL.chars.spire;
-      g.devMenu.teleport('world', B.site.x, B.site.z + 6, Math.PI); for (let i = 0; i < 300 && !B.fighting(); i++) await w(100);
+      g.devMenu.teleport('world', B.fightPoint.x, B.fightPoint.z, 0); c.interact('combat-fight'); ch.position.set(B.site.x, ch.position.y, B.site.z + 6);
       const shoot = () => { S.charge = SPECIAL.chargeHits; S.busy = 0; S.use(); for (let i = 0; i < 120; i++) S.update(1 / 30); };
       B.weak = 0; let hp = B.hp; shoot(); o.bark = hp - B.hp === 0; B.weak = 5; hp = B.hp; shoot(); o.weak = hp - B.hp > 0;
       B.end(false); return o;
@@ -296,7 +300,7 @@ try {
     const r = ready ? await p.evaluate(async () => {
       const g = window.__tgw, c = g.combat, B = c.boss, o = {}, w = ms => new Promise(x => setTimeout(x, ms));
       g.devMenu.teleport('world', B.site.x, B.site.z + 6, Math.PI);
-      for (let i = 0; i < 300 && !B.fighting(); i++) await w(100);
+      g.devMenu.teleport('world', B.fightPoint.x, B.fightPoint.z, 0); c.interact('combat-fight');
       o.fight = B.fighting(); await w(1500); o.camHigh = g.camera.position.y - g.character.position.y > 2.5;
       B.shake = .45; c.invuln = 0; c.hurt(99, g.character.position.x + .1, g.character.position.z);  // lethal Stomp: shake still running
       for (let i = 0; i < 400 && (c.wilting || g.world.space !== 'garden'); i++) await w(100);

@@ -617,7 +617,7 @@ Unless a runtime bug appears, the remaining content/progression order is:
 6. **Wood Giant integration**
 7. **Lake Run integration**
 8. **Thora quest / real Stable unlock progression**
-8b. **Open combat follow-ups (Jannik 02/10, not built):** arena colliders outside the fight (stones/wall/gate have none today; only the Giant's body); a golden FIGHT holo indicator at the gate instead of waking at 9 m; later the Wood Giant appears at random spots in an area (temporary root ring as boundary) instead of the fixed arena, and the arena may become a character-vs-character venue (needs the multiplayer foundation, item 10).
+8b. **Open combat follow-ups (Jannik 02/10):** arena colliders + FIGHT marker done (R65.1). Later the Wood Giant appears at random spots in an area (temporary root ring as boundary) instead of the fixed arena, and the arena may become a character-vs-character venue (needs the multiplayer foundation, item 10).
 9. **Alliance/team garden permissions**
 10. **Multiplayer/social foundation**
 11. **Season/progression meta-system**
@@ -1575,6 +1575,7 @@ are only touched where a measured hotspot requires it, minimally.
    failure. Must pass before every push (CLAUDE.md rule 5).
 
 **B status 02/10/2026: complete (R51–R57).** On-device check (iPhone, Jannik 02/10): 60 fps steady (frame max 20–24 ms), 217 draw calls / 370k tris in the garden, 363 / 433k at the lake, mobile-high, 1 WebGL context → no perf work needed before C.
+**Arena (R65.1, v0.8.01):** stones/wall/gate posts collide (277 circles from the model's vertices), doors only while the fight is on; the Giant wakes only from the golden FIGHT holo marker outside the gate (no more 9 m auto-wake).
 **Character specials (R65, v0.8.00):** melee plays Jannik's `Swing`; landed hits fill a per-character meter (6 hits); full → F / special button throws the character's own special (`SpecialSystem.js`, data `SPECIAL`): 9 kinds (lob/pool, pierce, chain, boomerang, cloud, fan, pearl, stun splat, roll). Wood Giant: 0 on bark, ×3 in weak windows. Character meshes stay the locked ones; only the new clips were merged in (Jannik's decimated meshes lose detail on Daisy/Aloe/Cactus).
 **Shake fix (R64.2, v0.7.32):** a lethal Stomp/Slam no longer leaves the camera shaking in the garden (shake zeroed on fight end, never applied in the garden). **Throwing (proposal, not built):** each character GLB gets a `Throw` clip (same rig, `Hand_Socket_R` release) + one `assets/combat/proj_<character>.glb` (+Z forward, ≤300 tris, clips `Fly` loop + `Hit` burst); balance proposal: 1 damage, 1.2 s cooldown, 8 m, on the Wood Giant only weak points/root knots (bark 0). Needs its own GO.
 **Combat fixes (R64.1, v0.7.31):** wilting mid-boss-fight now ends the fight (before, the portal fade paused the combat update, the Giant stayed in its fight and pulled you back into the arena on 'back to world'); boss camera higher/further back (3.0 m / 9.5 m, FOV 74/62) so the root warnings around you are visible, lifts over the wall at the edge, closed gate fades see-through. Tunables in `GIANT.camera`.

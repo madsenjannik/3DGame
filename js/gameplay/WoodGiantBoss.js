@@ -10,6 +10,7 @@ import * as THREE from 'three';
 import { loadGLTF } from '../core/AssetManager.js';
 import { WildsModel } from './WildsModels.js';
 import { GIANT } from '../data/combatCatalog.js';
+import { createHoloIndicator } from '../visual/holo-indicator.js';
 
 const DIR = './assets/combat/';
 function rng(seed) { let a = seed >>> 0; return () => { a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
@@ -53,6 +54,8 @@ export class WoodGiantBoss {
       this.mixer = new THREE.AnimationMixer(s); this.fxMixer = new THREE.AnimationMixer(s);
       this.clips = Object.fromEntries(giant.animations.map(c => [c.name, c]));
       this.obstacle = this.g.world.addObstacle({ x: this.site.x, z: this.site.z, r: GIANT.bodyRadius * .75, height: 6, kind: 'boss-wood-giant' });
+      this.obstacle.space = 'world';
+      this.buildArenaColliders(); this.buildFightMarker();   // R65.1
       this.reset();
     } catch (e) { console.warn('[TGW] Wood Giant unavailable (fails soft)', e); this.site = null; }
     return this;
@@ -91,7 +94,63 @@ export class WoodGiantBoss {
     this.tele.visible = false; this.ui.classList.remove('show'); this.setZoom(false); this.syncObstacle();
     for (const wv of this.waves || []) this.c.root.remove(wv.mesh); this.waves = [];
   }
-  syncObstacle() { if (this.obstacle) { this.obstacle.x = this.gx; this.obstacle.z = this.gz; this.obstacle.r = this.giant.visible ? GIANT.bodyRadius * .75 : 0.01; } }
+  syncObstacle() {
+    if (this.obstacle) { this.obstacle.x = this.gx; this.obstacle.z = this.gz; this.obstacle.r = this.giant.visible ? GIANT.bodyRadius * .75 : 0.01; }
+    const closed = this.fighting(); for (const o of this.doorObstacles || []) o.r = closed ? o.r0 : 0.01;   // doors block only while closed
+  }
+  // R65.1: before this the stones, wall and gate had no collision at all (only the Giant's body); outside a fight
+  // you walked straight through them. Colliders are circles laid over the arena model's own low vertices
+  // (≤ 1.8 m), greedily thinned, so they follow the stones/wall exactly; the doors get their own set.
+  buildArenaColliders() {
+    const arena = this.arena.root; arena.updateMatrixWorld(true);
+    const v = new THREE.Vector3(), base = this.site.y, R = .42, GAP = .5;
+    const circles = node => {
+      const pts = [];
+      node?.traverse(m => {
+        if (!m.isMesh) return; const pos = m.geometry.attributes.position;
+        for (let i = 0; i < pos.count; i++) { v.fromBufferAttribute(pos, i).applyMatrix4(m.matrixWorld); if (v.y - base < 1.8) pts.push([v.x, v.z, v.y - base]); }
+      });
+      const keep = [];
+      for (const [x, z, h] of pts) { const k = keep.find(c => Math.hypot(c.x - x, c.z - z) < GAP); if (k) k.h = Math.max(k.h, h); else keep.push({ x, z, h }); }
+      return keep;
+    };
+    const add = (list, kind) => list.map(c => { const o = this.g.world.addObstacle({ x: c.x, z: c.z, r: R, height: Math.max(.6, c.h), kind }); o.space = 'world'; o.r0 = R; return o; });
+    this.arenaObstacles = [];
+    for (const n of ['Arena_WoodGiant_Stones', 'Arena_WoodGiant_Wall', 'Gate_Post_L', 'Gate_Post_R']) this.arenaObstacles.push(...add(circles(arena.getObjectByName(n)), 'arena-wall'));
+    this.doorObstacles = [];
+    for (const n of ['Arena_WoodGiant_DoorL', 'Arena_WoodGiant_DoorR']) this.doorObstacles.push(...add(circles(arena.getObjectByName(n)), 'arena-door'));
+    this.syncObstacle();
+  }
+  // R65.1: a golden holo marker just outside the gate (same indicator as RIDE / JUMP / FISH). The Giant no longer
+  // wakes when you walk close: you start the fight here (InteractionResolver via CombatSystem, 'combat-fight').
+  buildFightMarker() {
+    const l = this.arena.root.getObjectByName('Arena_WoodGiant_DoorL'), r = this.arena.root.getObjectByName('Arena_WoodGiant_DoorR');
+    const a = l.getWorldPosition(new THREE.Vector3()), b = r.getWorldPosition(new THREE.Vector3()), gx = (a.x + b.x) / 2, gz = (a.z + b.z) / 2;
+    const ox = gx - this.site.x, oz = gz - this.site.z, ol = Math.hypot(ox, oz) || 1;
+    this.fightPoint = { x: gx + ox / ol * 1.6, z: gz + oz / ol * 1.6 };                 // outside the gate
+    this.enterPoint = { x: gx - ox / ol * 2.2, z: gz - oz / ol * 2.2 };                 // where the fight starts, inside
+    const holo = createHoloIndicator({ radius: .58, height: 1.3, intensity: .48, breath: 2.4, scanSpeed: 2.0, scanDensity: 90, baseRing: true, groundHalo: true, fadeIn: .35 });
+    const c = document.createElement('canvas'); c.width = 246; c.height = 78; const x = c.getContext('2d');
+    x.font = '800 44px Manrope, system-ui, sans-serif'; x.textAlign = 'center'; x.textBaseline = 'middle'; x.shadowColor = 'rgba(0,0,0,.45)'; x.shadowBlur = 8; x.fillStyle = '#ffe9a3'; x.fillText('FIGHT', 123, 41);
+    const tex = new THREE.CanvasTexture(c); tex.colorSpace = THREE.SRGBColorSpace;
+    const label = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, transparent: true, depthWrite: false })); label.scale.set(1.35, .43, 1); label.position.y = 1.58;
+    const m = new THREE.Group(); m.name = 'WOOD_GIANT_FIGHT_MARKER'; m.add(holo.group, label);
+    m.position.set(this.fightPoint.x, this.L.groundHeight(this.fightPoint.x, this.fightPoint.z) + .015, this.fightPoint.z); this.c.root.add(m);
+    this.marker = { m, holo, label };
+  }
+  // The 'Fight' offer at the marker (CombatSystem passes it to the resolver).
+  fightOffer(px, pz) {
+    if (!this.fightPoint || this.state !== 'sleep' || this.c.wilting) return null;
+    const d = Math.hypot(px - this.fightPoint.x, pz - this.fightPoint.z);
+    return d < 1.4 ? { type: 'combat-fight', label: 'Fight the Wood Giant', distance: d } : null;
+  }
+  startFight() {
+    if (this.state !== 'sleep') return false;
+    const ch = this.g.character, p = this.enterPoint;
+    ch.position.set(p.x, this.L.groundHeight(p.x, p.z), p.z); ch.root.position.copy(ch.position);
+    ch.heading = Math.atan2(this.gx - p.x, this.gz - p.z); ch.root.rotation.y = ch.heading; ch.velocity?.set(0, 0, 0);
+    this.begin(); this.syncObstacle(); return true;
+  }
   // R63.1 boss camera: the free camera's yaw glides to 'behind you, facing the Giant' (swipe still looks
   // around), then applyCamera() places it low and looks up between your head and the Giant's chest.
   setZoom(on) {
@@ -141,11 +200,12 @@ export class WoodGiantBoss {
   update(dt, ch) {
     if (!this.site || !this.giant) return;
     const px = ch.position.x, pz = ch.position.z, dC = Math.hypot(px - this.site.x, pz - this.site.z);
+    if (this.marker) { const on = this.state === 'sleep' && dC < 60; on ? this.marker.holo.show() : this.marker.holo.hide(); this.marker.holo.update(this.c.time, dt); this.marker.label.visible = on; }
     if (dC > 70 && (this.state === 'sleep' || this.state === 'resting')) return;
     this.mixer.update(dt); this.fxMixer.update(dt); this.arena.update(dt); this.t += dt;
     this.weak = Math.max(0, this.weak - dt); this.shake = Math.max(0, this.shake - dt);
     if (this.state === 'resting') { if (this.available()) this.reset(); return; }
-    if (this.state === 'sleep') { if (dC < GIANT.wakeRange && !this.c.wilting) this.begin(); return; }
+    if (this.state === 'sleep') return;   // R65.1: woken only from the FIGHT marker (startFight)
     if (this.state === 'sinking') {
       const k = Math.min(1, this.t / 3.2); this.giant.position.y = -k * 9; this.giant.rotation.z = k * .25;
       if (k >= 1) { this.giant.visible = false; this.state = 'resting'; this.arena.play(['GateOpen'], () => this.arena.loop('Idle')); this.syncObstacle(); }

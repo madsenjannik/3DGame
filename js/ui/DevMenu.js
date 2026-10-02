@@ -123,7 +123,7 @@ export class DevMenu {
       if (op === 'hurt') { this.hide(); c.invuln = 0; if (g.world.space !== 'world') return this.toast('Kun i verden'); const p = g.character.position; c.hurt(2, p.x + .1, p.z); return; }
       if (op === 'respawn') { for (const k of Object.keys(c.p.moles)) c.p.moles[k] = 0; g.save.persist(); return this.toast('Moles kommer tilbage om et øjeblik'); }
       const B = c.boss;
-      if (op === 'arena') { if (!B?.site) return this.toast('Ingen arena (model mangler?)'); this.teleport('world', B.site.x, B.site.z + 13, Math.PI); return; }
+      if (op === 'arena') { if (!B?.site) return this.toast('Ingen arena (model mangler?)'); const f = B.fightPoint || { x: B.site.x, z: B.site.z + 13.6 }; this.teleport('world', f.x + (f.x - B.site.x) * .06, f.z + (f.z - B.site.z) * .06, Math.atan2(B.site.x - f.x, B.site.z - f.z)); return; }
       if (op === 'bosslow') { if (!B?.fighting()) return this.toast('Start kampen først (gå ind i arenaen)'); B.hp = 4; B.renderUi(); return this.toast('Wood Giant: 4 liv'); }
       if (op === 'bossreset') { if (!B?.giant) return this.toast('Ingen boss'); B.p.defeatedAt = 0; B.end(false); g.save.persist(); return this.toast('Wood Giant er klar igen'); }
       if (op === 'mercy') { c.p.mercyUntil = 0; c.p.pouches = []; c.syncPouches(); g.save.persist(); return this.toast('Mercy og poser nulstillet'); }
