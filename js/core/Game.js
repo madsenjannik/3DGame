@@ -176,7 +176,7 @@ export class Game {
     // Do not run ThirdPersonCamera first and then fight its result afterwards.
     if(!stableCameraOwner&&!homeCameraOwner)this.followCamera.update(dt);
     this.combat?.boss?.applyCamera(this.camera,this.character);
-    const shk=this.combat?.boss?.shake||0;if(shk>0){const a=.22*shk;this.camera.position.x+=(Math.random()-.5)*a;this.camera.position.y+=(Math.random()-.5)*a;} // R63 boss impact
+    const shk=gardenSpace?0:(this.combat?.boss?.shake||0);if(shk>0){const a=.22*shk;this.camera.position.x+=(Math.random()-.5)*a;this.camera.position.y+=(Math.random()-.5)*a;} // R63 boss impact
     this.homePortal?.update(dt);this.world.update?.(dt,this.time,this.character.position);
 
     if(gardenSpace){

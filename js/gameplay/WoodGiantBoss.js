@@ -105,7 +105,7 @@ export class WoodGiantBoss {
     this.g.hud?.showToast('The Wood Giant wakes!');
   }
   end(won) {
-    this.ui.classList.remove('show'); this.setZoom(false); this.tele.visible = false;
+    this.ui.classList.remove('show'); this.setZoom(false); this.tele.visible = false; this.shake = 0; // R64.2: a lethal Stomp/Slam left the shake set (it only decays in the world)
     for (const wv of this.waves || []) this.c.root.remove(wv.mesh); this.waves = [];
     for (const r of this.roots) this.c.root.remove(r.model.root); this.roots = [];
     if (!won) return this.reset();

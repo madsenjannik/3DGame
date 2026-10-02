@@ -274,15 +274,17 @@ try {
       g.devMenu.teleport('world', B.site.x, B.site.z + 6, Math.PI);
       for (let i = 0; i < 300 && !B.fighting(); i++) await w(100);
       o.fight = B.fighting(); await w(1500); o.camHigh = g.camera.position.y - g.character.position.y > 2.5;
-      c.invuln = 0; c.hurt(99, g.character.position.x + .1, g.character.position.z);
+      B.shake = .45; c.invuln = 0; c.hurt(99, g.character.position.x + .1, g.character.position.z);  // lethal Stomp: shake still running
       for (let i = 0; i < 400 && (c.wilting || g.world.space !== 'garden'); i++) await w(100);
+      await w(1500); const cp = []; for (let i = 0; i < 6; i++) { cp.push(g.camera.position.clone()); await w(120); }
+      o.still = B.shake === 0 && cp.every(v => v.distanceTo(cp[0]) < .02);
       o.ended = g.world.space === 'garden' && !B.fighting() && !g.followCamera.lockYaw && B.hp === 60;
       g.homePortal.interact('home-exit', g.character, g.followCamera, g.hud);
       for (let i = 0; i < 400 && (g.homePortal.busy || g.world.space !== 'world'); i++) await w(100);
       await w(2500); const ch = g.character.position; o.d = Math.hypot(ch.x - B.site.x, ch.z - B.site.z); o.free = g.world.space === 'world' && !B.fighting() && o.d > 20;
       return o;
     }) : {};
-    check('wood giant: wilt mid-fight ends the fight, back to the world is not pulled into the arena, camera above head', ready && r.fight && r.camHigh && r.ended && r.free && !errors.length, errors[0] || JSON.stringify(r));
+    check('wood giant: wilt mid-fight ends the fight + camera shake, back to the world is not pulled into the arena, camera above head', ready && r.fight && r.camHigh && r.ended && r.still && r.free && !errors.length, errors[0] || JSON.stringify(r));
     await ctx.close(); }
   // 5. DEV disabled: no dev UI or handles leak into normal play
   { const ctx = await context({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true }); const { p, errors, ok } = await startGame(ctx, 'daisy', { dev: false });
