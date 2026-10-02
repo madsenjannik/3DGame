@@ -6,3 +6,4 @@
 4. Locked systems stay untouched without a GO for that exact scope. **Never change the three greenhouse levels.** Building happens in the private garden, not the shared world.
 5. Bump `version.js` on every build; run `node tests/smoke.mjs` (must be all PASS) and check the change in a browser (touch + desktop) before pushing — the branch is the live GitHub Pages test site.
 6. New GLBs load through `js/core/AssetManager.js`; new interactions offer through `js/core/InteractionResolver.js`; optional systems must fail soft (see MASTER §31).
+7. Private-garden structures are placed by `js/gameplay/GardenBuildSystem.js` (data: `js/data/gardenCatalog.js`). Never hard-code their x/z in gameplay code; ask the placed transform. House, gate, pond and story spots stay fixed.

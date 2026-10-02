@@ -5,6 +5,7 @@ import http from 'node:http';
 import fs from 'node:fs';
 import path from 'node:path';
 import { createRequire } from 'node:module';
+import { SNAPSHOT_SAVE, collectGardenSnapshot } from './garden-snapshot.mjs';
 
 const ROOT = path.resolve(path.dirname(new URL(import.meta.url).pathname), '..');
 const require = createRequire(import.meta.url);
@@ -115,6 +116,43 @@ try {
         garden: !!(w.benchModel && w.barrelModel && w.shrineModel && w.hedgeModels?.length && w.pots?.slots.every(v => v.pm) && w.threat?.weedGltf) };
     }) : {};
     check('wilds + garden GLBs: nodes, thicket, caches, ring/bubble cues, garden builds; gather clip completes', r.kinds === 6 && r.thorns && r.state === 'regrowing' && r.gained && r.hidden && r.ring && r.bubbles && r.garden && !errors.length, errors[0] || JSON.stringify(r));
+    await ctx.close(); }
+  // 10. R60 GardenBuildSystem: migration leaves every private-garden transform identical to the pre-R60 reference
+  { const ctx = await context({ viewport: { width: 844, height: 390 } }); const p = await ctx.newPage(); const errors = []; p.on('pageerror', e => errors.push(e.message));
+    await p.addInitScript(sv => { localStorage.setItem('dym.homeMovedIn.v1.fern', '1'); localStorage.setItem('tgw.devMenu', '1'); localStorage.setItem('dym-gh-level', '2'); if (!sessionStorage.getItem('seeded')) { localStorage.setItem('tgw.save', JSON.stringify(sv)); sessionStorage.setItem('seeded', '1'); } }, SNAPSHOT_SAVE);
+    await p.goto(B + 'game.html?char=fern', { waitUntil: 'load' });
+    const ok = await p.waitForFunction(() => window.__tgw?.wilds?.gardenModels && window.__tgw.greenhouse?.entries.size === 3 && window.__tgw.wilds.threat, null, { timeout: 240000 }).then(() => true, () => false);
+    let diffs = ['not loaded'];
+    if (ok) { const ref = JSON.parse(fs.readFileSync(path.join(ROOT, 'tests/garden-snapshot.ref.json'), 'utf8')), now = await p.evaluate(collectGardenSnapshot); diffs = [];
+      const walk = (a, b, k) => { if (typeof a !== 'object' || a === null || typeof b !== 'object' || b === null) { if (JSON.stringify(a) !== JSON.stringify(b)) diffs.push(k); return; } for (const x of new Set([...Object.keys(a), ...Object.keys(b)])) walk(a[x], b[x], `${k}.${x}`); };
+      walk(ref, now, 'garden'); }
+    check('garden migration: 0 transform differences vs pre-R60 reference', ok && !diffs.length && !errors.length, errors[0] || diffs.slice(0, 4).join(' '));
+    // 11. old saves + defaults valid + structures follow a moved greenhouse
+    const r = ok ? await p.evaluate(async () => {
+      const g = window.__tgw, gb = g.garden, { STRUCTURES } = await import('./js/data/gardenCatalog.js'), { SaveGame } = await import('./js/core/SaveGame.js');
+      const valid = Object.entries(STRUCTURES).every(([type, d]) => gb.problem(type, d.defaultAnchor.gx, d.defaultAnchor.gz, d.defaultAnchor.rot) === null);
+      const pondBlocked = !!gb.problem('shrine', 17, 24, 0), overlap = !!gb.problem('shrine', 13, 30, 0);
+      const weedsXZ = g.save.profile.threat.weeds.every(w => Number.isFinite(w.x) && Number.isFinite(w.z));
+      const saved = g.save.profile.garden?.buildings?.length === 4;
+      // Follow test: move the greenhouse 90° somewhere else and back; interaction + pots must follow.
+      const gh = g.greenhouse, i0 = gh.interactionPoint(), p0 = g.wilds.pots.slots[0].g.position.clone();
+      gh.setPlacement(-6, -10, 1); g.wilds.pots.placeForLevel(); const i1 = gh.interactionPoint(), p1 = g.wilds.pots.slots[0].g.position.clone();
+      const follows = Math.abs(i1.x - (-6 + (gh.level ? [0.86, 0.86, 1.65, 2.52][gh.level] + .7 : 1.56))) < 1e-6 && Math.abs(i1.z + 10) < 1e-6 && p1.distanceTo(p0) > 5;
+      const t = gb.transformOf('greenhouse'); gh.setPlacement(t.x, t.z, t.rot); g.wilds.pots.placeForLevel(); const back = g.wilds.pots.slots[0].g.position.distanceTo(p0) < 1e-9 && gh.interactionPoint().z === i0.z;
+      // Old saves: v1, v3 with old-format weeds, garbage garden data; nothing may throw, defaults come back.
+      const keep = localStorage.getItem('tgw.save'); let oldOk = true;
+      try {
+        for (const raw of [{ version: 1, profiles: { fern: { homeLevel: 3 } } }, { version: 3, profiles: { fern: { threat: { started: 1, weeds: [{ id: 'a', spot: 2, bornAt: 1 }] } } } }, { version: 3, profiles: { fern: { garden: { plots: 'x', buildings: [{ id: 'shrine', type: 'shrine', gx: 'a' }, { id: 'greenhouse', type: 'greenhouse', gx: 17, gz: 24, rot: 0 }] } } } }]) {
+          localStorage.setItem('tgw.save', JSON.stringify(raw)); const sv = new SaveGame({ characterId: 'fern', ephemeral: false }); sv.ephemeral = true;
+          const b = new gb.constructor({ profile: sv.profile, world: g.world }), d = STRUCTURES.greenhouse.defaultAnchor, gh2 = b.get('greenhouse');
+          if (b.p.garden.buildings.length !== 4 || gh2.gx !== d.gx || gh2.gz !== d.gz || !b.p.garden.plots.includes('home')) oldOk = false;
+          if (raw.profiles.fern.threat && !(sv.profile.threat.weeds[0]?.spot === 2)) oldOk = false;
+        }
+      } catch (e) { oldOk = 'threw ' + e.message; }
+      localStorage.setItem('tgw.save', keep);
+      return { valid, pondBlocked, overlap, weedsXZ, saved, follows, back, oldOk };
+    }) : {};
+    check('garden build: defaults valid, pond/overlap rejected, old saves load, structures follow placement', r.valid && r.pondBlocked && r.overlap && r.weedsXZ && r.saved && r.follows && r.back && r.oldOk === true && !errors.length, errors[0] || JSON.stringify(r));
     await ctx.close(); }
   // 5. DEV disabled: no dev UI or handles leak into normal play
   { const ctx = await context({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true }); const { p, errors, ok } = await startGame(ctx, 'daisy', { dev: false });

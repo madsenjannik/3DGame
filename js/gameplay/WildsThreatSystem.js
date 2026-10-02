@@ -6,7 +6,9 @@ import { THREAT } from '../data/wildsCatalog.js';
 import { WildsModel } from './WildsModels.js';
 const WEED_STAGES = ['Spire', 'Busk', 'Tornet']; // R59.2 garden_weeds.glb subtrees, one per stage
 
-const GH = { x: 6.5, z: -11.2 };
+// R60: the greenhouse position comes from GardenBuildSystem (placed transform), not a constant.
+const GH_KEEP_OUT = 3.3, GH_KEEP_OUT_Z = 2.8;   // greenhouse-local half extents weeds keep off (all levels)
+const QSC = [[0, 1], [1, 0], [0, -1], [-1, 0]];
 // Garden layout to keep weeds off (from GardenEnvironment / MeaningfulChoiceSystem).
 const FLOWER_BEDS = [[5.1, -8.3, 2.3], [7.4, -8.0, 1.8], [3.1, -5.6, 2.5], [-4.7, 6.4, 2.7], [-7.6, -6.0, 2.5], [8.7, 8.4, 2.3], [-9.0, 8.6, 2.2]];
 const GARDEN_PROPS = [[-9.35, -5.15, 1.5], [-5.05, -5.9, 1.5]];
@@ -19,7 +21,15 @@ export class WildsThreatSystem {
     this.w = wilds; this.p = wilds.profile.threat; this.weeds = []; this.snails = []; this.snailSeq = 0;
     this.root = new THREE.Group(); this.root.name = 'WILDS_THREAT'; wilds.gardenRoot.add(this.root);
     this.buildAssets(); this.buildSpots();
-    for (const rec of this.p.weeds) if (this.spots[rec.spot]) this.weeds.push(this.makeWeed(rec));
+    // Weeds keep their own position (R60). Pre-R60 records only had a spot index: resolve it once against
+    // the default spot table (identical to before) and store x/z, so a later greenhouse move cannot shift them.
+    let migrated = false;
+    for (const rec of this.p.weeds) {
+      if (!(Number.isFinite(rec.x) && Number.isFinite(rec.z))) { const s = this.spots[rec.spot]; if (!s) continue; rec.x = s.x; rec.z = s.z; migrated = true; }
+      this.weeds.push(this.makeWeed(rec));
+    }
+    this.p.weeds = this.p.weeds.filter(r => Number.isFinite(r.x) && Number.isFinite(r.z));
+    if (migrated) this.w.save.persist();
     this.catchUp();
   }
 
@@ -32,12 +42,14 @@ export class WildsThreatSystem {
 
   buildSpots() {
     const rand = rng(2024), avoid = this.w.homeProps(), spots = [];
+    const GH = this.w.garden?.transformOf('greenhouse') || { x: 6.5, z: -11.2, rot: 0 }, [gs, gc] = QSC[GH.rot || 0];
     for (let i = 0; i < 2400 && spots.length < 22; i++) {
       // Half the candidates hug the greenhouse so the threat reaches the pots.
       const near = i % 2 === 0, a = rand() * 6.283, r = 3.3 + rand() * 2.2;
       const x = near ? GH.x + Math.cos(a) * r : -10.6 + rand() * 21.2, z = near ? GH.z + Math.sin(a) * r : -12.4 + rand() * 20.4;
       if (Math.abs(x) > 10.9 || z < -12.8 || z > 8.4) continue;
-      if (x > 3.2 && x < 9.8 && z > -14 && z < -8.4) continue;              // greenhouse footprint (all levels)
+      const dx = x - GH.x, dz = z - GH.z, lx = dx * gc - dz * gs, lz = dx * gs + dz * gc;  // world -> greenhouse-local
+      if (Math.abs(lx) < GH_KEEP_OUT && Math.abs(lz) < GH_KEEP_OUT_Z) continue;  // greenhouse footprint (all levels)
       if (Math.abs(x - pathX(z)) < 1.2) continue;                             // garden path
       if (Math.hypot((x + 3.85) / 2.1, (z + 1.6) / 2.8) < 1) continue;        // pond
       if (FLOWER_BEDS.some(([bx, bz, br]) => Math.hypot(x - bx, z - bz) < br + .3)) continue;
@@ -50,7 +62,9 @@ export class WildsThreatSystem {
   }
 
   // ---------- timing ----------
-  fence() { return this.w.profile.homeLevel >= 4; }
+  // R60 fix: the Thorn Hedge Fence is home level 3 since save v2 shifted levels down by one; the old
+  // `>= 4` could never be true, so the hedge's documented effect (half as many weeds/snails) never applied.
+  fence() { return this.w.profile.homeLevel >= 3; }
   weedEveryMs() { return THREAT.weedEverySec * 1000 * (this.fence() ? THREAT.fenceFactor : 1) * (this.w.profile.perks.ward ? 2 : 1); }
   snailEveryMs() { return THREAT.snailEverySec * 1000 * (this.fence() ? THREAT.fenceFactor : 1); }
   stageMs() { return THREAT.weedStageSec * 1000 * (this.w.passive?.weedSlow || 1); }
@@ -73,7 +87,7 @@ export class WildsThreatSystem {
 
   // ---------- weeds ----------
   makeWeed(rec) {
-    const s = this.spots[rec.spot], root = new THREE.Group(), rand = rng(rec.spot * 97 + 3);
+    const s = { x: rec.x, z: rec.z }, root = new THREE.Group(), rand = rng(Number.isInteger(rec.spot) ? rec.spot * 97 + 3 : [...rec.id].reduce((a, ch) => a * 31 + ch.charCodeAt(0) | 0, 7));
     root.position.set(s.x, 0, s.z); root.rotation.y = rand() * 6.28; this.root.add(root);
     const stages = [new THREE.Group(), new THREE.Group(), new THREE.Group()];
     for (let i = 0; i < 5; i++) { const a = i / 5 * 6.28; stages[0].add(this.mesh(this.g.leaf, this.m.sprout, [Math.cos(a) * .12, .14, Math.sin(a) * .12], [(Math.cos(a)) * .3, 0, (Math.sin(a)) * .3])); }
@@ -91,9 +105,9 @@ export class WildsThreatSystem {
 
   spawnWeed(bornAt, announce) {
     if (this.weeds.length >= THREAT.maxWeeds) return null;
-    const taken = new Set(this.weeds.map(w => w.rec.spot)), free = this.spots.map((_, i) => i).filter(i => !taken.has(i));
+    const free = this.spots.map((_, i) => i).filter(i => !this.weeds.some(w => Math.hypot(w.x - this.spots[i].x, w.z - this.spots[i].z) < .5));
     if (!free.length) return null;
-    const rec = { id: `weed-${bornAt}`, spot: free[Math.floor(Math.random() * free.length)], bornAt };
+    const spot = free[Math.floor(Math.random() * free.length)], rec = { id: `weed-${bornAt}`, spot, x: this.spots[spot].x, z: this.spots[spot].z, bornAt };
     this.p.weeds.push(rec); const weed = this.makeWeed(rec); this.weeds.push(weed);
     if (announce) this.w.hud?.showToast('Overgrowth is creeping into your garden');
     return weed;

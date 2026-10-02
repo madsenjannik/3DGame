@@ -78,11 +78,26 @@ function segmentIntersectionT2D(ax,az,bx,bz,cx,cz,dx,dz){
 
 function clipAction(entry,name){return entry.actions.get(name)||null;}
 
+// R60 (Jannik's explicit exception, 02/10/2026): the greenhouse follows the GardenBuildSystem placement.
+// Only the transform changes: models, levels, animations, progression and the save key are untouched.
+// Quarter-turn rotation of the authored local collision data (+z = door side). rot 0 returns the
+// original arrays, so the default placement feeds exactly the pre-R60 numbers to every consumer.
+const QSC=[[0,1],[1,0],[0,-1],[-1,0]];
+function rotPoint(lx,lz,rot){const [s,c]=QSC[rot&3];return [lx*c+lz*s,-lx*s+lz*c];}
+function rotateShapes(shapes,rot){
+  if(!shapes||!(rot&3))return shapes;
+  return shapes.map(sh=>{
+    if(sh.kind==='wall'){const [ax,az]=rotPoint(sh.ax,sh.az,rot),[bx,bz]=rotPoint(sh.bx,sh.bz,rot);return {...sh,ax,az,bx,bz};}
+    const a=rotPoint(sh.minX,sh.minZ,rot),b=rotPoint(sh.maxX,sh.maxZ,rot);
+    return {...sh,minX:Math.min(a[0],b[0]),minZ:Math.min(a[1],b[1]),maxX:Math.max(a[0],b[0]),maxZ:Math.max(a[1],b[1])};
+  });
+}
+
 export class GreenhouseProgressionSystem {
   constructor(scene,{state,world}){
     this.scene=scene;this.state=state;this.world=world;
     this.entries=new Map();this.level=0;this.anim=null;this.cameraExtra=0;this.interaction=null;
-    this.origin=new THREE.Vector3(ROOT_X,0,ROOT_Z);
+    this.origin=new THREE.Vector3(ROOT_X,0,ROOT_Z);this.rot=0;
     const params=new URLSearchParams(location.search);
     this.devMode=params.get('dev')==='1';
     this.devEphemeral=this.devMode&&params.get('ghpersist')!=='1'&&params.has('ghlevel');
@@ -112,7 +127,7 @@ export class GreenhouseProgressionSystem {
     const gltf=await new GLTFLoader().loadAsync(ASSETS[level]);
     const root=gltf.scene;
     root.name=`GreenhouseProgression_L${level}`;
-    root.position.copy(this.origin);
+    root.position.copy(this.origin);root.rotation.y=this.yaw();
     root.visible=false;
     root.traverse(o=>{
       if(!o.isMesh)return;
@@ -186,8 +201,19 @@ export class GreenhouseProgressionSystem {
     this.state.events.emit('greenhouse:level-changed',{level:this.level,from:a.from});
   }
 
+  yaw(){const a=(this.rot&3)*Math.PI/2;return a>Math.PI?a-2*Math.PI:a;}
+  // R60: place the whole greenhouse (all three levels, collision, camera walls, interaction, pots).
+  setPlacement(x,z,rot=0){
+    this.origin.set(x,0,z);this.rot=rot&3;
+    for(const e of this.entries.values()){e.root.position.copy(this.origin);e.root.rotation.y=this.yaw();e.root.updateMatrixWorld(true);e.cameraBox.setFromObject(e.root);}
+    this.syncCollision();
+    this.state.events.emit('greenhouse:placed',{x,z,rot:this.rot});
+  }
+  // Greenhouse-local point (+z = door side) to world.
+  localToWorld(lx,lz){const [dx,dz]=rotPoint(lx,lz,this.rot);return {x:this.origin.x+dx,z:this.origin.z+dz};}
+
   interactionPoint(level=this.level){
-    return {x:ROOT_X,z:ROOT_Z+FRONT[level]+INTERACTION_PAD};
+    return this.localToWorld(0,FRONT[level]+INTERACTION_PAD);
   }
 
   collisionLevel(){
@@ -197,7 +223,7 @@ export class GreenhouseProgressionSystem {
 
   syncCollision(){
     const level=this.collisionLevel();
-    this.world.setGreenhouseCollision?.(COLLISION[level],ROOT_X,ROOT_Z);
+    this.world.setGreenhouseCollision?.(rotateShapes(COLLISION[level],this.rot),this.origin.x,this.origin.z);
   }
 
   update(dt,time,character){
@@ -226,7 +252,8 @@ export class GreenhouseProgressionSystem {
   cameraOcclusionDistance(start,end,maxDist,margin=.20){
     if(this.world?.space!=='garden')return maxDist;
     const shown=this.anim?.to||(this.level===0?1:this.level),shapes=CAMERA_COLLISION[shown]||[];
-    const ax=start.x-ROOT_X,az=start.z-ROOT_Z,bx=end.x-ROOT_X,bz=end.z-ROOT_Z;
+    // World ray into greenhouse-local space (inverse quarter turn; identity at the default rot 0).
+    const inv=(4-this.rot)&3,[ax,az]=rotPoint(start.x-this.origin.x,start.z-this.origin.z,inv),[bx,bz]=rotPoint(end.x-this.origin.x,end.z-this.origin.z,inv);
     let best=maxDist;
     for(const shape of shapes){
       if(shape.kind!=='wall')continue;

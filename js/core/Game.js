@@ -30,6 +30,7 @@ import { QualityManager, QUALITY } from './Quality.js';
 import { InteractionResolver } from './InteractionResolver.js';
 import { log, warn } from '../dev/Log.js';
 import { BoatEconomySystem } from '../gameplay/BoatEconomySystem.js';
+import { GardenBuildSystem } from '../gameplay/GardenBuildSystem.js';
 
 export class Game {
   async init({characterId='succulent',devMode=false}={}){
@@ -88,7 +89,9 @@ export class Game {
     optional('map',()=>this.worldMap.ready);
     // Core loop v1 (shared world). DEV routes use a throwaway profile that is never written.
     this.save=new SaveGame({characterId:this.state.player.characterId,ephemeral:devMode});
-    this.wilds=new WildsLoopSystem({world:this.world,state:this.state,save:this.save,hud:this.hud,greenhouse:null}).init();
+    // R60: placed structures (greenhouse, workshop, rain, shrine) come from the GardenBuildSystem.
+    this.garden=new GardenBuildSystem({profile:this.save.profile,world:this.world});
+    this.wilds=new WildsLoopSystem({world:this.world,state:this.state,save:this.save,hud:this.hud,greenhouse:null,garden:this.garden}).init();
     this.workbenchPanel=new WorkbenchPanel({wilds:this.wilds,state:this.state});
     this.wilds.onOpenWorkbench=()=>{this.workbenchPanel.show();this.input.resetTouchPointers?.();};
     const syncTools=()=>this.hud.setTools?.(this.wilds.profile.tools,this.wilds.profile.water);this.wilds.onChange(syncTools);syncTools();
@@ -115,7 +118,7 @@ export class Game {
       attach(stablePromise,s=>{this.stable=s;this.world.stableCollisionResolver=(p,r)=>s.resolveCollisions(p,r);s.bindRuntime({character:this.character,renderer:this.renderer});s.bindRuntime({input:this.input,hud:this.hud,followCamera:this.followCamera});this.cameraOcclusion.stable=s;this.structureVisibility.stable=s;}),
       attach(collectiblePromise,c=>{this.collectible=c;}),
       attach(choicePromise,c=>{this.choiceWorld=c;}),
-      attach(greenhousePromise,g=>{this.greenhouse=g;this.wilds.setGreenhouse(g);this.cameraOcclusion.greenhouse=g;this.structureVisibility.greenhouse=g;}),
+      attach(greenhousePromise,g=>{const gt=this.garden.transformOf('greenhouse');g.setPlacement(gt.x,gt.z,gt.rot);this.greenhouse=g;this.wilds.setGreenhouse(g);this.cameraOcclusion.greenhouse=g;this.structureVisibility.greenhouse=g;}),
       attach(orangeryPromise,o=>{this.orangery=o;this.cameraOcclusion.orangery=o;this.structureVisibility.orangery=o;}),
       attach(fishingPromise,f=>{this.fishing=f;try{this.boatEco=new BoatEconomySystem({fishing:f,wilds:this.wilds,hud:this.hud}).init();}catch(e){warn('BOAT','economy disabled',e);this.failed.push('boat');}})
     ]).then(()=>{mark('allSystemsReadyMs');log('LOAD','background systems ready',this.startupMetrics);if(this.failed.length)this.hud.showToast?.(`Some parts could not load: ${this.failed.join(', ')}`);});

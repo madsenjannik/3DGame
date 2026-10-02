@@ -116,8 +116,10 @@ export class DevMenu {
       w.save.persist(); this.toast('Tiden er spolet 5 min frem');
     } else if (a.startsWith('tp:')) {
       const t = a.slice(3), hp = g.homePortal;
-      if (t === 'bench') this.teleport('garden', 4.7, 7.6, Math.PI / 2);
-      else if (t === 'greenhouse') this.teleport('garden', 6.5, -9.3, Math.PI);
+      // R60: follow the placed structures (front of the workshop / greenhouse door), not fixed coordinates.
+      const front = (id, d, fb) => { const t = w.structureAt(id), p = w.at(id, 0, d); return p ? [p.x, p.z, t.yaw + Math.PI] : fb; };
+      if (t === 'bench') { const [x, z, h] = front('workshop', 1.3, [4.7, 7.6, Math.PI / 2]); this.teleport('garden', x, z, h); }
+      else if (t === 'greenhouse') { const [x, z, h] = front('greenhouse', 1.9, [6.5, -9.3, Math.PI]); this.teleport('garden', x, z, h); }
       else if (t === 'pond') this.teleport('garden', -3.9, 1.15, Math.PI);
       else if (t === 'gate') { const s = hp?.gardenSpawn?.() || { x: 0, z: 9.65, heading: Math.PI }; this.teleport('garden', s.x, s.z, s.heading); }
       else if (t === 'dock') { const sp = g.fishing?.shopPoint; if (!sp) return this.toast('Fiskeri er ikke indlæst endnu'); this.teleport('world', sp.x, sp.z, 0); }

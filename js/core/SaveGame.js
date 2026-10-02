@@ -20,7 +20,8 @@ function blankProfile() {
     perks: {},            // golden-seed perk id -> true
     daily: { date: '', done: {}, progress: {}, streak: 0, lastDate: '' },
     fishing: { starter: false, own: {}, log: {} },   // R58: Sigurd's gear + catch log (was memory-only)
-    boat: { owned: false, trips: 0, waterfall: 0, lastReward: '' } // R58 boat economy
+    boat: { owned: false, trips: 0, waterfall: 0, lastReward: '' }, // R58 boat economy
+    garden: null          // R60 GardenBuildSystem: { version, plots[], buildings[{ id, type, gx, gz, rot }] }
   };
 }
 
@@ -35,7 +36,7 @@ function migrate(raw) {
     if (old >= 1) p.pots = { count: 1, slots: [null, null, null] };
   }
   // v3: no data change — adds the meta stamp (build, savedAt) written on every flush.
-  // R58 adds profile.fishing + profile.boat; additive with defaults, so no version bump.
+  // R58 adds profile.fishing + profile.boat, R60 profile.garden; additive with defaults, so no version bump.
   save.version = SAVE_VERSION;
   return save;
 }
@@ -59,7 +60,9 @@ function validProfile(p) {
   out.threat.started = Number.isFinite(t.started) ? t.started : 0;
   out.threat.lastSpawn = Number.isFinite(t.lastSpawn) ? t.lastSpawn : 0;
   out.threat.lastSnail = Number.isFinite(t.lastSnail) ? t.lastSnail : 0;
-  if (Array.isArray(t.weeds)) out.threat.weeds = t.weeds.filter(w => w && typeof w.id === 'string' && Number.isInteger(w.spot) && Number.isFinite(w.bornAt)).slice(0, 24);
+  // Weeds: pre-R60 records carry a spot index, R60+ records also carry their own x/z (both formats load).
+  if (Array.isArray(t.weeds)) out.threat.weeds = t.weeds.filter(w => w && typeof w.id === 'string' && Number.isFinite(w.bornAt) && (Number.isInteger(w.spot) || (Number.isFinite(w.x) && Number.isFinite(w.z))))
+    .slice(0, 24).map(w => { const r = { id: w.id, bornAt: w.bornAt }; if (Number.isInteger(w.spot)) r.spot = w.spot; if (Number.isFinite(w.x) && Number.isFinite(w.z)) { r.x = w.x; r.z = w.z; } return r; });
   for (const [k, v] of Object.entries(p.perks || {})) if (v === true) out.perks[k] = true;
   const d = p.daily || {};
   if (typeof d.date === 'string') out.daily.date = d.date;
@@ -76,6 +79,12 @@ function validProfile(p) {
   out.boat.trips = Math.max(0, b.trips | 0);
   out.boat.waterfall = Math.max(0, b.waterfall | 0);
   if (typeof b.lastReward === 'string') out.boat.lastReward = b.lastReward;
+  // R60 GardenBuildSystem placements (absent = catalog defaults = the pre-R60 layout).
+  const g = p.garden;
+  if (g && typeof g === 'object') {
+    out.garden = { version: 1, plots: Array.isArray(g.plots) ? g.plots.filter(x => typeof x === 'string').slice(0, 32) : [], buildings: [] };
+    if (Array.isArray(g.buildings)) for (const x of g.buildings.slice(0, 64)) if (x && typeof x.id === 'string' && typeof x.type === 'string' && Number.isInteger(x.gx) && Number.isInteger(x.gz) && Number.isInteger(x.rot)) out.garden.buildings.push({ id: x.id, type: x.type, gx: x.gx, gz: x.gz, rot: x.rot & 3 });
+  }
   return out;
 }
 

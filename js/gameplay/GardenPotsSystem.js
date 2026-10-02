@@ -8,7 +8,7 @@ import { POTS, MATERIALS } from '../data/wildsCatalog.js';
 import { WildsModel } from './WildsModels.js';
 const PLANT_CLIPS = ['Seed', 'Sprout', 'Bud', 'Bloom']; // R59.2 garden_pot_plant.glb stage loops
 
-const GH = { x: 6.5, z: -11.2 };                 // GreenhouseProgressionSystem ROOT_X / ROOT_Z
+const GH = { x: 6.5, z: -11.2 };                 // fallback only until the greenhouse attaches (R60: slots follow its placement)
 // Slots per greenhouse level, local to the greenhouse root: [x, y(top of furniture), z].
 const SLOTS = {
   1: [[-0.64, .67, -0.28], [0, .67, -0.64], [0.64, .67, 0.1]],    // L1 U-shaped lower shelf
@@ -80,11 +80,16 @@ export class GardenPotsSystem {
     s.pot.clear(); s.pot.add(this.potTemplate.clone(true));
   }
 
+  // R60: slots are greenhouse-local and follow the placed greenhouse (GardenBuildSystem → setPlacement).
   placeForLevel() {
-    const lvl = this.gh?.level || 0;
-    if (lvl === this.level) return; this.level = lvl;
+    const gh = this.gh, lvl = gh?.level || 0, key = gh ? `${lvl}|${gh.origin.x}|${gh.origin.z}|${gh.rot}` : `${lvl}`;
+    if (key === this.placedKey) return; this.placedKey = key; this.level = lvl;
     const set = SLOTS[lvl];
-    this.slots.forEach((s, i) => { if (set) s.g.position.set(GH.x + set[i][0], set[i][1], GH.z + set[i][2]); });
+    this.slots.forEach((s, i) => {
+      if (!set) return;
+      const p = gh?.localToWorld ? gh.localToWorld(set[i][0], set[i][2]) : { x: GH.x + set[i][0], z: GH.z + set[i][2] };
+      s.g.position.set(p.x, set[i][1], p.z); s.g.rotation.y = gh?.yaw ? gh.yaw() : 0;
+    });
   }
 
   // ---------- state ----------

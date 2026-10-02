@@ -14,8 +14,10 @@ import { loadWildsModels, loadGardenModels, WildsModel } from './WildsModels.js'
 
 const HOME = { x: 0, z: 4.7 };
 // Private-garden placements (garden space, ground y = 0). The workbench replaces the old Lookout site.
-const WORKBENCH = { x: 6.0, z: 7.6, ry: -Math.PI / 2 };
-const BARREL = { x: -6.6, z: .8 }, SHRINE = { x: -9.2, z: 2.8 };
+// R60: workshop / rain / shrine positions come from GardenBuildSystem (placed transforms, profile.garden).
+// These are only the fallback when no placement system is attached (identical to the catalog defaults).
+const FALLBACK = { workshop: { x: 6.0, z: 7.6, rot: 3, yaw: -Math.PI / 2 }, rain: { x: -6.6, z: .8, rot: 0, yaw: 0 }, shrine: { x: -9.2, z: 2.8, rot: 0, yaw: 0 } };
+const QSC = [[0, 1], [1, 0], [0, -1], [-1, 0]];
 const HEDGE = [[-11.3, -9.5], [-11.3, -5.5], [-11.3, -1.5], [-11.3, 2.5], [-11.3, 6.0], [11.3, -5.0], [11.3, -1.0], [11.3, 3.0], [-7.5, -12.9], [-3.0, -12.9]];
 const COMMON = ['wood', 'stone', 'clay', 'fiber'];
 const big0 = kind => kind === 'oldlog' || kind === 'boulder';
@@ -46,7 +48,8 @@ function labelSprite(text, width = 420) {
 function costMet(inv, cost) { return Object.entries(cost).every(([id, n]) => (inv.get(id) || 0) >= n); }
 
 export class WildsLoopSystem {
-  constructor({ world, state, save, hud, greenhouse }) {
+  constructor({ world, state, save, hud, greenhouse, garden }) {
+    this.garden = garden || null;
     this.world = world; this.L = world.sharedLandscape; this.state = state; this.save = save; this.hud = hud;
     this.profile = save.profile;
     this.root = new THREE.Group(); this.root.name = 'WILDS_CORE_LOOP'; this.L.root.add(this.root);
@@ -103,6 +106,12 @@ export class WildsLoopSystem {
     if (on && !present) lists.forEach(l => l.push(o));
     if (!on && present) lists.forEach(l => { const i = l.indexOf(o); if (i >= 0) l.splice(i, 1); });
   }
+
+  // ---------- R60 placed structures ----------
+  // (named `structureAt` because `this.placed` is the node-placement list)
+  structureAt(id) { return this.garden?.transformOf(id) || FALLBACK[id]; }
+  // Structure-local point (+z = front) to world for a placed structure.
+  at(id, lx = 0, lz = 0) { const t = this.structureAt(id), [s, c] = QSC[t.rot & 3]; return { x: t.x + lx * c + lz * s, z: t.z - lx * s + lz * c }; }
 
   // R58 progression-aware guidance shared by the HUD objective card and the workbench panel.
   // Returns { title, copy } for the single most useful next step.
@@ -271,7 +280,8 @@ export class WildsLoopSystem {
   canCut() { return this.has('sickle') || !!this.passive?.thornHands; }
   // Garden props a weed must not sprout on.
   homeProps() {
-    return [{ x: WORKBENCH.x, z: WORKBENCH.z, r: 1.1 }, { x: BARREL.x, z: BARREL.z, r: .9 }, { x: BARREL.x - .95, z: BARREL.z, r: .8 }, { x: SHRINE.x, z: SHRINE.z, r: 1 }];
+    const w = this.at('workshop'), b = this.at('rain'), c = this.at('rain', -.95, 0), sh = this.at('shrine');
+    return [{ x: w.x, z: w.z, r: 1.1 }, { x: b.x, z: b.z, r: .9 }, { x: c.x, z: c.z, r: .8 }, { x: sh.x, z: sh.z, r: 1 }];
   }
   plantSeed(perkId) {
     const perk = PERKS.find(p => p.id === perkId);
@@ -289,8 +299,8 @@ export class WildsLoopSystem {
 
   // ---------- workbench + home upgrades ----------
   buildWorkbench() {
-    const g = new THREE.Group(), m = this.mat, w = WORKBENCH;
-    g.position.set(w.x, 0, w.z); g.rotation.y = w.ry;
+    const g = new THREE.Group(), m = this.mat, w = this.structureAt('workshop');
+    g.position.set(w.x, 0, w.z); g.rotation.y = w.yaw;
     g.add(this.mesh(new THREE.BoxGeometry(1.5, .1, .72), m.plankLight, [0, .78, 0]));
     for (const x of [-.66, .66]) for (const z of [-.28, .28]) g.add(this.mesh(new THREE.BoxGeometry(.09, .78, .09), m.plank, [x, .39, z]));
     g.add(this.mesh(new THREE.BoxGeometry(1.4, .06, .6), m.plank, [0, .25, 0]));
@@ -315,9 +325,9 @@ export class WildsLoopSystem {
 
   buildHomeUpgrades() {
     const m = this.mat, rand = rng(99);
-    const at = (x, z, ry = 0) => { const g = new THREE.Group(); g.position.set(x, 0, z); g.rotation.y = ry; g.visible = false; this.gardenRoot.add(g); return g; };
+    const at = (id) => { const t = this.structureAt(id), g = new THREE.Group(); g.position.set(t.x, 0, t.z); g.rotation.y = t.yaw; g.visible = false; this.gardenRoot.add(g); return g; };
     // L1: rain barrel + compost bin by the garden pond.
-    const l1 = at(BARREL.x, BARREL.z);
+    const l1 = at('rain');
     l1.add(this.mesh(new THREE.CylinderGeometry(.36, .32, .9, 12), m.plank, [0, .45, 0]));
     l1.add(this.mesh(new THREE.CylinderGeometry(.33, .33, .03, 12), m.water, [0, .88, 0], [1, 1, 1], [0, 0, 0], false));
     for (const y of [.2, .7]) l1.add(this.mesh(new THREE.TorusGeometry(.355, .018, 5, 16), m.stoneDark, [0, y, 0], [1, 1, 1], [Math.PI / 2, 0, 0], false));
@@ -325,7 +335,7 @@ export class WildsLoopSystem {
     l1.add(this.mesh(new THREE.SphereGeometry(.38, 8, 6), m.soil, [-.95, .5, 0], [1, .45, 1], [0, 0, 0], false));
     this.upgradeL1 = l1;
     // L2: seed shrine with a floating golden seed.
-    const l2 = at(SHRINE.x, SHRINE.z);
+    const l2 = at('shrine');
     l2.add(this.mesh(new THREE.CylinderGeometry(.55, .7, .4, 8), m.stone, [0, .2, 0]));
     l2.add(this.mesh(new THREE.CylinderGeometry(.3, .4, .7, 8), m.stoneDark, [0, .75, 0]));
     const seed = this.mesh(new THREE.SphereGeometry(.16, 14, 10), m.gold, [0, 1.45, 0], [.82, 1.2, .82]); l2.add(seed);
@@ -341,7 +351,8 @@ export class WildsLoopSystem {
       b.add(this.mesh(new THREE.ConeGeometry(.05, .2, 4), m.thornDark, [-.3, .45, -.1], [1, 1, 1], [0, 0, 1.2], false));
     }
     const mk = (x, z, r, kind) => { const o = { x, z, r, height: 1, kind, traversal: 'blocked', space: 'garden' }; return o; };
-    this.upgradeObstacles = [mk(BARREL.x, BARREL.z, .55, 'wilds-barrel'), mk(BARREL.x - .95, BARREL.z, .5, 'wilds-compost'), mk(SHRINE.x, SHRINE.z, .65, 'wilds-shrine')];
+    const b = this.at('rain'), c = this.at('rain', -.95, 0), sh = this.at('shrine');
+    this.upgradeObstacles = [mk(b.x, b.z, .55, 'wilds-barrel'), mk(c.x, c.z, .5, 'wilds-compost'), mk(sh.x, sh.z, .65, 'wilds-shrine')];
   }
 
   applyHomeLevel(celebrate) {
@@ -656,7 +667,7 @@ export class WildsLoopSystem {
     const px = character.position.x, pz = character.position.z;
     this.threat?.update(dt, time, character, offer);
     this.pots?.update(dt, time, character, offer);
-    const w = this.workbench, wd = Math.hypot(px - WORKBENCH.x, pz - WORKBENCH.z), wNear = wd < 1.9;
+    const wp = this.structureAt('workshop'), w = this.workbench, wd = Math.hypot(px - wp.x, pz - wp.z), wNear = wd < 1.9;
     w.near += ((wNear ? 1 : 0) - w.near) * damp(6, dt);
     w.glow.material.opacity = .16 + w.near * .3 + Math.sin(time * 1.6) * .04;
     if (wNear) offer({ type: 'wilds-workbench', distance: wd, label: 'Use Workbench' });
