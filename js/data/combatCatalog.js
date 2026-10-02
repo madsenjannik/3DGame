@@ -41,6 +41,10 @@ export const MOLE = {
   firstBonus: { amber: 1 }   // first Mole ever (Golden Seeds stay reserved for caches/streaks/bosses)
 };
 
+// R62: garden snails on the same contract. They crawl to potted plants (eat them), turn on you when
+// you stand next to them, and drop shells. The private garden is a safe zone: they can hurt, never wilt you.
+export const SNAIL = { scale: 1.6, biteRange: 1.1, biteEvery: 2.2, biteHitAt: .45, biteDamage: 1 };
+
 export const WILT = {
   dropShare: .5,                                  // half of each common material (rounded down)
   materials: ['wood', 'stone', 'clay', 'fiber'],  // amber, shells, seeds and tools are never lost

@@ -4,6 +4,8 @@
 import * as THREE from 'three';
 import { THREAT } from '../data/wildsCatalog.js';
 import { WildsModel } from './WildsModels.js';
+import { loadGLTF } from '../core/AssetManager.js';
+import { SNAIL } from '../data/combatCatalog.js';
 const WEED_STAGES = ['Spire', 'Busk', 'Tornet']; // R59.2 garden_weeds.glb subtrees, one per stage
 
 // R60: the greenhouse position comes from GardenBuildSystem (placed transform), not a constant.
@@ -21,6 +23,8 @@ export class WildsThreatSystem {
     this.w = wilds; this.p = wilds.profile.threat; this.weeds = []; this.snails = []; this.snailSeq = 0;
     this.root = new THREE.Group(); this.root.name = 'WILDS_THREAT'; wilds.gardenRoot.add(this.root);
     this.buildAssets(); this.buildSpots();
+    // R62: Jannik's snail (Idle/Crawl/Attack/Hit/Defeat) on the R61 enemy contract; placeholder if it fails.
+    loadGLTF('./assets/combat/enemy_snail.glb').then(g => { this.snailGltf = g; }).catch(e => console.warn('[TGW] snail model missing; keeping the placeholder', e));
     // Weeds keep their own position (R60). Pre-R60 records only had a spot index: resolve it once against
     // the default spot table (identical to before) and store x/z, so a later greenhouse move cannot shift them.
     let migrated = false;
@@ -157,20 +161,26 @@ export class WildsThreatSystem {
       const x = side === 0 ? -11 : side === 1 ? 11 : -10 + t * 20, z = side === 2 ? -12.6 : -12 + t * 18;
       if (x > 3 && x < 10 && z < -8) continue;
       const root = new THREE.Group(); root.position.set(x, 0, z); this.root.add(root);
-      const body = this.mesh(new THREE.CapsuleGeometry(.11, .42, 3, 8), this.m.body, [0, .1, 0], [0, 0, Math.PI / 2]); root.add(body);
-      const shell = new THREE.Group(); shell.position.set(-.06, .27, 0); root.add(shell);
-      shell.add(this.mesh(new THREE.SphereGeometry(.2, 10, 8), this.m.shell, [0, 0, 0], [0, 0, 0], [1, 1, .8]));
-      shell.add(this.mesh(new THREE.TorusGeometry(.12, .035, 5, 14), this.m.shellDark, [0, 0, .15], [0, 0, 0]));
-      for (const zz of [-.05, .05]) { root.add(this.mesh(new THREE.CylinderGeometry(.012, .012, .18, 4), this.m.body, [.26, .26, zz], [0, 0, -.35])); root.add(this.mesh(new THREE.SphereGeometry(.03, 6, 5), this.m.eye, [.3, .35, zz])); }
-      const s = { id: ++this.snailSeq, root, shell, x, z, hp: THREAT.snailHp, state: 'crawl', t: 0, hitT: 0, target: null, eatT: 0, ph: Math.random() * 6 };
+      let shell = new THREE.Group(), model = null;
+      if (this.snailGltf) { model = new WildsModel(this.snailGltf, 'snail', { scale: SNAIL.scale }); root.add(model.root); model.loop('Crawl'); }
+      else {
+        const body = this.mesh(new THREE.CapsuleGeometry(.11, .42, 3, 8), this.m.body, [0, .1, 0], [0, 0, Math.PI / 2]); root.add(body);
+        shell.position.set(-.06, .27, 0); root.add(shell);
+        shell.add(this.mesh(new THREE.SphereGeometry(.2, 10, 8), this.m.shell, [0, 0, 0], [0, 0, 0], [1, 1, .8]));
+        shell.add(this.mesh(new THREE.TorusGeometry(.12, .035, 5, 14), this.m.shellDark, [0, 0, .15], [0, 0, 0]));
+        for (const zz of [-.05, .05]) { root.add(this.mesh(new THREE.CylinderGeometry(.012, .012, .18, 4), this.m.body, [.26, .26, zz], [0, 0, -.35])); root.add(this.mesh(new THREE.SphereGeometry(.03, 6, 5), this.m.eye, [.3, .35, zz])); }
+      }
+      const s = { id: ++this.snailSeq, root, shell, model, x, z, hp: THREAT.snailHp, state: 'crawl', t: 0, hitT: 0, target: null, eatT: 0, ph: Math.random() * 6, biteT: 0 };
       root.scale.setScalar(.001); s.grow = 0; this.snails.push(s);
       return s;
     }
   }
 
-  swat(snail, character) {
+  // R62: strikes come from CombatSystem (damage = your tool); the old 'Swat' = 1 damage.
+  swat(snail, character, dmg = 1) {
     if (snail.state === 'dying') return false;
-    snail.hp--; snail.hitT = .35; character.flash();
+    snail.hp -= dmg; snail.hitT = .35; character.flash();
+    if (snail.model && snail.hp > 0) snail.model.play(['Hit'], () => snail.model.loop('Crawl'));
     const dx = snail.x - character.position.x, dz = snail.z - character.position.z, d = Math.hypot(dx, dz) || 1;
     snail.x += dx / d * .9; snail.z += dz / d * .9; snail.eatT = 0;
     if (snail.hp <= 0) {
@@ -217,6 +227,11 @@ export class WildsThreatSystem {
 
     for (const s of this.snails) {
       if (s.grow < 1) { s.grow = Math.min(1, s.grow + dt * 1.2); s.root.scale.setScalar(Math.max(.001, ease(s.grow))); }
+      s.model?.update(dt);
+      if (s.state === 'dying' && s.model) {
+        if (!s.defeatPlayed) { s.defeatPlayed = true; s.model.play(['Defeat'], () => { s.state = 'gone'; this.root.remove(s.root); }); }
+        continue;
+      }
       if (s.state === 'dying') {
         s.t += dt; const p = Math.min(1, s.t / .5); s.root.scale.setScalar(Math.max(.001, 1 - ease(p))); s.root.position.y += dt * .8; s.root.rotation.y += dt * 9;
         if (p >= 1) { s.state = 'gone'; this.root.remove(s.root); }
@@ -226,19 +241,27 @@ export class WildsThreatSystem {
       const pool = this.w.pots?.targets() || [];
       if (!pool.length) { s.state = 'dying'; s.t = 0; continue; }
       let tgt = pool[0], best = 1e9; for (const b of pool) { const d = Math.hypot(b.x - s.x, b.z - s.z); if (d < best) { best = d; tgt = b; } }
-      if (best > .55) {
+      const d = Math.hypot(px - s.x, pz - s.z), busy = s.model?.busy();
+      s.biteT = Math.max(0, s.biteT - dt);
+      if (d < SNAIL.biteRange && this.w.combat) {
+        // R62: a snail you stand next to turns on you (half a heart; the garden never makes you wilt).
+        s.root.rotation.y = Math.atan2(-(pz - s.z), px - s.x);
+        if (s.biteT <= 0 && s.hitT <= 0) { s.biteT = SNAIL.biteEvery; s.pendingBite = SNAIL.biteHitAt; s.model?.play(['Attack'], () => s.model.loop('Idle')); }
+        else if (!busy) s.model?.loop('Idle');
+      } else if (best > .55) {
         const sp = THREAT.snailSpeed * (s.hitT > 0 ? 0 : 1), dx = tgt.x - s.x, dz = tgt.z - s.z;
         s.x += dx / best * sp * dt; s.z += dz / best * sp * dt; s.root.rotation.y = Math.atan2(-dz, dx);
+        if (!busy) s.model?.loop('Crawl');
       } else {
-        s.eatT += dt;
+        s.eatT += dt; if (!busy) s.model?.loop('Attack');   // munching the plant
         if (s.eatT > 5) { s.eatT = 0; if (this.w.pots.eat(tgt.i)) this.w.hud?.showToast('A snail is eating your plant!'); }
       }
+      if (s.pendingBite > 0) { s.pendingBite -= dt; if (s.pendingBite <= 0 && d < SNAIL.biteRange + .4) this.w.combat?.hurt(SNAIL.biteDamage, s.x, s.z); }
       s.hitT = Math.max(0, s.hitT - dt);
       const wob = Math.sin(time * 6 + s.ph) * .04;
-      s.root.position.set(s.x, s.hitT > 0 ? Math.sin(s.hitT * 30) * .05 : 0, s.z);
-      s.shell.scale.set(1 + wob, 1 - wob, 1);
-      const d = Math.hypot(px - s.x, pz - s.z);
-      if (d < 1.5) offer({ type: 'wilds-snail', snail: s, distance: d, label: 'Swat Snail' });
+      s.root.position.set(s.x, s.hitT > 0 && !s.model ? Math.sin(s.hitT * 30) * .05 : 0, s.z);
+      if (!s.model) s.shell.scale.set(1 + wob, 1 - wob, 1);
+      if (d < 1.5 && !this.w.combat) offer({ type: 'wilds-snail', snail: s, distance: d, label: 'Swat Snail' });  // R62: CombatSystem offers Strike instead
     }
     this.snails = this.snails.filter(s => s.state !== 'gone');
   }

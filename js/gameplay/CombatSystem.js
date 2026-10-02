@@ -167,10 +167,13 @@ export class CombatSystem {
 
   // ---------- player ----------
   weapon() { const id = WEAPON_ORDER.find(t => this.w.has(t)); return id ? WEAPONS[id] : WEAPONS.hands; }
+  // Nearest hittable enemy: Moles in the wilds, snails in the private garden (R62).
   target(reach) {
-    const ch = this.g.character; let best = null, bd = Infinity;
-    for (const m of this.moles) { if (!VULNERABLE.has(m.state)) continue; const d = Math.hypot(ch.position.x - m.x, ch.position.z - m.z); if (d < reach && d < bd) { bd = d; best = m; } }
-    return best ? { m: best, d: bd } : null;
+    const ch = this.g.character, garden = this.g.world.space === 'garden'; let best = null;
+    const consider = (kind, e) => { const d = Math.hypot(ch.position.x - e.x, ch.position.z - e.z); if (d < reach && (!best || d < best.d)) best = { kind, m: e, d, x: e.x, z: e.z }; };
+    if (garden) { for (const sn of this.w.threat?.snails || []) if (sn.state !== 'dying' && sn.state !== 'gone') consider('snail', sn); }
+    else for (const m of this.moles) if (VULNERABLE.has(m.state)) consider('mole', m);
+    return best;
   }
   attack() {
     if (this.cd > 0 || this.wilting) return false;
@@ -180,12 +183,15 @@ export class CombatSystem {
     const step = t ? Math.max(0, Math.min(.6, t.d - 1.0)) : .2;
     ch.position.x += Math.sin(ch.heading) * step; ch.position.z += Math.cos(ch.heading) * step; this.g.world.resolveCollisions?.(ch.position, .3);
     ch.flash?.();
+    if (t?.kind === 'snail') { this.lastCombat = this.time; return this.w.threat.swat(t.m, ch, wpn.dmg); }
     if (t) return this.hitMole(t.m, wpn.dmg);   // same range as the Strike prompt: what you are offered, you hit
     return false;
   }
   hurt(amount, fx, fz) {
-    if (this.invuln > 0 || this.wilting || this.g.world.space !== 'world') return false;
-    this.hp = Math.max(0, this.hp - amount); this.invuln = PLAYER.invuln; this.lastHit = this.time; this.lastCombat = this.time;
+    const space = this.g.world.space;
+    if (this.invuln > 0 || this.wilting || (space !== 'world' && space !== 'garden')) return false;
+    // The private garden is a safe zone (R62): snails can hurt you there, but never below half a heart.
+    this.hp = space === 'garden' ? Math.max(Math.min(this.hp, 1), this.hp - amount) : Math.max(0, this.hp - amount); this.invuln = PLAYER.invuln; this.lastHit = this.time; this.lastCombat = this.time;
     const ch = this.g.character, dx = ch.position.x - fx, dz = ch.position.z - fz, l = Math.hypot(dx, dz) || 1;
     ch.position.x += dx / l * PLAYER.knockback; ch.position.z += dz / l * PLAYER.knockback; this.g.world.resolveCollisions?.(ch.position, .3);
     ch.flash?.(); document.body.classList.remove('hurt-flash'); void document.body.offsetWidth; document.body.classList.add('hurt-flash');
@@ -253,6 +259,11 @@ export class CombatSystem {
     this.time = time; this.cd = Math.max(0, this.cd - dt); this.invuln = Math.max(0, this.invuln - dt);
     if (!this.wilting && this.hp < MAX_HP && time - this.lastHit > PLAYER.regenDelay && (time - (this.lastRegen || 0)) > PLAYER.regenEvery) { this.lastRegen = time; this.heal(false); }
     this.hudEl.classList.toggle('show', this.hp < MAX_HP || time - this.lastCombat < 4);
+    if (this.g.world.space === 'garden') {
+      if (!active || this.wilting) return { interaction: null };
+      const wpn = this.weapon(), t = this.target(wpn.reach + .6);
+      return { interaction: t ? { type: 'combat-strike', label: `Strike · ${wpn.name}`, distance: t.d } : null };
+    }
     if (this.g.world.space !== 'world') return { interaction: null };
     const now = Date.now();
     if (!this._tick || time - this._tick > 1) { this._tick = time; this.respawnTick(now); if (this.p.pouches.some(p => p.until <= now)) this.syncPouches(); }

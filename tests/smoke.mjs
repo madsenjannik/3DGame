@@ -208,8 +208,18 @@ try {
         window.__wood = g.state.inventory.get('wood'); c.hp = 1; c.invuln = 0; c.hurt(2, g.character.position.x + .1, g.character.position.z); return { wilt, back }; }));
       await p.waitForFunction(() => !window.__tgw.combat.wilting, null, { timeout: 60000 }).catch(() => {});
       r.mercy = await p.evaluate(() => window.__tgw.state.inventory.get('wood') === window.__wood && window.__tgw.combat.p.pouches.length === 0);
+      // R62 snail in the garden: bites half a heart, garden never goes below half a heart, Strike kills it for a shell.
+      await p.waitForFunction(() => window.__tgw.wilds.threat.snailGltf, null, { timeout: 120000 }).catch(() => {});
+      Object.assign(r, await p.evaluate(() => { const g = window.__tgw, w = g.wilds, t = w.threat, c = g.combat, ch = g.character; c.heal(true); c.invuln = 0;
+        if (g.greenhouse && g.greenhouse.level < 1) { g.greenhouse.level = 1; w.pots.placeForLevel(); } g.devMenu.run('mats'); g.devMenu.run('pots'); w.profile.pots.slots = [{ stage: 1, wet: true, readyAt: 9e12 }, null, null]; if (!t.active()) t.start(Date.now());
+        const sn = t.spawnSnail(); if (!sn) return { snail: 'no spawn' }; g.devMenu.teleport('garden', sn.x + (sn.x > 0 ? -.9 : .9), sn.z, 0);  // always on the garden side of the snail
+        for (let i = 0; i < 40 && c.hp === 10; i++) w.update(.1, i * .1, ch, 'garden'); const bite = c.hp === 9;
+        c.hp = 1; c.invuln = 0; for (let i = 0; i < 40; i++) w.update(.1, i * .1, ch, 'garden'); const safe = c.hp === 1; c.heal(true);
+        const sh = g.state.inventory.get('shell') || 0, offer = c.update(.016, 99, ch, true).interaction?.type === 'combat-strike'; c.cd = 0; c.attack();
+        for (let i = 0; i < 40; i++) w.update(.1, i * .1, ch, 'garden');
+        const ok = !!sn.model && bite && safe && offer && sn.state === 'gone' && (g.state.inventory.get('shell') || 0) > sh; return { snail: ok || JSON.stringify({ m: !!sn.model, bite, safe, offer, st: sn.state, hp: c.hp }) }; }));
     }
-    check('combat: mole cycle, strike + defeat + loot, mole hurts, wilt pouch (half), recover, mercy', ready && r.seq === 'warning>emerge>up' && r.defeated && r.loot >= 2 && r.collected && r.hurt && r.wilt && r.back && r.mercy && !errors.length, errors[0] || JSON.stringify(r));
+    check('combat: mole cycle, strike + defeat + loot, mole hurts, wilt pouch (half), recover, mercy, garden snail', ready && r.seq === 'warning>emerge>up' && r.defeated && r.loot >= 2 && r.collected && r.hurt && r.wilt && r.back && r.mercy && r.snail === true && !errors.length, errors[0] || JSON.stringify(r));
     await ctx.close(); }
   // 5. DEV disabled: no dev UI or handles leak into normal play
   { const ctx = await context({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true }); const { p, errors, ok } = await startGame(ctx, 'daisy', { dev: false });
