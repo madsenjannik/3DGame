@@ -16,7 +16,7 @@
 - **R50.3 (v0.5.30, `CAMERA-R50.3-20261002A`) is LOCKED** (Jannik's plan, 02/10/2026) and is the baseline for all new work:
   R46.2 start/splash, offline cleanup, wilds core loop (R47–R49), dev menu (R50), free camera everywhere (R50.3).
 - **R45 is historical** — a rollback reference only. New builds do **not** start from R45.
-- **In progress: gameplay C (section 31)**: Boat economy done (R58) → combat foundation → Mole → Wood Giant → Lake Run → Thora.
+- **In progress: gameplay C (section 31)**: Boat economy (R58) → combat foundation + Mole (R61) → snail (R62) → Wood Giant (R63) → Lake Run (R64) done → Thora next.
 - Rules: no build without **GO**; every build updates HANDOVER + MASTER in the same commit (§1.7); never change the three greenhouse levels;
   building happens in the private garden.
 
@@ -693,9 +693,9 @@ Do not build boss-specific special architecture before ordinary combat exists.
 
 ---
 
-# 17. LAKE RUN — DEFERRED
+# 17. LAKE RUN — v1 BUILT (R64, CANDIDATE)
 
-Prototype/design exists.
+R64 v1: buoy course on the lake (see the R64 status line in §31 and HANDOVER). Original direction below; ghosts, limited (rewarded) attempts, obstacles (drifting logs) and touch play are in v1; the weekly part is a weekly board + weekly gold bonus (no rotating course yet).
 
 Direction includes:
 - weekly activity
@@ -704,7 +704,7 @@ Direction includes:
 - obstacles
 - mobile interaction
 
-Not current priority.
+v1 is built (R64); next steps only with a new GO.
 
 ---
 
@@ -1574,6 +1574,7 @@ are only touched where a measured hotspot requires it, minimally.
    failure. Must pass before every push (CLAUDE.md rule 5).
 
 **B status 02/10/2026: complete (R51–R57).** On-device check (iPhone, Jannik 02/10): 60 fps steady (frame max 20–24 ms), 217 draw calls / 370k tris in the garden, 363 / 433k at the lake, mobile-high, 1 WebGL context → no perf work needed before C.
+**Lake Run (R64, v0.7.30): C plan step 5 done.** `LakeRunSystem.js` + `LAKE_RUN` (wildsCatalog): buoy course on the lake for Sigurd's boat (start ~6 m off the dock → 6 gates → back), countdown, timer, +1 s shore bump / +2 s drifting log, splits vs PB, medals 45/53/65 s, 3 rewarded runs per day (then practice), first gold +2 Amber, weekly gold +1 Amber, PB ghost boat, seeded weekly board, result card. FishingV1/Boat and the Stable race untouched (reads `f.boat` only). Owned boat = no rent per race. Save `profile.lakeRun`. Not done: boat upgrades (needs a GO on the FishingV1 lock: top speed is capped there), weekly course rotation. Next in C: Thora quest (needs Thora in 3D).
 **Wood Giant tuning (R63.1, v0.7.21):** harder (60 HP, bark 1 / weak ×3, no regen, shockwave to hop over, roots from phase 1) + low-angle boss camera looking up at the Giant; scale 0.65. Tunables in `GIANT` (combatCatalog).
 **Wood Giant (R63, v0.7.20): first boss done** (`WoodGiantBoss.js`, phases, telegraphed Stomp/Slam, root attacks with weak points, weak windows ×2, arena gate/boundary, boss bar, camera pull-back, sink defeat, Golden Seed first win, 24 h rematch). Next in C: Lake Run → Thora quest.
 **Snail enemy (R62, v0.7.10):** garden snails use the enemy contract + GLB; Strike works in the garden; garden = safe zone (min ½ heart).

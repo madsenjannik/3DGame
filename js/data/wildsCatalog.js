@@ -117,3 +117,29 @@ export const BOAT = {
   waterfallReward: { stone: 3, clay: 2, amber: 1 }, // once per day
   firstWaterfall: { golden_seed: 1 }         // the very first time only
 };
+
+// R64 Lake Run: a timed buoy course on the lake for Sigurd's boat (Stable-race principles: checkpoints,
+// timer, penalties, PB, ghost, seeded weekly rivals; own logic and UI, the Stable stays untouched).
+// Gates are world x/z on the lake (centre 95,20, navigable r ≈ 24.8). The run starts at `start` and
+// finishes back through it after every gate in order. Times in seconds.
+export const LAKE_RUN = {
+  start: { x: 105.5, z: 9.5 },
+  gates: [[95, 7], [84, 12], [82, 24], [90, 33], [102, 32], [108, 22]],
+  gateWidth: 5.2,                 // buoy to buoy; you pass when the boat is within half of it
+  startZone: 4,                   // 'Start Lake Run' is offered this close to the start buoys (dock is ~6 m away)
+  countdown: 3,
+  // Drifting logs between gates: centre, drift direction, amplitude (m), period (s).
+  logs: [[100.5, 7.5, 0, 1, 1.6, 5.5], [83, 18, 1, 0, 1.8, 6.5], [96, 33.5, 0, 1, 1.6, 6], [105.5, 27, 1, 0, 1.6, 5]],
+  logRadius: 1.55,                // boat ↔ log hit distance
+  penalty: { shore: 1, log: 2 },  // seconds added
+  medals: [45, 53, 65],           // gold / silver / bronze incl. penalties (autopilot ideal line: 40.4 s clean)
+  attemptsPerDay: 3,              // rewarded runs per day; after that runs still count for PB + board
+  reward: {
+    gold:   { shell: 2, fiber: 4, amber: 1 },
+    silver: { shell: 2, fiber: 3 },
+    bronze: { fiber: 3, wood: 2 }
+  },
+  firstGold: { amber: 2 },        // the very first gold
+  weeklyGold: { amber: 1 },       // first gold of each week
+  ghostEvery: .2                  // ghost sample interval
+};

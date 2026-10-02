@@ -4,6 +4,7 @@
 // The priorities encode the established precedence (locked systems over the wilds loop).
 export const PRIORITY = {
   combat: 70,      // R61: strike a Mole / pick up your wilt pouch (a fight beats everything nearby)
+  lakerun: 65,     // R64: 'Start Lake Run' at the start buoys beats 'Fish' there (Dock is ~6 m away)
   fishing: 60,     // FishingV1 incl. boat board/dock
   stable: 50,      // Stable doors, Thora, RIDE/JUMP
   home: 45,        // shed door / back to the world

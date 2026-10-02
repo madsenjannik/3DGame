@@ -22,6 +22,7 @@ function blankProfile() {
     fishing: { starter: false, own: {}, log: {} },   // R58: Sigurd's gear + catch log (was memory-only)
     boat: { owned: false, trips: 0, waterfall: 0, lastReward: '' }, // R58 boat economy
     combat: { moles: {}, firstMole: false, pouches: [], mercyUntil: 0, giant: { defeatedAt: 0, wins: 0 } }, // R61/R63 combat
+    lakeRun: { best: 0, splits: [], ghost: [], runs: [], day: '', attempts: 0, golds: 0, weekGold: '' }, // R64 Lake Run
     garden: null          // R60 GardenBuildSystem: { version, plots[], buildings[{ id, type, gx, gz, rot }] }
   };
 }
@@ -88,6 +89,14 @@ function validProfile(p) {
   out.combat.giant = { defeatedAt: Number.isFinite(cb.giant?.defeatedAt) ? cb.giant.defeatedAt : 0, wins: Math.max(0, cb.giant?.wins | 0) };
   if (Array.isArray(cb.pouches)) out.combat.pouches = cb.pouches.filter(q => q && typeof q.id === 'string' && Number.isFinite(q.x) && Number.isFinite(q.z) && Number.isFinite(q.until) && q.items && typeof q.items === 'object').slice(-3)
     .map(q => ({ id: q.id, x: q.x, z: q.z, until: q.until, items: Object.fromEntries(Object.entries(q.items).filter(([, n]) => Number.isFinite(n) && n > 0).map(([k, n]) => [k, Math.floor(n)])) }));
+  // R64 Lake Run (additive, v3). Ghost = flat [x, z, yaw, ...] samples of the PB run (boat-local).
+  const lr = p.lakeRun || {}, num = a => Array.isArray(a) ? a.filter(Number.isFinite) : [];
+  out.lakeRun.best = Number.isFinite(lr.best) && lr.best > 0 ? lr.best : 0;
+  out.lakeRun.splits = num(lr.splits).slice(0, 16); out.lakeRun.ghost = num(lr.ghost).slice(0, 3 * 1500);
+  if (Array.isArray(lr.runs)) out.lakeRun.runs = lr.runs.filter(r => r && typeof r.day === 'string' && Number.isFinite(r.t)).slice(-60).map(r => ({ day: r.day, t: r.t }));
+  if (typeof lr.day === 'string') out.lakeRun.day = lr.day;
+  out.lakeRun.attempts = Math.max(0, lr.attempts | 0); out.lakeRun.golds = Math.max(0, lr.golds | 0);
+  if (typeof lr.weekGold === 'string') out.lakeRun.weekGold = lr.weekGold;
   // R60 GardenBuildSystem placements (absent = catalog defaults = the pre-R60 layout).
   const g = p.garden;
   if (g && typeof g === 'object') {

@@ -1066,3 +1066,32 @@ body.hurt-flash::after{content:'';position:fixed;inset:0;pointer-events:none;z-i
 .boss-track i{display:block;height:100%;width:100%;background:linear-gradient(90deg,#7a5230,#c98a4b);transition:width .25s ease}
 .boss-bar.weak .boss-track i{background:linear-gradient(90deg,#d9a441,#ffe08a)}
 @media (max-width:700px) and (orientation:portrait){.boss-bar{top:calc(max(14px,env(safe-area-inset-top)) + 178px)}}
+
+/* R64 Lake Run: race HUD (timer, buoys, splits), countdown, result card */
+.lakerun-hud{position:fixed;left:50%;top:calc(max(14px,env(safe-area-inset-top)) + 70px);transform:translate(-50%,-12px);z-index:31;opacity:0;pointer-events:none;transition:opacity .3s ease,transform .3s ease;
+  min-width:170px;padding:8px 18px 9px;border-radius:16px;background:rgba(28,36,24,.72);border:1px solid rgba(255,241,184,.45);color:#fff1b8;text-align:center;font:800 11px Manrope,system-ui,sans-serif;letter-spacing:.14em;text-transform:uppercase}
+.lakerun-hud.show{opacity:1;transform:translate(-50%,0)}
+.lakerun-hud .lr-time{font-size:30px;letter-spacing:.02em;font-variant-numeric:tabular-nums;color:#fff;line-height:1.15}
+.lakerun-hud .lr-sub{font-weight:700;opacity:.85}
+.lakerun-hud .lr-split{height:0;overflow:hidden;font-size:16px;letter-spacing:.04em;transition:height .2s ease}
+.lakerun-hud .lr-split.show{height:22px}
+.lakerun-hud .lr-split.good{color:#9be38a}.lakerun-hud .lr-split.bad{color:#ff9f7a}
+.lakerun-count{position:fixed;left:50%;top:38%;transform:translate(-50%,-50%) scale(.8);z-index:32;opacity:0;pointer-events:none;transition:opacity .2s ease,transform .2s ease;
+  font:800 88px Manrope,system-ui,sans-serif;color:#fff1b8;text-shadow:0 3px 14px rgba(0,0,0,.45)}
+.lakerun-count.show{opacity:1;transform:translate(-50%,-50%) scale(1)}
+.lakerun-result{position:fixed;left:50%;top:50%;transform:translate(-50%,-46%);z-index:40;width:min(340px,calc(100vw - 32px));max-height:calc(100vh - 32px);overflow:auto;opacity:0;pointer-events:none;transition:opacity .3s ease,transform .3s ease;
+  padding:16px 18px;border-radius:20px;background:rgba(30,38,26,.92);border:1px solid rgba(255,241,184,.45);color:#f4efe4;text-align:center;font:600 13px Manrope,system-ui,sans-serif}
+.lakerun-result.show{opacity:1;pointer-events:auto;transform:translate(-50%,-50%)}
+.lakerun-result>b{display:block;font-weight:800;font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:#fff1b8}
+.lakerun-result .lr-big{font:800 40px Manrope,system-ui,sans-serif;font-variant-numeric:tabular-nums;color:#fff;margin:2px 0}
+.lakerun-result .lr-medal{display:inline-block;padding:3px 12px;border-radius:999px;font-weight:800;font-size:12px;letter-spacing:.1em;text-transform:uppercase;background:rgba(255,255,255,.12)}
+.lakerun-result .lr-medal.gold{background:#d9a441;color:#2a2112}.lakerun-result .lr-medal.silver{background:#c9cdd2;color:#22262a}.lakerun-result .lr-medal.bronze{background:#b0703f;color:#fff}
+.lakerun-result .lr-info{margin:8px 0 6px;opacity:.9}
+.lakerun-result .lr-board{list-style:decimal;margin:0 0 8px;padding:0 0 0 22px;text-align:left;font-variant-numeric:tabular-nums}
+.lakerun-result .lr-board li{padding:2px 0}.lakerun-result .lr-board li span:last-child{float:right}
+.lakerun-result .lr-board li.you{color:#ffd76a;font-weight:800}
+.lakerun-result .lr-reward{font-weight:700;color:#fff1b8;margin-bottom:10px}
+.lakerun-result .lr-btns{display:flex;gap:10px}
+.lakerun-result button{flex:1;min-height:44px;border-radius:14px;border:1px solid rgba(255,241,184,.5);background:rgba(255,241,184,.12);color:#fff1b8;font:800 14px Manrope,system-ui,sans-serif;cursor:pointer}
+.lakerun-result button[data-lr="again"]{background:#d9a441;color:#2a2112;border-color:#d9a441}
+@media (max-width:700px) and (orientation:portrait){.lakerun-hud{top:calc(max(14px,env(safe-area-inset-top)) + 178px)}}

@@ -93,6 +93,26 @@ try {
     }) : {};
     check('boat camera: follows behind the boat, swipe looks around', r.mode === 'boat' && r.behind < .45 && r.swiped && !errors.length, errors[0] || JSON.stringify(r));
     await ctx.close(); }
+  // 7b. R64 Lake Run: start offer at the buoys, countdown holds the boat, buoys in order, log penalty, finish, medal reward, PB + ghost saved
+  { const ctx = await context({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true }); const { p, errors, ok } = await startGame(ctx, 'fern');
+    const ready = ok && await p.waitForFunction(() => window.__tgw?.lakeRun, null, { timeout: 240000 }).then(() => true, () => false);
+    const r = ready ? await p.evaluate(async () => {
+      const g = window.__tgw, f = g.fishing, L = g.lakeRun, B = f.boat, o = {}, inv = id => g.state.inventory.get(id) || 0;
+      L.devToStart(); await new Promise(x => setTimeout(x, 600)); L.devToStart();
+      o.offer = g.interactions.resolve()?.type === 'lakerun-start' || L.interaction()?.type === 'lakerun-start';
+      const amber = inv('amber'); L.begin(); f.input.frameMove = { x: 0, y: 0 };
+      const dt = 1 / 30; let t = 0; const step = () => { t += dt; f.updateBoat(dt, t, true); L.update(dt); };
+      const x0 = B.pos.x; B.tgt = { x: x0 + 5, z: B.pos.z }; for (let i = 0; i < 60; i++) step(); o.held = Math.abs(B.pos.x - x0) < .2 && L.state === 'countdown';
+      for (let i = 0; i < 60 && L.state === 'countdown'; i++) step();
+      let order = true;
+      for (let i = 0; i < 30 * 200 && L.state === 'racing'; i++) { const n = L.next, q = L.seq[n], l = f.boatWorldToLocal(B.homePos.clone().set(q.x, B.homePos.y, q.z)); B.tgt = { x: l.x, z: l.z }; step(); if (L.next > n + 1) order = false; }
+      const res = L.p; o.order = order; o.state = L.state; o.pen = L.pen >= 2; o.pb = res.best > 30 && res.best < 80 && res.ghost.length > 300 && res.splits.length === L.seq.length;
+      o.reward = inv('amber') > amber || inv('fiber') > 0; o.card = document.querySelector('.lakerun-result').classList.contains('show') && res.attempts === 1;
+      g.save.flush(); o.saved = JSON.parse(localStorage.getItem('tgw.save')).profiles.fern.lakeRun.best === res.best;
+      o.t = res.best; return o;
+    }) : {};
+    check('lake run: start at buoys, countdown hold, buoys in order, log penalty, finish + medal reward, PB + ghost saved', ready && r.offer && r.held && r.order && r.state === 'result' && r.pen && r.pb && r.reward && r.card && r.saved && !errors.length, errors[0] || JSON.stringify(r));
+    await ctx.close(); }
   // 8. R58.2 free-camera collision: backing into the workbench, a tree or the cabin never puts the camera inside the character
   { const ctx = await context({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true }); const { p, errors, ok } = await startGame(ctx, 'fern');
     const ready = ok && await p.waitForFunction(() => window.__tgw?.fishing, null, { timeout: 240000 }).then(() => true, () => false);

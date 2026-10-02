@@ -32,6 +32,9 @@ export class DevMenu {
         <section><small>BÅD (R58)</small><div class="dev-grid">
           <button data-a="boat:ready">Stang + 3 fiskearter</button><button data-a="boat:vest">Redningsvest</button><button data-a="boat:trips">+2 vandfaldsture (kan købe)</button><button data-a="boat:reset">Nulstil båd + fiskeri</button><button data-a="tp:dock">Teleport: Sigurd / bro</button>
         </div></section>
+        <section><small>LAKE RUN (R64)</small><div class="dev-grid">
+          <button data-a="lr:start">Båd ved startbøjerne</button><button data-a="lr:go">Start Lake Run</button><button data-a="lr:gold">Gennemfør (guldtid)</button><button data-a="lr:reset">Nulstil Lake Run</button>
+        </div></section>
         <section><small>KAMP (R61)</small><div class="dev-grid">
           <button data-a="cb:tp">Teleport til Mole</button><button data-a="cb:heal">Fuld liv</button><button data-a="cb:hurt">Tag 1 hjerte skade</button><button data-a="cb:respawn">Respawn moles</button><button data-a="cb:mercy">Nulstil mercy + poser</button><button data-a="cb:arena">Teleport til Wood Giant</button><button data-a="cb:bosslow">Boss: 4 liv tilbage</button><button data-a="cb:bossreset">Boss: klar igen</button>
         </div></section>
@@ -102,6 +105,14 @@ export class DevMenu {
       else if (op === 'trips') p.boat.waterfall += 2;
       else if (op === 'reset') { f.starter = false; for (const k of Object.keys(f.own)) delete f.own[k]; for (const k of Object.keys(f.log)) delete f.log[k]; Object.assign(p.boat, { owned: false, trips: 0, waterfall: 0, lastReward: '' }); f.setBoatAccess({ owned: false, rented: false }); }
       f.renderAll?.(); g.boatEco.persist(); this.toast({ ready: 'Stang + roach, perch, bream', vest: 'Redningsvest', trips: `Vandfaldsture: ${p.boat.waterfall}`, reset: 'Båd og fiskeri nulstillet' }[op]);
+      return;
+    }
+    if (a.startsWith('lr:')) {
+      const L = g.lakeRun, op = a.slice(3); if (!L) return this.toast('Lake Run er ikke indlæst endnu');
+      if (op === 'start') { this.hide(); L.devToStart(); return this.toast('Båden ligger ved startbøjerne'); }
+      if (op === 'go') { this.hide(); if (L.nearStart() > 6) L.devToStart(); L.begin(); return; }
+      if (op === 'gold') { if (L.state !== 'racing') return this.toast('Start et løb først'); this.hide(); L.t = 40; L.next = L.seq.length - 1; L.seq.slice(0, -1).forEach((q, i) => { L.splits[i] = 6 * (i + 1); }); const q = L.seq[L.next], f = g.fishing, B = f.boat, s = f.boatWorldToLocal(B.homePos.clone().set(q.x, B.homePos.y, q.z)); B.pos.x = s.x; B.pos.z = s.z; return; }
+      if (op === 'reset') { L.cancel(); L.closeResult(); Object.assign(L.p, { best: 0, splits: [], ghost: [], runs: [], day: '', attempts: 0, golds: 0, weekGold: '' }); g.save.persist(); return this.toast('Lake Run nulstillet'); }
       return;
     }
     if (a.startsWith('cb:')) {

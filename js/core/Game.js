@@ -30,6 +30,7 @@ import { QualityManager, QUALITY } from './Quality.js';
 import { InteractionResolver } from './InteractionResolver.js';
 import { log, warn } from '../dev/Log.js';
 import { BoatEconomySystem } from '../gameplay/BoatEconomySystem.js';
+import { LakeRunSystem } from '../gameplay/LakeRunSystem.js';
 import { GardenBuildSystem } from '../gameplay/GardenBuildSystem.js';
 import { GardenBuildMode } from '../ui/GardenBuildMode.js';
 import { GardenVegetationMask } from '../world/GardenVegetationMask.js';
@@ -133,7 +134,7 @@ export class Game {
       attach(choicePromise,c=>{this.choiceWorld=c;}),
       attach(greenhousePromise,g=>{const gt=this.garden.transformOf('greenhouse');g.setPlacement(gt.x,gt.z,gt.rot);this.greenhouse=g;this.wilds.setGreenhouse(g);this.cameraOcclusion.greenhouse=g;this.structureVisibility.greenhouse=g;}),
       attach(orangeryPromise,o=>{this.orangery=o;this.cameraOcclusion.orangery=o;this.structureVisibility.orangery=o;}),
-      attach(fishingPromise,f=>{this.fishing=f;try{this.boatEco=new BoatEconomySystem({fishing:f,wilds:this.wilds,hud:this.hud}).init();}catch(e){warn('BOAT','economy disabled',e);this.failed.push('boat');}})
+      attach(fishingPromise,f=>{this.fishing=f;try{this.boatEco=new BoatEconomySystem({fishing:f,wilds:this.wilds,hud:this.hud}).init();}catch(e){warn('BOAT','economy disabled',e);this.failed.push('boat');}try{this.lakeRun=new LakeRunSystem(this,f);}catch(e){warn('LAKERUN','lake run disabled',e);this.failed.push('lakerun');}})
     ]).then(()=>{mark('allSystemsReadyMs');this.vegetationMask?.apply();log('LOAD','background systems ready',this.startupMetrics);if(this.failed.length)this.hud.showToast?.(`Some parts could not load: ${this.failed.join(', ')}`);});
     // DEV routes spawn straight into the Stable/Orangery/Fishing, so they wait for everything as before.
     if(devMode)await background;
@@ -181,7 +182,7 @@ export class Game {
     if(gardenSpace){
       this.choiceWorld?.update(dt,this.time);
     }else{
-      this.wildlife?.update(dt,this.time,this.character.position);this.orangery?.update(dt,this.time,this.character.position);this.stable?.update(dt,this.time,this.character.position,this.camera,this.renderer);this.fishing?.update(dt,this.time,this.character);this.boatEco?.update();if(stableBusy)this.stable?.syncPlayerVisibility?.();
+      this.wildlife?.update(dt,this.time,this.character.position);this.orangery?.update(dt,this.time,this.character.position);this.stable?.update(dt,this.time,this.character.position,this.camera,this.renderer);this.fishing?.update(dt,this.time,this.character);this.boatEco?.update();this.lakeRun?.update(dt);if(stableBusy)this.stable?.syncPlayerVisibility?.();
     }
 
     let seed={near:false},greenhouse={interaction:null};
@@ -206,7 +207,8 @@ export class Game {
       if(!gardenSpace){
         // Boat mode keeps the controller paused while still exposing FishingV1-owned E interactions.
         R.offer('stable',this.stable?.interaction?.(this.character.position));
-        R.offer('fishing',this.fishing?.interaction?.(this.character.position));
+        R.offer('lakerun',this.lakeRun?.interaction());
+        if(!this.lakeRun?.busy())R.offer('fishing',this.fishing?.interaction?.(this.character.position)); // R64: no Fish/Dock mid-race
       }
     }
     const interaction=R.resolve();
@@ -224,6 +226,7 @@ export class Game {
       else if(interaction.type?.startsWith?.('stable-'))this.stable?.interact(interaction);
       else if(interaction.type?.startsWith?.('wilds-'))this.wilds.interact(interaction,this.character);
       else if(interaction.type?.startsWith?.('combat-'))this.combat?.interact(interaction.type);
+      else if(interaction.type?.startsWith?.('lakerun-'))this.lakeRun?.interact(interaction.type);
       else if(['fish-board','fishing-shop','fishing-spot','boat-board','boat-fish','boat-dock'].includes(interaction.type))this.fishing?.interact(interaction.type);
     }
 
