@@ -1536,7 +1536,7 @@ are only touched where a measured hotspot requires it, minimally.
 **B. Technical foundation**
 1. Performance instrumentation: DEV performance HUD + structured DEV logger (done, R51).
 2. *Error boundaries early*: optional subsystems warn + continue; only the player character is critical. **Done (R52):** home, stable, golden seed, seed choice, greenhouse, orangery, fishing, map, wildlife are optional (`[LOAD] … failed` + toast listing what's missing); a failed character GLB falls back to the procedural sprout. Verified with 7 GLBs blocked: game starts, player moves, no page errors.
-3. *PWA standalone early* (manifest + Apple metadata; no service worker) — biggest iPhone viewport win.
+3. *PWA standalone early* (manifest + Apple metadata; no service worker) — biggest iPhone viewport win. **Done (R53):** `manifest.webmanifest` (standalone, orientation any, icons 192/512/1024) + apple-mobile-web-app-capable / black-translucent status bar / title / touch icon on index, selector and game (selector viewport-fit=cover).
 4. Asset/load profiling → central small AssetManager (loadOnce, dedupe, clone, priority, fallback).
 5. Staged loading: critical path first (character, home, nearby landscape, HUD), background/proximity for Stable,
    Cabin/Fishing, wildlife, Result/Podium (*first concrete hotspot: the Result Stage iframe — a second WebGL renderer —
