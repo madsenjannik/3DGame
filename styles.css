@@ -1024,3 +1024,24 @@ body.stable-race-result-active .stable-race-controls,body.stable-race-result-act
   .touch #action{height:44px;min-width:80px;padding:0 16px;bottom:calc(20px + env(safe-area-inset-bottom));font-size:13px}
   .dev-menu-btn{height:28px;padding:0 10px;font-size:10px}
 }
+
+/* R60 GardenBuildSystem: build/move mode bar + garden layout buttons */
+.build-bar{position:fixed;left:50%;bottom:calc(16px + env(safe-area-inset-bottom));transform:translate(-50%,140%);z-index:60;display:flex;gap:12px;align-items:center;
+  padding:10px 12px 10px 16px;border-radius:22px;background:rgba(28,36,24,.86);color:#f4f1e8;font-family:Manrope,system-ui,sans-serif;
+  box-shadow:0 10px 30px rgba(0,0,0,.28);transition:transform .25s ease;max-width:calc(100vw - 24px);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px)}
+.build-bar.open{transform:translate(-50%,0)}
+.build-info{display:flex;flex-direction:column;min-width:0}
+.build-info small{font-size:10px;letter-spacing:.16em;opacity:.65}
+.build-info b{font-size:15px}
+.build-why{font-size:12px;color:#bfe8a8;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.build-bar.bad .build-why{color:#ffb4a8}
+.build-buttons{display:flex;gap:8px;flex:none}
+.build-buttons button{height:44px;min-width:44px;padding:0 14px;border-radius:14px;border:1px solid rgba(255,241,184,.35);background:rgba(255,255,255,.08);color:#f4f1e8;font:700 14px Manrope,system-ui,sans-serif;cursor:pointer}
+.build-buttons .build-place{background:#7fae4a;border-color:#a8d070;color:#17210f}
+.build-buttons .build-place:disabled{opacity:.4;cursor:not-allowed}
+body.build-mode #action{display:none!important}
+.wilds-move{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:6px 0 4px}
+.wilds-move button{height:40px;border-radius:12px;border:1px solid rgba(59,53,43,.18);background:rgba(255,255,255,.6);font:700 13px Manrope,system-ui,sans-serif;cursor:pointer}
+.wilds-sub{margin:14px 0 4px;font-size:13px;letter-spacing:.06em}
+@media (max-width:520px){.build-bar{flex-direction:column;align-items:stretch;gap:8px;width:calc(100vw - 24px)}.build-buttons{justify-content:space-between}.build-buttons button{flex:1}}
+@media (max-height:430px){.build-bar{bottom:calc(8px + env(safe-area-inset-bottom));padding:6px 8px 6px 12px}.build-buttons button{height:38px}}

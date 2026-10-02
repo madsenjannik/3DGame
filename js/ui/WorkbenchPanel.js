@@ -26,6 +26,7 @@ export class WorkbenchPanel {
       if (e.target.closest('[data-pot]')) { this.wilds.pots.craftPot(); return; }
       const plant = e.target.closest('[data-plant]'); if (plant) { this.wilds.plantSeed(plant.dataset.plant); return; }
       if (e.target.closest('[data-upgrade]')) this.wilds.upgradeHome();
+      const mv = e.target.closest('[data-move]'); if (mv) { this.hide(); this.onMove?.(mv.dataset.move); }
     });
     addEventListener('keydown', e => { if (this.open && (e.key === 'Escape' || e.code === 'KeyE' && !e.repeat)) { e.stopImmediatePropagation(); e.preventDefault(); this.hide(); } }, true);
     wilds.onChange(() => { if (this.open) this.render(); });
@@ -80,6 +81,11 @@ export class WorkbenchPanel {
         html += `<article class="wilds-item${done ? ' owned' : ''}${!done && !isNext ? ' locked' : ''}"><div class="wilds-icon">${['🛢', '✦', '🌿'][i]}</div><div class="wilds-body"><b>${esc(u.name)}</b><p>${esc(u.effect)}</p>${done ? '' : `<div class="wilds-costs">${this.costHtml(u.cost)}</div>`}</div>
           ${isNext ? `<button type="button" data-upgrade ${can ? '' : 'disabled'}>Build</button>` : `<button type="button" disabled>${done ? 'Built' : 'Later'}</button>`}</article>`;
       });
+    }
+    // R60 step 2: garden layout. Each structure can be moved; the garden remembers it per character.
+    if (this.tab === 'home' && this.onMove) {
+      html += `<h3 class="wilds-sub">Garden layout</h3><p class="wilds-note">Pick a building, then walk to where it should stand. Rotate, then place.</p><div class="wilds-move">${
+        [['greenhouse', 'Greenhouse'], ['workshop', 'Workshop'], ['rain', 'Rain barrel'], ['shrine', 'Seed Shrine']].map(([id, n]) => `<button type="button" data-move="${id}">Move ${n}</button>`).join('')}</div>`;
     }
     this.el.querySelector('.wilds-list').innerHTML = html;
     this.el.querySelector('.wilds-inv').innerHTML = Object.values(MATERIALS).map(m => `<span><i>${m.icon}</i>${this.state.inventory.get(m.id) || 0}</span>`).join('');

@@ -61,6 +61,18 @@ export class WildsThreatSystem {
     this.spots = spots;
   }
 
+  // R60 step 2: a structure moved. New weeds use a fresh spot table; weeds now under a structure are gone.
+  relayout() {
+    this.buildSpots();
+    const g = this.w.garden; if (!g) return;
+    const rects = g.p.garden.buildings.map(b => g.footprintRect(b.id, .2));
+    for (const w of this.weeds) {
+      if (w.state !== 'alive' || !rects.some(r => w.x > r.x0 && w.x < r.x1 && w.z > r.z0 && w.z < r.z1)) continue;
+      w.state = 'gone'; this.root.remove(w.root); this.p.weeds = this.p.weeds.filter(r => r !== w.rec);
+    }
+    this.w.save.persist();
+  }
+
   // ---------- timing ----------
   // R60 fix: the Thorn Hedge Fence is home level 3 since save v2 shifted levels down by one; the old
   // `>= 4` could never be true, so the hedge's documented effect (half as many weeds/snails) never applied.

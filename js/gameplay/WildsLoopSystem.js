@@ -11,6 +11,7 @@ import { WildsThreatSystem } from './WildsThreatSystem.js';
 import { DailyRequests } from './DailyRequests.js';
 import { GardenPotsSystem } from './GardenPotsSystem.js';
 import { loadWildsModels, loadGardenModels, WildsModel } from './WildsModels.js';
+import { FIXED_HEDGE as HEDGE } from '../data/gardenCatalog.js';
 
 const HOME = { x: 0, z: 4.7 };
 // Private-garden placements (garden space, ground y = 0). The workbench replaces the old Lookout site.
@@ -18,7 +19,6 @@ const HOME = { x: 0, z: 4.7 };
 // These are only the fallback when no placement system is attached (identical to the catalog defaults).
 const FALLBACK = { workshop: { x: 6.0, z: 7.6, rot: 3, yaw: -Math.PI / 2 }, rain: { x: -6.6, z: .8, rot: 0, yaw: 0 }, shrine: { x: -9.2, z: 2.8, rot: 0, yaw: 0 } };
 const QSC = [[0, 1], [1, 0], [0, -1], [-1, 0]];
-const HEDGE = [[-11.3, -9.5], [-11.3, -5.5], [-11.3, -1.5], [-11.3, 2.5], [-11.3, 6.0], [11.3, -5.0], [11.3, -1.0], [11.3, 3.0], [-7.5, -12.9], [-3.0, -12.9]];
 const COMMON = ['wood', 'stone', 'clay', 'fiber'];
 const big0 = kind => kind === 'oldlog' || kind === 'boulder';
 
@@ -112,6 +112,18 @@ export class WildsLoopSystem {
   structureAt(id) { return this.garden?.transformOf(id) || FALLBACK[id]; }
   // Structure-local point (+z = front) to world for a placed structure.
   at(id, lx = 0, lz = 0) { const t = this.structureAt(id), [s, c] = QSC[t.rot & 3]; return { x: t.x + lx * c + lz * s, z: t.z - lx * s + lz * c }; }
+
+  // R60 step 2: a structure was moved in build mode → move its group, colliders and threat layout.
+  applyPlacements() {
+    const put = (g, id) => { if (!g) return; const t = this.structureAt(id); g.position.set(t.x, 0, t.z); g.rotation.y = t.yaw; };
+    put(this.workbench?.root, 'workshop'); put(this.upgradeL1, 'rain'); put(this.upgradeL2, 'shrine');
+    const wb = this.at('workshop'); if (this.workbenchObstacle) { this.workbenchObstacle.x = wb.x; this.workbenchObstacle.z = wb.z; }
+    if (this.upgradeObstacles) {
+      const b = this.at('rain'), c = this.at('rain', -.95, 0), sh = this.at('shrine');
+      [[0, b], [1, c], [2, sh]].forEach(([i, p]) => { this.upgradeObstacles[i].x = p.x; this.upgradeObstacles[i].z = p.z; });
+    }
+    this.threat?.relayout?.();
+  }
 
   // R58 progression-aware guidance shared by the HUD objective card and the workbench panel.
   // Returns { title, copy } for the single most useful next step.
@@ -320,7 +332,7 @@ export class WildsLoopSystem {
     const glow = new THREE.Sprite(new THREE.SpriteMaterial({ map: this.glowTex, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, opacity: .25 }));
     glow.position.y = 1.1; glow.scale.setScalar(2.6); g.add(glow);
     this.gardenRoot.add(g); this.workbench = { root: g, glow, near: 0 };
-    this.gardenObstacle(w.x, w.z, .8, 'wilds-workbench');
+    this.workbenchObstacle = this.gardenObstacle(w.x, w.z, .8, 'wilds-workbench');
   }
 
   buildHomeUpgrades() {

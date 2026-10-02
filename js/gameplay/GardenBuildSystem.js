@@ -53,6 +53,35 @@ export class GardenBuildSystem {
     return { x: t.x + lx * c + lz * s, z: t.z - lx * s + lz * c };
   }
   onChange(fn) { this.listeners.add(fn); return () => this.listeners.delete(fn); }
+  isDefault(id) { const b = this.get(id), d = b && STRUCTURES[b.type].defaultAnchor; return !!b && b.gx === d.gx && b.gz === d.gz && (b.rot & 3) === d.rot; }
+
+  // R60 step 2: cell anchor whose placed transform lands nearest a desired world point (inverse of transformOf).
+  anchorFor(type, x, z, rot) {
+    const o = STRUCTURES[type].localOffset, [s, c] = SC[rot & 3];
+    const cx = x - (o.x * c + o.z * s), cz = z - (-o.x * s + o.z * c);
+    return { gx: Math.round((cx - GRID_ORIGIN.x) / CELL), gz: Math.round((cz - GRID_ORIGIN.z) / CELL), rot: rot & 3 };
+  }
+  // Commit a placement (validated again here). Returns the problem string, or null on success.
+  place(id, gx, gz, rot) {
+    const b = this.get(id); if (!b) return 'unknown structure';
+    const why = this.problem(b.type, gx, gz, rot, id); if (why) return why;
+    b.gx = gx; b.gz = gz; b.rot = rot & 3;
+    for (const fn of this.listeners) fn(id);
+    return null;
+  }
+  resetToDefaults() {
+    for (const b of this.p.garden.buildings) { const d = STRUCTURES[b.type].defaultAnchor; Object.assign(b, { gx: d.gx, gz: d.gz, rot: d.rot }); }
+    for (const b of this.p.garden.buildings) for (const fn of this.listeners) fn(b.id);
+  }
+  // World AABB of a structure's body footprint (quarter turns keep it axis-aligned), optional margin.
+  footprintRect(id, margin = 0, gx, gz, rot) {
+    const b = this.get(id); if (!b) return null;
+    const def = STRUCTURES[b.type], P = gx === undefined ? b : { gx, gz, rot }, [s, c] = SC[P.rot & 3];
+    const cx = GRID_ORIGIN.x + P.gx * CELL, cz = GRID_ORIGIN.z + P.gz * CELL, o = def.localOffset, [x0, z0, x1, z1] = def.footprint;
+    const tx = cx + o.x * c + o.z * s, tz = cz - o.x * s + o.z * c;
+    const pts = [[x0, z0], [x1, z0], [x0, z1], [x1, z1]].map(([lx, lz]) => [tx + lx * c + lz * s, tz - lx * s + lz * c]);
+    return { x0: Math.min(...pts.map(p => p[0])) - margin, x1: Math.max(...pts.map(p => p[0])) + margin, z0: Math.min(...pts.map(p => p[1])) - margin, z1: Math.max(...pts.map(p => p[1])) + margin };
+  }
 
   // ---------- cells ----------
   cellCenter(gx, gz) { return { x: GRID_ORIGIN.x + (gx + .5) * CELL, z: GRID_ORIGIN.z + (gz + .5) * CELL }; }

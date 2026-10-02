@@ -32,6 +32,9 @@ export class DevMenu {
         <section><small>BÅD (R58)</small><div class="dev-grid">
           <button data-a="boat:ready">Stang + 3 fiskearter</button><button data-a="boat:vest">Redningsvest</button><button data-a="boat:trips">+2 vandfaldsture (kan købe)</button><button data-a="boat:reset">Nulstil båd + fiskeri</button><button data-a="tp:dock">Teleport: Sigurd / bro</button>
         </div></section>
+        <section><small>HAVE-LAYOUT (R60)</small><div class="dev-grid">
+          <button data-a="move:greenhouse">Flyt drivhus</button><button data-a="move:workshop">Flyt workshop</button><button data-a="move:rain">Flyt regntønde</button><button data-a="move:shrine">Flyt shrine</button><button data-a="layout:reset">Nulstil placeringer</button>
+        </div></section>
         <section><small>DRIVHUS (genindlæser)</small><div class="dev-grid four">
           <button data-a="gh:0">Intet</button><button data-a="gh:1">L1</button><button data-a="gh:2">L2</button><button data-a="gh:3">L3</button>
         </div></section>
@@ -98,6 +101,8 @@ export class DevMenu {
       f.renderAll?.(); g.boatEco.persist(); this.toast({ ready: 'Stang + roach, perch, bream', vest: 'Redningsvest', trips: `Vandfaldsture: ${p.boat.waterfall}`, reset: 'Båd og fiskeri nulstillet' }[op]);
       return;
     }
+    if (a.startsWith('move:')) { if (!g.world.isGardenSpace()) return this.toast('Gå ind i din have først'); this.hide(); g.buildMode?.start(a.slice(5)); return; }
+    if (a === 'layout:reset') { g.garden?.resetToDefaults(); this.toast('Haven er tilbage på standardplaceringer'); return; }
     if (a === 'perf') { g.perfHud?.set(!g.perfHud.on); this.toast(g.perfHud?.on ? 'Performance-HUD til' : 'Performance-HUD fra'); return; }
     if (a === 'metrics') {
       const m = window.__TGW_STARTUP_METRICS__ || {}; const keys = Object.keys(m).filter(k => k.endsWith('Ms'));

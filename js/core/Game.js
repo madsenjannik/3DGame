@@ -31,6 +31,8 @@ import { InteractionResolver } from './InteractionResolver.js';
 import { log, warn } from '../dev/Log.js';
 import { BoatEconomySystem } from '../gameplay/BoatEconomySystem.js';
 import { GardenBuildSystem } from '../gameplay/GardenBuildSystem.js';
+import { GardenBuildMode } from '../ui/GardenBuildMode.js';
+import { GardenVegetationMask } from '../world/GardenVegetationMask.js';
 
 export class Game {
   async init({characterId='succulent',devMode=false}={}){
@@ -93,6 +95,13 @@ export class Game {
     this.garden=new GardenBuildSystem({profile:this.save.profile,world:this.world});
     this.wilds=new WildsLoopSystem({world:this.world,state:this.state,save:this.save,hud:this.hud,greenhouse:null,garden:this.garden}).init();
     this.workbenchPanel=new WorkbenchPanel({wilds:this.wilds,state:this.state});
+    // R60 step 2: build/move mode + vegetation under moved structures; every move re-places the systems.
+    this.buildMode=new GardenBuildMode({game:this});this.workbenchPanel.onMove=id=>this.buildMode.start(id);
+    this.vegetationMask=new GardenVegetationMask({world:this.world,garden:this.garden});this.vegetationMask.apply();
+    this.garden.onChange(id=>{
+      if(id==='greenhouse'&&this.greenhouse){const t=this.garden.transformOf('greenhouse');this.greenhouse.setPlacement(t.x,t.z,t.rot);}
+      this.wilds.applyPlacements();this.vegetationMask.apply();this.save.persist();
+    });
     this.wilds.onOpenWorkbench=()=>{this.workbenchPanel.show();this.input.resetTouchPointers?.();};
     const syncTools=()=>this.hud.setTools?.(this.wilds.profile.tools,this.wilds.profile.water);this.wilds.onChange(syncTools);syncTools();
     if(devMode||devMenuEnabled()){this.perfHud=new PerfHud(this);this.devMenu=new DevMenu(this);window.__tgw=this;}
@@ -121,7 +130,7 @@ export class Game {
       attach(greenhousePromise,g=>{const gt=this.garden.transformOf('greenhouse');g.setPlacement(gt.x,gt.z,gt.rot);this.greenhouse=g;this.wilds.setGreenhouse(g);this.cameraOcclusion.greenhouse=g;this.structureVisibility.greenhouse=g;}),
       attach(orangeryPromise,o=>{this.orangery=o;this.cameraOcclusion.orangery=o;this.structureVisibility.orangery=o;}),
       attach(fishingPromise,f=>{this.fishing=f;try{this.boatEco=new BoatEconomySystem({fishing:f,wilds:this.wilds,hud:this.hud}).init();}catch(e){warn('BOAT','economy disabled',e);this.failed.push('boat');}})
-    ]).then(()=>{mark('allSystemsReadyMs');log('LOAD','background systems ready',this.startupMetrics);if(this.failed.length)this.hud.showToast?.(`Some parts could not load: ${this.failed.join(', ')}`);});
+    ]).then(()=>{mark('allSystemsReadyMs');this.vegetationMask?.apply();log('LOAD','background systems ready',this.startupMetrics);if(this.failed.length)this.hud.showToast?.(`Some parts could not load: ${this.failed.join(', ')}`);});
     // DEV routes spawn straight into the Stable/Orangery/Fishing, so they wait for everything as before.
     if(devMode)await background;
     if(this.homePortal?.moveInPending)this.homePortal.beginMoveIn(this.character,this.followCamera,this.camera,this.hud);
@@ -144,6 +153,7 @@ export class Game {
     const stableBusy=!gardenSpace&&(this.stable?.isBusy?.()||false);
     const specialBusy=fishingBusy||stableBusy;
     const wildsPanel=(this.workbenchPanel?.open||this.devMenu?.open)||false;
+    const building=!!this.buildMode?.active;
     const mapOpen=this.worldMap?.isOpen||false,mapOverlay=mapOpen&&(this.worldMap?.overlayMode||false);
     const touchLook=this.input.isTouch?this.input.consumeLook?.():null;
     // R58.1: in the boat the free camera still takes swipes (a short look-around; it glides back behind the boat).
@@ -179,12 +189,13 @@ export class Game {
     const R=this.interactions;R.begin();
     if(!this.state.choice.open&&!portalBusy&&!wildsPanel){
       if(gardenSpace){
-        R.offer('wilds',this.wilds?.update(dt,this.time,this.character,'garden').interaction);
-        if(seed.near)R.offer('first-seed',{type:'first-seed',label:'Collect Golden Seed'});
-        R.offer('greenhouse',greenhouse.interaction);
+        // Build mode: the garden keeps living, but nothing else can be used until Place/Cancel.
+        const gi=this.wilds?.update(dt,this.time,this.character,'garden').interaction;if(!building)R.offer('wilds',gi);
+        if(seed.near&&!building)R.offer('first-seed',{type:'first-seed',label:'Collect Golden Seed'});
+        if(!building)R.offer('greenhouse',greenhouse.interaction);
       }
       if(!gardenSpace&&!specialBusy)R.offer('wilds',this.wilds?.update(dt,this.time,this.character,'world').interaction);
-      if(!specialBusy)R.offer('home',this.homePortal?.interaction?.(this.character.position));
+      if(!specialBusy&&!building)R.offer('home',this.homePortal?.interaction?.(this.character.position));
       if(!gardenSpace){
         // Boat mode keeps the controller paused while still exposing FishingV1-owned E interactions.
         R.offer('stable',this.stable?.interaction?.(this.character.position));
@@ -192,6 +203,7 @@ export class Game {
       }
     }
     const interaction=R.resolve();
+    if(building)this.buildMode.update(dt,this.character);
     // R58 objective director (1 Hz): show the wilds progression step unless the first Golden Seed
     // story (private garden, until the plant/donate choice) owns the card.
     const nowMs=performance.now();

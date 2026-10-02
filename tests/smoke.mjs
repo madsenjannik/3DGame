@@ -154,6 +154,26 @@ try {
     }) : {};
     check('garden build: defaults valid, pond/overlap rejected, old saves load, structures follow placement', r.valid && r.pondBlocked && r.overlap && r.weedsXZ && r.saved && r.follows && r.back && r.oldOk === true && !errors.length, errors[0] || JSON.stringify(r));
     await ctx.close(); }
+  // 12. R60 step 2 build mode: ghost validity, cancel = no change, place moves group/collider/vegetation, persists, reset restores
+  { const ctx = await context({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true }); const p = await ctx.newPage(); const errors = []; p.on('pageerror', e => errors.push(e.message));
+    await p.addInitScript(() => { localStorage.setItem('dym.homeMovedIn.v1.fern', '1'); localStorage.setItem('tgw.devMenu', '1'); localStorage.setItem('dym-gh-level', '1'); });
+    await p.goto(B + 'game.html?char=fern', { waitUntil: 'load' });
+    const ok = await p.waitForFunction(() => window.__tgw?.wilds?.gardenModels && window.__tgw.greenhouse?.entries.size === 3, null, { timeout: 240000 }).then(() => true, () => false);
+    const step = (fn, arg) => p.evaluate(fn, arg), W = ms => p.waitForTimeout(ms);
+    let r = {};
+    if (ok) {
+      await step(() => { const g = window.__tgw; g.devMenu.run('mats'); g.wilds.upgradeHome(); g.wilds.upgradeHome(); g.devMenu.teleport('garden', -3.85, 3.6, Math.PI); g.buildMode.start('shrine'); }); await W(5000);
+      r.pondBlocked = await step(() => window.__tgw.buildMode.placeBtn.disabled && /pond/.test(window.__tgw.buildMode.snap?.why || ''));
+      r.cancelSame = await step(() => { const g = window.__tgw, before = JSON.stringify(g.garden.get('shrine')); g.buildMode.cancel(); return !g.buildMode.active && JSON.stringify(g.garden.get('shrine')) === before; });
+      await step(() => { const g = window.__tgw; g.devMenu.teleport('garden', -3.6, 9.0, -Math.PI / 2); g.buildMode.start('shrine'); }); await W(5000);
+      Object.assign(r, await step(() => { const g = window.__tgw, placed = g.buildMode.confirm(), t = g.garden.transformOf('shrine'), grp = g.wilds.upgradeL2.position, ob = g.wilds.upgradeObstacles[2];
+        g.save.flush(); return { placed, moved: !g.garden.isDefault('shrine'), follows: grp.x === t.x && grp.z === t.z && ob.x === t.x && ob.z === t.z, hidden: g.vegetationMask.meshes.reduce((a, e) => a + e.hidden, 0) }; }));
+      await p.reload({ waitUntil: 'load' }); await p.waitForFunction(() => window.__tgw?.wilds?.gardenModels && window.__tgw.greenhouse?.entries.size === 3, null, { timeout: 240000 }).catch(() => {});
+      Object.assign(r, await step(() => { const g = window.__tgw, persisted = !g.garden.isDefault('shrine') && g.wilds.upgradeL2.position.x === g.garden.transformOf('shrine').x;
+        g.garden.resetToDefaults(); return { persisted, resetHidden: g.vegetationMask.meshes.reduce((a, e) => a + e.hidden, 0), resetPos: g.wilds.upgradeL2.position.x === -9.2 && g.wilds.upgradeL2.position.z === 2.8 }; }));
+    }
+    check('build mode: invalid blocked, cancel unchanged, place moves + hides vegetation, persists, reset restores', ok && r.pondBlocked && r.cancelSame && r.placed && r.moved && r.follows && r.hidden > 0 && r.persisted && r.resetHidden === 0 && r.resetPos && !errors.length, errors[0] || JSON.stringify(r));
+    await ctx.close(); }
   // 5. DEV disabled: no dev UI or handles leak into normal play
   { const ctx = await context({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true }); const { p, errors, ok } = await startGame(ctx, 'daisy', { dev: false });
     const leak = ok && await p.evaluate(() => !!document.querySelector('.dev-menu-btn') || !!window.__tgw || !document.getElementById('dev-badge').hidden);

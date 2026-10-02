@@ -26,6 +26,14 @@ export const RESERVED = [
   { id: 'community', kind: 'circle',  x: -5.05, z: -5.9, r: 1.0 },
   { id: 'golden-seed', kind: 'circle', x: -7.3, z: -4.9, r: 0.9 }
 ];
+// Thorn-hedge segments (home level 3) stand at fixed spots along the fence; structures keep clear of them.
+// Each is [x, z]; segments on the side fences (|x| > 11) run along z, the back ones along x (≈2 m × 0.55 m).
+export const FIXED_HEDGE = [[-11.3, -9.5], [-11.3, -5.5], [-11.3, -1.5], [-11.3, 2.5], [-11.3, 6.0], [11.3, -5.0], [11.3, -1.0], [11.3, 3.0], [-7.5, -12.9], [-3.0, -12.9]];
+for (const [x, z] of FIXED_HEDGE) {
+  const along = Math.abs(x) > 11, hl = 1.0, hd = .3;
+  RESERVED.push({ id: 'hedge', kind: 'rect', x0: x - (along ? hd : hl), z0: z - (along ? hl : hd), x1: x + (along ? hd : hl), z1: z + (along ? hl : hd) });
+}
+
 // Reachability is checked from the gate; these must stay reachable too (watering-can refill, door).
 export const GATE = { x: 0.2, z: 11.75 };
 export const MUST_REACH = [{ id: 'door', x: 0, z: 8.25 }, { id: 'pond-shore', x: -3.85, z: 1.5 }];
