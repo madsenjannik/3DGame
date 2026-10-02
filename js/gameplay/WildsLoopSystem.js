@@ -2,13 +2,15 @@
 // Core loop:
 //   shared world: gather nodes, cut thornbrush, loot amber caches (exploration)
 //   private garden: workbench, garden upgrades, greenhouse pots, overgrowth + snails (home)
-// Visuals are procedural placeholders in the low-poly palette until authored GLBs exist.
+// R59: wilds nodes, thornbrush and caches use Jannik's GLBs (WildsModels.js) once loaded; the procedural
+// meshes below stay as the instant placeholder and as the fallback if a GLB fails.
 import * as THREE from 'three';
 import { damp, radialTexture } from '../visual/VisualKit.js';
 import { MATERIALS, NODE_KINDS, TOOLS, HOME_UPGRADES, RULES, PASSIVES, PERKS, GOLDEN_CACHES } from '../data/wildsCatalog.js';
 import { WildsThreatSystem } from './WildsThreatSystem.js';
 import { DailyRequests } from './DailyRequests.js';
 import { GardenPotsSystem } from './GardenPotsSystem.js';
+import { loadWildsModels, WildsModel } from './WildsModels.js';
 
 const HOME = { x: 0, z: 4.7 };
 // Private-garden placements (garden space, ground y = 0). The workbench replaces the old Lookout site.
@@ -53,6 +55,7 @@ export class WildsLoopSystem {
     this.buildWorkbench();
     this.buildHomeUpgrades();
     this.placeThorns();
+    loadWildsModels().then(m => this.applyModels(m)).catch(e => console.warn('[TGW] wilds models unavailable', e));
     this.applyHomeLevel(false);
     this.pots = new GardenPotsSystem(this, this.greenhouse);
     this.threat = new WildsThreatSystem(this);
@@ -387,6 +390,45 @@ export class WildsLoopSystem {
     return t;
   }
 
+  // ---------- R59 authored models ----------
+  applyModels(models) {
+    const swap = (group, model) => { while (group.children.length) group.remove(group.children[0]); group.add(model.root); };
+    for (const node of this.nodes) {
+      const g = models[node.kind]; if (!g) continue;
+      if (node.state === 'gathering') { node.body.position.y = 0; this.finishGather(node); } // placeholder anim was mid-way
+      if (node.state === 'growing') { node.state = 'ready'; }
+      const m = node.model = new WildsModel(g, node.kind); swap(node.body, m);
+      node.glow.visible = false; node.ring.visible = false; node.body.position.y = 0;
+      if (node.kind === 'oldlog') { // fit the three colliders to the authored log (≈1.5 m long)
+        const ax = Math.cos(node.root.rotation.y), az = -Math.sin(node.root.rotation.y);
+        node.obstacles.forEach((o, i) => { const off = (i - 1) * .48; o.x = node.x + ax * off; o.z = node.z + az * off; o.r = .36; o.height = .7; });
+      }
+      if (node.state === 'regrowing') { node.body.scale.setScalar(1); node.body.visible = false; }
+      else { node.body.scale.setScalar(1); node.body.visible = true; m.loop('Idle'); }
+    }
+    for (const t of this.thorns) {
+      const tg = models.thicket, cg = models[GOLDEN_CACHES.includes(t.id) ? 'golden' : 'amber'];
+      if (t.phase === 'cutting') { t.brush.visible = false; this.clearThorn(t); }
+      if (t.phase === 'looting') t.phase = 'looted';
+      if (tg) {
+        const m = t.thicket = new WildsModel(tg, 'thicket'); swap(t.brush, m); t.brush.scale.set(1, 1, 1); t.brush.rotation.y = 0;
+        t.brush.visible = true; if (t.phase === 'wild') m.loop('Idle'); else m.loop('Cleared');
+      }
+      if (cg) {
+        const m = t.cacheModel = new WildsModel(cg, GOLDEN_CACHES.includes(t.id) ? 'golden' : 'amber'); swap(t.cache, m); t.cache.scale.setScalar(1); t.cache.position.y = 0;
+        t.cache.visible = true; m.loop(t.phase === 'looted' ? 'Looted' : 'Closed');
+      }
+    }
+    this.modelsReady = true;
+  }
+
+  clearThorn(t) {
+    this.setObstacle(t.obstacle, false); t.phase = 'cleared';
+    for (const [id, n] of Object.entries(RULES.thornCutReward)) this.give(id, n);
+    this.hud?.showToast(`Thornbrush cleared  Fiber +${RULES.thornCutReward.fiber}`);
+    this.profile.thorns[t.id] = 'cleared'; this.save.persist();
+  }
+
   // ---------- interaction ----------
   interact(hit, character) {
     if (!hit) return false;
@@ -404,6 +446,7 @@ export class WildsLoopSystem {
     if (node.state !== 'ready') return false;
     if (node.def.requires && !this.has(node.def.requires)) return false;
     node.state = 'gathering'; node.t = 0; node.character = character;
+    if (node.model) node.model.play(node.model.def.action, () => { node.body.visible = false; this.finishGather(node); });
     return true;
   }
 
@@ -422,6 +465,7 @@ export class WildsLoopSystem {
   cut(thorn, character) {
     if (thorn.phase !== 'wild' || !this.canCut()) return false;
     thorn.phase = 'cutting'; thorn.t = 0; character.flash();
+    if (thorn.thicket) thorn.thicket.play(['Cut'], () => { thorn.thicket.loop('Cleared'); this.clearThorn(thorn); });
     return true;
   }
 
@@ -432,6 +476,7 @@ export class WildsLoopSystem {
     this.give('amber', amber); this.give(extra, RULES.cacheReward.extra); if (seed) this.give('golden_seed', 1);
     this.hud?.showToast(`Hidden cache: Amber +${amber}  ${MATERIALS[extra].name} +${RULES.cacheReward.extra}${seed ? '  Golden Seed +1!' : ''}`);
     this.profile.thorns[thorn.id] = 'looted'; this.save.persist();
+    if (thorn.cacheModel) thorn.cacheModel.play(['Open'], () => { thorn.phase = 'looted'; thorn.cacheModel.loop('Looted'); });
     return true;
   }
 
@@ -450,6 +495,7 @@ export class WildsLoopSystem {
       if (d > 70 && (node.state === 'ready' || node.state === 'regrowing')) { if (node.state === 'regrowing' && now >= (this.profile.nodes[node.id] || 0)) this.regrown(node, true); continue; }
       const inReach = d < node.reach && node.state === 'ready';
       node.near += ((inReach ? 1 : 0) - node.near) * damp(6, dt);
+      if (node.model) { if (d < 45 || node.model.busy()) node.model.update(dt); node.model.ring(node.state === 'ready' ? node.near : 0); }
       if (node.state === 'ready') {
         node.glow.material.opacity = .14 + node.near * .3 + Math.sin(time * 2 + node.x) * .03;
         node.ring.material.opacity = node.near * .45; node.ring.rotation.z += dt * .2;
@@ -459,12 +505,14 @@ export class WildsLoopSystem {
           offer({ type: 'wilds-gather', node, distance: d, disabled: !!locked, label: locked ? `${node.def.name} · needs ${tool.name}` : `Gather ${node.def.name}` });
         }
       } else if (node.state === 'gathering') {
+        if (node.model) continue;           // the GLB clip ends the gather (WildsModel.play callback)
         node.t += dt; const p = Math.min(1, node.t / .45), e = ease(p);
         node.body.scale.setScalar(Math.max(.001, 1 - e)); node.body.position.y = e * .4; node.glow.material.opacity *= .9;
         if (p >= 1) { node.body.position.y = 0; node.glow.visible = false; node.ring.material.opacity = 0; this.finishGather(node); }
       } else if (node.state === 'regrowing') {
         if (now >= (this.profile.nodes[node.id] || 0)) this.regrown(node, false);
       } else if (node.state === 'growing') {
+        if (node.model) continue;           // Regrow clip → Idle (see regrown)
         node.t += dt; const p = Math.min(1, node.t / 1.2), s = ease(p) * (1 + Math.sin(p * Math.PI) * .12);
         node.body.scale.setScalar(Math.max(.001, s)); if (p >= 1) { node.body.scale.setScalar(1); node.state = 'ready'; }
       }
@@ -473,23 +521,24 @@ export class WildsLoopSystem {
     for (const t of this.thorns) {
       const d = Math.hypot(px - t.x, pz - t.z);
       if (d > 80 && (t.phase === 'wild' || t.phase === 'cleared' || t.phase === 'looted')) continue;
+      if (t.thicket && (d < 45 || t.thicket.busy())) t.thicket.update(dt);
+      if (t.cacheModel && (d < 45 || t.cacheModel.busy())) t.cacheModel.update(dt);
+      t.near += (((t.phase === 'wild' && d < 2.65) || (t.phase === 'cleared' && d < 1.4) ? 1 : 0) - t.near) * damp(6, dt);
+      t.thicket?.ring(t.phase === 'wild' ? t.near : 0); t.cacheModel?.ring(t.phase === 'cleared' ? t.near : 0);
       t.halo.material.opacity = .5 + Math.sin(time * 2.2 + t.x) * .12;
       t.crystals.forEach((c, i) => { c.rotation.y += dt * (.5 + i * .2); });
       if (t.phase === 'wild') {
         if (d < 30 && !this.profile.thorns[t.id]) { this.profile.thorns[t.id] = 'seen'; this.save.persist(); this.hud?.showToast('Thornbrush spotted: something glows inside'); }
         if (d < 2.65) offer({ type: 'wilds-cut', thorn: t, distance: d, disabled: !this.canCut(), label: this.canCut() ? 'Cut Thornbrush' : 'Thornbrush · needs Sickle' });
       } else if (t.phase === 'cutting') {
+        if (t.thicket) continue;            // Cut clip → clearThorn
         t.t += dt; const p = Math.min(1, t.t / .7), e = ease(p);
         t.brush.scale.set(1 + e * .25, Math.max(.001, 1 - e), 1 + e * .25); t.brush.rotation.y += dt * 3;
-        if (p >= 1) {
-          t.brush.visible = false; this.setObstacle(t.obstacle, false); t.phase = 'cleared';
-          for (const [id, n] of Object.entries(RULES.thornCutReward)) this.give(id, n);
-          this.hud?.showToast(`Thornbrush cleared  Fiber +${RULES.thornCutReward.fiber}`);
-          this.profile.thorns[t.id] = 'cleared'; this.save.persist();
-        }
+        if (p >= 1) { t.brush.visible = false; this.clearThorn(t); }
       } else if (t.phase === 'cleared') {
         if (d < 1.4) offer({ type: 'wilds-cache', thorn: t, distance: d, label: 'Open hidden cache' });
       } else if (t.phase === 'looting') {
+        if (t.cacheModel) continue;         // Open clip → Looted
         t.t += dt; const p = Math.min(1, t.t / .5), e = ease(p);
         t.cache.scale.setScalar(Math.max(.001, 1 - e)); t.cache.position.y = e * .5;
         if (p >= 1) { t.cache.visible = false; t.phase = 'looted'; }
@@ -515,7 +564,14 @@ export class WildsLoopSystem {
 
   regrown(node, instant) {
     delete this.profile.nodes[node.id]; this.save.persist();
-    node.glow.visible = true; node.obstacles.forEach(o => this.setObstacle(o, true));
+    node.obstacles.forEach(o => this.setObstacle(o, true));
+    if (node.model) {
+      node.body.visible = true;
+      if (instant) { node.state = 'ready'; node.model.loop('Idle'); }
+      else { node.state = 'growing'; node.model.play(['Regrow'], () => { node.state = 'ready'; node.model.loop('Idle'); }); }
+      return;
+    }
+    node.glow.visible = true;
     if (instant) { node.body.scale.setScalar(1); node.state = 'ready'; }
     else { node.state = 'growing'; node.t = 0; }
   }

@@ -3,7 +3,7 @@
 ## Start here
 - **Repo:** `madsenjannik/3DGame`, branch `claude/magical-lovelace-nuka97` (GitHub replaces ZIP packages).
 - **Live test build:** `https://madsenjannik.github.io/3DGame/` (version shown bottom-left on the start screen).
-- **Current build:** v0.6.12 · `CAMCOLL-R58.2-20261002A` (see `version.js`).
+- **Current build:** v0.6.20 · `WILDSGLB-R59-20261002A` (see `version.js`).
 - **LOCKED baseline:** R50.3 (v0.5.30). R45 is historical rollback reference only. Builds after R50.3 are CANDIDATE.
 - **Now:** technical foundation pass (MASTER §31). Gameplay (Boat, combat, Mole …) after Jannik's runtime check.
 - **Rules:** never build without Jannik's explicit **GO**; analyze, find root cause and define exact scope first.
@@ -33,11 +33,12 @@
 | R58 · v0.6.10 | **C starts: Boat economy v1** (`js/gameplay/BoatEconomySystem.js`, data `BOAT` in wildsCatalog). Discover Sigurd → requirement (3 species + Life Vest, which Sigurd stitches from 6 Fiber + 2 Snail Shell) → rent per trip (3 Wood + 2 Fiber) → waterfall reward once/day (3 Stone, 2 Clay, 1 Amber; first time +1 Golden Seed) → buy after 2 waterfall trips (20 Wood, 12 Fiber, 6 Clay, 4 Amber), no more rent. Fishing gear + catch log now persist in `tgw.save` (were memory-only). Locked FishingV1/Boat→Waterfall untouched (method swap on the instance). Objective falls back to boat steps. Dev menu → BÅD. Smoke 9/9. Device check on iPhone (R57): 60 fps, 217–363 calls, 370–433k tris, mobile-high. |
 | R58.1 · v0.6.11 | **Boat camera fix** (Jannik: camera broken in the boat). Root cause: since R50.3 the free camera only recentred while the character walks (`currentSpeed > .6`); seated in the boat speed is always 0 and swipes were blocked, so the camera froze at the boarding angle (repro: boat heading changed, camera yaw stayed 3.14). Fix in `ControlProfiles.js` only: in the boat the free camera always glides behind the boat; swipe (and desktop right-drag) gives a 1.2 s look-around, then it returns. `Game.js` lets swipes through in boat mode for the free profile only. Locked FishingV1 boat camera/rowing untouched; classic R45 profile unchanged. Smoke 10/10 (new boat-camera check). |
 | R58.2 · v0.6.12 | **Free-camera collision** (Jannik: camera inside the character near trees, buildings, Sigurd). Root cause: R21 occlusion pulled the camera straight in to a 0.32 m floor from the chest point (measured: 0.32 m at the workbench and at a tree = inside the model; 1.08 m at chest height at the cabin). Fix (GO 1–3, free profile only, `CameraOcclusionSystem.setFreeRules`): 1) obstacles lower than 1.3 m no longer block (camera rides over); 2) thin ones (r < 0.7: trunks, posts) no longer block; 3) when something does block the camera lifts (up to 1.7 m, 0.7 m at buildings because of eaves) and the floor is 0.9 m / 1.1 m at structures. After: workbench 3.5 m, tree 6.6 m, cabin 1.04 m but 1.75 m up looking over the head. Classic R45 keeps the R21 rules; greenhouse wall data untouched. Character fade (point 4) not built. Smoke 11/11. |
+| R59 · v0.6.20 | **Wilds-loop GLBs (Jannik's pack A)** in `assets/wilds/` (9 files, 2.3 MB, 527–1,485 tris each, node animations): branches, old log, loose stones, boulder, clay bank, wild grass, thorn thicket, amber cache, golden cache (thorn-2/4/6). New `js/gameplay/WildsModels.js` (load via AssetManager, per-instance mixer + ring material). Gather plays the GLB clip (old log Chop→Gather, boulder Break, clay Dig, grass Cut), reward at clip end, Regrow clip on regrow; thicket Idle→Cut→Cleared; cache Closed→Open→Looted (looted chest stays). Ring opacity .11→.49 near (README spec). Models load in the background, procedural meshes remain the instant placeholder + fallback. Scales fitted to gameplay footprints (1.15–2.2×); old-log colliders fitted to the model. Mixers tick only within 45 m. Not done: cache point light (perf: an extra light costs every material on mobile) and the Highlight clip (ring is game-driven). Smoke 12/12. |
 
 Details: `docs/MASTER-PROJECT-DOCUMENT.md` section 30 and `docs/R47…R49*.md`.
 
 ## Automated check
-`node tests/smoke.mjs` from the repo root (needs Playwright + Chromium). 11/11 must pass before a push (incl. R58 boat economy, R58.1 boat camera, R58.2 camera collision).
+`node tests/smoke.mjs` from the repo root (needs Playwright + Chromium). 12/12 must pass before a push (incl. R58 boat economy, R58.1 boat camera, R58.2 camera collision, R59 wilds GLBs).
 
 ## Quick test (with the dev menu)
 1. Start screen → Indstillinger → turn on **Dev-menu** → START → pick a character.
