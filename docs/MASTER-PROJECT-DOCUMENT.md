@@ -133,6 +133,14 @@ No technical cleanup may alter functioning:
 
 unless the change is explicitly intended to solve a documented problem.
 
+## 1.7 Update MASTER + HANDOVER with every build (Jannik, 02/10/2026)
+
+Every commit that changes the game must, in the same commit, update:
+- `docs/HANDOVER.md`: current build/version line, the build table, open/pending items;
+- `docs/MASTER-PROJECT-DOCUMENT.md`: current working status and the section describing the changed system.
+
+A build whose docs are not updated is not finished. No exceptions for "small" fixes.
+
 ---
 
 # 2. VERSIONING / CURRENT SOURCE OF TRUTH

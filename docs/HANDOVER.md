@@ -6,6 +6,7 @@
 - **Current build:** v0.5.30 · `CAMERA-R50.3-20261002A` (see `version.js`).
 - **Last LOCKED baseline:** R45 (`v0.3.96-R45-HOLO-INDICATOR-LOCKED`). Everything newer is CANDIDATE.
 - **Rules:** never build without Jannik's explicit **GO**; analyze, find root cause and define exact scope first.
+  **Every build updates `docs/HANDOVER.md` and `docs/MASTER-PROJECT-DOCUMENT.md` in the same commit** (MASTER §1.7).
   Building lives in the **private garden**. **Do not change the three greenhouse levels.**
 
 ## What changed since R45 (all CANDIDATE)
