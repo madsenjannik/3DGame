@@ -53,3 +53,18 @@ export const WILT = {
 };
 
 export const LOOT_FILES = { clay: 'loot_clay', stone: 'loot_stone', fiber: 'loot_fiber', wood: 'loot_wood', golden_seed: 'loot_golden_seed', water: 'loot_water' };
+
+// R63 Wood Giant (first boss) — reuses the contract (hp, hurt(), telegraphs, weak windows, drops) and adds
+// phases, root ground attacks, weak windows, an arena boundary and a boss bar. No separate boss engine.
+export const GIANT = {
+  scale: .8, hp: 30, bodyRadius: 2.6, walkSpeed: 1.25,
+  wakeRange: 9, arenaRadius: 11.5,
+  stomp: { range: 4.6, impactAt: 1.0, radius: 3.6, damage: 2, footLocal: [2.3, -.4] },    // 1 heart
+  slam:  { range: 5.5, impactAt: 1.18, radius: 3.4, damage: 4, frontLocal: [0, 2.6] },    // 2 hearts
+  weakWindow: { stomp: 1.6, slam: 2.2 }, weakMultiplier: 2,
+  phases: [ { at: 1, roots: 0, every: 0, speed: 1 }, { at: .6, roots: 3, every: 8, speed: 1 }, { at: .25, roots: 5, every: 6, speed: 1.2 } ],
+  root: { warn: 1.2, radius: 1.05, damage: 2, weakRange: 1.9, weakDamage: 2, spacing: .9 },
+  rematchHours: 24,
+  reward: { first: { golden_seed: 1, amber: 3, wood: 10 }, again: { amber: 2, wood: 8 } },
+  cameraZoom: 1.75
+};

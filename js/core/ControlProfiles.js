@@ -88,7 +88,7 @@ export function applyControlProfile(game, id) {
     cam.inBoat = () => game.fishing?.boat?.on && game.fishing.mode === 'boat';
     if (hint) hint.textContent = 'WASD to move · Shift to run · Space to hop · hold right mouse to look · wheel to zoom';
     cam.freeYaw = cam.yaw; cam.freePitch = 0; cam.idleLook = 99; cam.freeZoom = cam.freeZoom || 1;
-    cam.distance = function () { return (this.camera.aspect < .8 ? 7.0 : 5.8) * (this.freeZoom || 1); };
+    cam.distance = function () { return (this.camera.aspect < .8 ? 7.0 : 5.8) * (this.freeZoom || 1) * (this.bossZoom || 1); }; // R63 boss fights pull back
     cam.wantedYaw = function () { return this.freeYaw; };
     cam.applyTouchLook = function (delta) {
       if (!delta) return; const dx = +delta.x || 0, dy = +delta.y || 0;

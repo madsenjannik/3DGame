@@ -1574,6 +1574,7 @@ are only touched where a measured hotspot requires it, minimally.
    failure. Must pass before every push (CLAUDE.md rule 5).
 
 **B status 02/10/2026: complete (R51–R57).** On-device check (iPhone, Jannik 02/10): 60 fps steady (frame max 20–24 ms), 217 draw calls / 370k tris in the garden, 363 / 433k at the lake, mobile-high, 1 WebGL context → no perf work needed before C.
+**Wood Giant (R63, v0.7.20): first boss done** (`WoodGiantBoss.js`, phases, telegraphed Stomp/Slam, root attacks with weak points, weak windows ×2, arena gate/boundary, boss bar, camera pull-back, sink defeat, Golden Seed first win, 24 h rematch). Next in C: Lake Run → Thora quest.
 **Snail enemy (R62, v0.7.10):** garden snails use the enemy contract + GLB; Strike works in the garden; garden = safe zone (min ½ heart).
 **Combat (R61, v0.7.00): C plan step 2 done (combat foundation + Mole).** Enemy contract in `CombatSystem` (dormant/warning/emerge/up/attack/hit/burrow/hidden/defeat/gone; enemies only use player position + `hurt()`). Tuning in `combatCatalog.js` (PLAYER, WEAPONS, MOLE, WILT). Death = 'wilting': half the common materials in a recoverable pouch (20 min), mercy 10 min, tools/rare items safe. Next in C: snail as a real enemy on the same contract → Wood Giant + arena (models ready, wood-giant 11.8k tris) → Lake Run → Thora. Pack B (arm swing) replaces the lunge.
 **Garden paths (R60.2, v0.6.51):** spine reserved; the greenhouse branch path follows the placed greenhouse (stones + soil repaint + cleared vegetation), default = authored path, bit-identical.

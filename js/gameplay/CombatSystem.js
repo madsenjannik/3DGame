@@ -8,6 +8,7 @@
 import * as THREE from 'three';
 import { loadGLTF } from '../core/AssetManager.js';
 import { WildsModel } from './WildsModels.js';
+import { WoodGiantBoss } from './WoodGiantBoss.js';
 import { MATERIALS } from '../data/wildsCatalog.js';
 import { PLAYER, WEAPONS, WEAPON_ORDER, ATTACK_COOLDOWN, MOLE, WILT, LOOT_FILES } from '../data/combatCatalog.js';
 
@@ -26,6 +27,7 @@ export class CombatSystem {
     this.root = new THREE.Group(); this.root.name = 'WILDS_COMBAT'; this.L.root.add(this.root);
     this.moles = []; this.loot = []; this.fx = []; this.pouchViews = new Map(); this.models = {};
     this.buildHud(); this.placeMoles(); this.syncPouches();
+    try { this.boss = new WoodGiantBoss(this); } catch (e) { console.warn('[TGW] Wood Giant disabled', e); }  // R63
     this.ready = this.loadModels();
   }
 
@@ -173,16 +175,18 @@ export class CombatSystem {
     const consider = (kind, e) => { const d = Math.hypot(ch.position.x - e.x, ch.position.z - e.z); if (d < reach && (!best || d < best.d)) best = { kind, m: e, d, x: e.x, z: e.z }; };
     if (garden) { for (const sn of this.w.threat?.snails || []) if (sn.state !== 'dying' && sn.state !== 'gone') consider('snail', sn); }
     else for (const m of this.moles) if (VULNERABLE.has(m.state)) consider('mole', m);
+    if (!garden && this.boss) { const b = this.boss.target(ch.position.x, ch.position.z, reach); if (b && (!best || b.d <= best.d)) best = b; }  // R63
     return best;
   }
   attack() {
     if (this.cd > 0 || this.wilting) return false;
     const wpn = this.weapon(), t = this.target(wpn.reach + .6), ch = this.g.character; this.cd = ATTACK_COOLDOWN;
-    if (t) { ch.heading = Math.atan2(t.m.x - ch.position.x, t.m.z - ch.position.z); ch.root.rotation.y = ch.heading; }
+    if (t) { ch.heading = Math.atan2(t.x - ch.position.x, t.z - ch.position.z); ch.root.rotation.y = ch.heading; }
     // Lunge until pack B brings a real arm swing: a small step toward the target + the character flash.
     const step = t ? Math.max(0, Math.min(.6, t.d - 1.0)) : .2;
     ch.position.x += Math.sin(ch.heading) * step; ch.position.z += Math.cos(ch.heading) * step; this.g.world.resolveCollisions?.(ch.position, .3);
     ch.flash?.();
+    if (t?.kind === 'giant' || t?.kind === 'root') return this.boss.hit(t, wpn.dmg);
     if (t?.kind === 'snail') { this.lastCombat = this.time; return this.w.threat.swat(t.m, ch, wpn.dmg); }
     if (t) return this.hitMole(t.m, wpn.dmg);   // same range as the Strike prompt: what you are offered, you hit
     return false;
@@ -268,6 +272,7 @@ export class CombatSystem {
     const now = Date.now();
     if (!this._tick || time - this._tick > 1) { this._tick = time; this.respawnTick(now); if (this.p.pouches.some(p => p.until <= now)) this.syncPouches(); }
     for (const m of this.moles) this.updateMole(m, dt, ch);
+    this.boss?.update(dt, ch);
     for (const f of this.fx) if (f.busy) f.model.update(dt);
     this.updateLoot(dt, ch);
     for (const v of this.pouchViews.values()) v.children[0].position.y = .22 + Math.sin(time * 2) * .02;

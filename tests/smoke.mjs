@@ -221,6 +221,26 @@ try {
     }
     check('combat: mole cycle, strike + defeat + loot, mole hurts, wilt pouch (half), recover, mercy, garden snail', ready && r.seq === 'warning>emerge>up' && r.defeated && r.loot >= 2 && r.collected && r.hurt && r.wilt && r.back && r.mercy && r.snail === true && !errors.length, errors[0] || JSON.stringify(r));
     await ctx.close(); }
+  // 14. R63 Wood Giant: arena placed, wake + camera pull-back, stomp hurts 1 heart, weak window doubles damage,
+  //     roots hurt + weak point damages the Giant, defeat → sinks, gate opens, Golden Seed loot, win saved
+  { const ctx = await context({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true }); const { p, errors, ok } = await startGame(ctx, 'fern');
+    const ready = ok && await p.waitForFunction(() => window.__tgw?.combat?.boss?.giant, null, { timeout: 240000 }).then(() => true, () => false);
+    const r = ready ? await p.evaluate(() => { const g = window.__tgw, c = g.combat, B = c.boss, ch = g.character, o = {}; g.wilds.profile.tools.axe = true;
+      g.devMenu.teleport('world', B.site.x, B.site.z + 6, Math.PI); B.update(.1, ch); o.wake = B.state === 'wake' && g.followCamera.bossZoom > 1;
+      for (let i = 0; i < 20; i++) B.update(.1, ch);
+      let hp0 = c.hp; for (let i = 0; i < 120 && B.state !== 'stuck'; i++) { if (B.state === 'walk') ch.position.set(B.gx, ch.position.y, B.gz + 3.5); else if (B.state === 'stomp' || B.state === 'slam') { const Q = B.local(...(B.state === 'stomp' ? [2.3, -.4] : [0, 2.6])); ch.position.set(Q.x + .3, ch.position.y, Q.z); } B.update(.1, ch); }
+      o.stomp = hp0 - c.hp >= 2 && B.state === 'stuck'; c.heal(true); c.invuln = 0;
+      const h = B.hp; ch.position.set(B.gx, ch.position.y, B.gz + 3); c.cd = 0; c.attack(); o.weak = h - B.hp === 4;
+      B.hp = 15; B.spawnRoots(3, ch.position.x, ch.position.z); hp0 = c.hp; c.invuln = 0; for (let i = 0; i < 14; i++) B.updateRoots(.1, ch.position.x, ch.position.z);
+      const up = B.roots.find(x => x.state === 'up'); let wp = 0; if (up) { ch.position.set(up.x + .5, ch.position.y, up.z); const hh = B.hp; c.cd = 0; c.attack(); wp = hh - B.hp; }
+      o.roots = hp0 - c.hp >= 2 && wp === 2;
+      c.heal(true); for (let k = 0; k < 20 && B.hp > 0; k++) { B.weak = 0; ch.position.set(B.gx, ch.position.y, B.gz + 3); c.cd = 0; c.invuln = 1; c.attack(); }
+      for (let i = 0; i < 40; i++) B.update(.1, ch);
+      o.win = B.state === 'resting' && B.p.wins === 1 && c.loot.some(l => l.kind === 'golden_seed') && !g.followCamera.bossZoom || g.followCamera.bossZoom === 1;
+      o.win = o.win && B.state === 'resting' && B.p.wins === 1 && c.loot.some(l => l.kind === 'golden_seed');
+      return o; }) : {};
+    check('wood giant: wake, stomp telegraph hurts, weak window x2, roots + weak point, defeat + golden seed + saved', ready && r.wake && r.stomp && r.weak && r.roots && r.win && !errors.length, errors[0] || JSON.stringify(r));
+    await ctx.close(); }
   // 5. DEV disabled: no dev UI or handles leak into normal play
   { const ctx = await context({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true }); const { p, errors, ok } = await startGame(ctx, 'daisy', { dev: false });
     const leak = ok && await p.evaluate(() => !!document.querySelector('.dev-menu-btn') || !!window.__tgw || !document.getElementById('dev-badge').hidden);
