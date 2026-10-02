@@ -237,6 +237,7 @@ export class WildsThreatSystem {
         if (p >= 1) { s.state = 'gone'; this.root.remove(s.root); }
         continue;
       }
+      if (s.stunUntil > Date.now()) { s.pendingBite = 0; s.root.position.set(s.x, 0, s.z); continue; }  // R65 special stun
       // Head for the nearest potted plant.
       const pool = this.w.pots?.targets() || [];
       if (!pool.length) { s.state = 'dying'; s.t = 0; continue; }
@@ -249,7 +250,7 @@ export class WildsThreatSystem {
         if (s.biteT <= 0 && s.hitT <= 0) { s.biteT = SNAIL.biteEvery; s.pendingBite = SNAIL.biteHitAt; s.model?.play(['Attack'], () => s.model.loop('Idle')); }
         else if (!busy) s.model?.loop('Idle');
       } else if (best > .55) {
-        const sp = THREAT.snailSpeed * (s.hitT > 0 ? 0 : 1), dx = tgt.x - s.x, dz = tgt.z - s.z;
+        const sp = THREAT.snailSpeed * (s.hitT > 0 ? 0 : 1) * (s.slowUntil > Date.now() ? .4 : 1), dx = tgt.x - s.x, dz = tgt.z - s.z;
         s.x += dx / best * sp * dt; s.z += dz / best * sp * dt; s.root.rotation.y = Math.atan2(-dz, dx);
         if (!busy) s.model?.loop('Crawl');
       } else {

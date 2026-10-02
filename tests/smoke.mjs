@@ -265,6 +265,30 @@ try {
       return o; }) : {};
     check('wood giant: wake + boss camera lock, stomp hurts, weak window x3, bark 1, roots + weak point, shockwave (hop to dodge), defeat + golden seed + saved', ready && r.wake && r.stomp && r.weak && r.bark && r.roots && r.wave && r.win && !errors.length, errors[0] || JSON.stringify(r));
     await ctx.close(); }
+  // 17c. R65 character specials: Swing/Throw overlays on the locked character, landed hits fill the meter, all nine
+  // specials hurt a Mole, the Giant's bark takes 0 and its weak window takes damage, a garden snail can be hit
+  { const ctx = await context({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true }); const { p, errors, ok } = await startGame(ctx, 'spire');
+    const ready = ok && await p.waitForFunction(() => window.__tgw?.combat?.boss?.giant && window.__tgw.combat.models?.mole && window.__tgw.combat.special, null, { timeout: 240000 }).then(() => true, () => false);
+    const r = ready ? await p.evaluate(async () => {
+      const g = window.__tgw, c = g.combat, S = c.special, m = c.moles[0], ch = g.character, B = c.boss, o = {}, w = ms => new Promise(x => setTimeout(x, ms));
+      const { SPECIAL } = await import('./js/data/combatCatalog.js'); g.wilds.profile.tools.axe = true;
+      o.clips = ch.instance.playOverlay('Swing') > .5 && ch.instance.playOverlay('Throw') > .5;
+      g.devMenu.teleport('world', m.home.x + 2, m.home.z, -Math.PI / 2);
+      for (let i = 0; i < 60 && m.state !== 'up'; i++) c.updateMole(m, .1, ch);
+      m.hp = 99; m.stunUntil = Date.now() + 1e6; S.charge = 0; c.cd = 0; c.attack(); o.gain = S.charge === 1;
+      o.notFull = S.use() === false; const dmg = {};
+      for (const [id, def] of Object.entries(SPECIAL.chars)) {
+        S.def = def; m.hp = 50; m.state = 'up'; ch.position.set(m.x + 5, ch.position.y, m.z); S.charge = SPECIAL.chargeHits; S.busy = 0; S.zones = [];
+        S.use(); for (let i = 0; i < 150; i++) S.update(1 / 30); dmg[id] = 50 - m.hp;
+      }
+      o.all = Object.values(dmg).every(v => v >= 2); o.dmg = dmg; m.stunUntil = 0; S.def = SPECIAL.chars.spire;
+      g.devMenu.teleport('world', B.site.x, B.site.z + 6, Math.PI); for (let i = 0; i < 300 && !B.fighting(); i++) await w(100);
+      const shoot = () => { S.charge = SPECIAL.chargeHits; S.busy = 0; S.use(); for (let i = 0; i < 120; i++) S.update(1 / 30); };
+      B.weak = 0; let hp = B.hp; shoot(); o.bark = hp - B.hp === 0; B.weak = 5; hp = B.hp; shoot(); o.weak = hp - B.hp > 0;
+      B.end(false); return o;
+    }) : {};
+    check('specials: Swing/Throw clips on the locked character, hits fill the meter, all 9 specials hurt, Giant bark 0 / weak window hurts', ready && r.clips && r.gain && r.notFull && r.all && r.bark && r.weak && !errors.length, errors[0] || JSON.stringify(r));
+    await ctx.close(); }
   // 17b. R64.1 wilting mid-fight in the real frame loop ends the fight; the shed door back to the world does not
   // drop you into it again; the boss camera keeps the ground around you in view (camera above head height)
   { const ctx = await context({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true }); const { p, errors, ok } = await startGame(ctx, 'fern');

@@ -81,9 +81,25 @@ export class AssetRegistry {
       idle?.reset().play();walk?.reset().play();idle?.setEffectiveWeight(1);walk?.setEffectiveWeight(0);
       if(hop){hop.setLoop(THREE.LoopOnce,1);hop.clampWhenFinished=false;hop.setEffectiveWeight(1);}
       let lean=0;
+      // R65 upper-body overlays (Use / Swing / Throw_Charge / Throw from Jannik's pack): additive on top of
+      // Idle/Walk so the legs keep walking. Reference = bind pose captured now (README: not frame 0).
+      const rest=new Map();visualRoot.traverse(o=>rest.set(o.name,{position:o.position.clone(),quaternion:o.quaternion.clone(),scale:o.scale.clone()}));
+      const overlays=new Map();
+      const overlay=name=>{
+        if(overlays.has(name))return overlays.get(name);
+        const src=gltf.animations.find(c=>c.name===name);if(!src){overlays.set(name,null);return null;}
+        const clip=src.clone(),ref=[];
+        for(const t of clip.tracks){const {nodeName,propertyName}=THREE.PropertyBinding.parseTrackName(t.name),r=rest.get(nodeName)?.[propertyName];if(!r)continue;ref.push(new t.constructor(t.name,[0],r.toArray()));}
+        THREE.AnimationUtils.makeClipAdditive(clip,0,new THREE.AnimationClip(name+'_ref',0,ref));
+        const act=mixer.clipAction(clip);overlays.set(name,act);return act;
+      };
       return {
         definition: def,
         root,
+        // Play an overlay clip once (or looped); returns its length in seconds (0 when the clip is missing).
+        playOverlay(name,{loop=false,timeScale=1}={}){const a=overlay(name);if(!a)return 0;a.stop();a.reset();a.enabled=true;a.setLoop(loop?THREE.LoopRepeat:THREE.LoopOnce,loop?Infinity:1);a.clampWhenFinished=false;a.setEffectiveWeight(1);a.setEffectiveTimeScale(timeScale);a.play();return a.getClip().duration/timeScale;},
+        stopOverlay(name){overlays.get(name)?.stop();},
+        socket(name){return visualRoot.getObjectByName(name);},
         playHop(){if(!hop)return;hop.stop();hop.reset();hop.enabled=true;hop.setLoop(THREE.LoopOnce,1);hop.setEffectiveWeight(1);hop.setEffectiveTimeScale(1);hop.play();},
         updateVisual({ dt, speed, maxSpeed=4.15, turnRate=0 }) {
           const w=THREE.MathUtils.smoothstep(speed,.04,1.35);

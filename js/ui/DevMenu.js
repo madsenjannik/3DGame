@@ -36,7 +36,7 @@ export class DevMenu {
           <button data-a="lr:start">Båd ved startbøjerne</button><button data-a="lr:go">Start Lake Run</button><button data-a="lr:gold">Gennemfør (guldtid)</button><button data-a="lr:reset">Nulstil Lake Run</button>
         </div></section>
         <section><small>KAMP (R61)</small><div class="dev-grid">
-          <button data-a="cb:tp">Teleport til Mole</button><button data-a="cb:heal">Fuld liv</button><button data-a="cb:hurt">Tag 1 hjerte skade</button><button data-a="cb:respawn">Respawn moles</button><button data-a="cb:mercy">Nulstil mercy + poser</button><button data-a="cb:arena">Teleport til Wood Giant</button><button data-a="cb:bosslow">Boss: 4 liv tilbage</button><button data-a="cb:bossreset">Boss: klar igen</button>
+          <button data-a="cb:tp">Teleport til Mole</button><button data-a="cb:heal">Fuld liv</button><button data-a="cb:special">Fyld special-måler</button><button data-a="cb:hurt">Tag 1 hjerte skade</button><button data-a="cb:respawn">Respawn moles</button><button data-a="cb:mercy">Nulstil mercy + poser</button><button data-a="cb:arena">Teleport til Wood Giant</button><button data-a="cb:bosslow">Boss: 4 liv tilbage</button><button data-a="cb:bossreset">Boss: klar igen</button>
         </div></section>
         <section><small>HAVE-LAYOUT (R60)</small><div class="dev-grid">
           <button data-a="move:greenhouse">Flyt drivhus</button><button data-a="move:workshop">Flyt workshop</button><button data-a="move:rain">Flyt regntønde</button><button data-a="move:shrine">Flyt shrine</button><button data-a="layout:reset">Nulstil placeringer</button>
@@ -119,6 +119,7 @@ export class DevMenu {
       const c = g.combat, op = a.slice(3); if (!c) return this.toast('Kamp er ikke indlæst');
       if (op === 'tp') { const m = c.moles.find(x => x.state !== 'gone') || c.moles[0]; if (!m) return this.toast('Ingen Mole fundet'); this.teleport('world', m.home.x + 4, m.home.z, -Math.PI / 2); return; }
       if (op === 'heal') { c.heal(true); return this.toast('Fuldt liv'); }
+      if (op === 'special') { const S = c.special; if (!S?.def) return this.toast('Ingen special for denne figur'); S.charge = 99; S.gain(0); c.lastCombat = c.time; return this.toast(`${S.def.name} klar: tryk F / knappen`); }
       if (op === 'hurt') { this.hide(); c.invuln = 0; if (g.world.space !== 'world') return this.toast('Kun i verden'); const p = g.character.position; c.hurt(2, p.x + .1, p.z); return; }
       if (op === 'respawn') { for (const k of Object.keys(c.p.moles)) c.p.moles[k] = 0; g.save.persist(); return this.toast('Moles kommer tilbage om et øjeblik'); }
       const B = c.boss;

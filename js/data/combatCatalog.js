@@ -75,3 +75,23 @@ export const GIANT = {
   rematchHours: 24,
   reward: { first: { golden_seed: 1, amber: 3, wood: 10 }, again: { amber: 2, wood: 8 } }
 };
+
+// R65 character specials (Jannik's specials pack, assets/combat/specials/). A Sap meter fills from melee hits
+// that land; when full, F / the special button throws the character's own special (Throw clip, released at
+// 0.375 s from Hand_Socket_R). On the Wood Giant specials only hurt during a weak window (×weakMultiplier) and
+// root weak points; the bark takes 0, so a ranged burst can't replace the fight.
+export const SPECIAL = {
+  chargeHits: 6, releaseAt: .375, scale: 2.2, autoAim: 10,
+  // kind: line (pierce) | fan | boomerang | chain | lob | pearl | roll. r = effect radius, dmg per hit.
+  chars: {
+    aloe:      { name: 'Gel Bomb',     meter: 'Gel',    file: 'aloe',      kind: 'lob',       range: 8,  dmg: 2, r: 1.8, pool: 4, slow: .4 },
+    cactus:    { name: 'Thorn Shot',   meter: 'Thorn',  file: 'cactus',    kind: 'line',      range: 12, dmg: 3, speed: 18 },
+    daisy:     { name: 'Petal Star',   meter: 'Pollen', file: 'daisy',     kind: 'chain',     range: 9,  dmg: 2, speed: 13, jumps: 3, jumpRange: 5 },
+    fern:      { name: 'Leaf Boomerang', meter: 'Spore', file: 'fern',     kind: 'boomerang', range: 8,  dmg: 2, speed: 11 },
+    hyacinth:  { name: 'Scent Cloud',  meter: 'Scent',  file: 'hyacinth',  kind: 'lob',       range: 8,  dmg: 1, r: 2.2, cloud: 3, tick: .75 },
+    spire:     { name: 'Leaf Fan',     meter: 'Sap',    file: 'spire',     kind: 'fan',       range: 9,  dmg: 2, speed: 14, count: 3, spread: .26 },
+    succulent: { name: 'Water Pearl',  meter: 'Dew',    file: 'succulent', kind: 'pearl',     range: 9,  dmg: 2, speed: 7, r: 2, push: 2.5 },
+    swamp:     { name: 'Mud Splat',    meter: 'Mud',    file: 'swamp',     kind: 'lob',       range: 8,  dmg: 3, r: 2, stun: 1.5 },
+    tulip:     { name: 'Bulb Roll',    meter: 'Bud',    file: 'tulip',     kind: 'roll',      range: 10, dmg: 3, speed: 9, r: 2 }
+  }
+};

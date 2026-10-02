@@ -9,6 +9,7 @@ import * as THREE from 'three';
 import { loadGLTF } from '../core/AssetManager.js';
 import { WildsModel } from './WildsModels.js';
 import { WoodGiantBoss } from './WoodGiantBoss.js';
+import { SpecialSystem } from './SpecialSystem.js';
 import { MATERIALS } from '../data/wildsCatalog.js';
 import { PLAYER, WEAPONS, WEAPON_ORDER, ATTACK_COOLDOWN, MOLE, WILT, LOOT_FILES } from '../data/combatCatalog.js';
 
@@ -28,6 +29,7 @@ export class CombatSystem {
     this.moles = []; this.loot = []; this.fx = []; this.pouchViews = new Map(); this.models = {};
     this.buildHud(); this.placeMoles(); this.syncPouches();
     try { this.boss = new WoodGiantBoss(this); } catch (e) { console.warn('[TGW] Wood Giant disabled', e); }  // R63
+    try { this.special = new SpecialSystem(this); } catch (e) { console.warn('[TGW] specials disabled', e); }  // R65
     this.ready = this.loadModels();
   }
 
@@ -80,7 +82,8 @@ export class CombatSystem {
     const md = m.model; if (!md || m.state === 'gone') return;
     const px = ch.position.x, pz = ch.position.z, d = Math.hypot(px - m.x, pz - m.z);
     if (d > 60 && m.state === 'dormant') return;
-    md.update(dt); m.t += dt; m.attackCd = Math.max(0, m.attackCd - dt);
+    md.update(dt); if (m.stunUntil > Date.now()) return;  // R65 special stun: frozen in place (still hittable)
+    m.t += dt; m.attackCd = Math.max(0, m.attackCd - dt);
     const face = () => { m.root.rotation.y = Math.atan2(px - m.x, pz - m.z); };
     m.bar.visible = VULNERABLE.has(m.state) && m.hp < MOLE.hp;
     switch (m.state) {
@@ -185,11 +188,13 @@ export class CombatSystem {
     // Lunge until pack B brings a real arm swing: a small step toward the target + the character flash.
     const step = t ? Math.max(0, Math.min(.6, t.d - 1.0)) : .2;
     ch.position.x += Math.sin(ch.heading) * step; ch.position.z += Math.cos(ch.heading) * step; this.g.world.resolveCollisions?.(ch.position, .3);
-    ch.flash?.();
-    if (t?.kind === 'giant' || t?.kind === 'root') return this.boss.hit(t, wpn.dmg);
-    if (t?.kind === 'snail') { this.lastCombat = this.time; return this.w.threat.swat(t.m, ch, wpn.dmg); }
-    if (t) return this.hitMole(t.m, wpn.dmg);   // same range as the Strike prompt: what you are offered, you hit
-    return false;
+    ch.flash?.(); ch.instance?.playOverlay?.('Swing');   // R65: Jannik's Swing clip (upper body) on top of the lunge
+    let landed = false;
+    if (t?.kind === 'giant' || t?.kind === 'root') landed = this.boss.hit(t, wpn.dmg);
+    else if (t?.kind === 'snail') { this.lastCombat = this.time; landed = this.w.threat.swat(t.m, ch, wpn.dmg); }
+    else if (t) landed = this.hitMole(t.m, wpn.dmg);   // same range as the Strike prompt: what you are offered, you hit
+    if (landed) this.special?.gain();                  // R65: landed hits fill the character's special meter
+    return landed;
   }
   hurt(amount, fx, fz) {
     const space = this.g.world.space;
@@ -264,6 +269,7 @@ export class CombatSystem {
   // Returns { interaction } (strike a nearby Mole / pick up a pouch). `active` = world, not busy.
   update(dt, time, ch, active) {
     this.time = time; this.cd = Math.max(0, this.cd - dt); this.invuln = Math.max(0, this.invuln - dt);
+    if (this.special) { this.special.update(dt); this.special.btn?.classList.toggle('show', !!this.special.charge || time - this.lastCombat < 6); }  // R65
     if (!this.wilting && this.hp < MAX_HP && !this.boss?.fighting() && time - this.lastHit > PLAYER.regenDelay && (time - (this.lastRegen || 0)) > PLAYER.regenEvery) { this.lastRegen = time; this.heal(false); }
     this.hudEl.classList.toggle('show', this.hp < MAX_HP || time - this.lastCombat < 4);
     if (this.g.world.space === 'garden') {
