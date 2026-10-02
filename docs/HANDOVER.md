@@ -3,7 +3,7 @@
 ## Start here
 - **Repo:** `madsenjannik/3DGame`, branch `claude/magical-lovelace-nuka97` (GitHub replaces ZIP packages).
 - **Live test build:** `https://madsenjannik.github.io/3DGame/` (version shown bottom-left on the start screen).
-- **Current build:** v0.5.11 · `CAMLAB-R50.1-20261001A` (see `version.js`).
+- **Current build:** v0.5.20 · `CAMERA-R50.2-20261002A` (see `version.js`).
 - **Last LOCKED baseline:** R45 (`v0.3.96-R45-HOLO-INDICATOR-LOCKED`). Everything newer is CANDIDATE.
 - **Rules:** never build without Jannik's explicit **GO**; analyze, find root cause and define exact scope first.
   Building lives in the **private garden**. **Do not change the three greenhouse levels.**
@@ -18,7 +18,8 @@
 | R48.1 · v0.4.21 | Mobile layout (compact HUD materials, landscape panel/start/selector). Built without GO — Jannik flagged this. |
 | R49 · v0.5.00 | All building moved into the private garden; Lookout loop retired; greenhouse pots (plant/water/harvest); SaveGame v2 migration. |
 | R50 · v0.5.10 | Dev menu (Indstillinger → Dev-menu, works on real save) + crafted tools shown in the HUD. |
-| R50.1 · v0.5.11 | DEV-only camera/control variants: A Frit kamera (Genshin-style), B Cozy ovenfra (Animal Crossing-style). Standard unchanged. |
+| R50.1 · v0.5.11 | DEV-only camera/control variants: A Frit kamera (Genshin-style), B Cozy ovenfra (Animal Crossing-style). |
+| R50.2 · v0.5.20 | Jannik chose A: Frit kamera is the default on touch devices; desktop keeps the classic camera. |
 
 Details: `docs/MASTER-PROJECT-DOCUMENT.md` section 30 and `docs/R47…R49*.md`.
 
@@ -30,7 +31,7 @@ Details: `docs/MASTER-PROJECT-DOCUMENT.md` section 30 and `docs/R47…R49*.md`.
 5. DEV → **Nærmeste tornekrat** to test cutting + cache.
 
 ## Open / pending
-- Jannik to compare camera variants (Dev menu → KAMERA & STYRING) and pick one → separate GO to make it default.
+- Camera A is default on touch (R50.2). Open: desktop mouse-look if A should also become the PC default.
 - Jannik's runtime test + LÅS of R46.2–R50.
 - R34B mobile gestures: still awaiting final real-device approval.
 - Safari toolbars eat ~⅓ of landscape height: proposed (not built) web-app manifest for fullscreen "Add to Home Screen".

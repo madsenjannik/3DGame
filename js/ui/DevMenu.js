@@ -37,7 +37,7 @@ export class DevMenu {
         <section><small>FARE</small><div class="dev-grid"><button data-a="reset" class="danger">Nulstil wilds-save (denne karakter)</button></div></section>
       </div></div>`;
     document.body.appendChild(el); this.el = el; this.open = false;
-    this.profile = applyControlProfile(game, savedProfile()); this.markProfile();
+    this.profile = applyControlProfile(game, savedProfile(game.input?.isTouch)); this.markProfile();
     for (const t of ['pointerdown', 'pointermove', 'pointerup']) { el.addEventListener(t, e => e.stopPropagation()); btn.addEventListener(t, e => e.stopPropagation()); }
     btn.addEventListener('click', () => this.show());
     el.addEventListener('click', e => {

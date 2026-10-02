@@ -1505,7 +1505,10 @@ Dev menu → KAMERA & STYRING: **Standard** (unchanged, locked behavior), **A ·
 camera only turns on swipe, lazy recenter behind you after ~2.5 s of walking, 7.0/5.8 m, FOV 60/52) and **B · Cozy
 ovenfra** (Animal Crossing-style: fixed high camera, never rotates, stick matches the screen, 11.5/9.8 m, FOV 46/40).
 Implemented in `js/core/ControlProfiles.js` by swapping methods on the live camera instance; `ThirdPersonCamera.js`
-and `CharacterController.js` are untouched and non-dev players always get Standard. Choosing a winner = separate GO.
+and `CharacterController.js` are untouched.
+
+**R50.2 (02/10/2026, Jannik: "A GO"):** A · Frit kamera is now the **default on touch devices** (iPhone/iPad).
+Desktop keeps the classic R45 camera (no mouse-look yet). Dev menu can still switch between all three.
 
 ## Known limits
 Placeholder procedural art for all new props; no real combat/health; no global day/night lighting; balancing is a

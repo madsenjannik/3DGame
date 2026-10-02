@@ -1,5 +1,6 @@
 // @ts-nocheck
-// DEV-only camera/control variants. They never edit the locked ThirdPersonCamera or
+// Camera/control variants. Since R50.2 'free' is the default on touch devices (Jannik: "A GO");
+// desktop keeps 'standard' (no mouse-look yet). Other variants stay DEV-only. They never edit the locked ThirdPersonCamera or
 // CharacterController code: a variant swaps a few methods on the live camera instance and
 // restores the originals for 'standard'. Selected from the Dev menu, remembered per device.
 //
@@ -15,12 +16,13 @@ import { damp, wrapAngle } from '../visual/VisualKit.js';
 
 export const CONTROL_PROFILE_KEY = 'tgw.controlProfile';
 export const PROFILES = {
-  standard: { name: 'Standard (nuværende)', text: 'Uændret: kameraet følger figurens retning.' },
-  free: { name: 'A · Frit kamera', text: 'Kameraet drejer kun når du swiper (højre side). Glider selv bag dig efter ~2,5 s gang. Lidt længere væk, mere horisont.' },
+  standard: { name: 'Klassisk (R45 / PC-standard)', text: 'Kameraet følger figurens retning. Standard på PC.' },
+  free: { name: 'A · Frit kamera (mobil-standard)', text: 'Kameraet drejer kun når du swiper (højre side). Glider selv bag dig efter ~2,5 s gang. Lidt længere væk, mere horisont.' },
   cozy: { name: 'B · Cozy ovenfra', text: 'Fast højt kamera der aldrig drejer. Joysticket matcher skærmen. Kun én tommelfinger.' }
 };
 
-export function savedProfile() { try { return localStorage.getItem(CONTROL_PROFILE_KEY) || 'standard'; } catch { return 'standard'; } }
+export function defaultProfile(isTouch) { return isTouch ? 'free' : 'standard'; }
+export function savedProfile(isTouch) { try { return localStorage.getItem(CONTROL_PROFILE_KEY) || defaultProfile(isTouch); } catch { return defaultProfile(isTouch); } }
 
 const ORIGINAL = Symbol('tgwOriginalCamera');
 

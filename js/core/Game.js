@@ -24,6 +24,7 @@ import { SaveGame } from './SaveGame.js';
 import { WildsLoopSystem } from '../gameplay/WildsLoopSystem.js';
 import { WorkbenchPanel } from '../ui/WorkbenchPanel.js';
 import { DevMenu, devMenuEnabled } from '../ui/DevMenu.js';
+import { applyControlProfile, defaultProfile } from './ControlProfiles.js';
 
 export class Game {
   async init({characterId='succulent',devMode=false}={}){
@@ -83,6 +84,7 @@ export class Game {
     this.wilds.onOpenWorkbench=()=>{this.workbenchPanel.show();this.input.resetTouchPointers?.();};
     const syncTools=()=>this.hud.setTools?.(this.wilds.profile.tools,this.wilds.profile.water);this.wilds.onChange(syncTools);syncTools();
     if(devMode||devMenuEnabled()){this.devMenu=new DevMenu(this);window.__tgw=this;}
+    else applyControlProfile(this,defaultProfile(this.input.isTouch)); // R50.2: free camera on touch, classic on desktop
     mark('wildsReadyMs');
     this.cameraOcclusion=new CameraOcclusionSystem({world:this.world,homePortal:this.homePortal,greenhouse:this.greenhouse,orangery:this.orangery,stable:this.stable});
     this.followCamera.setOcclusionSystem(this.cameraOcclusion);
