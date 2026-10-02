@@ -48,7 +48,9 @@ export class CharacterController {
   update(dt, time, input, followCamera) {
     const m = input.frameMove || { x: 0, y: 0 };
     const magnitude = Math.min(1, input.moveMagnitude || Math.hypot(m.x, m.y));
-    const active = magnitude > .05;
+    // R65.3: a big combat hit (Stomp/Slam) takes control for ~0.45 s while you are thrown back.
+    if (this.controlLock > 0) this.controlLock -= dt;
+    const active = magnitude > .05 && !(this.controlLock > 0);
     const wasReverseActive = this.reverseIntentActive;
     this.reverseIntentActive = false;
 

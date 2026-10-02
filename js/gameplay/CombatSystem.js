@@ -196,13 +196,16 @@ export class CombatSystem {
     if (landed) this.special?.gain();                  // R65: landed hits fill the character's special meter
     return landed;
   }
-  hurt(amount, fx, fz) {
+  hurt(amount, fx, fz, push = PLAYER.knockback) {
     const space = this.g.world.space;
     if (this.invuln > 0 || this.wilting || (space !== 'world' && space !== 'garden')) return false;
     // The private garden is a safe zone (R62): snails can hurt you there, but never below half a heart.
     this.hp = space === 'garden' ? Math.max(Math.min(this.hp, 1), this.hp - amount) : Math.max(0, this.hp - amount); this.invuln = PLAYER.invuln; this.lastHit = this.time; this.lastCombat = this.time;
     const ch = this.g.character, dx = ch.position.x - fx, dz = ch.position.z - fz, l = Math.hypot(dx, dz) || 1;
-    ch.position.x += dx / l * PLAYER.knockback; ch.position.z += dz / l * PLAYER.knockback; this.g.world.resolveCollisions?.(ch.position, .3);
+    // R65.3: thrown back over a short time (collision every step) instead of a 0.75 m teleport; big hits arc with a hop.
+    const big = push >= 2, dur = big ? .42 : PLAYER.knockTime;
+    this.kb = { x: dx / l, z: dz / l, dist: push, done: 0, t: 0, dur };
+    if (big) { ch.controlLock = dur + .05; if (ch.isGrounded) { ch.isGrounded = false; ch.hopVelocity = ch.hopLaunchSpeed * .75; ch.instance?.playHop?.(); } }
     ch.flash?.(); document.body.classList.remove('hurt-flash'); void document.body.offsetWidth; document.body.classList.add('hurt-flash');
     this.renderHud();
     if (this.hp <= 0) this.wilt();
@@ -212,7 +215,7 @@ export class CombatSystem {
 
   // ---------- wilting (death) ----------
   async wilt() {
-    if (this.wilting) return; this.wilting = true;
+    if (this.wilting) return; this.wilting = true; this.kb = null; if (this.g.character) this.g.character.controlLock = 0;
     // R64.1: end a boss fight right here. The portal fade below pauses the combat update, so the boss never saw
     // the wilt and the fight (arena pull-in, camera lock, no regen) resumed on the way back to the world.
     if (this.boss?.fighting()) this.boss.end(false);
@@ -269,6 +272,11 @@ export class CombatSystem {
   // Returns { interaction } (strike a nearby Mole / pick up a pouch). `active` = world, not busy.
   update(dt, time, ch, active) {
     this.time = time; this.cd = Math.max(0, this.cd - dt); this.invuln = Math.max(0, this.invuln - dt);
+    if (this.kb) {   // R65.3 knockback: ease-out slide, resolved against walls every frame
+      const k = this.kb, ch = this.g.character; k.t = Math.min(k.dur, k.t + dt); const u = k.t / k.dur, want = k.dist * (1 - (1 - u) * (1 - u)), step = want - k.done; k.done = want;
+      ch.position.x += k.x * step; ch.position.z += k.z * step; this.g.world.resolveCollisions?.(ch.position, ch.radius || .3); ch.velocity?.set(0, 0, 0);
+      if (k.t >= k.dur || this.wilting) this.kb = null;
+    }
     if (this.special) { this.special.update(dt); this.special.btn?.classList.toggle('show', !!this.special.charge || time - this.lastCombat < 6); }  // R65
     if (!this.wilting && this.hp < MAX_HP && !this.boss?.fighting() && time - this.lastHit > PLAYER.regenDelay && (time - (this.lastRegen || 0)) > PLAYER.regenEvery) { this.lastRegen = time; this.heal(false); }
     this.hudEl.classList.toggle('show', this.hp < MAX_HP || time - this.lastCombat < 4);

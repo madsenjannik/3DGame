@@ -9,7 +9,8 @@
 export const PLAYER = {
   hearts: 5,                 // 10 half-hearts
   invuln: 1.0,               // seconds after a hit
-  knockback: .75,            // metres
+  knockback: .75,            // metres (R65.3: a short slide, not a jump; big hits pass their own push)
+  knockTime: .22,            // seconds for the default push; pushes ≥ 2 m take 0.42 s with a hop arc and lock control
   regenDelay: 5,             // seconds without damage before hearts return
   regenEvery: 6              // seconds per half-heart
 };
@@ -64,11 +65,11 @@ export const GIANT = {
   weakMultiplier: 3,          // weapon damage ×3 while the Giant is stuck after a Stomp/Slam
   weakWindow: { stomp: 1.6, slam: 2.2 },
   // impactAt = when it lands (telegraph length); clipImpact = impact time inside the authored clip.
-  stomp: { range: 4.6, impactAt: .8, clipImpact: 1.0, radius: 4.5, damage: 2, footLocal: [2.9, -.5] },  // 1 heart
-  slam:  { range: 5.5, impactAt: 1.0, clipImpact: 1.18, radius: 3.6, damage: 4, frontLocal: [0, 3.2] }, // 2 hearts
-  shockwave: { fromPhase: 1, speed: 6, maxRadius: 11, width: .75, damage: 2, airborne: .12 },          // hop over it
+  stomp: { range: 4.6, impactAt: .8, clipImpact: 1.0, radius: 4.5, damage: 2, push: 3.5, footLocal: [2.9, -.5] },  // 1 heart
+  slam:  { range: 5.5, impactAt: 1.0, clipImpact: 1.18, radius: 3.6, damage: 4, push: 5, frontLocal: [0, 3.2] }, // 2 hearts
+  shockwave: { fromPhase: 1, speed: 6, maxRadius: 11, width: .75, damage: 2, push: 1.5, airborne: .12 },          // hop over it
   phases: [ { at: 1, roots: 2, every: 7, speed: 1 }, { at: .6, roots: 4, every: 5, speed: 1 }, { at: .25, roots: 6, every: 4, speed: 1.3 } ],
-  root: { warn: 1.2, radius: 1.05, damage: 2, weakRange: 1.9, weakDamage: 3, spacing: .9, lead: .6 },
+  root: { warn: 1.2, radius: 1.05, damage: 2, push: 1.5, weakRange: 1.9, weakDamage: 3, spacing: .9, lead: .6 },
   regenInFight: false,
   // R64.1: higher and further back so the root warnings on the ground around you are in view (was 7.5 / 1.4 / .45 / 68 / 58).
   camera: { distance: 9.5, height: 3.0, chestY: 5.2, lookBlend: .3, fovPortrait: 74, fovLandscape: 62, outside: 2, wallLift: .9, edgeLift: .3, liftMax: 3.5, gateFade: .2 },

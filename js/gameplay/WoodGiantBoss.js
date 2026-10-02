@@ -53,10 +53,10 @@ export class WoodGiantBoss {
       s.traverse(o => { if (o.isMesh) { o.castShadow = !/FX_/.test(o.name); o.receiveShadow = true; o.frustumCulled = false; } });
       this.mixer = new THREE.AnimationMixer(s); this.fxMixer = new THREE.AnimationMixer(s);
       this.clips = Object.fromEntries(giant.animations.map(c => [c.name, c]));
-      // R65.2: body (Hips) + both feet follow the animated bones every frame (one centre circle was smaller than the
-      // feet). space = 'world' explicitly: before R65.1 it took the space active at load time, so it could end up
-      // registered for the garden and never block in the world.
-      this.bodyParts = [['Hips', 1.3], ['Foot_L', .95], ['Foot_R', .95]].map(([n, r]) => ({ bone: s.getObjectByName(n), r, o: Object.assign(this.g.world.addObstacle({ x: this.site.x, z: this.site.z, r, height: 6, kind: 'boss-wood-giant' }), { space: 'world' }) }));
+      // R65.2/R65.3: only the two feet block and follow the animated bones every frame, so you can run between the
+      // legs (a hip circle closed that gap). space = 'world' explicitly: before R65.1 it took the space active at
+      // load time, so it could end up registered for the garden and never block in the world.
+      this.bodyParts = [['Foot_L', .8], ['Foot_R', .8]].map(([n, r]) => ({ bone: s.getObjectByName(n), r, o: Object.assign(this.g.world.addObstacle({ x: this.site.x, z: this.site.z, r, height: 6, kind: 'boss-wood-giant' }), { space: 'world' }) }));
       this.obstacle = this.bodyParts[0].o;
       this.buildArenaColliders(); this.buildFightMarker();   // R65.1
       this.reset();
@@ -244,7 +244,7 @@ export class WoodGiantBoss {
         if (!this.hitDone) this.showTele(P.x, P.z, A.radius, k);
         if (!this.hitDone && this.t >= at) {
           this.hitDone = true; this.tele.visible = false; this.shake = .45; this.fx(this.state === 'stomp' ? 'Stomp_FX' : 'Slam_FX');
-          if (Math.hypot(px - P.x, pz - P.z) < A.radius) this.c.hurt(A.damage, P.x, P.z);
+          if (Math.hypot(px - P.x, pz - P.z) < A.radius) this.c.hurt(A.damage, P.x, P.z, A.push);   // R65.3 thrown back
           if (this.state === 'stomp' && phIdx >= GIANT.shockwave.fromPhase) this.spawnWave(P.x, P.z);
         }
         if (this.t >= this.attackLen) { this.stuckFor = GIANT.weakWindow[this.state]; this.weak = this.stuckFor; this.state = 'stuck'; this.t = 0; this.renderUi(); }
@@ -310,7 +310,7 @@ export class WoodGiantBoss {
     for (const wv of this.waves || []) {
       wv.r += W.speed * dt; wv.mesh.scale.setScalar(wv.r); wv.mesh.material.opacity = .8 * (1 - wv.r / W.maxRadius);
       const d = Math.hypot(ch.position.x - wv.x, ch.position.z - wv.z), airborne = ch.isGrounded === false || (ch.hopOffset || 0) > W.airborne;
-      if (!wv.hit && Math.abs(d - wv.r) < W.width && !airborne) { wv.hit = true; this.c.hurt(W.damage, wv.x, wv.z); }
+      if (!wv.hit && Math.abs(d - wv.r) < W.width && !airborne) { wv.hit = true; this.c.hurt(W.damage, wv.x, wv.z, W.push); }
       if (wv.r > W.maxRadius) { wv.done = true; this.c.root.remove(wv.mesh); }
     }
     this.waves = (this.waves || []).filter(w => !w.done);
@@ -330,7 +330,7 @@ export class WoodGiantBoss {
       r.model.update(dt); r.t += dt;
       if (r.state === 'warn' && r.t > GIANT.root.warn) {
         r.state = 'up'; r.t = 0; r.model.play(['Strike'], () => { if (r.state === 'up') { r.state = 'retract'; r.model.play(['Retract'], () => r.done = true); } });
-        if (Math.hypot(px - r.x, pz - r.z) < GIANT.root.radius) this.c.hurt(GIANT.root.damage, r.x, r.z);
+        if (Math.hypot(px - r.x, pz - r.z) < GIANT.root.radius) this.c.hurt(GIANT.root.damage, r.x, r.z, GIANT.root.push);
       }
     }
     for (const r of this.roots) if (r.done) this.c.root.remove(r.model.root);

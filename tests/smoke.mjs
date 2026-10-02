@@ -248,12 +248,14 @@ try {
     const r = ready ? await p.evaluate(() => { const g = window.__tgw, c = g.combat, B = c.boss, ch = g.character, o = {}; g.wilds.profile.tools.axe = true;
       // R65.1: walking close no longer wakes it; arena walls collide; the FIGHT marker starts it and the doors close
       g.devMenu.teleport('world', B.site.x, B.site.z + 6, Math.PI); B.update(.1, ch); o.sleeps = B.state === 'sleep';
-      const wo = B.arenaObstacles[5], q = { x: wo.x + .05, z: wo.z }; g.world.resolveCollisions(q, .3); o.walls = B.arenaObstacles.length > 30 && Math.hypot(q.x - wo.x, q.z - wo.z) >= wo.r + .29 && B.doorObstacles.every(d => d.r < .1) && B.openDoorObstacles.length > 0 && B.openDoorObstacles.every(d => d.r > .3) && B.bodyParts.length === 3 && B.bodyParts.every(b => b.bone && b.o.space === 'world' && b.o.r > .5);
+      const wo = B.arenaObstacles[5], q = { x: wo.x + .05, z: wo.z }; g.world.resolveCollisions(q, .3); o.walls = B.arenaObstacles.length > 30 && Math.hypot(q.x - wo.x, q.z - wo.z) >= wo.r + .29 && B.doorObstacles.every(d => d.r < .1) && B.openDoorObstacles.length > 0 && B.openDoorObstacles.every(d => d.r > .3) && B.bodyParts.length === 2 && B.bodyParts.every(b => b.bone && b.o.space === 'world' && b.o.r > .5);
+      const mid = { x: (B.bodyParts[0].o.x + B.bodyParts[1].o.x) / 2, z: (B.bodyParts[0].o.z + B.bodyParts[1].o.z) / 2 }, mq = { ...mid }; g.world.resolveCollisions(mq, .3); o.between = Math.hypot(mq.x - mid.x, mq.z - mid.z) < .01;
       g.devMenu.teleport('world', B.fightPoint.x, B.fightPoint.z, 0); o.offer = c.update(.016, c.time, ch, true).interaction?.type === 'combat-fight';
       c.interact('combat-fight'); o.wake = o.sleeps && o.offer && B.state === 'wake' && typeof g.followCamera.lockYaw === 'function' && B.doorObstacles.every(d => d.r > .3) && B.openDoorObstacles.every(d => d.r < .1);
       for (let i = 0; i < 20; i++) B.update(.1, ch);
       let hp0 = c.hp; for (let i = 0; i < 120 && B.state !== 'stuck'; i++) { if (B.state === 'walk') ch.position.set(B.gx, ch.position.y, B.gz + 3.5); else if (B.state === 'stomp' || B.state === 'slam') { const Q = B.local(...(B.state === 'stomp' ? [2.9, -.5] : [0, 3.2])); ch.position.set(Q.x + .3, ch.position.y, Q.z); } B.update(.1, ch); }
       o.stomp = hp0 - c.hp >= 2 && B.state === 'stuck'; c.heal(true); c.invuln = 0;
+      { const s0 = { x: ch.position.x, z: ch.position.z }; c.hurt(2, s0.x - 1, s0.z, 3.5); const lock = ch.controlLock > .3; for (let i = 0; i < 20; i++) c.update(.03, c.time + .03, ch, true); o.thrown = lock && Math.hypot(ch.position.x - s0.x, ch.position.z - s0.z) > 2 && !c.kb; c.heal(true); c.invuln = 0; }
       const h = B.hp; ch.position.set(B.gx, ch.position.y, B.gz + 3); c.cd = 0; c.attack(); o.weak = h - B.hp === 6;
       B.weak = 0; const h2 = B.hp; c.cd = 0; c.attack(); o.bark = h2 - B.hp === 1;
       B.hp = 15; B.spawnRoots(3, ch.position.x, ch.position.z); hp0 = c.hp; c.invuln = 0; for (let i = 0; i < 14; i++) B.updateRoots(.1, ch.position.x, ch.position.z);
@@ -267,7 +269,7 @@ try {
       o.win = B.state === 'resting' && B.p.wins === 1 && c.loot.some(l => l.kind === 'golden_seed') && !g.followCamera.bossZoom || g.followCamera.bossZoom === 1;
       o.win = o.win && B.state === 'resting' && B.p.wins === 1 && c.loot.some(l => l.kind === 'golden_seed');
       return o; }) : {};
-    check('wood giant: sleeps when you walk in, arena walls collide, FIGHT marker starts it + doors close, camera lock, stomp hurts, weak window x3, bark 1, roots + weak point, shockwave (hop to dodge), defeat + golden seed + saved', ready && r.walls && r.wake && r.stomp && r.weak && r.bark && r.roots && r.wave && r.win && !errors.length, errors[0] || JSON.stringify(r));
+    check('wood giant: sleeps when you walk in, arena walls collide, free between the legs, thrown back by big hits, FIGHT marker starts it + doors close, camera lock, stomp hurts, weak window x3, bark 1, roots + weak point, shockwave (hop to dodge), defeat + golden seed + saved', ready && r.walls && r.between && r.thrown && r.wake && r.stomp && r.weak && r.bark && r.roots && r.wave && r.win && !errors.length, errors[0] || JSON.stringify(r));
     await ctx.close(); }
   // 17c. R65 character specials: Swing/Throw overlays on the locked character, landed hits fill the meter, all nine
   // specials hurt a Mole, the Giant's bark takes 0 and its weak window takes damage, a garden snail can be hit
