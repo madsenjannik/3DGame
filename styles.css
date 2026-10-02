@@ -1065,4 +1065,4 @@ body.hurt-flash::after{content:'';position:fixed;inset:0;pointer-events:none;z-i
 .boss-track{margin-top:5px;height:12px;border-radius:999px;background:rgba(28,36,24,.75);border:1px solid rgba(255,241,184,.55);overflow:hidden}
 .boss-track i{display:block;height:100%;width:100%;background:linear-gradient(90deg,#7a5230,#c98a4b);transition:width .25s ease}
 .boss-bar.weak .boss-track i{background:linear-gradient(90deg,#d9a441,#ffe08a)}
-@media (max-width:700px) and (orientation:portrait){.boss-bar{top:auto;bottom:calc(max(14px,env(safe-area-inset-bottom)) + 132px)}}
+@media (max-width:700px) and (orientation:portrait){.boss-bar{top:calc(max(14px,env(safe-area-inset-top)) + 178px)}}

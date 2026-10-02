@@ -57,14 +57,20 @@ export const LOOT_FILES = { clay: 'loot_clay', stone: 'loot_stone', fiber: 'loot
 // R63 Wood Giant (first boss) — reuses the contract (hp, hurt(), telegraphs, weak windows, drops) and adds
 // phases, root ground attacks, weak windows, an arena boundary and a boss bar. No separate boss engine.
 export const GIANT = {
-  scale: .8, hp: 30, bodyRadius: 2.6, walkSpeed: 1.25,
+  // R63.1 (Jannik: too easy, too big to see): smaller, harder, low-angle boss camera.
+  scale: .65, hp: 60, bodyRadius: 2.1, walkSpeed: 1.8,
   wakeRange: 9, arenaRadius: 11.5,
-  stomp: { range: 4.6, impactAt: 1.0, radius: 3.6, damage: 2, footLocal: [2.3, -.4] },    // 1 heart
-  slam:  { range: 5.5, impactAt: 1.18, radius: 3.4, damage: 4, frontLocal: [0, 2.6] },    // 2 hearts
-  weakWindow: { stomp: 1.6, slam: 2.2 }, weakMultiplier: 2,
-  phases: [ { at: 1, roots: 0, every: 0, speed: 1 }, { at: .6, roots: 3, every: 8, speed: 1 }, { at: .25, roots: 5, every: 6, speed: 1.2 } ],
-  root: { warn: 1.2, radius: 1.05, damage: 2, weakRange: 1.9, weakDamage: 2, spacing: .9 },
+  barkDamage: 1,              // body hits outside a weak window: the bark is hard
+  weakMultiplier: 3,          // weapon damage ×3 while the Giant is stuck after a Stomp/Slam
+  weakWindow: { stomp: 1.6, slam: 2.2 },
+  // impactAt = when it lands (telegraph length); clipImpact = impact time inside the authored clip.
+  stomp: { range: 4.6, impactAt: .8, clipImpact: 1.0, radius: 4.5, damage: 2, footLocal: [2.9, -.5] },  // 1 heart
+  slam:  { range: 5.5, impactAt: 1.0, clipImpact: 1.18, radius: 3.6, damage: 4, frontLocal: [0, 3.2] }, // 2 hearts
+  shockwave: { fromPhase: 1, speed: 6, maxRadius: 11, width: .75, damage: 2, airborne: .12 },          // hop over it
+  phases: [ { at: 1, roots: 2, every: 7, speed: 1 }, { at: .6, roots: 4, every: 5, speed: 1 }, { at: .25, roots: 6, every: 4, speed: 1.3 } ],
+  root: { warn: 1.2, radius: 1.05, damage: 2, weakRange: 1.9, weakDamage: 3, spacing: .9, lead: .6 },
+  regenInFight: false,
+  camera: { distance: 7.5, height: 1.4, chestY: 5.2, lookBlend: .45, fovPortrait: 68, fovLandscape: 58 },
   rematchHours: 24,
-  reward: { first: { golden_seed: 1, amber: 3, wood: 10 }, again: { amber: 2, wood: 8 } },
-  cameraZoom: 1.75
+  reward: { first: { golden_seed: 1, amber: 3, wood: 10 }, again: { amber: 2, wood: 8 } }
 };

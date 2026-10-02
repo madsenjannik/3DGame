@@ -88,7 +88,7 @@ export function applyControlProfile(game, id) {
     cam.inBoat = () => game.fishing?.boat?.on && game.fishing.mode === 'boat';
     if (hint) hint.textContent = 'WASD to move · Shift to run · Space to hop · hold right mouse to look · wheel to zoom';
     cam.freeYaw = cam.yaw; cam.freePitch = 0; cam.idleLook = 99; cam.freeZoom = cam.freeZoom || 1;
-    cam.distance = function () { return (this.camera.aspect < .8 ? 7.0 : 5.8) * (this.freeZoom || 1) * (this.bossZoom || 1); }; // R63 boss fights pull back
+    cam.distance = function () { return (this.camera.aspect < .8 ? 7.0 : 5.8) * (this.freeZoom || 1); };
     cam.wantedYaw = function () { return this.freeYaw; };
     cam.applyTouchLook = function (delta) {
       if (!delta) return; const dx = +delta.x || 0, dy = +delta.y || 0;
@@ -110,8 +110,9 @@ export function applyControlProfile(game, id) {
       // R58.1: in the boat the character's speed is always 0 (it is seated), so the walking rule
       // never fired and the camera froze at the boarding angle. Boat → always glide back behind
       // the boat; a swipe gives a short look-around (1.2 s) before it returns.
-      const boating = this.inBoat?.();
-      if (boating) { if (this.idleLook > 1.2) this.freeYaw = wrapAngle(this.freeYaw + wrapAngle(this.target.heading + Math.PI - this.freeYaw) * damp(2.4, dt)); }
+      const boating = this.inBoat?.(), lock = this.lockYaw?.();  // R63.1 boss: glide behind you, facing the Giant
+      if (lock != null) { if (this.idleLook > 1.2) this.freeYaw = wrapAngle(this.freeYaw + wrapAngle(lock - this.freeYaw) * damp(2.4, dt)); }
+      else if (boating) { if (this.idleLook > 1.2) this.freeYaw = wrapAngle(this.freeYaw + wrapAngle(this.target.heading + Math.PI - this.freeYaw) * damp(2.4, dt)); }
       else {
         // Lazy recenter: only while walking forward-ish and the camera hasn't been touched for 2.5 s.
         const moving = (this.target.currentSpeed || 0) > .6 && !this.target.reverseIntentActive;

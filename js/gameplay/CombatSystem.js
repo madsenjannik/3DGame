@@ -261,7 +261,7 @@ export class CombatSystem {
   // Returns { interaction } (strike a nearby Mole / pick up a pouch). `active` = world, not busy.
   update(dt, time, ch, active) {
     this.time = time; this.cd = Math.max(0, this.cd - dt); this.invuln = Math.max(0, this.invuln - dt);
-    if (!this.wilting && this.hp < MAX_HP && time - this.lastHit > PLAYER.regenDelay && (time - (this.lastRegen || 0)) > PLAYER.regenEvery) { this.lastRegen = time; this.heal(false); }
+    if (!this.wilting && this.hp < MAX_HP && !this.boss?.fighting() && time - this.lastHit > PLAYER.regenDelay && (time - (this.lastRegen || 0)) > PLAYER.regenEvery) { this.lastRegen = time; this.heal(false); }
     this.hudEl.classList.toggle('show', this.hp < MAX_HP || time - this.lastCombat < 4);
     if (this.g.world.space === 'garden') {
       if (!active || this.wilting) return { interaction: null };

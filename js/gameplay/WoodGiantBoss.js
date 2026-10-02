@@ -88,17 +88,25 @@ export class WoodGiantBoss {
     this.gx = this.site.x; this.gz = this.site.z - 2; this.giant.position.set(0, 0, -2); this.giant.rotation.set(0, 0, 0); this.giant.visible = this.state === 'sleep';
     this.loop('Idle', .6); this.arena.loop('Idle');
     for (const r of this.roots) this.c.root.remove(r.model.root); this.roots = [];
-    this.tele.visible = false; this.ui.classList.remove('show'); this.setZoom(1); this.syncObstacle();
+    this.tele.visible = false; this.ui.classList.remove('show'); this.setZoom(false); this.syncObstacle();
+    for (const wv of this.waves || []) this.c.root.remove(wv.mesh); this.waves = [];
   }
   syncObstacle() { if (this.obstacle) { this.obstacle.x = this.gx; this.obstacle.z = this.gz; this.obstacle.r = this.giant.visible ? GIANT.bodyRadius * .75 : 0.01; } }
-  setZoom(z) { const cam = this.g.followCamera; if (cam) cam.bossZoom = z; }
+  // R63.1 boss camera: the free camera's yaw glides to 'behind you, facing the Giant' (swipe still looks
+  // around), then applyCamera() places it low and looks up between your head and the Giant's chest.
+  setZoom(on) {
+    const cam = this.g.followCamera; if (!cam) return;
+    cam.lockYaw = on ? () => Math.atan2(this.g.character.position.x - this.gx, this.g.character.position.z - this.gz) : null;
+    if (!on && this.camActive) { this.camActive = false; this.g.resize?.(); }
+  }
   begin() {
     this.state = 'wake'; this.t = 0; this.arena.play(['GateClose'], () => this.arena.loop('Idle'));
-    this.ui.classList.add('show'); this.renderUi(); this.setZoom(GIANT.cameraZoom); this.loop('Idle', 1.4);
+    this.ui.classList.add('show'); this.renderUi(); this.setZoom(true); this.loop('Idle', 1.4);
     this.g.hud?.showToast('The Wood Giant wakes!');
   }
   end(won) {
-    this.ui.classList.remove('show'); this.setZoom(1); this.tele.visible = false;
+    this.ui.classList.remove('show'); this.setZoom(false); this.tele.visible = false;
+    for (const wv of this.waves || []) this.c.root.remove(wv.mesh); this.waves = [];
     for (const r of this.roots) this.c.root.remove(r.model.root); this.roots = [];
     if (!won) return this.reset();
     this.state = 'sinking'; this.t = 0; this.fx('Slam_FX'); this.loop('Idle', .3);
@@ -121,7 +129,7 @@ export class WoodGiantBoss {
   fighting() { return ['wake', 'walk', 'stomp', 'slam', 'stuck'].includes(this.state); }
   hit(t, dmg) {
     if (t.kind === 'root') { const r = t.m; r.state = 'retract'; r.model.play(['WeakHit', 'Retract'], () => r.done = true); this.damage(GIANT.root.weakDamage, r.x, r.z, true); return true; }
-    this.damage(dmg * (this.weak > 0 ? GIANT.weakMultiplier : 1), this.c.g.character.position.x, this.c.g.character.position.z, this.weak > 0);
+    this.damage(this.weak > 0 ? dmg * GIANT.weakMultiplier : GIANT.barkDamage, this.c.g.character.position.x, this.c.g.character.position.z, this.weak > 0);
     return true;
   }
   damage(n, x, z, big) {
@@ -160,31 +168,60 @@ export class WoodGiantBoss {
         break;
       }
       case 'stomp': case 'slam': {
-        const A = GIANT[this.state], at = A.impactAt / ph.speed, k = Math.min(1, this.t / at);
+        const A = GIANT[this.state], at = A.impactAt / ph.speed, k = Math.min(1, this.t / at), phIdx = GIANT.phases.indexOf(ph);
         const P = this.state === 'stomp' ? this.local(...A.footLocal) : this.local(...A.frontLocal);
         if (!this.hitDone) this.showTele(P.x, P.z, A.radius, k);
         if (!this.hitDone && this.t >= at) {
           this.hitDone = true; this.tele.visible = false; this.shake = .45; this.fx(this.state === 'stomp' ? 'Stomp_FX' : 'Slam_FX');
           if (Math.hypot(px - P.x, pz - P.z) < A.radius) this.c.hurt(A.damage, P.x, P.z);
+          if (this.state === 'stomp' && phIdx >= GIANT.shockwave.fromPhase) this.spawnWave(P.x, P.z);
         }
         if (this.t >= this.attackLen) { this.stuckFor = GIANT.weakWindow[this.state]; this.weak = this.stuckFor; this.state = 'stuck'; this.t = 0; this.renderUi(); }
         break;
       }
     }
     // Root attacks under the player (phase 2+).
-    if (ph.roots) { this.rootT += dt; if (this.rootT > ph.every) { this.rootT = 0; this.spawnRoots(ph.roots, px, pz); } }
+    if (ph.roots) { this.rootT += dt; if (this.rootT > ph.every) { this.rootT = 0; const v = ch.velocity || { x: 0, z: 0 }, L = GIANT.root.lead; this.spawnRoots(ph.roots, px + v.x * L, pz + v.z * L); } }  // aim where you are heading
+    this.updateWaves(dt, ch);
     this.updateRoots(dt, px, pz);
     this.giant.position.set(this.gx - this.site.x, 0, this.gz - this.site.z); this.syncObstacle();
   }
-  // While the gate is closed the camera stays inside the arena (the closed gate would hide the fight).
-  clampCamera(camera, ch) {
-    if (!this.site || !this.fighting()) return;
-    const max = GIANT.arenaRadius - 1.4, dx = camera.position.x - this.site.x, dz = camera.position.z - this.site.z, d = Math.hypot(dx, dz);
-    if (d <= max) return;
-    const k = max / d; camera.position.x = this.site.x + dx * k; camera.position.z = this.site.z + dz * k;
-    camera.position.y = Math.max(camera.position.y, ch.position.y + 4.6); camera.lookAt(ch.position.x, ch.position.y + 1.2, ch.position.z);
+  // R63.1 low-angle boss camera (Shadow of the Colossus idea): low behind you, looking up between your head
+  // and the Giant's chest, kept inside the arena while the gate is closed.
+  applyCamera(camera, ch) {
+    if (!this.site || !this.fighting()) { if (this.camActive) { this.camActive = false; this.g.resize?.(); } return; }
+    const C = GIANT.camera, cam = this.g.followCamera, yaw = cam?.yaw ?? Math.atan2(ch.position.x - this.gx, ch.position.z - this.gz);
+    let x = ch.position.x + Math.sin(yaw) * C.distance, z = ch.position.z + Math.cos(yaw) * C.distance;
+    const max = GIANT.arenaRadius - 1.2, dx = x - this.site.x, dz = z - this.site.z, d = Math.hypot(dx, dz);
+    if (d > max) { x = this.site.x + dx * max / d; z = this.site.z + dz * max / d; }
+    const y = Math.max(ch.position.y + C.height, this.L.groundHeight(x, z) + .8);
+    camera.position.set(x, y, z);
+    const chest = this.site.y + C.chestY, head = ch.position.y + 1.2, k = C.lookBlend;
+    camera.lookAt(ch.position.x + (this.gx - ch.position.x) * k, head + (chest - head) * k, ch.position.z + (this.gz - ch.position.z) * k);
+    const fov = camera.aspect < .8 ? C.fovPortrait : C.fovLandscape;
+    if (Math.abs(camera.fov - fov) > .01) { camera.fov = fov; camera.updateProjectionMatrix(); }
+    this.camActive = true;
   }
-  startAttack(kind, ph) { this.state = kind; this.t = 0; this.hitDone = false; this.attackLen = this.once(kind === 'stomp' ? 'Stomp' : 'Slam', ph.speed); }
+  // The clip is sped up so its authored impact lands on the (shorter) telegraph.
+  startAttack(kind, ph) { const A = GIANT[kind]; this.state = kind; this.t = 0; this.hitDone = false; this.attackLen = this.once(kind === 'stomp' ? 'Stomp' : 'Slam', ph.speed * A.clipImpact / A.impactAt); }
+
+  // Shockwave (phase 2+): a ring rolls outward from the Stomp; be in the air (hop) when it passes.
+  spawnWave(x, z) {
+    this.waves ||= [];
+    const m = new THREE.Mesh(new THREE.RingGeometry(.9, 1, 64).rotateX(-Math.PI / 2), new THREE.MeshBasicMaterial({ color: 0xffb05a, transparent: true, opacity: .8, depthWrite: false, side: THREE.DoubleSide }));
+    m.position.set(x, this.L.groundHeight(x, z) + .08, z); m.renderOrder = 4; this.c.root.add(m);
+    this.waves.push({ x, z, r: .5, mesh: m, hit: false });
+  }
+  updateWaves(dt, ch) {
+    const W = GIANT.shockwave;
+    for (const wv of this.waves || []) {
+      wv.r += W.speed * dt; wv.mesh.scale.setScalar(wv.r); wv.mesh.material.opacity = .8 * (1 - wv.r / W.maxRadius);
+      const d = Math.hypot(ch.position.x - wv.x, ch.position.z - wv.z), airborne = ch.isGrounded === false || (ch.hopOffset || 0) > W.airborne;
+      if (!wv.hit && Math.abs(d - wv.r) < W.width && !airborne) { wv.hit = true; this.c.hurt(W.damage, wv.x, wv.z); }
+      if (wv.r > W.maxRadius) { wv.done = true; this.c.root.remove(wv.mesh); }
+    }
+    this.waves = (this.waves || []).filter(w => !w.done);
+  }
 
   spawnRoots(n, px, pz) {
     if (!this.rootGltf) return;
