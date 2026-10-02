@@ -53,8 +53,11 @@ export class WoodGiantBoss {
       s.traverse(o => { if (o.isMesh) { o.castShadow = !/FX_/.test(o.name); o.receiveShadow = true; o.frustumCulled = false; } });
       this.mixer = new THREE.AnimationMixer(s); this.fxMixer = new THREE.AnimationMixer(s);
       this.clips = Object.fromEntries(giant.animations.map(c => [c.name, c]));
-      this.obstacle = this.g.world.addObstacle({ x: this.site.x, z: this.site.z, r: GIANT.bodyRadius * .75, height: 6, kind: 'boss-wood-giant' });
-      this.obstacle.space = 'world';
+      // R65.2: body (Hips) + both feet follow the animated bones every frame (one centre circle was smaller than the
+      // feet). space = 'world' explicitly: before R65.1 it took the space active at load time, so it could end up
+      // registered for the garden and never block in the world.
+      this.bodyParts = [['Hips', 1.3], ['Foot_L', .95], ['Foot_R', .95]].map(([n, r]) => ({ bone: s.getObjectByName(n), r, o: Object.assign(this.g.world.addObstacle({ x: this.site.x, z: this.site.z, r, height: 6, kind: 'boss-wood-giant' }), { space: 'world' }) }));
+      this.obstacle = this.bodyParts[0].o;
       this.buildArenaColliders(); this.buildFightMarker();   // R65.1
       this.reset();
     } catch (e) { console.warn('[TGW] Wood Giant unavailable (fails soft)', e); this.site = null; }
@@ -95,8 +98,12 @@ export class WoodGiantBoss {
     for (const wv of this.waves || []) this.c.root.remove(wv.mesh); this.waves = [];
   }
   syncObstacle() {
-    if (this.obstacle) { this.obstacle.x = this.gx; this.obstacle.z = this.gz; this.obstacle.r = this.giant.visible ? GIANT.bodyRadius * .75 : 0.01; }
-    const closed = this.fighting(); for (const o of this.doorObstacles || []) o.r = closed ? o.r0 : 0.01;   // doors block only while closed
+    if (this.bodyParts) {
+      this.giant.updateMatrixWorld(true);
+      for (const b of this.bodyParts) { const p = b.bone ? b.bone.getWorldPosition(new THREE.Vector3()) : new THREE.Vector3(this.gx, 0, this.gz); b.o.x = p.x; b.o.z = p.z; b.o.r = this.giant.visible ? b.r : 0.01; }
+    }
+    const closed = this.fighting(); for (const o of this.doorObstacles || []) o.r = closed ? o.r0 : 0.01;   // closed line only during the fight
+    for (const o of this.openDoorObstacles || []) o.r = closed ? 0.01 : o.r0;                               // open leaves otherwise
   }
   // R65.1: before this the stones, wall and gate had no collision at all (only the Giant's body); outside a fight
   // you walked straight through them. Colliders are circles laid over the arena model's own low vertices
@@ -117,8 +124,12 @@ export class WoodGiantBoss {
     const add = (list, kind) => list.map(c => { const o = this.g.world.addObstacle({ x: c.x, z: c.z, r: R, height: Math.max(.6, c.h), kind }); o.space = 'world'; o.r0 = R; return o; });
     this.arenaObstacles = [];
     for (const n of ['Arena_WoodGiant_Stones', 'Arena_WoodGiant_Wall', 'Gate_Post_L', 'Gate_Post_R']) this.arenaObstacles.push(...add(circles(arena.getObjectByName(n)), 'arena-wall'));
-    this.doorObstacles = [];
-    for (const n of ['Arena_WoodGiant_DoorL', 'Arena_WoodGiant_DoorR']) this.doorObstacles.push(...add(circles(arena.getObjectByName(n)), 'arena-door'));
+    // Doors: the model rests with them open, so their vertices are the wrong place; block the closed line (z 12, post to post).
+    const line = []; for (let x = -1.75; x <= 1.76; x += .5) { const p = arena.localToWorld(new THREE.Vector3(x, 0, 12)); line.push({ x: p.x, z: p.z, h: 2.2 }); }
+    this.doorObstacles = add(line, 'arena-door');
+    // ...and the open door leaves (rest pose) block outside the fight.
+    this.openDoorObstacles = [];
+    for (const n of ['Arena_WoodGiant_DoorL', 'Arena_WoodGiant_DoorR']) this.openDoorObstacles.push(...add(circles(arena.getObjectByName(n)), 'arena-door-open'));
     this.syncObstacle();
   }
   // R65.1: a golden holo marker just outside the gate (same indicator as RIDE / JUMP / FISH). The Giant no longer
@@ -205,7 +216,7 @@ export class WoodGiantBoss {
     this.mixer.update(dt); this.fxMixer.update(dt); this.arena.update(dt); this.t += dt;
     this.weak = Math.max(0, this.weak - dt); this.shake = Math.max(0, this.shake - dt);
     if (this.state === 'resting') { if (this.available()) this.reset(); return; }
-    if (this.state === 'sleep') return;   // R65.1: woken only from the FIGHT marker (startFight)
+    if (this.state === 'sleep') { this.syncObstacle(); return; }   // R65.1: woken only from the FIGHT marker (startFight)
     if (this.state === 'sinking') {
       const k = Math.min(1, this.t / 3.2); this.giant.position.y = -k * 9; this.giant.rotation.z = k * .25;
       if (k >= 1) { this.giant.visible = false; this.state = 'resting'; this.arena.play(['GateOpen'], () => this.arena.loop('Idle')); this.syncObstacle(); }
