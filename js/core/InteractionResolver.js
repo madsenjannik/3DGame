@@ -3,6 +3,7 @@
 // interaction (E / action button). Higher priority wins; ties go to the nearer candidate.
 // The priorities encode the established precedence (locked systems over the wilds loop).
 export const PRIORITY = {
+  combat: 70,      // R61: strike a Mole / pick up your wilt pouch (a fight beats everything nearby)
   fishing: 60,     // FishingV1 incl. boat board/dock
   stable: 50,      // Stable doors, Thora, RIDE/JUMP
   home: 45,        // shed door / back to the world

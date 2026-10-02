@@ -33,6 +33,7 @@ import { BoatEconomySystem } from '../gameplay/BoatEconomySystem.js';
 import { GardenBuildSystem } from '../gameplay/GardenBuildSystem.js';
 import { GardenBuildMode } from '../ui/GardenBuildMode.js';
 import { GardenVegetationMask } from '../world/GardenVegetationMask.js';
+import { CombatSystem } from '../gameplay/CombatSystem.js';
 
 export class Game {
   async init({characterId='succulent',devMode=false}={}){
@@ -95,6 +96,7 @@ export class Game {
     this.garden=new GardenBuildSystem({profile:this.save.profile,world:this.world});
     this.wilds=new WildsLoopSystem({world:this.world,state:this.state,save:this.save,hud:this.hud,greenhouse:null,garden:this.garden}).init();
     this.workbenchPanel=new WorkbenchPanel({wilds:this.wilds,state:this.state});
+    try{this.combat=new CombatSystem(this);}catch(e){warn('COMBAT','combat disabled',e);this.failed.push('combat');} // R61 (fails soft)
     // R60 step 2: build/move mode + vegetation under moved structures; every move re-places the systems.
     this.buildMode=new GardenBuildMode({game:this});this.workbenchPanel.onMove=id=>this.buildMode.start(id);
     if(!this.garden.isDefault('greenhouse'))this.world.setGreenhouseBranch?.(this.garden.currentBranch()); // R60.2 path follows a moved greenhouse
@@ -197,6 +199,7 @@ export class Game {
         if(!building)R.offer('greenhouse',greenhouse.interaction);
       }
       if(!gardenSpace&&!specialBusy)R.offer('wilds',this.wilds?.update(dt,this.time,this.character,'world').interaction);
+      R.offer('combat',this.combat?.update(dt,this.time,this.character,!gardenSpace&&!specialBusy&&!portalBusy).interaction);
       if(!specialBusy&&!building)R.offer('home',this.homePortal?.interaction?.(this.character.position));
       if(!gardenSpace){
         // Boat mode keeps the controller paused while still exposing FishingV1-owned E interactions.
@@ -218,6 +221,7 @@ export class Game {
       else if(interaction.type==='greenhouse')this.greenhouse?.interact(this.character);
       else if(interaction.type?.startsWith?.('stable-'))this.stable?.interact(interaction);
       else if(interaction.type?.startsWith?.('wilds-'))this.wilds.interact(interaction,this.character);
+      else if(interaction.type?.startsWith?.('combat-'))this.combat?.interact(interaction.type);
       else if(['fish-board','fishing-shop','fishing-spot','boat-board','boat-fish','boat-dock'].includes(interaction.type))this.fishing?.interact(interaction.type);
     }
 

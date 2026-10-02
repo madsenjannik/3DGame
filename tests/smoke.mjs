@@ -182,6 +182,35 @@ try {
     }
     check('build mode + paths: invalid blocked, cancel unchanged, place moves + hides vegetation, persists, reset restores, spine reserved, branch follows greenhouse', ok && r.pondBlocked && r.cancelSame && r.placed && r.moved && r.follows && r.hidden > 0 && r.persisted && r.resetHidden === 0 && r.resetPos && r.spine && r.stones && r.branchBlocks && r.restored && !errors.length, errors[0] || JSON.stringify(r));
     await ctx.close(); }
+  // 13. R61 combat: Mole warning→emerge→up, strike with the axe, defeat → loot (walk over) + first bonus, Mole hurts,
+  //     wilt drops half the common materials in a pouch + sends you home, pouch recovers them, mercy drops nothing
+  { const ctx = await context({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true }); const { p, errors, ok } = await startGame(ctx, 'fern');
+    const ready = ok && await p.waitForFunction(() => window.__tgw?.combat?.models?.mole, null, { timeout: 240000 }).then(() => true, () => false);
+    let r = {};
+    if (ready) {
+      r = await p.evaluate(() => { const g = window.__tgw, c = g.combat, m = c.moles[0], ch = g.character, out = {}; g.wilds.profile.tools.axe = true;
+        g.devMenu.teleport('world', m.home.x + 2.0, m.home.z, -Math.PI / 2);
+        const seq = []; for (let i = 0; i < 60 && m.state !== 'up'; i++) { c.updateMole(m, .1, ch); if (seq[seq.length - 1] !== m.state) seq.push(m.state); } out.seq = seq.join('>');
+        for (let k = 0; k < 4 && m.state !== 'defeat' && m.state !== 'gone'; k++) { c.cd = 0; if (['up', 'hit', 'attack', 'emerge'].includes(m.state)) c.attack(); for (let i = 0; i < 8; i++) c.updateMole(m, .1, ch); }
+        for (let i = 0; i < 30; i++) c.updateMole(m, .1, ch);
+        out.defeated = m.state === 'gone' && !!c.p.moles[m.id] && c.p.firstMole && (g.state.inventory.get('amber') || 0) >= 1; out.loot = c.loot.length;
+        const before = ['clay', 'stone', 'fiber'].reduce((a, k) => a + (g.state.inventory.get(k) || 0), 0);
+        for (const it of [...c.loot]) { for (let i = 0; i < 14; i++) c.updateLoot(.1, ch); ch.position.x = it.x; ch.position.z = it.z; for (let i = 0; i < 12; i++) c.updateLoot(.1, ch); }
+        out.collected = ['clay', 'stone', 'fiber'].reduce((a, k) => a + (g.state.inventory.get(k) || 0), 0) > before && c.loot.length === 0;
+        const m2 = c.moles[1] || m; c.p.moles = {}; c.respawnTick(Date.now()); m2.state = 'dormant'; ch.position.set(m2.x + 1.0, ch.position.y, m2.z);
+        for (let i = 0; i < 80 && c.hp === 10; i++) c.updateMole(m2, .1, ch); out.hurt = c.hp === 8;
+        for (const k of ['wood', 'stone', 'clay', 'fiber']) g.wilds.give(k, 10); window.__wpos = [ch.position.x, ch.position.z]; window.__wood = g.state.inventory.get('wood');
+        c.hp = 1; c.invuln = 0; c.hurt(2, ch.position.x + .1, ch.position.z); return out; });
+      await p.waitForFunction(() => !window.__tgw.combat.wilting, null, { timeout: 60000 }).catch(() => {});
+      Object.assign(r, await p.evaluate(() => { const g = window.__tgw, c = g.combat, w0 = window.__wood, w1 = g.state.inventory.get('wood');
+        const wilt = g.world.space === 'garden' && c.hp === 10 && w1 === w0 - Math.floor(w0 / 2) && c.p.pouches.length === 1 && c.p.mercyUntil > Date.now();
+        g.devMenu.teleport('world', ...window.__wpos, 0); const back = c.pickUpPouch() && g.state.inventory.get('wood') === w0 && c.p.pouches.length === 0;
+        window.__wood = g.state.inventory.get('wood'); c.hp = 1; c.invuln = 0; c.hurt(2, g.character.position.x + .1, g.character.position.z); return { wilt, back }; }));
+      await p.waitForFunction(() => !window.__tgw.combat.wilting, null, { timeout: 60000 }).catch(() => {});
+      r.mercy = await p.evaluate(() => window.__tgw.state.inventory.get('wood') === window.__wood && window.__tgw.combat.p.pouches.length === 0);
+    }
+    check('combat: mole cycle, strike + defeat + loot, mole hurts, wilt pouch (half), recover, mercy', ready && r.seq === 'warning>emerge>up' && r.defeated && r.loot >= 2 && r.collected && r.hurt && r.wilt && r.back && r.mercy && !errors.length, errors[0] || JSON.stringify(r));
+    await ctx.close(); }
   // 5. DEV disabled: no dev UI or handles leak into normal play
   { const ctx = await context({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true }); const { p, errors, ok } = await startGame(ctx, 'daisy', { dev: false });
     const leak = ok && await p.evaluate(() => !!document.querySelector('.dev-menu-btn') || !!window.__tgw || !document.getElementById('dev-badge').hidden);

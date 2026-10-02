@@ -21,6 +21,7 @@ function blankProfile() {
     daily: { date: '', done: {}, progress: {}, streak: 0, lastDate: '' },
     fishing: { starter: false, own: {}, log: {} },   // R58: Sigurd's gear + catch log (was memory-only)
     boat: { owned: false, trips: 0, waterfall: 0, lastReward: '' }, // R58 boat economy
+    combat: { moles: {}, firstMole: false, pouches: [], mercyUntil: 0 }, // R61 combat: mole respawns, wilt pouches
     garden: null          // R60 GardenBuildSystem: { version, plots[], buildings[{ id, type, gx, gz, rot }] }
   };
 }
@@ -79,6 +80,13 @@ function validProfile(p) {
   out.boat.trips = Math.max(0, b.trips | 0);
   out.boat.waterfall = Math.max(0, b.waterfall | 0);
   if (typeof b.lastReward === 'string') out.boat.lastReward = b.lastReward;
+  // R61 combat (additive, v3).
+  const cb = p.combat || {};
+  for (const [k, v] of Object.entries(cb.moles || {})) if (Number.isFinite(v)) out.combat.moles[k] = v;
+  out.combat.firstMole = cb.firstMole === true;
+  out.combat.mercyUntil = Number.isFinite(cb.mercyUntil) ? cb.mercyUntil : 0;
+  if (Array.isArray(cb.pouches)) out.combat.pouches = cb.pouches.filter(q => q && typeof q.id === 'string' && Number.isFinite(q.x) && Number.isFinite(q.z) && Number.isFinite(q.until) && q.items && typeof q.items === 'object').slice(-3)
+    .map(q => ({ id: q.id, x: q.x, z: q.z, until: q.until, items: Object.fromEntries(Object.entries(q.items).filter(([, n]) => Number.isFinite(n) && n > 0).map(([k, n]) => [k, Math.floor(n)])) }));
   // R60 GardenBuildSystem placements (absent = catalog defaults = the pre-R60 layout).
   const g = p.garden;
   if (g && typeof g === 'object') {

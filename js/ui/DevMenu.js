@@ -32,6 +32,9 @@ export class DevMenu {
         <section><small>BÅD (R58)</small><div class="dev-grid">
           <button data-a="boat:ready">Stang + 3 fiskearter</button><button data-a="boat:vest">Redningsvest</button><button data-a="boat:trips">+2 vandfaldsture (kan købe)</button><button data-a="boat:reset">Nulstil båd + fiskeri</button><button data-a="tp:dock">Teleport: Sigurd / bro</button>
         </div></section>
+        <section><small>KAMP (R61)</small><div class="dev-grid">
+          <button data-a="cb:tp">Teleport til Mole</button><button data-a="cb:heal">Fuld liv</button><button data-a="cb:hurt">Tag 1 hjerte skade</button><button data-a="cb:respawn">Respawn moles</button><button data-a="cb:mercy">Nulstil mercy + poser</button>
+        </div></section>
         <section><small>HAVE-LAYOUT (R60)</small><div class="dev-grid">
           <button data-a="move:greenhouse">Flyt drivhus</button><button data-a="move:workshop">Flyt workshop</button><button data-a="move:rain">Flyt regntønde</button><button data-a="move:shrine">Flyt shrine</button><button data-a="layout:reset">Nulstil placeringer</button>
         </div></section>
@@ -99,6 +102,15 @@ export class DevMenu {
       else if (op === 'trips') p.boat.waterfall += 2;
       else if (op === 'reset') { f.starter = false; for (const k of Object.keys(f.own)) delete f.own[k]; for (const k of Object.keys(f.log)) delete f.log[k]; Object.assign(p.boat, { owned: false, trips: 0, waterfall: 0, lastReward: '' }); f.setBoatAccess({ owned: false, rented: false }); }
       f.renderAll?.(); g.boatEco.persist(); this.toast({ ready: 'Stang + roach, perch, bream', vest: 'Redningsvest', trips: `Vandfaldsture: ${p.boat.waterfall}`, reset: 'Båd og fiskeri nulstillet' }[op]);
+      return;
+    }
+    if (a.startsWith('cb:')) {
+      const c = g.combat, op = a.slice(3); if (!c) return this.toast('Kamp er ikke indlæst');
+      if (op === 'tp') { const m = c.moles.find(x => x.state !== 'gone') || c.moles[0]; if (!m) return this.toast('Ingen Mole fundet'); this.teleport('world', m.home.x + 4, m.home.z, -Math.PI / 2); return; }
+      if (op === 'heal') { c.heal(true); return this.toast('Fuldt liv'); }
+      if (op === 'hurt') { this.hide(); c.invuln = 0; if (g.world.space !== 'world') return this.toast('Kun i verden'); const p = g.character.position; c.hurt(2, p.x + .1, p.z); return; }
+      if (op === 'respawn') { for (const k of Object.keys(c.p.moles)) c.p.moles[k] = 0; g.save.persist(); return this.toast('Moles kommer tilbage om et øjeblik'); }
+      if (op === 'mercy') { c.p.mercyUntil = 0; c.p.pouches = []; c.syncPouches(); g.save.persist(); return this.toast('Mercy og poser nulstillet'); }
       return;
     }
     if (a.startsWith('move:')) { if (!g.world.isGardenSpace()) return this.toast('Gå ind i din have først'); this.hide(); g.buildMode?.start(a.slice(5)); return; }

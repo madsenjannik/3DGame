@@ -1045,3 +1045,15 @@ body.build-mode #action{display:none!important}
 .wilds-sub{margin:14px 0 4px;font-size:13px;letter-spacing:.06em}
 @media (max-width:520px){.build-bar{flex-direction:column;align-items:stretch;gap:8px;width:calc(100vw - 24px)}.build-buttons{justify-content:space-between}.build-buttons button{flex:1}}
 @media (max-height:430px){.build-bar{bottom:calc(8px + env(safe-area-inset-bottom));padding:6px 8px 6px 12px}.build-buttons button{height:38px}}
+
+/* R61 combat: hearts (only while fighting / hurt) + a short red edge flash when hit */
+.hearts{position:fixed;left:50%;top:calc(max(14px,env(safe-area-inset-top)) + 64px);transform:translateX(-50%);z-index:30;display:flex;gap:4px;padding:5px 9px;border-radius:999px;
+  background:rgba(28,36,24,.55);opacity:0;pointer-events:none;transition:opacity .3s ease}
+.hearts.show{opacity:1}
+.hearts i{width:18px;height:16px;display:block;background:no-repeat center/contain url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 22'><path d='M12 21s-9-5.6-9-12A5 5 0 0 1 12 6a5 5 0 0 1 9 3c0 6.4-9 12-9 12z' fill='%23e8794a' stroke='%23fff1b8' stroke-width='1.6'/></svg>")}
+.hearts i.half{background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 22'><defs><clipPath id='h'><rect width='12' height='22'/></clipPath></defs><path d='M12 21s-9-5.6-9-12A5 5 0 0 1 12 6a5 5 0 0 1 9 3c0 6.4-9 12-9 12z' fill='rgba(0,0,0,.25)' stroke='%23fff1b8' stroke-width='1.6'/><path clip-path='url(%23h)' d='M12 21s-9-5.6-9-12A5 5 0 0 1 12 6a5 5 0 0 1 9 3c0 6.4-9 12-9 12z' fill='%23e8794a'/></svg>")}
+.hearts i.empty{background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 22'><path d='M12 21s-9-5.6-9-12A5 5 0 0 1 12 6a5 5 0 0 1 9 3c0 6.4-9 12-9 12z' fill='rgba(0,0,0,.25)' stroke='%23fff1b8' stroke-width='1.6'/></svg>")}
+body.hurt-flash::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:29;box-shadow:inset 0 0 90px rgba(220,70,50,.55);animation:hurtFlash .45s ease-out forwards}
+@keyframes hurtFlash{from{opacity:1}to{opacity:0}}
+@media (max-height:430px){.hearts{top:calc(max(8px,env(safe-area-inset-top)) + 44px)}.hearts i{width:14px;height:13px}}
+@media (max-width:700px) and (orientation:portrait){.hearts{top:auto;bottom:calc(max(14px,env(safe-area-inset-bottom)) + 92px)}}

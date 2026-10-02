@@ -96,6 +96,13 @@ export class WildsModel {
     this.current = this.mixer.clipAction(c); this.current.reset().setLoop(THREE.LoopOnce, 1); this.current.clampWhenFinished = true; this.current.play();
   }
   busy() { return !!this.onDone || this.queue.length > 0; }
+  // Hold the last frame of a clip (static pose, e.g. an underground Mole).
+  hold(name) {
+    const c = this.clips[name]; if (!c) return;
+    this.queue = []; this.onDone = null; this.mixer.stopAllAction();
+    this.current = this.mixer.clipAction(c); this.current.reset().setLoop(THREE.LoopOnce, 1); this.current.clampWhenFinished = true; this.current.play();
+    this.current.time = c.duration; this.mixer.update(0);
+  }
   ring(alpha) { if (this.ringMat) this.ringMat.opacity = alpha; }
   // Highlight (sparks + ring pulse) runs on top of the state clip while the player is close.
   highlight(on) {
