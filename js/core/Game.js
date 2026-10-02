@@ -84,7 +84,7 @@ export class Game {
     this.wilds.onOpenWorkbench=()=>{this.workbenchPanel.show();this.input.resetTouchPointers?.();};
     const syncTools=()=>this.hud.setTools?.(this.wilds.profile.tools,this.wilds.profile.water);this.wilds.onChange(syncTools);syncTools();
     if(devMode||devMenuEnabled()){this.devMenu=new DevMenu(this);window.__tgw=this;}
-    else applyControlProfile(this,defaultProfile(this.input.isTouch)); // R50.2: free camera on touch, classic on desktop
+    else applyControlProfile(this,defaultProfile()); // R50.3: free camera everywhere (mouse-look on desktop)
     mark('wildsReadyMs');
     this.cameraOcclusion=new CameraOcclusionSystem({world:this.world,homePortal:this.homePortal,greenhouse:this.greenhouse,orangery:this.orangery,stable:this.stable});
     this.followCamera.setOcclusionSystem(this.cameraOcclusion);

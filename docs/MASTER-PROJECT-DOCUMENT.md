@@ -1510,6 +1510,10 @@ and `CharacterController.js` are untouched.
 **R50.2 (02/10/2026, Jannik: "A GO"):** A · Frit kamera is now the **default on touch devices** (iPhone/iPad).
 Desktop keeps the classic R45 camera (no mouse-look yet). Dev menu can still switch between all three.
 
+**R50.3 (02/10/2026, GO):** A is the default on **all devices**. Desktop adds mouse-look: hold the **right** mouse
+button and drag (left button stays free for UI), mouse wheel zooms 0.65–1.45×. No pointer lock. The R45 camera is
+still available as "Klassisk" in the dev menu.
+
 ## Known limits
 Placeholder procedural art for all new props; no real combat/health; no global day/night lighting; balancing is a
 first guess. Older systems' saves not unified.

@@ -1,6 +1,6 @@
 // @ts-nocheck
-// Camera/control variants. Since R50.2 'free' is the default on touch devices (Jannik: "A GO");
-// desktop keeps 'standard' (no mouse-look yet). Other variants stay DEV-only. They never edit the locked ThirdPersonCamera or
+// Camera/control variants. Since R50.3 'free' is the default on every device (Jannik: "A GO");
+// on desktop it adds right-mouse drag to look and wheel zoom. Other variants stay DEV-only. They never edit the locked ThirdPersonCamera or
 // CharacterController code: a variant swaps a few methods on the live camera instance and
 // restores the originals for 'standard'. Selected from the Dev menu, remembered per device.
 //
@@ -16,13 +16,13 @@ import { damp, wrapAngle } from '../visual/VisualKit.js';
 
 export const CONTROL_PROFILE_KEY = 'tgw.controlProfile';
 export const PROFILES = {
-  standard: { name: 'Klassisk (R45 / PC-standard)', text: 'Kameraet følger figurens retning. Standard på PC.' },
-  free: { name: 'A · Frit kamera (mobil-standard)', text: 'Kameraet drejer kun når du swiper (højre side). Glider selv bag dig efter ~2,5 s gang. Lidt længere væk, mere horisont.' },
+  standard: { name: 'Klassisk (R45)', text: 'Det gamle kamera: følger figurens retning.' },
+  free: { name: 'A · Frit kamera (standard)', text: 'Kameraet drejer kun når du swiper (højre side). PC: hold højre musetast og træk, hjul zoomer. Glider selv bag dig efter ~2,5 s gang.' },
   cozy: { name: 'B · Cozy ovenfra', text: 'Fast højt kamera der aldrig drejer. Joysticket matcher skærmen. Kun én tommelfinger.' }
 };
 
-export function defaultProfile(isTouch) { return isTouch ? 'free' : 'standard'; }
-export function savedProfile(isTouch) { try { return localStorage.getItem(CONTROL_PROFILE_KEY) || defaultProfile(isTouch); } catch { return defaultProfile(isTouch); } }
+export function defaultProfile() { return 'free'; }
+export function savedProfile() { try { return localStorage.getItem(CONTROL_PROFILE_KEY) || defaultProfile(); } catch { return defaultProfile(); } }
 
 const ORIGINAL = Symbol('tgwOriginalCamera');
 
@@ -46,17 +46,46 @@ function setFov(cam, portrait, landscape) {
   if (Math.abs(cam.camera.fov - f) > .01) { cam.camera.fov = f; cam.camera.updateProjectionMatrix(); }
 }
 
+// Desktop mouse-look for 'free': hold the RIGHT button and drag (left stays free for UI), wheel zooms.
+// Installed once; it only acts while the free profile is active on that camera.
+function installMouse(game, cam) {
+  if (cam._mouseInstalled) return; cam._mouseInstalled = true;
+  const el = game.renderer.domElement; let drag = null;
+  el.addEventListener('contextmenu', e => { if (cam.profileId === 'free') e.preventDefault(); });
+  el.addEventListener('pointerdown', e => {
+    if (cam.profileId !== 'free' || e.pointerType !== 'mouse' || e.button !== 2) return;
+    drag = { id: e.pointerId, x: e.clientX, y: e.clientY }; el.setPointerCapture?.(e.pointerId); e.preventDefault();
+  });
+  el.addEventListener('pointermove', e => {
+    if (!drag || e.pointerId !== drag.id) return;
+    const dx = e.clientX - drag.x, dy = e.clientY - drag.y; drag.x = e.clientX; drag.y = e.clientY;
+    cam.freeYaw = wrapAngle(cam.freeYaw - dx * .0045);
+    cam.freePitch = THREE.MathUtils.clamp(cam.freePitch + dy * .0026, -.18, .28);
+    cam.idleLook = 0;
+  });
+  const end = e => { if (drag && e.pointerId === drag.id) { drag = null; el.releasePointerCapture?.(e.pointerId); } };
+  el.addEventListener('pointerup', end); el.addEventListener('pointercancel', end);
+  el.addEventListener('wheel', e => {
+    if (cam.profileId !== 'free') return; e.preventDefault();
+    cam.freeZoom = THREE.MathUtils.clamp((cam.freeZoom || 1) * (e.deltaY > 0 ? 1.08 : 1 / 1.08), .65, 1.45);
+  }, { passive: false });
+}
+
 export function applyControlProfile(game, id) {
   const cam = game.followCamera; if (!cam) return 'standard';
   if (!cam[ORIGINAL]) cam[ORIGINAL] = { distance: cam.distance, wantedYaw: cam.wantedYaw, applyTouchLook: cam.applyTouchLook, desired: cam.desired, update: cam.update, snap: cam.snap };
   const o = cam[ORIGINAL];
   Object.assign(cam, o);                  // restore standard first
+  cam.profileId = 'standard';
+  const hint = document.getElementById('hint'); if (hint) hint.textContent = 'WASD to move · Shift to run · Space to hop · camera follows your back';
   game.resize?.();                        // standard FOV per aspect
   if (!PROFILES[id] || id === 'standard') { cam.manualYaw = 0; cam.manualPitch = 0; return 'standard'; }
 
   if (id === 'free') {
-    cam.freeYaw = cam.yaw; cam.freePitch = 0; cam.idleLook = 99;
-    cam.distance = function () { return this.camera.aspect < .8 ? 7.0 : 5.8; };
+    cam.profileId = 'free'; installMouse(game, cam);
+    if (hint) hint.textContent = 'WASD to move · Shift to run · Space to hop · hold right mouse to look · wheel to zoom';
+    cam.freeYaw = cam.yaw; cam.freePitch = 0; cam.idleLook = 99; cam.freeZoom = cam.freeZoom || 1;
+    cam.distance = function () { return (this.camera.aspect < .8 ? 7.0 : 5.8) * (this.freeZoom || 1); };
     cam.wantedYaw = function () { return this.freeYaw; };
     cam.applyTouchLook = function (delta) {
       if (!delta) return; const dx = +delta.x || 0, dy = +delta.y || 0;
@@ -86,6 +115,7 @@ export function applyControlProfile(game, id) {
   }
 
   if (id === 'cozy') {
+    cam.profileId = 'cozy';
     // Keep the current view direction, squared to the nearest 45 degrees, and never rotate again.
     cam.cozyYaw = Math.round(cam.yaw / (Math.PI / 4)) * (Math.PI / 4);
     cam.distance = function () { return this.camera.aspect < .8 ? 11.5 : 9.8; };

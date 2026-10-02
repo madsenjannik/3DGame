@@ -3,7 +3,7 @@
 ## Start here
 - **Repo:** `madsenjannik/3DGame`, branch `claude/magical-lovelace-nuka97` (GitHub replaces ZIP packages).
 - **Live test build:** `https://madsenjannik.github.io/3DGame/` (version shown bottom-left on the start screen).
-- **Current build:** v0.5.20 · `CAMERA-R50.2-20261002A` (see `version.js`).
+- **Current build:** v0.5.30 · `CAMERA-R50.3-20261002A` (see `version.js`).
 - **Last LOCKED baseline:** R45 (`v0.3.96-R45-HOLO-INDICATOR-LOCKED`). Everything newer is CANDIDATE.
 - **Rules:** never build without Jannik's explicit **GO**; analyze, find root cause and define exact scope first.
   Building lives in the **private garden**. **Do not change the three greenhouse levels.**
@@ -20,6 +20,7 @@
 | R50 · v0.5.10 | Dev menu (Indstillinger → Dev-menu, works on real save) + crafted tools shown in the HUD. |
 | R50.1 · v0.5.11 | DEV-only camera/control variants: A Frit kamera (Genshin-style), B Cozy ovenfra (Animal Crossing-style). |
 | R50.2 · v0.5.20 | Jannik chose A: Frit kamera is the default on touch devices; desktop keeps the classic camera. |
+| R50.3 · v0.5.30 | A is default everywhere; desktop mouse-look (hold right button + drag) and wheel zoom. |
 
 Details: `docs/MASTER-PROJECT-DOCUMENT.md` section 30 and `docs/R47…R49*.md`.
 
@@ -31,7 +32,7 @@ Details: `docs/MASTER-PROJECT-DOCUMENT.md` section 30 and `docs/R47…R49*.md`.
 5. DEV → **Nærmeste tornekrat** to test cutting + cache.
 
 ## Open / pending
-- Camera A is default on touch (R50.2). Open: desktop mouse-look if A should also become the PC default.
+- Camera A is default everywhere (R50.3) incl. desktop mouse-look; needs Jannik's runtime test.
 - Jannik's runtime test + LÅS of R46.2–R50.
 - R34B mobile gestures: still awaiting final real-device approval.
 - Safari toolbars eat ~⅓ of landscape height: proposed (not built) web-app manifest for fullscreen "Add to Home Screen".
