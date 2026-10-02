@@ -105,3 +105,15 @@ export const RULES = {
   thornCutReward: { fiber: 3 },
   cacheReward: { amber: 2, extra: 3 } // extra = random common material amount
 };
+
+// R58 Boat economy: discover (Sigurd) -> requirement (3 species + Life Vest) -> rent per trip ->
+// use (waterfall run) -> own after enough waterfall trips. Upgrades come later (Lake Run).
+export const BOAT = {
+  speciesNeeded: 3,
+  vestCost: { fiber: 6, shell: 2 },          // Sigurd stitches a Life Vest from your materials
+  rentCost: { wood: 3, fiber: 2 },           // paid per trip until you own her
+  buyAfterTrips: 2,                          // waterfall trips before Sigurd will sell
+  buyCost: { wood: 20, fiber: 12, clay: 6, amber: 4 },
+  waterfallReward: { stone: 3, clay: 2, amber: 1 }, // once per day
+  firstWaterfall: { golden_seed: 1 }         // the very first time only
+};

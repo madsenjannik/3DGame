@@ -113,6 +113,7 @@ export class WildsLoopSystem {
     const up = HOME_UPGRADES[p.homeLevel];
     if (up) return g(`Build ${up.name}`, 'Upgrade your garden at the workbench.');
     if (inv('golden_seed') > 0 && PERKS.some(k => !p.perks[k.id])) return g('Plant your Golden Seed', 'At the Seed Shrine (workbench → Seeds).');
+    const boat = this.boatGoal?.(); if (boat) return boat; // R58 boat economy (set by BoatEconomySystem)
     return g('Keep your garden growing', 'More of the wilds will open with the seasons.');
   }
 

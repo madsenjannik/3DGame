@@ -18,7 +18,9 @@ function blankProfile() {
     stats: { gathered: 0, crafted: 0, weeds: 0, snails: 0 },
     threat: { started: 0, lastSpawn: 0, lastSnail: 0, weeds: [] }, // overgrowth: [{ id, spot, bornAt }]
     perks: {},            // golden-seed perk id -> true
-    daily: { date: '', done: {}, progress: {}, streak: 0, lastDate: '' }
+    daily: { date: '', done: {}, progress: {}, streak: 0, lastDate: '' },
+    fishing: { starter: false, own: {}, log: {} },   // R58: Sigurd's gear + catch log (was memory-only)
+    boat: { owned: false, trips: 0, waterfall: 0, lastReward: '' } // R58 boat economy
   };
 }
 
@@ -33,6 +35,7 @@ function migrate(raw) {
     if (old >= 1) p.pots = { count: 1, slots: [null, null, null] };
   }
   // v3: no data change — adds the meta stamp (build, savedAt) written on every flush.
+  // R58 adds profile.fishing + profile.boat; additive with defaults, so no version bump.
   save.version = SAVE_VERSION;
   return save;
 }
@@ -64,6 +67,15 @@ function validProfile(p) {
   out.daily.streak = Math.max(0, d.streak | 0);
   for (const [k, v] of Object.entries(d.done || {})) if (v === true) out.daily.done[k] = true;
   for (const [k, v] of Object.entries(d.progress || {})) if (Number.isFinite(v)) out.daily.progress[k] = Math.max(0, Math.floor(v));
+  const f = p.fishing || {};
+  out.fishing.starter = f.starter === true;
+  for (const [k, v] of Object.entries(f.own || {})) if (Number.isFinite(v) && v > 0) out.fishing.own[k] = 1;
+  for (const [k, v] of Object.entries(f.log || {})) if (v && Number.isFinite(v.count) && Number.isFinite(v.best)) out.fishing.log[k] = { count: Math.max(0, v.count | 0), best: Math.max(0, +v.best) };
+  const b = p.boat || {};
+  out.boat.owned = b.owned === true;
+  out.boat.trips = Math.max(0, b.trips | 0);
+  out.boat.waterfall = Math.max(0, b.waterfall | 0);
+  if (typeof b.lastReward === 'string') out.boat.lastReward = b.lastReward;
   return out;
 }
 

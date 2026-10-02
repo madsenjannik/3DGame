@@ -3,7 +3,7 @@
 ## Start here
 - **Repo:** `madsenjannik/3DGame`, branch `claude/magical-lovelace-nuka97` (GitHub replaces ZIP packages).
 - **Live test build:** `https://madsenjannik.github.io/3DGame/` (version shown bottom-left on the start screen).
-- **Current build:** v0.6.00 · `SMOKE-R57-20261002A` (see `version.js`).
+- **Current build:** v0.6.10 · `BOAT-R58-20261002A` (see `version.js`).
 - **LOCKED baseline:** R50.3 (v0.5.30). R45 is historical rollback reference only. Builds after R50.3 are CANDIDATE.
 - **Now:** technical foundation pass (MASTER §31). Gameplay (Boat, combat, Mole …) after Jannik's runtime check.
 - **Rules:** never build without Jannik's explicit **GO**; analyze, find root cause and define exact scope first.
@@ -30,11 +30,12 @@
 | R55 · v0.5.80 | Adaptive quality (desktop / mobile-high / mobile-low: resolution + shadow map only, same look; touch auto-drops to low below ~42 fps and remembers it) + lifecycle contract (hidden page stops rendering + flushes save; resume without dt jump). Dev menu: force Auto/Lav/Høj/Desktop. |
 | R56 · v0.5.90 | Interaction resolver (one active interaction by priority + distance), SaveGame v3 (last-known-good backup, build stamp, corrupt-save recovery, Dev menu copy/download/import save), progression-aware objective card (replaces the stale "Find the Golden Seed" in the world) + short-landscape HUD. |
 | R57 · v0.6.00 | Automated regression smoke: `node tests/smoke.mjs` (start→selector, game on desktop + 390×844 + 844×390 + 667×375, missing GLBs, save v1→v3 + reload, DEV-off leak check). 8/8 pass. **Technical foundation (MASTER §31 B) complete → checkpoint before gameplay C.** |
+| R58 · v0.6.10 | **C starts: Boat economy v1** (`js/gameplay/BoatEconomySystem.js`, data `BOAT` in wildsCatalog). Discover Sigurd → requirement (3 species + Life Vest, which Sigurd stitches from 6 Fiber + 2 Snail Shell) → rent per trip (3 Wood + 2 Fiber) → waterfall reward once/day (3 Stone, 2 Clay, 1 Amber; first time +1 Golden Seed) → buy after 2 waterfall trips (20 Wood, 12 Fiber, 6 Clay, 4 Amber), no more rent. Fishing gear + catch log now persist in `tgw.save` (were memory-only). Locked FishingV1/Boat→Waterfall untouched (method swap on the instance). Objective falls back to boat steps. Dev menu → BÅD. Smoke 9/9. Device check on iPhone (R57): 60 fps, 217–363 calls, 370–433k tris, mobile-high. |
 
 Details: `docs/MASTER-PROJECT-DOCUMENT.md` section 30 and `docs/R47…R49*.md`.
 
 ## Automated check
-`node tests/smoke.mjs` from the repo root (needs Playwright + Chromium). 8/8 must pass before a push.
+`node tests/smoke.mjs` from the repo root (needs Playwright + Chromium). 9/9 must pass before a push (incl. the R58 boat-economy flow).
 
 ## Quick test (with the dev menu)
 1. Start screen → Indstillinger → turn on **Dev-menu** → START → pick a character.
@@ -42,14 +43,17 @@ Details: `docs/MASTER-PROJECT-DOCUMENT.md` section 30 and `docs/R47…R49*.md`.
 3. DEV → **3 potter + vand** → **Drivhus** teleport → plant, water → DEV **Spol 5 min frem** ×3 → harvest.
 4. DEV → **Ukrudt nu** / **Snegl nu** to see the threat; **Arbejdsbænk** teleport for crafting/upgrades.
 5. DEV → **Nærmeste tornekrat** to test cutting + cache.
+6. Boat (R58): DEV → **+20 materialer** → **Stang + 3 fiskearter** → **Teleport: Sigurd / bro** → walk to the hatch, talk to Sigurd →
+   "Could you make me a life vest?" → "Can I take the boat out?" → board at the dock, row the stream to the waterfall (reward toast) →
+   dock. DEV **+2 vandfaldsture** → Sigurd offers "Would you sell me the boat?".
 
 ## Open / pending
 - Proposed, needs GO (locked): greenhouse loads all three level GLBs (~7.5 MB) at startup; loading only the current level + next would cut startup bytes by ~5 MB.
 - Camera A is default everywhere (R50.3) incl. desktop mouse-look; needs Jannik's runtime test.
 - Jannik's runtime test + LÅS of R46.2–R50.
 - R34B mobile gestures: still awaiting final real-device approval.
-- Safari toolbars eat ~⅓ of landscape height: proposed (not built) web-app manifest for fullscreen "Add to Home Screen".
-- Proposed (not built): compact HUD for very short landscape; objective card in the world still says "Find the Golden Seed".
+- Seen on Jannik's iPhone screenshot (02/10): in the garden the camera can sit right on top of the character (occlusion pull-in near walls?). Not investigated yet; needs a repro spot.
+- Boat objective only appears once the garden goals are done (objectives are one linear chain). Parallel tracks = later scope.
 - Claude Design project import is blocked in this environment (needs `/design-login` or files uploaded). `Brand_Export.dc.html` was read; its 3D icon needs the missing `icons3d.js`. No scope chosen.
 
 ## Regression checklist for the next change

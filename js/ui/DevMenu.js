@@ -29,6 +29,9 @@ export class DevMenu {
           <button data-a="tp:bench">Arbejdsbænk</button><button data-a="tp:greenhouse">Drivhus</button><button data-a="tp:pond">Dam</button><button data-a="tp:gate">Havelåge</button>
           <button data-a="tp:world">Verden (hjem)</button><button data-a="tp:node">Nærmeste node</button><button data-a="tp:thorn">Nærmeste tornekrat</button>
         </div></section>
+        <section><small>BÅD (R58)</small><div class="dev-grid">
+          <button data-a="boat:ready">Stang + 3 fiskearter</button><button data-a="boat:vest">Redningsvest</button><button data-a="boat:trips">+2 vandfaldsture (kan købe)</button><button data-a="boat:reset">Nulstil båd + fiskeri</button><button data-a="tp:dock">Teleport: Sigurd / bro</button>
+        </div></section>
         <section><small>DRIVHUS (genindlæser)</small><div class="dev-grid four">
           <button data-a="gh:0">Intet</button><button data-a="gh:1">L1</button><button data-a="gh:2">L2</button><button data-a="gh:3">L3</button>
         </div></section>
@@ -86,6 +89,15 @@ export class DevMenu {
       }
       return;
     }
+    if (a.startsWith('boat:')) {
+      const f = g.fishing, op = a.slice(5); if (!f || !g.boatEco) return this.toast('Fiskeri er ikke indlæst endnu');
+      if (op === 'ready') { f.starter = true; f.own.rodBamboo = 1; f.own.worms = 1; for (const id of ['roach', 'perch', 'bream']) f.log[id] ||= { count: 1, best: 20 }; }
+      else if (op === 'vest') f.own.vest = 1;
+      else if (op === 'trips') p.boat.waterfall += 2;
+      else if (op === 'reset') { f.starter = false; for (const k of Object.keys(f.own)) delete f.own[k]; for (const k of Object.keys(f.log)) delete f.log[k]; Object.assign(p.boat, { owned: false, trips: 0, waterfall: 0, lastReward: '' }); f.setBoatAccess({ owned: false, rented: false }); }
+      f.renderAll?.(); g.boatEco.persist(); this.toast({ ready: 'Stang + roach, perch, bream', vest: 'Redningsvest', trips: `Vandfaldsture: ${p.boat.waterfall}`, reset: 'Båd og fiskeri nulstillet' }[op]);
+      return;
+    }
     if (a === 'perf') { g.perfHud?.set(!g.perfHud.on); this.toast(g.perfHud?.on ? 'Performance-HUD til' : 'Performance-HUD fra'); return; }
     if (a === 'metrics') {
       const m = window.__TGW_STARTUP_METRICS__ || {}; const keys = Object.keys(m).filter(k => k.endsWith('Ms'));
@@ -108,6 +120,7 @@ export class DevMenu {
       else if (t === 'greenhouse') this.teleport('garden', 6.5, -9.3, Math.PI);
       else if (t === 'pond') this.teleport('garden', -3.9, 1.15, Math.PI);
       else if (t === 'gate') { const s = hp?.gardenSpawn?.() || { x: 0, z: 9.65, heading: Math.PI }; this.teleport('garden', s.x, s.z, s.heading); }
+      else if (t === 'dock') { const sp = g.fishing?.shopPoint; if (!sp) return this.toast('Fiskeri er ikke indlæst endnu'); this.teleport('world', sp.x, sp.z, 0); }
       else if (t === 'world') { const s = hp?.worldSpawn?.() || { x: .1, z: 14.3, heading: 0 }; this.teleport('world', s.x, s.z, s.heading); }
       else {
         const from = g.world.space === 'world' ? g.character.position : { x: 0, z: 14 };

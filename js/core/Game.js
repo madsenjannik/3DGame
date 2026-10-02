@@ -29,6 +29,7 @@ import { PerfHud } from '../dev/PerfHud.js';
 import { QualityManager, QUALITY } from './Quality.js';
 import { InteractionResolver } from './InteractionResolver.js';
 import { log, warn } from '../dev/Log.js';
+import { BoatEconomySystem } from '../gameplay/BoatEconomySystem.js';
 
 export class Game {
   async init({characterId='succulent',devMode=false}={}){
@@ -115,7 +116,7 @@ export class Game {
       attach(choicePromise,c=>{this.choiceWorld=c;}),
       attach(greenhousePromise,g=>{this.greenhouse=g;this.wilds.setGreenhouse(g);this.cameraOcclusion.greenhouse=g;this.structureVisibility.greenhouse=g;}),
       attach(orangeryPromise,o=>{this.orangery=o;this.cameraOcclusion.orangery=o;this.structureVisibility.orangery=o;}),
-      attach(fishingPromise,f=>{this.fishing=f;})
+      attach(fishingPromise,f=>{this.fishing=f;try{this.boatEco=new BoatEconomySystem({fishing:f,wilds:this.wilds,hud:this.hud}).init();}catch(e){warn('BOAT','economy disabled',e);this.failed.push('boat');}})
     ]).then(()=>{mark('allSystemsReadyMs');log('LOAD','background systems ready',this.startupMetrics);if(this.failed.length)this.hud.showToast?.(`Some parts could not load: ${this.failed.join(', ')}`);});
     // DEV routes spawn straight into the Stable/Orangery/Fishing, so they wait for everything as before.
     if(devMode)await background;
@@ -158,7 +159,7 @@ export class Game {
     if(gardenSpace){
       this.choiceWorld?.update(dt,this.time);
     }else{
-      this.wildlife?.update(dt,this.time,this.character.position);this.orangery?.update(dt,this.time,this.character.position);this.stable?.update(dt,this.time,this.character.position,this.camera,this.renderer);this.fishing?.update(dt,this.time,this.character);if(stableBusy)this.stable?.syncPlayerVisibility?.();
+      this.wildlife?.update(dt,this.time,this.character.position);this.orangery?.update(dt,this.time,this.character.position);this.stable?.update(dt,this.time,this.character.position,this.camera,this.renderer);this.fishing?.update(dt,this.time,this.character);this.boatEco?.update();if(stableBusy)this.stable?.syncPlayerVisibility?.();
     }
 
     let seed={near:false},greenhouse={interaction:null};

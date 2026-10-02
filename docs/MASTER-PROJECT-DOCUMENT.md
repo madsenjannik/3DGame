@@ -16,7 +16,7 @@
 - **R50.3 (v0.5.30, `CAMERA-R50.3-20261002A`) is LOCKED** (Jannik's plan, 02/10/2026) and is the baseline for all new work:
   R46.2 start/splash, offline cleanup, wilds core loop (R47–R49), dev menu (R50), free camera everywhere (R50.3).
 - **R45 is historical** — a rollback reference only. New builds do **not** start from R45.
-- **In progress: technical foundation pass (section 31)**, then gameplay (Boat → combat → Mole → Wood Giant …) after Jannik's runtime check.
+- **In progress: gameplay C (section 31)**: Boat economy done (R58) → combat foundation → Mole → Wood Giant → Lake Run → Thora.
 - Rules: no build without **GO**; every build updates HANDOVER + MASTER in the same commit (§1.7); never change the three greenhouse levels;
   building happens in the private garden.
 
@@ -1573,7 +1573,8 @@ are only touched where a measured hotspot requires it, minimally.
    **Done (R57):** `node tests/smoke.mjs` — serves the repo itself, blocks all external requests, 8 checks, exit code 1 on
    failure. Must pass before every push (CLAUDE.md rule 5).
 
-**B status 02/10/2026: complete (R51–R57).** Next: Jannik's on-device check (performance HUD numbers on iPhone,
+**B status 02/10/2026: complete (R51–R57).** On-device check (iPhone, Jannik 02/10): 60 fps steady (frame max 20–24 ms), 217 draw calls / 370k tris in the garden, 363 / 433k at the lake, mobile-high, 1 WebGL context → no perf work needed before C.
+**C progress:** 1. **Boat economy — Done (R58, v0.6.10):** `BoatEconomySystem` wraps Sigurd's dialog on the live FishingV1 instance (locked file untouched). Discover (Sigurd) → requirement (3 species + Life Vest; vest stitched by Sigurd from `BOAT.vestCost`) → rent per trip (`rentCost`; rental ends on docking as before) → use (waterfall: `waterfallReward` once per local day, `firstWaterfall` Golden Seed once) → own (after `buyAfterTrips` waterfall trips, `buyCost`; owned = no rent). Save: `profile.fishing {starter, own, log}` and `profile.boat {owned, trips, waterfall, lastReward}` (additive, still v3). Before R58 fishing progress was lost on every reload and the vest was 'Coming soon', so the boat could not be reached in normal play. Later: boat upgrades with Lake Run. Next: combat foundation. Next: Jannik's on-device check (performance HUD numbers on iPhone,
 PWA from the home screen), then C starts with Boat economy.
 **C. Gameplay** (*checkpoint with Jannik after B*): Boat economy → combat foundation → Mole (first combat slice) →
 Wood Giant (first boss, reuses combat contract) → Lake Run → Thora quest.
