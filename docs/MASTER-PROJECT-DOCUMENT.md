@@ -1547,8 +1547,15 @@ are only touched where a measured hotspot requires it, minimally.
    released 5 s after the result closes. Background load competes with rendering — on software GL it took 31 s; real
    iPhone timing must be checked with the performance HUD.
 6. Lifecycle contract: visibilitychange/pagehide → pause rendering, flush save; resume with offline catch-up, no dt jump;
-   no hidden 3D scene rendering behind another.
+   no hidden 3D scene rendering behind another. **Done (R55):** hidden → `setAnimationLoop(null)` + save flush; visible →
+   clock reset + loop restart (verified 0 frames while hidden). Timestamp systems (nodes, pots, weeds, daily) catch up by design;
+   SaveGame also flushes on pagehide. Result Stage iframe unloads after use (R54).
 7. Adaptive quality profiles (mobile-low / mobile-high / desktop): DPR, shadow map size, density — same visual style.
+   **Done (R55):** `js/core/Quality.js` — desktop DPR≤2 / shadow 2048 (unchanged look), mobile-high DPR≤1.5 / 1536,
+   mobile-low DPR≤1.15 / 1024. Touch starts high, drops to low after 2×2 s windows under 42 fps (after a 6 s settle),
+   remembered in `tgw.quality`; Dev menu can force a profile. Density (wildlife/vegetation) not yet profiled —
+   needs on-device numbers first. Note: three r165 `renderer.info` does not count the shadow pass, so shadow cost must be
+   judged by on-device FPS, not draw calls.
 8. Interaction resolver (one active interaction from candidates by priority/distance/context) — before combat.
 9. SaveGame v3 robustness: schema validation, migration chain, last-known-good backup, build/version stamp,
    DEV export/import/download.

@@ -26,6 +26,7 @@ import { WorkbenchPanel } from '../ui/WorkbenchPanel.js';
 import { DevMenu, devMenuEnabled } from '../ui/DevMenu.js';
 import { applyControlProfile, defaultProfile } from './ControlProfiles.js';
 import { PerfHud } from '../dev/PerfHud.js';
+import { QualityManager, QUALITY } from './Quality.js';
 import { log, warn } from '../dev/Log.js';
 
 export class Game {
@@ -97,6 +98,13 @@ export class Game {
     this.structureVisibility=new StructureVisibilitySystem({world:this.world,greenhouse:this.greenhouse,orangery:this.orangery,stable:this.stable,cameraOcclusion:this.cameraOcclusion});
     this.clock=new THREE.Clock();this.time=0;this.lastMoved=false;
     addEventListener('resize',()=>this.resize());this.resize();this.homePortal?.prepareMoveInCamera?.(this.camera,this.character);this.renderer.setAnimationLoop(()=>this.frame());
+    this.quality=new QualityManager(this,this.input.isTouch);
+    // R55 lifecycle contract: hidden page → stop rendering + flush save; visible again → resume
+    // without a delta-time jump (timestamp-based systems catch up on their own).
+    document.addEventListener('visibilitychange',()=>{
+      if(document.hidden){this.renderer.setAnimationLoop(null);this.save?.flush?.();log('LIFE','paused (hidden)');}
+      else{this.clock.getDelta();this.renderer.setAnimationLoop(()=>this.frame());log('LIFE','resumed');}
+    });
     this.hud.ready();mark('firstPlayableMs');
     // Attach background systems as they arrive (each is optional; null when it failed).
     const attach=(promise,fn)=>promise.then(v=>{if(v)fn(v);return v;});
@@ -119,9 +127,9 @@ export class Game {
     setTimeout(()=>{if(!this.input.moved&&!this.homePortal?.usesMoveInCamera?.())this.hud.hint.style.opacity='0';},9000);
   }
 
-  resize(){this.renderer.setSize(innerWidth,innerHeight);this.camera.aspect=innerWidth/innerHeight;this.camera.fov=this.camera.aspect<.8?58:48;this.camera.updateProjectionMatrix();}
+  resize(){if(this.quality)this.renderer.setPixelRatio(Math.min(devicePixelRatio||1,QUALITY[this.quality.id].dpr));this.renderer.setSize(innerWidth,innerHeight);this.camera.aspect=innerWidth/innerHeight;this.camera.fov=this.camera.aspect<.8?58:48;this.camera.updateProjectionMatrix();}
   frame(){
-    const dt=Math.min(this.clock.getDelta(),1/20);this.time+=dt;this.uTime.value=this.time;this.input.update();
+    const rawDt=this.clock.getDelta();this.quality?.sample(rawDt);const dt=Math.min(rawDt,1/20);this.time+=dt;this.uTime.value=this.time;this.input.update();
     if(this.input.moved&&!this.lastMoved){this.lastMoved=true;this.hud.markMoved();}
 
     const gardenSpace=this.world.isGardenSpace();

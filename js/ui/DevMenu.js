@@ -21,7 +21,7 @@ export class DevMenu {
       <header><div><small>TEST · RIGTIG SAVE</small><h2>Dev menu</h2></div><button type="button" class="wilds-close" aria-label="Close">✕</button></header>
       <div class="dev-menu-body">
         <section><small>KAMERA & STYRING (kun dev)</small><div class="dev-grid profiles">${Object.entries(PROFILES).map(([id, p]) => `<button data-a="cam:${id}">${p.name}</button>`).join('')}</div><p class="dev-note"></p></section>
-        <section><small>MÅLING</small><div class="dev-grid"><button data-a="perf">Performance-HUD til/fra</button><button data-a="metrics">Vis startup-tider</button></div></section>
+        <section><small>MÅLING</small><div class="dev-grid"><button data-a="perf">Performance-HUD til/fra</button><button data-a="metrics">Vis startup-tider</button></div><div class="dev-grid four"><button data-a="q:auto">Auto</button><button data-a="q:mobile-low">Lav</button><button data-a="q:mobile-high">Høj</button><button data-a="q:desktop">Desktop</button></div></section>
         <section><small>RESSOURCER</small><div class="dev-grid">
           <button data-a="mats">+20 materialer</button><button data-a="tools">Alle redskaber</button><button data-a="pots">3 potter + vand</button><button data-a="skip">Spol 5 min frem</button>
         </div></section>
@@ -74,6 +74,7 @@ export class DevMenu {
       this.profile = applyControlProfile(g, id); this.markProfile(); this.toast(`Kamera: ${PROFILES[this.profile].name}`);
       return;
     }
+    if (a.startsWith('q:')) { const id = a.slice(2); g.quality?.set(id === 'auto' ? null : id); this.toast(`Kvalitet: ${id === 'auto' ? 'automatisk (' + g.quality?.id + ')' : id}`); return; }
     if (a === 'perf') { g.perfHud?.set(!g.perfHud.on); this.toast(g.perfHud?.on ? 'Performance-HUD til' : 'Performance-HUD fra'); return; }
     if (a === 'metrics') {
       const m = window.__TGW_STARTUP_METRICS__ || {}; const keys = Object.keys(m).filter(k => k.endsWith('Ms'));
