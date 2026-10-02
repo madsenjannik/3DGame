@@ -91,6 +91,9 @@ export class WildsLoopSystem {
     if (!on && present) lists.forEach(l => { const i = l.indexOf(o); if (i >= 0) l.splice(i, 1); });
   }
 
+  // Greenhouse loads in the background (R55); pots follow it once it exists.
+  setGreenhouse(g) { this.greenhouse = g; if (this.pots) this.pots.gh = g; }
+
   gardenObstacle(x, z, r, kind) { const o = { x, z, r, height: 1, kind, traversal: 'blocked', space: 'garden' }; this.setObstacle(o, true); return o; }
 
   // ---------- shared assets ----------

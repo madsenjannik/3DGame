@@ -3,7 +3,7 @@
 // pond with the Watering Can, harvest when it flowers. Pots sit on the authored greenhouse
 // furniture of the current level; the greenhouse itself (levels, collision, camera) is untouched.
 import * as THREE from 'three';
-import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { loadGLTF } from '../core/AssetManager.js';
 import { POTS, MATERIALS } from '../data/wildsCatalog.js';
 
 const GH = { x: 6.5, z: -11.2 };                 // GreenhouseProgressionSystem ROOT_X / ROOT_Z
@@ -25,9 +25,11 @@ export class GardenPotsSystem {
       petal: [M(0xf2b8c6), M(0xf5d76e), M(0xb59ad8)], drop: new THREE.MeshStandardMaterial({ color: 0x6fb6e8, roughness: .2, emissive: 0x2a6da0, emissiveIntensity: .35 }) };
     this.slots = [0, 1, 2].map(i => this.makeSlot(i));
     this.potTemplate = null;
-    new GLTFLoader().loadAsync('./assets/props/pot-terracotta.glb').then(g => {
-      g.scene.traverse(o => { if (/Ghost|Seed/.test(o.name)) o.visible = false; if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
-      this.potTemplate = g.scene; for (const s of this.slots) this.swapPotModel(s);
+    // Shared with the seed-choice plot pot via AssetManager: clone before hiding helper nodes.
+    loadGLTF('./assets/props/pot-terracotta.glb').then(g => {
+      const tpl = g.scene.clone(true); tpl.visible = true; // the seed-choice system hides its own instance
+      tpl.traverse(o => { if (/Ghost|Seed/.test(o.name)) o.visible = false; if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
+      this.potTemplate = tpl; for (const s of this.slots) this.swapPotModel(s);
     }).catch(e => console.warn('[TGW] pot-terracotta.glb missing; using placeholder pots', e));
     this.level = -1; this.placeForLevel();
   }

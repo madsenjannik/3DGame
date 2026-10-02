@@ -3,7 +3,7 @@
 ## Start here
 - **Repo:** `madsenjannik/3DGame`, branch `claude/magical-lovelace-nuka97` (GitHub replaces ZIP packages).
 - **Live test build:** `https://madsenjannik.github.io/3DGame/` (version shown bottom-left on the start screen).
-- **Current build:** v0.5.60 · `PWA-R53-20261002A` (see `version.js`).
+- **Current build:** v0.5.70 · `LOAD-R54-20261002A` (see `version.js`).
 - **LOCKED baseline:** R50.3 (v0.5.30). R45 is historical rollback reference only. Builds after R50.3 are CANDIDATE.
 - **Now:** technical foundation pass (MASTER §31). Gameplay (Boat, combat, Mole …) after Jannik's runtime check.
 - **Rules:** never build without Jannik's explicit **GO**; analyze, find root cause and define exact scope first.
@@ -26,6 +26,7 @@
 | R51 · v0.5.40 | DEV performance HUD (Dev menu → MÅLING) + DEV logger + startup-time viewer; baseline measured (MASTER §31). |
 | R52 · v0.5.50 | Error boundaries: only world + player character are critical; failed subsystems warn and are skipped; character falls back to the procedural sprout. |
 | R53 · v0.5.60 | PWA standalone: manifest + Apple metadata on start/selector/game. iPhone: Safari → Del → Føj til hjemmeskærm → opens fullscreen without Safari bars. |
+| R54 · v0.5.70 | Staged loading: playable as soon as world + home + character are ready (headless 8.8 s → 2.6 s); Stable/garden/Orangery/Fishing attach in the background. Result Stage iframe loads on race start, unloads 5 s after. Small AssetManager (shared pot GLB loaded once). |
 
 Details: `docs/MASTER-PROJECT-DOCUMENT.md` section 30 and `docs/R47…R49*.md`.
 
@@ -37,6 +38,7 @@ Details: `docs/MASTER-PROJECT-DOCUMENT.md` section 30 and `docs/R47…R49*.md`.
 5. DEV → **Nærmeste tornekrat** to test cutting + cache.
 
 ## Open / pending
+- Proposed, needs GO (locked): greenhouse loads all three level GLBs (~7.5 MB) at startup; loading only the current level + next would cut startup bytes by ~5 MB.
 - Camera A is default everywhere (R50.3) incl. desktop mouse-look; needs Jannik's runtime test.
 - Jannik's runtime test + LÅS of R46.2–R50.
 - R34B mobile gestures: still awaiting final real-device approval.

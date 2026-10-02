@@ -55,11 +55,12 @@ export class Game {
     const stablePromise=optional('stable',()=>new NorthStableSystem(this.scene,{world:this.world,state:this.state,renderer:this.renderer}).init());
     // Critical: the selected character. If its GLB fails, fall back to the procedural sprout so the game still starts.
     const characterPromise=this.registry.instantiateCharacter(this.state.player.characterId,{uTime:this.uTime}).catch(e=>{warn('LOAD',`character ${this.state.player.characterId} failed; using the fallback sprout`,e);this.failed.push('character');return this.registry.instantiateCharacter('sprout_alpha',{uTime:this.uTime});});
-    [this.homePortal,this.stable]=await Promise.all([homePortalPromise,stablePromise]);
+    // R55 staged loading: only home + character gate the first playable frame. Stable, garden
+    // progression, Orangery and Fishing keep loading and attach themselves when ready.
+    this.homePortal=await homePortalPromise;
     const instance=await characterPromise;mark('worldCriticalReadyMs');
-    if(this.stable)this.world.stableCollisionResolver=(p,r)=>this.stable.resolveCollisions(p,r);
     this.scene.add(instance.root);
-    this.character=new CharacterController({instance,world:this.world,state:this.state});this.stable?.bindRuntime({character:this.character,renderer:this.renderer});
+    this.character=new CharacterController({instance,world:this.world,state:this.state});
     this.followCamera=new ThirdPersonCamera(this.camera,this.character,instance.definition.contract);this.followCamera.snap();this.homePortal?.prepareMoveInCamera?.(this.camera,this.character);
 
     // R36: Garden/progression systems are also independent at startup. Keep the
@@ -69,7 +70,6 @@ export class Game {
     // The old Lookout resource loop is retired: building now happens at the wilds workbench in this garden.
     const greenhousePromise=optional('greenhouse',()=>new GreenhouseProgressionSystem(this.world.privateRoot,{state:this.state,world:this.world}).init());
     const orangeryPromise=optional('orangery',()=>new OrangeryHubSystem(this.scene,{state:this.state,world:this.world,uTime:this.uTime}).init());
-    [this.collectible,this.choiceWorld,this.greenhouse,this.orangery]=await Promise.all([collectiblePromise,choicePromise,greenhousePromise,orangeryPromise]);mark('progressionSystemsReadyMs');
     this.hud=new Hud(this.state);this.choicePanel=new ChoicePanel(this.state);
     this.input=new InputManager({joy:document.getElementById('joy'),knob:document.getElementById('joy-knob'),actionButton:document.getElementById('action')});
     this.mapBlocking=false;this._mapViewDir=new THREE.Vector3();
@@ -81,12 +81,11 @@ export class Game {
       },
       onToggle:(open,overlay)=>{this.mapBlocking=!!(open&&!overlay);if(open)this.input.resetTouchPointers?.();}
     });
-    this.stable?.bindRuntime({input:this.input,hud:this.hud,followCamera:this.followCamera});
     const fishingPromise=optional('fishing',()=>new FishingV1System(this.scene,{state:this.state,world:this.world,input:this.input,hud:this.hud,renderer:this.renderer,character:this.character}).init());
-    [this.fishing]=await Promise.all([fishingPromise,optional('map',()=>this.worldMap.ready)]).then(([fishing])=>[fishing]);mark('uiAndFishingReadyMs');
+    optional('map',()=>this.worldMap.ready);
     // Core loop v1 (shared world). DEV routes use a throwaway profile that is never written.
     this.save=new SaveGame({characterId:this.state.player.characterId,ephemeral:devMode});
-    this.wilds=new WildsLoopSystem({world:this.world,state:this.state,save:this.save,hud:this.hud,greenhouse:this.greenhouse}).init();
+    this.wilds=new WildsLoopSystem({world:this.world,state:this.state,save:this.save,hud:this.hud,greenhouse:null}).init();
     this.workbenchPanel=new WorkbenchPanel({wilds:this.wilds,state:this.state});
     this.wilds.onOpenWorkbench=()=>{this.workbenchPanel.show();this.input.resetTouchPointers?.();};
     const syncTools=()=>this.hud.setTools?.(this.wilds.profile.tools,this.wilds.profile.water);this.wilds.onChange(syncTools);syncTools();
@@ -98,7 +97,19 @@ export class Game {
     this.structureVisibility=new StructureVisibilitySystem({world:this.world,greenhouse:this.greenhouse,orangery:this.orangery,stable:this.stable,cameraOcclusion:this.cameraOcclusion});
     this.clock=new THREE.Clock();this.time=0;this.lastMoved=false;
     addEventListener('resize',()=>this.resize());this.resize();this.homePortal?.prepareMoveInCamera?.(this.camera,this.character);this.renderer.setAnimationLoop(()=>this.frame());
-    this.hud.ready();if(this.failed.length)this.hud.showToast?.(`Some parts could not load: ${this.failed.join(', ')}`);
+    this.hud.ready();mark('firstPlayableMs');
+    // Attach background systems as they arrive (each is optional; null when it failed).
+    const attach=(promise,fn)=>promise.then(v=>{if(v)fn(v);return v;});
+    const background=Promise.all([
+      attach(stablePromise,s=>{this.stable=s;this.world.stableCollisionResolver=(p,r)=>s.resolveCollisions(p,r);s.bindRuntime({character:this.character,renderer:this.renderer});s.bindRuntime({input:this.input,hud:this.hud,followCamera:this.followCamera});this.cameraOcclusion.stable=s;this.structureVisibility.stable=s;}),
+      attach(collectiblePromise,c=>{this.collectible=c;}),
+      attach(choicePromise,c=>{this.choiceWorld=c;}),
+      attach(greenhousePromise,g=>{this.greenhouse=g;this.wilds.setGreenhouse(g);this.cameraOcclusion.greenhouse=g;this.structureVisibility.greenhouse=g;}),
+      attach(orangeryPromise,o=>{this.orangery=o;this.cameraOcclusion.orangery=o;this.structureVisibility.orangery=o;}),
+      attach(fishingPromise,f=>{this.fishing=f;})
+    ]).then(()=>{mark('allSystemsReadyMs');log('LOAD','background systems ready',this.startupMetrics);if(this.failed.length)this.hud.showToast?.(`Some parts could not load: ${this.failed.join(', ')}`);});
+    // DEV routes spawn straight into the Stable/Orangery/Fishing, so they wait for everything as before.
+    if(devMode)await background;
     if(this.homePortal?.moveInPending)this.homePortal.beginMoveIn(this.character,this.followCamera,this.camera,this.hud);
     mark('gameReadyMs');
     const resources=performance.getEntriesByType?.('resource')||[];

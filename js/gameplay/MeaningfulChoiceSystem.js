@@ -2,6 +2,7 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { damp, radialTexture } from '../visual/VisualKit.js';
+import { loadGLTF } from '../core/AssetManager.js';
 
 const LOTUS_URL='./assets/plants/golden-lotus.glb';
 const POT_URL='./assets/props/pot-terracotta.glb';
@@ -93,7 +94,7 @@ export class MeaningfulChoiceSystem {
 
   async loadGoldenLotusPayoff(){
     const loader=new GLTFLoader();
-    const [potGltf,lotusGltf]=await Promise.all([loader.loadAsync(POT_URL),loader.loadAsync(LOTUS_URL)]);
+    const [potGltf,lotusGltf]=await Promise.all([loadGLTF(POT_URL),loader.loadAsync(LOTUS_URL)]) /* R55: pot shared with greenhouse pots */;
 
     this.potRoot=potGltf.scene;this.potRoot.name='GoldenLotus_Pot_Terracotta';this.potRoot.visible=false;
     this.potRoot.traverse(o=>{if(o.isMesh){o.castShadow=true;o.receiveShadow=true;}});

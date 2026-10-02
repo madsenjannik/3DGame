@@ -1537,10 +1537,15 @@ are only touched where a measured hotspot requires it, minimally.
 1. Performance instrumentation: DEV performance HUD + structured DEV logger (done, R51).
 2. *Error boundaries early*: optional subsystems warn + continue; only the player character is critical. **Done (R52):** home, stable, golden seed, seed choice, greenhouse, orangery, fishing, map, wildlife are optional (`[LOAD] … failed` + toast listing what's missing); a failed character GLB falls back to the procedural sprout. Verified with 7 GLBs blocked: game starts, player moves, no page errors.
 3. *PWA standalone early* (manifest + Apple metadata; no service worker) — biggest iPhone viewport win. **Done (R53):** `manifest.webmanifest` (standalone, orientation any, icons 192/512/1024) + apple-mobile-web-app-capable / black-translucent status bar / title / touch icon on index, selector and game (selector viewport-fit=cover).
-4. Asset/load profiling → central small AssetManager (loadOnce, dedupe, clone, priority, fallback).
+4. Asset/load profiling → central small AssetManager (loadOnce, dedupe, clone, priority, fallback). **Done (R54):** `js/core/AssetManager.js` (`loadGLTF` cached + deduped, failed loads evicted, `cloneStatic`); only real duplicate found was `pot-terracotta.glb` (seed-choice + greenhouse pots) → now 1 request. New code must load GLBs through it. **Largest remaining load waste: the greenhouse preloads L1+L2+L3 (~7.5 MB) at startup — locked; changing it needs Jannik's explicit GO.**
 5. Staged loading: critical path first (character, home, nearby landscape, HUD), background/proximity for Stable,
    Cabin/Fishing, wildlife, Result/Podium (*first concrete hotspot: the Result Stage iframe — a second WebGL renderer —
-   is loaded at game start; load it when a race starts, unload after*).
+   is loaded at game start; load it when a race starts, unload after*). **Done (R54):** first playable frame waits only for
+   world + home + character (headless: playable 2.6 s vs 8.8 s before); Stable, Golden Seed, seed choice, greenhouse,
+   Orangery and Fishing attach in the background (`allSystemsReadyMs` metric). DEV routes still wait for everything.
+   Result Stage iframe: `about:blank` at start, loaded by `NorthStableSystem.ensureResultStage()` on race start/result,
+   released 5 s after the result closes. Background load competes with rendering — on software GL it took 31 s; real
+   iPhone timing must be checked with the performance HUD.
 6. Lifecycle contract: visibilitychange/pagehide → pause rendering, flush save; resume with offline catch-up, no dt jump;
    no hidden 3D scene rendering behind another.
 7. Adaptive quality profiles (mobile-low / mobile-high / desktop): DPR, shadow map size, density — same visual style.
