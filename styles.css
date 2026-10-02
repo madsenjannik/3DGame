@@ -1007,3 +1007,5 @@ body.stable-race-result-active .stable-race-controls,body.stable-race-result-act
 .dev-grid.profiles{grid-template-columns:1fr}
 .dev-grid button.active{background:#30392b;color:#ffd45a}
 .dev-note{margin:0;font-size:11px;line-height:1.4;color:#5b6353}
+.perf-hud{position:fixed;left:50%;top:max(6px,env(safe-area-inset-top));transform:translateX(-50%);z-index:60;padding:5px 9px;border-radius:9px;background:rgba(20,24,18,.78);color:#e9f0e2;font:600 10px/1.35 ui-monospace,Menlo,monospace;white-space:pre;pointer-events:none}
+.perf-hud.ok{color:#bfe6a1}.perf-hud.bad{color:#ffb39a}

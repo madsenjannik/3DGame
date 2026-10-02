@@ -9,20 +9,18 @@
 ---
 
 
-## CURRENT WORKING STATUS — 01/10/2026 (R50 candidate line)
+## CURRENT WORKING STATUS — 02/10/2026
 
-- **Source of truth is now GitHub:** `madsenjannik/3DGame`, branch `claude/magical-lovelace-nuka97`, served by GitHub Pages at `https://madsenjannik.github.io/3DGame/`. Commits replace ZIP packages; `version.js` is the single version/build label.
-- **Last LOCKED gameplay baseline is still R45.** Everything after it is CANDIDATE until Jannik tests and writes **LÅS**:
-  - R46.2 Start/Splash presentation (v0.4.00);
-  - cleanup pass (v0.4.01): fully offline (three.js addons + React/Babel vendored), dead duplicates removed, docs moved to `docs/`;
-  - R47 core loop v1 (v0.4.10) and R48 threat/traits/golden seeds/daily (v0.4.20), R48.1 mobile layout (v0.4.21);
-  - R49 builds moved into the private garden + greenhouse pots (v0.5.00);
-  - R50 dev menu + tools in HUD (v0.5.10).
-- **Pre-existing bug fixed in the R47 line:** `game.html` never closed `#stable-race-ui`, so joystick, E/action button, toasts, hint and loading screen were invisible outside races (no tappable interaction on iPhone). Stable result screen re-verified unchanged.
-- **Jannik's rule restated:** building happens in the **private garden**, not the shared world (world building may come later). The greenhouse is for pots and plants. **The three greenhouse levels must not be changed.**
-- No build without Jannik's explicit **GO** — this applies to every follow-up, including "small" layout fixes.
+- **Active baseline: GitHub HEAD** of `madsenjannik/3DGame`, branch `claude/magical-lovelace-nuka97`, live at
+  `https://madsenjannik.github.io/3DGame/`. `version.js` holds the version/build label. ZIP packages are no longer produced.
+- **R50.3 (v0.5.30, `CAMERA-R50.3-20261002A`) is LOCKED** (Jannik's plan, 02/10/2026) and is the baseline for all new work:
+  R46.2 start/splash, offline cleanup, wilds core loop (R47–R49), dev menu (R50), free camera everywhere (R50.3).
+- **R45 is historical** — a rollback reference only. New builds do **not** start from R45.
+- **In progress: technical foundation pass (section 31)**, then gameplay (Boat → combat → Mole → Wood Giant …) after Jannik's runtime check.
+- Rules: no build without **GO**; every build updates HANDOVER + MASTER in the same commit (§1.7); never change the three greenhouse levels;
+  building happens in the private garden.
 
-## R45 LOCKED STATUS (carried forward)
+## R45 LOCKED STATUS (historical — superseded by R50.3)
 
 - **Current canonical locked working base:** `THE-GROWING-WILDS-v0.3.96-R45-HOLO-INDICATOR-LOCKED.zip`.
 - **R45 is the branch/source-of-truth baseline** for all new work unless Jannik explicitly chooses another base.
@@ -1525,4 +1523,46 @@ still available as "Klassisk" in the dev menu.
 ## Known limits
 Placeholder procedural art for all new props; no real combat/health; no global day/night lighting; balancing is a
 first guess. Older systems' saves not unified.
+
+---
+
+# 31. TECHNICAL FOUNDATION + ROADMAP (Jannik's plan, GO 02/10/2026)
+
+Principle: **instrument and measure first, then fix concrete hotspots.** No big optimization refactor; locked systems
+are only touched where a measured hotspot requires it, minimally.
+
+## Order (Claude's adjustments in *italics*)
+**A. Baseline** — R50.3 LOCKED (done, R51); MASTER cleanup (done, R51).
+**B. Technical foundation**
+1. Performance instrumentation: DEV performance HUD + structured DEV logger (done, R51).
+2. *Error boundaries early*: optional subsystems warn + continue; only the player character is critical.
+3. *PWA standalone early* (manifest + Apple metadata; no service worker) — biggest iPhone viewport win.
+4. Asset/load profiling → central small AssetManager (loadOnce, dedupe, clone, priority, fallback).
+5. Staged loading: critical path first (character, home, nearby landscape, HUD), background/proximity for Stable,
+   Cabin/Fishing, wildlife, Result/Podium (*first concrete hotspot: the Result Stage iframe — a second WebGL renderer —
+   is loaded at game start; load it when a race starts, unload after*).
+6. Lifecycle contract: visibilitychange/pagehide → pause rendering, flush save; resume with offline catch-up, no dt jump;
+   no hidden 3D scene rendering behind another.
+7. Adaptive quality profiles (mobile-low / mobile-high / desktop): DPR, shadow map size, density — same visual style.
+8. Interaction resolver (one active interaction from candidates by priority/distance/context) — before combat.
+9. SaveGame v3 robustness: schema validation, migration chain, last-known-good backup, build/version stamp,
+   DEV export/import/download.
+10. Short-landscape HUD (max-height ~430px) + progression-aware objectives (replace hardcoded "Find the Golden Seed").
+11. Automated regression smoke (desktop + 390×844 + 844×390 + 667×375, missing-asset, save migration, reload, DEV off).
+**C. Gameplay** (*checkpoint with Jannik after B*): Boat economy → combat foundation → Mole (first combat slice) →
+Wood Giant (first boss, reuses combat contract) → Lake Run → Thora quest.
+**D. Scale**: asset compression pipeline (Draco/Meshopt/KTX2 decision, asset budgets), instancing, spatial grid/activation,
+animation + shadow culling.
+**E. Later**: social, alliances, multiplayer backend.
+**Not now**: multiplayer backend, ECS/engine rewrite, WebGPU, physics engine, global state/event-bus rewrite, quest
+framework, procedural streaming, day/night, skill tree, inventory grid, equipment, crafting tiers, many enemies/bosses.
+
+## Performance budgets
+Mobile FPS target 50–60 (minimum ~30 in heavy scenes) · frame budget 16.7 ms · avoid startup long-task series >50 ms ·
+as few WebGL contexts as possible · draw calls and triangles measured, not guessed.
+
+## Baseline measurement (R51, headless Chromium 844×390 touch, swiftshader — FPS not representative)
+29.0 MB / 102 requests / 22 GLBs before first playable frame · gameReady 8.8 s after init (world-critical 4.4 s) ·
+**465 draw calls, 464k triangles per frame** at the home gate · 11 textures, 491 geometries ·
+Result Stage iframe loaded at startup with its own WebGL renderer (rAF throttled while hidden).
 

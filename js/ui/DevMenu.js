@@ -21,6 +21,7 @@ export class DevMenu {
       <header><div><small>TEST · RIGTIG SAVE</small><h2>Dev menu</h2></div><button type="button" class="wilds-close" aria-label="Close">✕</button></header>
       <div class="dev-menu-body">
         <section><small>KAMERA & STYRING (kun dev)</small><div class="dev-grid profiles">${Object.entries(PROFILES).map(([id, p]) => `<button data-a="cam:${id}">${p.name}</button>`).join('')}</div><p class="dev-note"></p></section>
+        <section><small>MÅLING</small><div class="dev-grid"><button data-a="perf">Performance-HUD til/fra</button><button data-a="metrics">Vis startup-tider</button></div></section>
         <section><small>RESSOURCER</small><div class="dev-grid">
           <button data-a="mats">+20 materialer</button><button data-a="tools">Alle redskaber</button><button data-a="pots">3 potter + vand</button><button data-a="skip">Spol 5 min frem</button>
         </div></section>
@@ -71,6 +72,12 @@ export class DevMenu {
     if (a.startsWith('cam:')) {
       const id = a.slice(4); try { localStorage.setItem(CONTROL_PROFILE_KEY, id); } catch {}
       this.profile = applyControlProfile(g, id); this.markProfile(); this.toast(`Kamera: ${PROFILES[this.profile].name}`);
+      return;
+    }
+    if (a === 'perf') { g.perfHud?.set(!g.perfHud.on); this.toast(g.perfHud?.on ? 'Performance-HUD til' : 'Performance-HUD fra'); return; }
+    if (a === 'metrics') {
+      const m = window.__TGW_STARTUP_METRICS__ || {}; const keys = Object.keys(m).filter(k => k.endsWith('Ms'));
+      alert('Startup (ms siden init):\n' + keys.map(k => `${k}: ${m[k]}`).join('\n') + '\n\nTungeste GLB:\n' + (m.resources || []).slice(0, 6).map(r => `${r.name} ${r.durationMs}ms`).join('\n'));
       return;
     }
     if (a === 'mats') { for (const id of Object.keys(MATERIALS)) w.give(id, id === 'golden_seed' ? 2 : id === 'wild_seed' ? 5 : 20); g.hud.materials.classList.add('show'); this.toast('+20 materialer, +5 Wild Seeds, +2 Golden Seeds'); }

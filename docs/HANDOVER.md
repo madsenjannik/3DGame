@@ -1,10 +1,11 @@
-# THE GROWING WILDS — HANDOVER — 2026-10-01 — R50 CANDIDATE
+# THE GROWING WILDS — HANDOVER — 2026-10-02 — R51 (foundation pass)
 
 ## Start here
 - **Repo:** `madsenjannik/3DGame`, branch `claude/magical-lovelace-nuka97` (GitHub replaces ZIP packages).
 - **Live test build:** `https://madsenjannik.github.io/3DGame/` (version shown bottom-left on the start screen).
-- **Current build:** v0.5.30 · `CAMERA-R50.3-20261002A` (see `version.js`).
-- **Last LOCKED baseline:** R45 (`v0.3.96-R45-HOLO-INDICATOR-LOCKED`). Everything newer is CANDIDATE.
+- **Current build:** v0.5.40 · `PERF-R51-20261002A` (see `version.js`).
+- **LOCKED baseline:** R50.3 (v0.5.30). R45 is historical rollback reference only. Builds after R50.3 are CANDIDATE.
+- **Now:** technical foundation pass (MASTER §31). Gameplay (Boat, combat, Mole …) after Jannik's runtime check.
 - **Rules:** never build without Jannik's explicit **GO**; analyze, find root cause and define exact scope first.
   **Every build updates `docs/HANDOVER.md` and `docs/MASTER-PROJECT-DOCUMENT.md` in the same commit** (MASTER §1.7).
   Building lives in the **private garden**. **Do not change the three greenhouse levels.**
@@ -21,7 +22,8 @@
 | R50 · v0.5.10 | Dev menu (Indstillinger → Dev-menu, works on real save) + crafted tools shown in the HUD. |
 | R50.1 · v0.5.11 | DEV-only camera/control variants: A Frit kamera (Genshin-style), B Cozy ovenfra (Animal Crossing-style). |
 | R50.2 · v0.5.20 | Jannik chose A: Frit kamera is the default on touch devices; desktop keeps the classic camera. |
-| R50.3 · v0.5.30 | A is default everywhere; desktop mouse-look (hold right button + drag) and wheel zoom. |
+| R50.3 · v0.5.30 | A is default everywhere; desktop mouse-look (hold right button + drag) and wheel zoom. **LOCKED.** |
+| R51 · v0.5.40 | DEV performance HUD (Dev menu → MÅLING) + DEV logger + startup-time viewer; baseline measured (MASTER §31). |
 
 Details: `docs/MASTER-PROJECT-DOCUMENT.md` section 30 and `docs/R47…R49*.md`.
 

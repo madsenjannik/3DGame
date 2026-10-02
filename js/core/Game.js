@@ -25,6 +25,8 @@ import { WildsLoopSystem } from '../gameplay/WildsLoopSystem.js';
 import { WorkbenchPanel } from '../ui/WorkbenchPanel.js';
 import { DevMenu, devMenuEnabled } from '../ui/DevMenu.js';
 import { applyControlProfile, defaultProfile } from './ControlProfiles.js';
+import { PerfHud } from '../dev/PerfHud.js';
+import { log } from '../dev/Log.js';
 
 export class Game {
   async init({characterId='succulent',devMode=false}={}){
@@ -83,7 +85,7 @@ export class Game {
     this.workbenchPanel=new WorkbenchPanel({wilds:this.wilds,state:this.state});
     this.wilds.onOpenWorkbench=()=>{this.workbenchPanel.show();this.input.resetTouchPointers?.();};
     const syncTools=()=>this.hud.setTools?.(this.wilds.profile.tools,this.wilds.profile.water);this.wilds.onChange(syncTools);syncTools();
-    if(devMode||devMenuEnabled()){this.devMenu=new DevMenu(this);window.__tgw=this;}
+    if(devMode||devMenuEnabled()){this.perfHud=new PerfHud(this);this.devMenu=new DevMenu(this);window.__tgw=this;}
     else applyControlProfile(this,defaultProfile()); // R50.3: free camera everywhere (mouse-look on desktop)
     mark('wildsReadyMs');
     this.cameraOcclusion=new CameraOcclusionSystem({world:this.world,homePortal:this.homePortal,greenhouse:this.greenhouse,orangery:this.orangery,stable:this.stable});
@@ -95,7 +97,7 @@ export class Game {
     mark('gameReadyMs');
     const resources=performance.getEntriesByType?.('resource')||[];
     this.startupMetrics.resources=resources.filter(r=>/\.(glb|gltf)(\?|$)/i.test(r.name)).map(r=>({name:r.name.split('/').pop(),durationMs:Math.round(r.duration*10)/10,transferSize:r.transferSize||0,decodedBodySize:r.decodedBodySize||0})).sort((a,b)=>b.durationMs-a.durationMs).slice(0,24);
-    window.__TGW_STARTUP_METRICS__=this.startupMetrics;
+    window.__TGW_STARTUP_METRICS__=this.startupMetrics;log('LOAD','game ready',this.startupMetrics);
     if(new URLSearchParams(location.search).get('perf')==='1')console.table(this.startupMetrics.resources),console.info('[TGW startup]',this.startupMetrics);
     setTimeout(()=>{if(!this.input.moved&&!this.homePortal?.usesMoveInCamera?.())this.hud.hint.style.opacity='0';},9000);
   }
@@ -185,5 +187,6 @@ export class Game {
     this.worldMap?.setMarkers?.(gardenSpace?[]:(this.wilds?.mapMarkers?.()||[]));
     this.worldMap?.update?.();
     this.renderer.render(this.scene,this.camera);
+    this.perfHud?.tick();
   }
 }
