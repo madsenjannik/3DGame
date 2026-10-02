@@ -142,7 +142,9 @@ export class Game {
     const wildsPanel=(this.workbenchPanel?.open||this.devMenu?.open)||false;
     const mapOpen=this.worldMap?.isOpen||false,mapOverlay=mapOpen&&(this.worldMap?.overlayMode||false);
     const touchLook=this.input.isTouch?this.input.consumeLook?.():null;
-    if(!this.state.choice.open&&!specialBusy&&!portalBusy&&!mapOpen&&!wildsPanel)this.followCamera.applyTouchLook?.(touchLook);
+    // R58.1: in the boat the free camera still takes swipes (a short look-around; it glides back behind the boat).
+    const boatLook=!gardenSpace&&this.fishing?.mode==='boat'&&this.followCamera.profileId==='free';
+    if(!this.state.choice.open&&(!specialBusy||boatLook)&&!portalBusy&&!mapOpen&&!wildsPanel)this.followCamera.applyTouchLook?.(touchLook);
     if(!this.state.choice.open&&!specialBusy&&!portalBusy&&!this.mapBlocking&&!wildsPanel){this.character.update(dt,this.time,this.input,this.followCamera);}else if(!(stableBusy&&this.stable?.usesMovementInput?.())){this.input.consumeHop?.();}
     // Evaluate the Stable tunnel after character movement so Claude's drive-through
     // camera owns the very first frame that crosses the tunnel boundary.

@@ -3,7 +3,7 @@
 ## Start here
 - **Repo:** `madsenjannik/3DGame`, branch `claude/magical-lovelace-nuka97` (GitHub replaces ZIP packages).
 - **Live test build:** `https://madsenjannik.github.io/3DGame/` (version shown bottom-left on the start screen).
-- **Current build:** v0.6.10 · `BOAT-R58-20261002A` (see `version.js`).
+- **Current build:** v0.6.11 · `BOATCAM-R58.1-20261002A` (see `version.js`).
 - **LOCKED baseline:** R50.3 (v0.5.30). R45 is historical rollback reference only. Builds after R50.3 are CANDIDATE.
 - **Now:** technical foundation pass (MASTER §31). Gameplay (Boat, combat, Mole …) after Jannik's runtime check.
 - **Rules:** never build without Jannik's explicit **GO**; analyze, find root cause and define exact scope first.
@@ -31,11 +31,12 @@
 | R56 · v0.5.90 | Interaction resolver (one active interaction by priority + distance), SaveGame v3 (last-known-good backup, build stamp, corrupt-save recovery, Dev menu copy/download/import save), progression-aware objective card (replaces the stale "Find the Golden Seed" in the world) + short-landscape HUD. |
 | R57 · v0.6.00 | Automated regression smoke: `node tests/smoke.mjs` (start→selector, game on desktop + 390×844 + 844×390 + 667×375, missing GLBs, save v1→v3 + reload, DEV-off leak check). 8/8 pass. **Technical foundation (MASTER §31 B) complete → checkpoint before gameplay C.** |
 | R58 · v0.6.10 | **C starts: Boat economy v1** (`js/gameplay/BoatEconomySystem.js`, data `BOAT` in wildsCatalog). Discover Sigurd → requirement (3 species + Life Vest, which Sigurd stitches from 6 Fiber + 2 Snail Shell) → rent per trip (3 Wood + 2 Fiber) → waterfall reward once/day (3 Stone, 2 Clay, 1 Amber; first time +1 Golden Seed) → buy after 2 waterfall trips (20 Wood, 12 Fiber, 6 Clay, 4 Amber), no more rent. Fishing gear + catch log now persist in `tgw.save` (were memory-only). Locked FishingV1/Boat→Waterfall untouched (method swap on the instance). Objective falls back to boat steps. Dev menu → BÅD. Smoke 9/9. Device check on iPhone (R57): 60 fps, 217–363 calls, 370–433k tris, mobile-high. |
+| R58.1 · v0.6.11 | **Boat camera fix** (Jannik: camera broken in the boat). Root cause: since R50.3 the free camera only recentred while the character walks (`currentSpeed > .6`); seated in the boat speed is always 0 and swipes were blocked, so the camera froze at the boarding angle (repro: boat heading changed, camera yaw stayed 3.14). Fix in `ControlProfiles.js` only: in the boat the free camera always glides behind the boat; swipe (and desktop right-drag) gives a 1.2 s look-around, then it returns. `Game.js` lets swipes through in boat mode for the free profile only. Locked FishingV1 boat camera/rowing untouched; classic R45 profile unchanged. Smoke 10/10 (new boat-camera check). |
 
 Details: `docs/MASTER-PROJECT-DOCUMENT.md` section 30 and `docs/R47…R49*.md`.
 
 ## Automated check
-`node tests/smoke.mjs` from the repo root (needs Playwright + Chromium). 9/9 must pass before a push (incl. the R58 boat-economy flow).
+`node tests/smoke.mjs` from the repo root (needs Playwright + Chromium). 10/10 must pass before a push (incl. the R58 boat economy and the R58.1 boat camera).
 
 ## Quick test (with the dev menu)
 1. Start screen → Indstillinger → turn on **Dev-menu** → START → pick a character.

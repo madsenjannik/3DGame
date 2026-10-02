@@ -83,6 +83,7 @@ export function applyControlProfile(game, id) {
 
   if (id === 'free') {
     cam.profileId = 'free'; installMouse(game, cam);
+    cam.inBoat = () => game.fishing?.boat?.on && game.fishing.mode === 'boat';
     if (hint) hint.textContent = 'WASD to move · Shift to run · Space to hop · hold right mouse to look · wheel to zoom';
     cam.freeYaw = cam.yaw; cam.freePitch = 0; cam.idleLook = 99; cam.freeZoom = cam.freeZoom || 1;
     cam.distance = function () { return (this.camera.aspect < .8 ? 7.0 : 5.8) * (this.freeZoom || 1); };
@@ -104,9 +105,16 @@ export function applyControlProfile(game, id) {
     cam.update = function (dt) {
       setFov(this, 60, 52);
       this.idleLook += dt;
-      // Lazy recenter: only while walking forward-ish and the camera hasn't been touched for 2.5 s.
-      const moving = (this.target.currentSpeed || 0) > .6 && !this.target.reverseIntentActive;
-      if (moving && this.idleLook > 2.5) this.freeYaw = wrapAngle(this.freeYaw + wrapAngle(this.target.heading + Math.PI - this.freeYaw) * damp(.85, dt));
+      // R58.1: in the boat the character's speed is always 0 (it is seated), so the walking rule
+      // never fired and the camera froze at the boarding angle. Boat → always glide back behind
+      // the boat; a swipe gives a short look-around (1.2 s) before it returns.
+      const boating = this.inBoat?.();
+      if (boating) { if (this.idleLook > 1.2) this.freeYaw = wrapAngle(this.freeYaw + wrapAngle(this.target.heading + Math.PI - this.freeYaw) * damp(2.4, dt)); }
+      else {
+        // Lazy recenter: only while walking forward-ish and the camera hasn't been touched for 2.5 s.
+        const moving = (this.target.currentSpeed || 0) > .6 && !this.target.reverseIntentActive;
+        if (moving && this.idleLook > 2.5) this.freeYaw = wrapAngle(this.freeYaw + wrapAngle(this.target.heading + Math.PI - this.freeYaw) * damp(.85, dt));
+      }
       this.yaw = wrapAngle(this.yaw + wrapAngle(this.freeYaw - this.yaw) * damp(12, dt));
       finish(this, dt, .34);
     };
