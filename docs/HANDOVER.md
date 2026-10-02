@@ -3,7 +3,7 @@
 ## Start here
 - **Repo:** `madsenjannik/3DGame`, branch `claude/magical-lovelace-nuka97` (GitHub replaces ZIP packages).
 - **Live test build:** `https://madsenjannik.github.io/3DGame/` (version shown bottom-left on the start screen).
-- **Current build:** v0.5.40 · `PERF-R51-20261002A` (see `version.js`).
+- **Current build:** v0.5.50 · `SAFE-R52-20261002A` (see `version.js`).
 - **LOCKED baseline:** R50.3 (v0.5.30). R45 is historical rollback reference only. Builds after R50.3 are CANDIDATE.
 - **Now:** technical foundation pass (MASTER §31). Gameplay (Boat, combat, Mole …) after Jannik's runtime check.
 - **Rules:** never build without Jannik's explicit **GO**; analyze, find root cause and define exact scope first.
@@ -24,6 +24,7 @@
 | R50.2 · v0.5.20 | Jannik chose A: Frit kamera is the default on touch devices; desktop keeps the classic camera. |
 | R50.3 · v0.5.30 | A is default everywhere; desktop mouse-look (hold right button + drag) and wheel zoom. **LOCKED.** |
 | R51 · v0.5.40 | DEV performance HUD (Dev menu → MÅLING) + DEV logger + startup-time viewer; baseline measured (MASTER §31). |
+| R52 · v0.5.50 | Error boundaries: only world + player character are critical; failed subsystems warn and are skipped; character falls back to the procedural sprout. |
 
 Details: `docs/MASTER-PROJECT-DOCUMENT.md` section 30 and `docs/R47…R49*.md`.
 

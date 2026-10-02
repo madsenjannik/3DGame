@@ -95,8 +95,8 @@ export class DevMenu {
       if (t === 'bench') this.teleport('garden', 4.7, 7.6, Math.PI / 2);
       else if (t === 'greenhouse') this.teleport('garden', 6.5, -9.3, Math.PI);
       else if (t === 'pond') this.teleport('garden', -3.9, 1.15, Math.PI);
-      else if (t === 'gate') { const s = hp.gardenSpawn(); this.teleport('garden', s.x, s.z, s.heading); }
-      else if (t === 'world') { const s = hp.worldSpawn(); this.teleport('world', s.x, s.z, s.heading); }
+      else if (t === 'gate') { const s = hp?.gardenSpawn?.() || { x: 0, z: 9.65, heading: Math.PI }; this.teleport('garden', s.x, s.z, s.heading); }
+      else if (t === 'world') { const s = hp?.worldSpawn?.() || { x: .1, z: 14.3, heading: 0 }; this.teleport('world', s.x, s.z, s.heading); }
       else {
         const from = g.world.space === 'world' ? g.character.position : { x: 0, z: 14 };
         const list = t === 'node' ? w.nodes.filter(n => n.state === 'ready' && n.root.visible) : w.thorns.filter(x => x.phase === 'wild' || x.phase === 'cleared');
