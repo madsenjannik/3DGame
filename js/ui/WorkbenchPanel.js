@@ -40,26 +40,8 @@ export class WorkbenchPanel {
   }
   affordable(cost) { return Object.entries(cost).every(([id, n]) => (this.state.inventory.get(id) || 0) >= n); }
 
-  nextGoal() {
-    const w = this.wilds, p = w.profile;
-    const inv = id => this.state.inventory.get(id) || 0, pots = w.pots;
-    if (!w.has('axe')) return 'Craft the Stone Axe. Gather Wood, Stone and Fiber out in the wilds (through the garden gate).';
-    if (!pots.available()) return 'Build your greenhouse at the back of the garden. Pots and plants live there.';
-    if (pots.owned() < 1) return 'Craft a Terracotta Pot (Tools tab). It goes straight onto your greenhouse shelf.';
-    if (!w.has('can')) return 'Craft a Watering Can. Fill it at the garden pond.';
-    if (p.pots.slots.every((x, i) => i >= pots.owned() || !x) && inv('wild_seed') < 1) return 'Gather Wild Grass in the wilds; it sometimes drops Wild Seeds for your pots.';
-    if (p.pots.slots.some((x, i) => i < pots.owned() && !x) && inv('wild_seed') > 0) return 'Plant a Wild Seed in an empty pot in your greenhouse.';
-    if (p.pots.slots.some(x => x && !x.wet && x.stage < 3)) return p.water > 0 ? 'A plant is thirsty. Water it.' : 'A plant is thirsty. Fill your can at the pond.';
-    if (w.threat?.weeds.some(x => x.state === 'alive')) return 'Overgrowth is creeping in. Pull it before it reaches your greenhouse.';
-    const tool = TOOLS.find(t => !w.has(t.id));
-    if (tool) return `Craft the ${tool.name}. Gather what you are missing out in the wilds.`;
-    if (inv('amber') < 1 && p.homeLevel < 2 && Object.values(p.thorns).filter(v => v === 'looted').length < w.thorns.length)
-      return 'Find Thornbrush in the wilds. Cut it with your Sickle to reach hidden amber caches.';
-    const up = HOME_UPGRADES[p.homeLevel];
-    if (up) return `Build ${up.name} to grow your garden.`;
-    if ((this.state.inventory.get('golden_seed') || 0) > 0 && PERKS.some(k => !p.perks[k.id])) return 'Plant your Golden Seed at the shrine (Seeds tab).';
-    return 'Your garden is complete. Keep your pots growing; more of the wilds will open with the seasons.';
-  }
+  nextGoal() { return this.wilds.goal().copy; }
+
 
   render() {
     const w = this.wilds;

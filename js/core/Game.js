@@ -27,6 +27,7 @@ import { DevMenu, devMenuEnabled } from '../ui/DevMenu.js';
 import { applyControlProfile, defaultProfile } from './ControlProfiles.js';
 import { PerfHud } from '../dev/PerfHud.js';
 import { QualityManager, QUALITY } from './Quality.js';
+import { InteractionResolver } from './InteractionResolver.js';
 import { log, warn } from '../dev/Log.js';
 
 export class Game {
@@ -73,7 +74,7 @@ export class Game {
     const orangeryPromise=optional('orangery',()=>new OrangeryHubSystem(this.scene,{state:this.state,world:this.world,uTime:this.uTime}).init());
     this.hud=new Hud(this.state);this.choicePanel=new ChoicePanel(this.state);
     this.input=new InputManager({joy:document.getElementById('joy'),knob:document.getElementById('joy-knob'),actionButton:document.getElementById('action')});
-    this.mapBlocking=false;this._mapViewDir=new THREE.Vector3();
+    this.mapBlocking=false;this._mapViewDir=new THREE.Vector3();this.interactions=new InteractionResolver();
     this.worldMap=new WorldMap({
       container:document.body,landscape:this.world.sharedLandscape,rotate:true,metresAcross:90,size:'auto',overlay:'auto',edgeSoftness:60,
       getPlayer:()=>{
@@ -160,34 +161,34 @@ export class Game {
       this.wildlife?.update(dt,this.time,this.character.position);this.orangery?.update(dt,this.time,this.character.position);this.stable?.update(dt,this.time,this.character.position,this.camera,this.renderer);this.fishing?.update(dt,this.time,this.character);if(stableBusy)this.stable?.syncPlayerVisibility?.();
     }
 
-    let seed={near:false},loop={interaction:null},greenhouse={interaction:null};
+    let seed={near:false},greenhouse={interaction:null};
     if(gardenSpace){
       seed=this.collectible?.update(dt,this.time,this.character)||seed;
       greenhouse=this.greenhouse?.update(dt,this.time,this.character)||greenhouse;
       this.greenhouse?.applyCamera(this.camera,this.followCamera);
     }
 
-    let interaction=null;
+    // R56: every system offers candidates; the resolver picks the single active interaction.
+    const R=this.interactions;R.begin();
     if(!this.state.choice.open&&!portalBusy&&!wildsPanel){
       if(gardenSpace){
-        // Wilds garden props first; the locked seed/greenhouse interactions override where they overlap.
-        const gardenHit=this.wilds?.update(dt,this.time,this.character,'garden').interaction;if(gardenHit)interaction=gardenHit;
-        if(seed.near)interaction={type:'first-seed',label:'Collect Golden Seed'};
-        if(loop.interaction)interaction=loop.interaction;
-        if(greenhouse.interaction)interaction=greenhouse.interaction;
+        R.offer('wilds',this.wilds?.update(dt,this.time,this.character,'garden').interaction);
+        if(seed.near)R.offer('first-seed',{type:'first-seed',label:'Collect Golden Seed'});
+        R.offer('greenhouse',greenhouse.interaction);
       }
-      // Wilds go first so locked Stable/Fishing/Home interactions keep priority when they overlap.
-      if(!gardenSpace&&!specialBusy){const wildsHit=this.wilds?.update(dt,this.time,this.character,'world').interaction;if(wildsHit)interaction=wildsHit;}
-      if(!specialBusy){
-        const homeInteraction=this.homePortal?.interaction?.(this.character.position);if(homeInteraction)interaction=homeInteraction;
-      }
+      if(!gardenSpace&&!specialBusy)R.offer('wilds',this.wilds?.update(dt,this.time,this.character,'world').interaction);
+      if(!specialBusy)R.offer('home',this.homePortal?.interaction?.(this.character.position));
       if(!gardenSpace){
-        // Boat mode intentionally keeps the character controller paused while still
-        // exposing FishingV1-owned E interactions such as Fish / Dock.
-        const stableInteraction=this.stable?.interaction?.(this.character.position);if(stableInteraction)interaction=stableInteraction;
-        const fishInteraction=this.fishing?.interaction?.(this.character.position);if(fishInteraction)interaction=fishInteraction;
+        // Boat mode keeps the controller paused while still exposing FishingV1-owned E interactions.
+        R.offer('stable',this.stable?.interaction?.(this.character.position));
+        R.offer('fishing',this.fishing?.interaction?.(this.character.position));
       }
     }
+    const interaction=R.resolve();
+    // R58 objective director (1 Hz): show the wilds progression step unless the first Golden Seed
+    // story (private garden, until the plant/donate choice) owns the card.
+    const nowMs=performance.now();
+    if(this.wilds&&nowMs-(this._objAt||0)>1000){this._objAt=nowMs;if(!(gardenSpace&&!this.state.choice.resolved))this.hud.setObjective?.('NEXT STEP',this.wilds.goal());}
     this.hud.setActionVisible(!!interaction,interaction?.label||'Collect');this.hud.action.classList.toggle('wilds-locked',!!(interaction?.disabled&&interaction.type?.startsWith?.('wilds-')));
     const action=this.input.consumeAction();
     if(!this.state.choice.open&&action&&interaction&&!interaction.disabled){

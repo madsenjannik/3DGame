@@ -1,9 +1,10 @@
 // @ts-nocheck
-// SaveGameV1: one versioned save for new progression (load -> migrate -> hydrate -> persist).
+// SaveGame (v3): one versioned save for new progression (load -> migrate -> validate -> hydrate -> persist).
+// R57: last-known-good backup ('tgw.save.bak'), build/version stamp, corrupt-save fallback, DEV export/import.
 // Older systems (Stable, Greenhouse, MoveIn, Fishing) keep their own locked storage keys;
 // they move in here only under a separately approved scope.
-const SAVE_KEY = 'tgw.save';
-export const SAVE_VERSION = 2;
+const SAVE_KEY = 'tgw.save', BACKUP_KEY = 'tgw.save.bak';
+export const SAVE_VERSION = 3;
 
 function blankProfile() {
   return {
@@ -31,6 +32,7 @@ function migrate(raw) {
     const old = p.homeLevel | 0; p.homeLevel = Math.max(0, old - 1);
     if (old >= 1) p.pots = { count: 1, slots: [null, null, null] };
   }
+  // v3: no data change — adds the meta stamp (build, savedAt) written on every flush.
   save.version = SAVE_VERSION;
   return save;
 }
@@ -65,16 +67,28 @@ function validProfile(p) {
   return out;
 }
 
+function readStore(key) {
+  const raw = localStorage.getItem(key);
+  if (raw == null) return { raw: null, data: null };
+  const parsed = JSON.parse(raw);                       // throws on corrupt JSON
+  if (!parsed || typeof parsed !== 'object' || typeof parsed.profiles !== 'object') throw new Error('not a TGW save');
+  return { raw, data: migrate(parsed) };
+}
+
 export class SaveGame {
   // ephemeral: DEV routes play with a throwaway profile and never write storage.
   constructor({ characterId, ephemeral = false }) {
     this.characterId = characterId;
     this.ephemeral = ephemeral;
     this.data = { version: SAVE_VERSION, profiles: {} };
-    this.warned = false;
+    this.warned = false; this.loadedRaw = null; this.backedUp = false; this.recovered = false;
     if (!ephemeral) {
-      try { this.data = migrate(JSON.parse(localStorage.getItem(SAVE_KEY) || 'null')); }
-      catch (e) { console.warn('[TGW] Save could not be read; starting fresh', e); }
+      try { const r = readStore(SAVE_KEY); if (r.data) { this.data = r.data; this.loadedRaw = r.raw; } }
+      catch (e) {
+        console.warn('[TGW] Save is unreadable; trying the last-known-good backup', e);
+        try { const b = readStore(BACKUP_KEY); if (b.data) { this.data = b.data; this.recovered = true; } }
+        catch (e2) { console.warn('[TGW] Backup unreadable too; starting fresh', e2); }
+      }
     }
     this.profile = validProfile(this.data.profiles[characterId]);
     this.data.profiles[characterId] = this.profile;
@@ -95,10 +109,31 @@ export class SaveGame {
     this.timer = setTimeout(() => this.flush(), 400);
   }
 
+  serialize() {
+    return JSON.stringify({ ...this.data, version: SAVE_VERSION, meta: { build: globalThis.TGW_VERSION?.build || '', version: globalThis.TGW_VERSION?.version || '', savedAt: Date.now() } });
+  }
+
   flush() {
     if (this.ephemeral) return;
     clearTimeout(this.timer); this.timer = null;
-    try { localStorage.setItem(SAVE_KEY, JSON.stringify({ ...this.data, savedAt: Date.now() })); }
-    catch (e) { if (!this.warned) { this.warned = true; console.warn('[TGW] Progress could not be saved', e); } }
+    try {
+      // First write of the session: keep the save we loaded as the last-known-good backup.
+      if (!this.backedUp && this.loadedRaw) { localStorage.setItem(BACKUP_KEY, this.loadedRaw); this.backedUp = true; }
+      const out = this.serialize(); JSON.parse(out); // never write something we cannot read back
+      localStorage.setItem(SAVE_KEY, out);
+    } catch (e) { if (!this.warned) { this.warned = true; console.warn('[TGW] Progress could not be saved', e); } }
+  }
+
+  // DEV export/import (whole save, all characters).
+  exportJSON() { return JSON.stringify(JSON.parse(this.serialize()), null, 2); }
+  importJSON(text) {
+    const parsed = JSON.parse(text);
+    if (!parsed || typeof parsed !== 'object' || typeof parsed.profiles !== 'object') throw new Error('Not a Growing Wilds save');
+    const data = migrate(parsed);
+    for (const k of Object.keys(data.profiles)) data.profiles[k] = validProfile(data.profiles[k]);
+    const cur = localStorage.getItem(SAVE_KEY); if (cur) localStorage.setItem(BACKUP_KEY, cur);
+    localStorage.setItem(SAVE_KEY, JSON.stringify({ ...data, version: SAVE_VERSION, meta: { importedAt: Date.now() } }));
+    this.ephemeral = true; // caller reloads; nothing from this session may overwrite the import
+    return Object.keys(data.profiles);
   }
 }

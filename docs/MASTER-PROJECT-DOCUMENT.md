@@ -1557,9 +1557,18 @@ are only touched where a measured hotspot requires it, minimally.
    needs on-device numbers first. Note: three r165 `renderer.info` does not count the shadow pass, so shadow cost must be
    judged by on-device FPS, not draw calls.
 8. Interaction resolver (one active interaction from candidates by priority/distance/context) — before combat.
+   **Done (R56):** `js/core/InteractionResolver.js` — systems `offer(source, interaction)`, `resolve()` picks highest
+   priority then nearest. Priorities keep the established precedence: fishing 60 > stable 50 > home 45 > greenhouse 35 >
+   first-seed 30 > wilds 10. New interactive systems (combat, boat) must offer through it.
 9. SaveGame v3 robustness: schema validation, migration chain, last-known-good backup, build/version stamp,
-   DEV export/import/download.
+   DEV export/import/download. **Done (R56):** v1→v2→v3 chain; first write per session copies the loaded save to
+   `tgw.save.bak`; unreadable main save falls back to the backup; `meta {build, version, savedAt}`; writes are
+   read-back-checked. Dev menu → SAVE: copy JSON (to paste in chat), download, import (current save kept as backup).
 10. Short-landscape HUD (max-height ~430px) + progression-aware objectives (replace hardcoded "Find the Golden Seed").
+   **Done (R56):** `WildsLoopSystem.goal()` = single next step (gather → axe → greenhouse → pot → can → seed → plant →
+   water → harvest → threats → tools → caches → upgrades → perks), shared by the objective card (1 Hz, real time) and the
+   workbench panel; the first-Golden-Seed story still owns the card in the private garden until the plant/donate choice.
+   ≤620 px high: objective shows as a compact title; ≤430 px: smaller seed card, materials, tools, action and DEV buttons.
 11. Automated regression smoke (desktop + 390×844 + 844×390 + 667×375, missing-asset, save migration, reload, DEV off).
 **C. Gameplay** (*checkpoint with Jannik after B*): Boat economy → combat foundation → Mole (first combat slice) →
 Wood Giant (first boss, reuses combat contract) → Lake Run → Thora quest.

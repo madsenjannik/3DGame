@@ -36,6 +36,11 @@ export class Hud {
     state.events.on('greenhouse:level-changed',e=>{this.showToast(e.level===1?'Drivhus bygget':'Drivhus opgraderet');});
   }
   setMaterial(id,value){const el=document.getElementById(`${id}-count`);if(el)el.textContent=String(value);}
+  setObjective(kicker,goal){
+    if(!goal||(this._goalTitle===goal.title&&this.kicker.textContent===kicker))return;
+    this._goalTitle=goal.title;this.objective.classList.remove('complete');
+    this.kicker.textContent=kicker;this.title.textContent=goal.title;this.copy.textContent=goal.copy;
+  }
   setTools(tools,water){
     const row=document.getElementById('tools-row');if(!row)return;
     for(const el of row.querySelectorAll('[data-tool]'))el.classList.toggle('owned',!!tools[el.dataset.tool]);

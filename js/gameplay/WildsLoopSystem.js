@@ -91,6 +91,31 @@ export class WildsLoopSystem {
     if (!on && present) lists.forEach(l => { const i = l.indexOf(o); if (i >= 0) l.splice(i, 1); });
   }
 
+  // R58 progression-aware guidance shared by the HUD objective card and the workbench panel.
+  // Returns { title, copy } for the single most useful next step.
+  goal() {
+    const p = this.profile, inv = id => this.state.inventory.get(id) || 0, pots = this.pots, g = (title, copy) => ({ title, copy });
+    if (!Object.keys(p.inventory).length && !this.has('axe')) return g('Gather natural materials', 'Head out through the garden gate. Glowing piles of wood, stone and grass can be gathered.');
+    if (!this.has('axe')) return g('Craft your first tool', 'Bring Wood, Stone and Fiber to the workbench in your garden and craft the Stone Axe.');
+    if (!pots?.available()) return g('Build your greenhouse', 'At the back of your garden. Pots and plants live there.');
+    if (pots.owned() < 1) return g('Craft a pot', 'Workbench → Tools → Terracotta Pot. It goes straight onto the greenhouse shelf.');
+    if (!this.has('can')) return g('Craft a Watering Can', 'Fill it at the garden pond to water your pots.');
+    const slots = p.pots.slots;
+    if (slots.every((x, i) => i >= pots.owned() || !x) && inv('wild_seed') < 1) return g('Find a Wild Seed', 'Wild Grass in the wilds sometimes drops one.');
+    if (slots.some((x, i) => i < pots.owned() && !x) && inv('wild_seed') > 0) return g('Plant a Wild Seed', 'Plant it in an empty pot in your greenhouse.');
+    if (slots.some(x => x && !x.wet && x.stage < 3)) return p.water > 0 ? g('Water your plant', 'A plant in your greenhouse is thirsty.') : g('Fill your Watering Can', 'A plant is thirsty. Fill the can at the garden pond.');
+    if (slots.some(x => x && x.stage >= 3)) return g('Harvest your plant', 'A plant in your greenhouse has flowered.');
+    if (this.threat?.weeds.some(x => x.state === 'alive')) return g('Pull the overgrowth', 'Weeds are creeping into your garden. Pull them before they reach the greenhouse.');
+    const tool = TOOLS.find(t => !this.has(t.id));
+    if (tool) return g(`Craft the ${tool.name}`, 'Gather what you are missing out in the wilds.');
+    if (inv('amber') < 1 && p.homeLevel < 2 && Object.values(p.thorns).filter(v => v === 'looted').length < this.thorns.length)
+      return g('Clear Thornbrush', 'Cut Thornbrush in the wilds with your Sickle to reach hidden amber caches.');
+    const up = HOME_UPGRADES[p.homeLevel];
+    if (up) return g(`Build ${up.name}`, 'Upgrade your garden at the workbench.');
+    if (inv('golden_seed') > 0 && PERKS.some(k => !p.perks[k.id])) return g('Plant your Golden Seed', 'At the Seed Shrine (workbench → Seeds).');
+    return g('Keep your garden growing', 'More of the wilds will open with the seasons.');
+  }
+
   // Greenhouse loads in the background (R55); pots follow it once it exists.
   setGreenhouse(g) { this.greenhouse = g; if (this.pots) this.pots.gh = g; }
 

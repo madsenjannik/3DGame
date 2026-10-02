@@ -35,6 +35,7 @@ export class DevMenu {
         <section><small>TRUSSEL</small><div class="dev-grid">
           <button data-a="weed">Ukrudt nu</button><button data-a="snail">Snegl nu</button><button data-a="clearthreat">Fjern ukrudt + snegle</button>
         </div></section>
+        <section><small>SAVE</small><div class="dev-grid"><button data-a="save:copy">Kopiér save (JSON)</button><button data-a="save:download">Download save</button><button data-a="save:import">Importér save…</button></div></section>
         <section><small>FARE</small><div class="dev-grid"><button data-a="reset" class="danger">Nulstil wilds-save (denne karakter)</button></div></section>
       </div></div>`;
     document.body.appendChild(el); this.el = el; this.open = false;
@@ -75,6 +76,16 @@ export class DevMenu {
       return;
     }
     if (a.startsWith('q:')) { const id = a.slice(2); g.quality?.set(id === 'auto' ? null : id); this.toast(`Kvalitet: ${id === 'auto' ? 'automatisk (' + g.quality?.id + ')' : id}`); return; }
+    if (a.startsWith('save:')) {
+      const sv = g.save, op = a.slice(5);
+      if (op === 'copy') { const t = sv.exportJSON(); navigator.clipboard?.writeText(t).then(() => this.toast('Save kopieret – indsæt den i chatten'), () => prompt('Kopiér din save:', t)); }
+      else if (op === 'download') { const blob = new Blob([sv.exportJSON()], { type: 'application/json' }), url = URL.createObjectURL(blob), link = document.createElement('a'); link.href = url; link.download = `tgw-save-${Date.now()}.json`; document.body.appendChild(link); link.click(); link.remove(); setTimeout(() => URL.revokeObjectURL(url), 2000); }
+      else if (op === 'import') {
+        const text = prompt('Indsæt save-JSON (den nuværende gemmes som backup):'); if (!text) return;
+        try { const who = sv.importJSON(text); alert('Importeret: ' + who.join(', ') + '. Genindlæser.'); location.reload(); } catch (e) { alert('Kunne ikke importere: ' + e.message); }
+      }
+      return;
+    }
     if (a === 'perf') { g.perfHud?.set(!g.perfHud.on); this.toast(g.perfHud?.on ? 'Performance-HUD til' : 'Performance-HUD fra'); return; }
     if (a === 'metrics') {
       const m = window.__TGW_STARTUP_METRICS__ || {}; const keys = Object.keys(m).filter(k => k.endsWith('Ms'));
