@@ -3,7 +3,7 @@
 ## Start here
 - **Repo:** `madsenjannik/3DGame`, branch `claude/magical-lovelace-nuka97` (GitHub replaces ZIP packages).
 - **Live test build:** `https://madsenjannik.github.io/3DGame/` (version shown bottom-left on the start screen).
-- **Current build:** v0.5.90 · `CORE-R56-20261002A` (see `version.js`).
+- **Current build:** v0.6.00 · `SMOKE-R57-20261002A` (see `version.js`).
 - **LOCKED baseline:** R50.3 (v0.5.30). R45 is historical rollback reference only. Builds after R50.3 are CANDIDATE.
 - **Now:** technical foundation pass (MASTER §31). Gameplay (Boat, combat, Mole …) after Jannik's runtime check.
 - **Rules:** never build without Jannik's explicit **GO**; analyze, find root cause and define exact scope first.
@@ -29,8 +29,12 @@
 | R54 · v0.5.70 | Staged loading: playable as soon as world + home + character are ready (headless 8.8 s → 2.6 s); Stable/garden/Orangery/Fishing attach in the background. Result Stage iframe loads on race start, unloads 5 s after. Small AssetManager (shared pot GLB loaded once). |
 | R55 · v0.5.80 | Adaptive quality (desktop / mobile-high / mobile-low: resolution + shadow map only, same look; touch auto-drops to low below ~42 fps and remembers it) + lifecycle contract (hidden page stops rendering + flushes save; resume without dt jump). Dev menu: force Auto/Lav/Høj/Desktop. |
 | R56 · v0.5.90 | Interaction resolver (one active interaction by priority + distance), SaveGame v3 (last-known-good backup, build stamp, corrupt-save recovery, Dev menu copy/download/import save), progression-aware objective card (replaces the stale "Find the Golden Seed" in the world) + short-landscape HUD. |
+| R57 · v0.6.00 | Automated regression smoke: `node tests/smoke.mjs` (start→selector, game on desktop + 390×844 + 844×390 + 667×375, missing GLBs, save v1→v3 + reload, DEV-off leak check). 8/8 pass. **Technical foundation (MASTER §31 B) complete → checkpoint before gameplay C.** |
 
 Details: `docs/MASTER-PROJECT-DOCUMENT.md` section 30 and `docs/R47…R49*.md`.
+
+## Automated check
+`node tests/smoke.mjs` from the repo root (needs Playwright + Chromium). 8/8 must pass before a push.
 
 ## Quick test (with the dev menu)
 1. Start screen → Indstillinger → turn on **Dev-menu** → START → pick a character.

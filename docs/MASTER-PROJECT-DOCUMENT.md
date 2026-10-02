@@ -1570,6 +1570,11 @@ are only touched where a measured hotspot requires it, minimally.
    workbench panel; the first-Golden-Seed story still owns the card in the private garden until the plant/donate choice.
    ≤620 px high: objective shows as a compact title; ≤430 px: smaller seed card, materials, tools, action and DEV buttons.
 11. Automated regression smoke (desktop + 390×844 + 844×390 + 667×375, missing-asset, save migration, reload, DEV off).
+   **Done (R57):** `node tests/smoke.mjs` — serves the repo itself, blocks all external requests, 8 checks, exit code 1 on
+   failure. Must pass before every push (CLAUDE.md rule 5).
+
+**B status 02/10/2026: complete (R51–R57).** Next: Jannik's on-device check (performance HUD numbers on iPhone,
+PWA from the home screen), then C starts with Boat economy.
 **C. Gameplay** (*checkpoint with Jannik after B*): Boat economy → combat foundation → Mole (first combat slice) →
 Wood Giant (first boss, reuses combat contract) → Lake Run → Thora quest.
 **D. Scale**: asset compression pipeline (Draco/Meshopt/KTX2 decision, asset budgets), instancing, spatial grid/activation,
