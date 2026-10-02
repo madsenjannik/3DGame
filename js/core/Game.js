@@ -97,6 +97,7 @@ export class Game {
     mark('wildsReadyMs');
     this.cameraOcclusion=new CameraOcclusionSystem({world:this.world,homePortal:this.homePortal,greenhouse:this.greenhouse,orangery:this.orangery,stable:this.stable});
     this.followCamera.setOcclusionSystem(this.cameraOcclusion);
+    this.cameraOcclusion.setFreeRules(this.followCamera.profileId==='free'); // profile was applied before occlusion existed
     this.structureVisibility=new StructureVisibilitySystem({world:this.world,greenhouse:this.greenhouse,orangery:this.orangery,stable:this.stable,cameraOcclusion:this.cameraOcclusion});
     this.clock=new THREE.Clock();this.time=0;this.lastMoved=false;
     addEventListener('resize',()=>this.resize());this.resize();this.homePortal?.prepareMoveInCamera?.(this.camera,this.character);this.renderer.setAnimationLoop(()=>this.frame());

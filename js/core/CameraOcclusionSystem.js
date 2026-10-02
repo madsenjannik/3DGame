@@ -29,6 +29,17 @@ export class CameraOcclusionSystem {
     this.structureMinDistance=1.08;
     this.lastHitSource=null;
     this.lastBlockedSource=null;
+    // R58.2 (free camera only, set by ControlProfiles): low props and thin trunks/posts no longer
+    // shove the camera into the character; when something does block, the camera lifts up and
+    // looks down over the head instead of collapsing to chest height. Classic R45 keeps R21 rules.
+    this.freeRules=false;
+    this.freeLowHeight=1.3;   // obstacles lower than this: the camera rides over them
+    this.freeThinRadius=.7;   // trunks, posts, poles: the camera passes them
+    this.freeMinDistance=.9;  // floor outside the character (was .32 = inside the model)
+    this.freeStructureMin=1.1;
+    this.freeLift=1.8;        // metres of lift at full pull-in
+    this.freeLiftMax=1.7;
+    this.freeBuildingLiftMax=.7; // buildings have eaves: a big lift would put the camera under the roof
 
     this.dir=new THREE.Vector3();
     this.segment=new THREE.Vector3();
@@ -51,7 +62,7 @@ export class CameraOcclusionSystem {
     if(this.enabled){
       const hitDist=this.nearestDistance(start,desired,maxDist);
       if(hitDist<maxDist-.01){
-        const floor=this.cutawaySource(this.lastHitSource)?this.structureMinDistance:this.minDistance;
+        const floor=this.floorFor(this.lastHitSource);
         target=Math.min(maxDist,Math.max(floor,hitDist-this.clearance));
         this.occluded=true;this.lastBlockedDistance=target;this.lastBlockedSource=this.lastHitSource;
       }else{
@@ -61,13 +72,17 @@ export class CameraOcclusionSystem {
       this.occluded=false;this.lastBlockedDistance=0;this.lastBlockedSource=null;
     }
     this.releaseTimer=0;this.currentDistance=target;this.targetDistance=target;
-    out.copy(start).addScaledVector(delta.multiplyScalar(1/maxDist),target);
+    out.copy(start).addScaledVector(delta.multiplyScalar(1/maxDist),target);out.y+=this.liftFor(target,maxDist,this.lastHitSource);
     const ground=this.world?.groundHeight?.(out.x,out.z)??-Infinity;
     out.y=Math.max(out.y,ground+.58);
     return out;
   }
 
   setEnabled(v=true){this.enabled=!!v;}
+  setFreeRules(on){this.freeRules=!!on;}
+  floorFor(source){return this.cutawaySource(source)?(this.freeRules?this.freeStructureMin:this.structureMinDistance):(this.freeRules?this.freeMinDistance:this.minDistance);}
+  // R58.2: lift the pulled-in camera so it looks down over the head (0 when not pulled in).
+  liftFor(dist,maxDist,source){const building=this.cutawaySource(source)||source==='home';return this.freeRules&&maxDist>1e-5?Math.min(building?this.freeBuildingLiftMax:this.freeLiftMax,Math.max(0,1-dist/maxDist)*this.freeLift):0;}
 
   rayBoxDistance(start,dir,maxDist,box){
     if(!box||box.isEmpty?.())return maxDist;
@@ -87,6 +102,7 @@ export class CameraOcclusionSystem {
     // Tiny pebbles/posts should not make the camera breathe. Tall or substantial
     // traversal obstacles (trees, rocks, walls) remain valid occluders.
     if(radius<.28&&height<1.15)return maxDist;
+    if(this.freeRules&&(height<this.freeLowHeight||(o.r||0)<this.freeThinRadius))return maxDist;
     const dx=end.x-start.x,dz=end.z-start.z;
     const ox=start.x-o.x,oz=start.z-o.z;
     const a=dx*dx+dz*dz;if(a<1e-8)return maxDist;
@@ -164,7 +180,7 @@ export class CameraOcclusionSystem {
     let target=maxDist;
 
     if(rawBlocked){
-      const floor=this.cutawaySource(this.lastHitSource)?this.structureMinDistance:this.minDistance;
+      const floor=this.floorFor(this.lastHitSource);
       const rawTarget=Math.min(maxDist,Math.max(floor,hitDist-this.clearance));
       this.releaseTimer=0;
       if(!this.occluded||!this.targetDistance||!Number.isFinite(this.targetDistance)){
@@ -181,7 +197,7 @@ export class CameraOcclusionSystem {
     }else if(this.occluded){
       this.releaseTimer+=dt;
       if(this.releaseTimer<this.releaseDelay){
-        const floor=this.cutawaySource(this.lastBlockedSource)?this.structureMinDistance:this.minDistance;
+        const floor=this.floorFor(this.lastBlockedSource);
         target=Math.min(maxDist,Math.max(floor,this.lastBlockedDistance||this.currentDistance||floor));
         this.targetDistance=target;
       }else{
@@ -200,10 +216,10 @@ export class CameraOcclusionSystem {
     const damping=target<this.currentDistance?this.retractDamping:this.restoreDamping;
     this.currentDistance+=(target-this.currentDistance)*damp(damping,dt);
     if(this.occluded&&this.currentDistance>target+.08)this.currentDistance=target+.08;
-    const activeFloor=this.cutawaySource(this.lastHitSource||this.lastBlockedSource)?this.structureMinDistance:this.minDistance;
+    const activeFloor=this.floorFor(this.lastHitSource||this.lastBlockedSource);
     this.currentDistance=Math.min(maxDist,Math.max(activeFloor,this.currentDistance));
 
-    out.copy(start).addScaledVector(delta.multiplyScalar(1/maxDist),this.currentDistance);
+    out.copy(start).addScaledVector(delta.multiplyScalar(1/maxDist),this.currentDistance);out.y+=this.liftFor(this.currentDistance,maxDist,this.lastHitSource||this.lastBlockedSource);
     const ground=this.world?.groundHeight?.(out.x,out.z)??-Infinity;
     out.y=Math.max(out.y,ground+.58);
     return out;

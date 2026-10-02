@@ -77,12 +77,14 @@ export function applyControlProfile(game, id) {
   const o = cam[ORIGINAL];
   Object.assign(cam, o);                  // restore standard first
   cam.profileId = 'standard';
+  game.cameraOcclusion?.setFreeRules?.(false); // R45 classic keeps the R21 collision rules
   const hint = document.getElementById('hint'); if (hint) hint.textContent = 'WASD to move · Shift to run · Space to hop · camera follows your back';
   game.resize?.();                        // standard FOV per aspect
   if (!PROFILES[id] || id === 'standard') { cam.manualYaw = 0; cam.manualPitch = 0; return 'standard'; }
 
   if (id === 'free') {
     cam.profileId = 'free'; installMouse(game, cam);
+    game.cameraOcclusion?.setFreeRules?.(true);   // R58.2: ride over low props, pass trunks, lift instead of collapsing
     cam.inBoat = () => game.fishing?.boat?.on && game.fishing.mode === 'boat';
     if (hint) hint.textContent = 'WASD to move · Shift to run · Space to hop · hold right mouse to look · wheel to zoom';
     cam.freeYaw = cam.yaw; cam.freePitch = 0; cam.idleLook = 99; cam.freeZoom = cam.freeZoom || 1;
