@@ -8,6 +8,7 @@ import * as THREE from 'three';
 import { loadGLTF } from '../core/AssetManager.js';
 
 const BASE = './assets/wilds/';
+export const RING_COLOR = 0xfff1b8;
 // kind -> file, gameplay scale (models are authored small; scaled to the existing footprints/colliders),
 // action clips played on gather (in order).
 export const WILDS_MODELS = {
@@ -22,10 +23,27 @@ export const WILDS_MODELS = {
   golden:  { file: 'wilds_golden_cache',    scale: 1.3 }
 };
 
-export async function loadWildsModels() {
+// R59.2: Jannik's private-garden pack (assets/garden/). Subtree models (hedge segments, weed stages)
+// are cloned per node with their clips filtered to that subtree.
+export const GARDEN_MODELS = {
+  workbench: { file: 'garden_workbench', dir: './assets/garden/', scale: 1.3 },
+  barrel:    { file: 'home_rain_compost', dir: './assets/garden/', scale: 1.35 },
+  shrine:    { file: 'home_seed_shrine',  dir: './assets/garden/', scale: 1.35 },
+  hedge:     { file: 'home_thorn_hedge',  dir: './assets/garden/', scale: 1.45 },
+  weeds:     { file: 'garden_weeds',      dir: './assets/garden/', scale: 1.4 },
+  potplant:  { file: 'garden_pot_plant',  dir: './assets/garden/', scale: 1 },
+  swift:     { file: 'perk_swift',        dir: './assets/garden/', scale: 1 },
+  roots:     { file: 'perk_roots',        dir: './assets/garden/', scale: 1 },
+  ward:      { file: 'perk_ward',         dir: './assets/garden/', scale: 1 },
+  lucky:     { file: 'perk_lucky',        dir: './assets/garden/', scale: 1 }
+};
+
+export function loadGardenModels() { return loadSet(GARDEN_MODELS); }
+export function loadWildsModels() { return loadSet(WILDS_MODELS); }
+async function loadSet(set) {
   const out = {};
-  await Promise.all(Object.entries(WILDS_MODELS).map(async ([kind, def]) => {
-    try { out[kind] = await loadGLTF(`${BASE}${def.file}.glb`); }
+  await Promise.all(Object.entries(set).map(async ([kind, def]) => {
+    try { out[kind] = await loadGLTF(`${def.dir || BASE}${def.file}.glb`); }
     catch (e) { console.warn(`[TGW] wilds model ${def.file} failed; keeping the placeholder`, e); }
   }));
   return out;
@@ -33,16 +51,26 @@ export async function loadWildsModels() {
 
 // One placed instance: cloned scene + its own mixer and ring material.
 export class WildsModel {
-  constructor(gltf, kind) {
-    const def = WILDS_MODELS[kind];
-    this.def = def; this.root = gltf.scene.clone(true); this.root.scale.setScalar(def.scale);
+  // opts.node: clone only that named subtree (position reset), clips filtered to it.
+  constructor(gltf, kind, opts = {}) {
+    const def = WILDS_MODELS[kind] || GARDEN_MODELS[kind];
+    this.def = def;
+    if (opts.node) { const sub = gltf.scene.getObjectByName(opts.node).clone(true); sub.position.set(0, 0, 0); this.root = new THREE.Group(); this.root.add(sub); }
+    else this.root = gltf.scene.clone(true);
+    this.root.scale.setScalar(opts.scale ?? def.scale);
     const top = this.root.children[0];
-    this.root.traverse(o => { if (o.isMesh) { o.castShadow = !/Ring|Bit|Spark|Light|Glow/.test(o.name); o.receiveShadow = true; } });
+    this.root.traverse(o => { if (o.isMesh) { o.castShadow = !/Ring|Bit|Spark|Light|Glow|Ghost|Aura/.test(o.name); o.receiveShadow = true; } });
+    // R59.1: the authored ring rests at scale 0 (only the Highlight clip unfolds it) and its colour is the
+    // muted material tone, so it was invisible. Rest at full size, one bright "usable" colour for every model.
     const ring = top && this.root.getObjectByName(`${top.name}_Ring`);
     this.ringMat = null;
-    ring?.traverse(o => { if (o.isMesh) { o.material = o.material.clone(); o.material.depthWrite = false; this.ringMat = o.material; } });
+    if (ring) ring.scale.set(1, 1, 1);
+    ring?.traverse(o => { if (o.isMesh) { o.material = new THREE.MeshBasicMaterial({ color: RING_COLOR, transparent: true, opacity: 0, depthWrite: false, side: THREE.DoubleSide }); o.castShadow = false; o.renderOrder = 2; this.ringMat = o.material; } });
+    this.root.updateMatrixWorld(true);
+    this.top = new THREE.Box3().setFromObject(this.root).max.y; // for the icon bubble / glint height
     this.mixer = new THREE.AnimationMixer(this.root);
-    this.clips = Object.fromEntries(gltf.animations.map(c => [c.name, c]));
+    const filter = c => { if (!opts.node) return c; const tracks = c.tracks.filter(t => this.root.getObjectByName(THREE.PropertyBinding.parseTrackName(t.name).nodeName)); return new THREE.AnimationClip(c.name, c.duration, tracks); };
+    this.clips = Object.fromEntries(gltf.animations.map(c => [c.name, filter(c)]));
     this.current = null; this.queue = []; this.onDone = null;
     this.mixer.addEventListener('finished', () => this.next());
   }
@@ -68,6 +96,12 @@ export class WildsModel {
     this.current = this.mixer.clipAction(c); this.current.reset().setLoop(THREE.LoopOnce, 1); this.current.clampWhenFinished = true; this.current.play();
   }
   busy() { return !!this.onDone || this.queue.length > 0; }
-  ring(near) { if (this.ringMat) this.ringMat.opacity = .11 + near * .38; }
+  ring(alpha) { if (this.ringMat) this.ringMat.opacity = alpha; }
+  // Highlight (sparks + ring pulse) runs on top of the state clip while the player is close.
+  highlight(on) {
+    const c = this.clips.Highlight; if (!c) return;
+    this.hl ||= this.mixer.clipAction(c).setLoop(THREE.LoopRepeat, Infinity);
+    if (on && !this.hl.isRunning()) this.hl.reset().play(); else if (!on && this.hl.isRunning()) this.hl.stop();
+  }
   update(dt) { this.mixer.update(dt); }
 }

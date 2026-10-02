@@ -3,6 +3,8 @@
 // the greenhouse, and snails go for the potted plants. Overgrowth runs on real time (also offline).
 import * as THREE from 'three';
 import { THREAT } from '../data/wildsCatalog.js';
+import { WildsModel } from './WildsModels.js';
+const WEED_STAGES = ['Spire', 'Busk', 'Tornet']; // R59.2 garden_weeds.glb subtrees, one per stage
 
 const GH = { x: 6.5, z: -11.2 };
 // Garden layout to keep weeds off (from GardenEnvironment / MeaningfulChoiceSystem).
@@ -97,12 +99,21 @@ export class WildsThreatSystem {
     return weed;
   }
 
+  // R59.2: Jannik's weed model replaces the placeholder stages (current weeds rebuild on the next frame).
+  useModels(models) { this.weedGltf = models.weeds || null; for (const w of this.weeds) w.shown = 0; }
+  weedModel(w, st) {
+    if (w.model) w.root.remove(w.model.root);
+    const m = w.model = new WildsModel(this.weedGltf, 'weeds', { node: `Garden_Weeds_${WEED_STAGES[st - 1]}` });
+    w.root.add(m.root); w.stages.forEach(g => g.visible = false); m.loop('Idle');
+  }
+
   canPull(stage) { return stage < THREAT.sickleStage || this.w.has('sickle') || this.w.passive?.thornHands; }
 
   pull(weed, character) {
     if (weed.state !== 'alive') return false;
     const st = this.stage(weed.rec); if (!this.canPull(st)) return false;
     weed.state = 'pulling'; weed.t = 0; character.flash();
+    if (weed.model) weed.model.play([`Pull_${WEED_STAGES[st - 1]}`], () => { weed.state = 'gone'; this.root.remove(weed.root); });
     const n = THREAT.weedReward[st - 1]; this.w.give('fiber', n); this.w.hud?.showToast(`Overgrowth pulled  Fiber +${n}`);
     this.p.weeds = this.p.weeds.filter(r => r !== weed.rec); this.w.profile.stats.weeds++; this.w.track('weeds', 1); this.w.save.persist();
     return true;
@@ -160,7 +171,8 @@ export class WildsThreatSystem {
     for (const w of this.weeds) {
       if (w.state === 'alive') {
         const st = this.stage(w.rec, now);
-        if (st !== w.shown) { w.stages.forEach((g, i) => g.visible = i === st - 1); w.shown = st; w.root.scale.setScalar(.001); w.t = 0; }
+        if (st !== w.shown) { w.stages.forEach((g, i) => g.visible = i === st - 1); w.shown = st; w.root.scale.setScalar(.001); w.t = 0; if (this.weedGltf) this.weedModel(w, st); }
+        w.model?.update(dt);
         if (w.t < 1) { w.t = Math.min(1, w.t + dt * 1.5); w.root.scale.setScalar(Math.max(.001, ease(w.t))); }
         w.root.rotation.z = Math.sin(time * 1.3 + w.x) * .03;
         const d = Math.hypot(px - w.x, pz - w.z);
@@ -169,6 +181,7 @@ export class WildsThreatSystem {
           offer({ type: 'wilds-weed', weed: w, distance: d, disabled: !ok, label: ok ? names[st - 1] : 'Thorny Overgrowth · needs Sickle' });
         }
       } else if (w.state === 'pulling') {
+        if (w.model) { w.model.update(dt); continue; }
         w.t += dt; const p = Math.min(1, w.t / .45), e = ease(p);
         w.root.scale.set(Math.max(.001, 1 - e), Math.max(.001, 1 - e) * (1 + e), Math.max(.001, 1 - e)); w.root.position.y += dt * .6;
         if (p >= 1) { w.state = 'gone'; this.root.remove(w.root); }

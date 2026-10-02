@@ -10,7 +10,7 @@ import { MATERIALS, NODE_KINDS, TOOLS, HOME_UPGRADES, RULES, PASSIVES, PERKS, GO
 import { WildsThreatSystem } from './WildsThreatSystem.js';
 import { DailyRequests } from './DailyRequests.js';
 import { GardenPotsSystem } from './GardenPotsSystem.js';
-import { loadWildsModels, WildsModel } from './WildsModels.js';
+import { loadWildsModels, loadGardenModels, WildsModel } from './WildsModels.js';
 
 const HOME = { x: 0, z: 4.7 };
 // Private-garden placements (garden space, ground y = 0). The workbench replaces the old Lookout site.
@@ -18,9 +18,18 @@ const WORKBENCH = { x: 6.0, z: 7.6, ry: -Math.PI / 2 };
 const BARREL = { x: -6.6, z: .8 }, SHRINE = { x: -9.2, z: 2.8 };
 const HEDGE = [[-11.3, -9.5], [-11.3, -5.5], [-11.3, -1.5], [-11.3, 2.5], [-11.3, 6.0], [11.3, -5.0], [11.3, -1.0], [11.3, 3.0], [-7.5, -12.9], [-3.0, -12.9]];
 const COMMON = ['wood', 'stone', 'clay', 'fiber'];
+const big0 = kind => kind === 'oldlog' || kind === 'boulder';
 
 function rng(seed) { let a = seed >>> 0; return () => { a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
 const ease = p => p * p * (3 - 2 * p);
+const sstep = (a, b, x) => ease(Math.min(1, Math.max(0, (x - a) / (b - a))));
+// R59.1 readability: every usable thing shows the same three cues. A soft glint from ~22 m, the bright
+// ground ring + Highlight sparks within 6 m, and an icon bubble (material, or a lock) within ~8 m.
+const CUE = { glintFar: 30, glintFull: 22, highlight: 6, bubbleFar: 8.5, bubbleFull: 6 };
+const ICONS = {
+  wood: ['▰', '#c89a66'], oldlog: ['▰', '#c89a66'], stone: ['◆', '#d4d7cb'], boulder: ['◆', '#d4d7cb'],
+  clay: ['●', '#d98a60'], fiber: ['≋', '#a9d06f'], thorn: ['☾', '#e3ecbf'], amber: ['⬣', '#f2b24c'], golden: ['✦', '#ffd76a']
+};
 
 function labelSprite(text, width = 420) {
   const canvas = document.createElement('canvas'); canvas.width = width; canvas.height = 96;
@@ -56,6 +65,7 @@ export class WildsLoopSystem {
     this.buildHomeUpgrades();
     this.placeThorns();
     loadWildsModels().then(m => this.applyModels(m)).catch(e => console.warn('[TGW] wilds models unavailable', e));
+    loadGardenModels().then(m => this.applyGardenModels(m)).catch(e => console.warn('[TGW] garden models unavailable', e));
     this.applyHomeLevel(false);
     this.pots = new GardenPotsSystem(this, this.greenhouse);
     this.threat = new WildsThreatSystem(this);
@@ -98,7 +108,7 @@ export class WildsLoopSystem {
   // Returns { title, copy } for the single most useful next step.
   goal() {
     const p = this.profile, inv = id => this.state.inventory.get(id) || 0, pots = this.pots, g = (title, copy) => ({ title, copy });
-    if (!Object.keys(p.inventory).length && !this.has('axe')) return g('Gather natural materials', 'Head out through the garden gate. Glowing piles of wood, stone and grass can be gathered.');
+    if (!Object.keys(p.inventory).length && !this.has('axe')) return g('Gather natural materials', 'Head out through the garden gate. Look for things that glint: get close and an icon shows what you can gather.');
     if (!this.has('axe')) return g('Craft your first tool', 'Bring Wood, Stone and Fiber to the workbench in your garden and craft the Stone Axe.');
     if (!pots?.available()) return g('Build your greenhouse', 'At the back of your garden. Pots and plants live there.');
     if (pots.owned() < 1) return g('Craft a pot', 'Workbench → Tools → Terracotta Pot. It goes straight onto the greenhouse shelf.');
@@ -237,13 +247,14 @@ export class WildsLoopSystem {
     glow.position.y = .5; glow.scale.setScalar(kind === 'oldlog' || kind === 'boulder' ? 2.4 : 1.5); root.add(glow);
     const ring = new THREE.Mesh(this.ringGeo, new THREE.MeshBasicMaterial({ color: 0xf4e3a6, transparent: true, opacity: 0, side: THREE.DoubleSide, depthWrite: false }));
     ring.rotation.x = -Math.PI / 2; ring.position.y = .04; ring.scale.setScalar(kind === 'oldlog' || kind === 'boulder' ? 2 : 1); root.add(ring);
+    const bubble = this.makeBubble(kind, big0(kind) ? 1.6 : 1.1); root.add(bubble);
     this.root.add(root);
     const big = kind === 'oldlog' || kind === 'boulder';
     // The log lies along its local X axis, so it gets three colliders along that axis.
     const ax = Math.cos(root.rotation.y), az = -Math.sin(root.rotation.y);
     const obstacles = kind === 'oldlog' ? [-.7, 0, .7].map(o => this.world.addObstacle({ x: x + ax * o, z: z + az * o, r: .4, height: .6, kind: 'wilds-oldlog' }))
       : kind === 'boulder' ? [this.world.addObstacle({ x, z, r: .75, height: .9, kind: 'wilds-boulder' })] : [];
-    const node = { id, kind, def, x, z, root, body, glow, ring, near: 0, reach: big ? 2.1 : 1.45, state: 'ready', t: 0, obstacles };
+    const node = { id, kind, def, x, z, root, body, glow, ring, bubble, near: 0, reach: big ? 2.1 : 1.45, state: 'ready', t: 0, obstacles };
     const regrowAt = this.profile.nodes[id];
     if (regrowAt && regrowAt > Date.now()) { node.state = 'regrowing'; body.scale.setScalar(.001); glow.visible = false; obstacles.forEach(o => this.setObstacle(o, false)); }
     return node;
@@ -266,6 +277,7 @@ export class WildsLoopSystem {
     const perk = PERKS.find(p => p.id === perkId);
     if (!perk || this.profile.perks[perkId] || this.profile.homeLevel < 2 || !this.pay({ golden_seed: 1 })) return false;
     this.profile.perks[perkId] = true; this.save.persist(); this.hud?.showToast(`${perk.name} takes root`); this.emit();
+    if (this.shrineModel) { this.shrineModel.play(['Plant'], () => this.shrineModel.loop('Idle')); this.syncPerks(perkId); }
     return true;
   }
   mapMarkers() {
@@ -337,6 +349,7 @@ export class WildsLoopSystem {
     this.upgradeL1.visible = lvl >= 1; this.setObstacle(this.upgradeObstacles[0], lvl >= 1); this.setObstacle(this.upgradeObstacles[1], lvl >= 1);
     this.upgradeL2.visible = lvl >= 2; this.setObstacle(this.upgradeObstacles[2], lvl >= 2);
     this.upgradeL3.visible = lvl >= 3;
+    this.syncGardenModels(celebrate);
     if (celebrate) this.hud?.showToast(`${HOME_UPGRADES[lvl - 1].name} built`);
   }
 
@@ -344,7 +357,8 @@ export class WildsLoopSystem {
     const tool = TOOLS.find(t => t.id === toolId);
     if (!tool || this.has(toolId) || !this.pay(tool.cost)) return false;
     this.profile.tools[toolId] = true; this.profile.stats.crafted++;
-    if (this.rack[toolId]) this.rack[toolId].visible = true; this.save.persist();
+    if (this.rack[toolId]) this.rack[toolId].visible = !this.benchModel; this.save.persist();
+    this.benchModel?.play(['Craft'], () => this.benchModel.loop('Idle'));
     this.hud?.showToast(`${tool.name} crafted`); this.emit();
     return true;
   }
@@ -383,11 +397,95 @@ export class WildsLoopSystem {
       for (let s = 0; s < 2; s++) brush.add(this.mesh(new THREE.ConeGeometry(.03, .22, 4), m.thornDark, [Math.cos(a) * (r + .18), .3 + rand() * h * .7, Math.sin(a) * (r + .18)], [1, 1, 1], [0, 0, Math.PI / 2 + a], false));
     }
     for (let k = 0; k < 4; k++) { const a = rand() * 6.283; brush.add(this.mesh(new THREE.TorusGeometry(.9 + rand() * .4, .035, 4, 18, Math.PI), m.thornDark, [0, .35 + k * .22, 0], [1, 1, 1], [Math.PI / 2 + (rand() - .5) * .6, 0, a], false)); }
-    const saved = this.profile.thorns[id], t = { id, x, z, root, cache, brush, crystals, halo, near: 0, t: 0, phase: saved === 'cleared' || saved === 'looted' ? saved : 'wild' };
+    const glow = new THREE.Sprite(new THREE.SpriteMaterial({ map: this.glowTex, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, opacity: 0 }));
+    glow.position.y = .9; glow.scale.setScalar(3.2); root.add(glow);
+    const bubble = this.makeBubble('thorn', 2.2); root.add(bubble);
+    const saved = this.profile.thorns[id], t = { id, x, z, root, cache, brush, crystals, halo, glow, bubble, near: 0, t: 0, phase: saved === 'cleared' || saved === 'looted' ? saved : 'wild' };
     t.obstacle = this.world.addObstacle({ x, z, r: 1.45, height: 1.6, kind: 'wilds-thornbrush' });
     if (t.phase !== 'wild') { brush.visible = false; this.setObstacle(t.obstacle, false); }
     if (t.phase === 'looted') cache.visible = false;
     return t;
+  }
+
+  // ---------- R59.1 readability cues ----------
+  iconTex(key, locked) {
+    const id = key + (locked ? ':locked' : ''); this.iconCache ||= {};
+    if (this.iconCache[id]) return this.iconCache[id];
+    const c = document.createElement('canvas'); c.width = c.height = 128; const x = c.getContext('2d'), [ch, col] = ICONS[key] || ['?', '#fff'];
+    x.fillStyle = 'rgba(28,36,24,.82)'; x.beginPath(); x.arc(64, 64, 54, 0, Math.PI * 2); x.fill();
+    x.lineWidth = 5; x.strokeStyle = 'rgba(255,241,184,.9)'; x.stroke();
+    x.textAlign = 'center'; x.textBaseline = 'middle'; x.fillStyle = locked ? 'rgba(255,255,255,.45)' : col; x.font = '700 62px Manrope, "Segoe UI Symbol", sans-serif'; x.fillText(ch, 64, 68);
+    if (locked) { x.font = '40px "Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif'; x.fillText('🔒', 92, 94); }
+    const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; return (this.iconCache[id] = t);
+  }
+  makeBubble(key, y) {
+    const b = new THREE.Sprite(new THREE.SpriteMaterial({ map: this.iconTex(key, false), transparent: true, depthWrite: false, depthTest: false, opacity: 0 }));
+    b.scale.setScalar(.52); b.position.y = y; b.renderOrder = 10; b.visible = false; b.userData.baseY = y; return b;
+  }
+  // One place drives glint, ring, Highlight and bubble for a node or thornbrush. `on` = usable right now.
+  cue(o, model, d, near, on, key, locked, time) {
+    const vis = on ? 1 - sstep(CUE.glintFull, CUE.glintFar, d) : 0;
+    if (o.glow) { o.glow.visible = vis > .01; o.glow.material.opacity = vis * (.34 + Math.sin(time * 2.4 + o.x) * .1) + near * .2; }
+    model?.ring(Math.min(.8, vis * .3 + near * .45)); model?.highlight(on && d < CUE.highlight);
+    const b = o.bubble; if (!b) return;
+    const bo = on ? 1 - sstep(CUE.bubbleFull, CUE.bubbleFar, d) : 0;
+    b.visible = bo > .01; if (!b.visible) return;
+    b.material.opacity = bo; const tex = this.iconTex(key, locked); if (b.material.map !== tex) { b.material.map = tex; b.material.needsUpdate = true; }
+    b.position.y = b.userData.baseY + Math.sin(time * 2 + o.x) * .05;
+  }
+
+  // ---------- R59.2 private-garden models ----------
+  applyGardenModels(models) {
+    const fresh = (group, keep = []) => { for (const c of [...group.children]) if (!keep.includes(c)) group.remove(c); };
+    this.gardenMixers = [];
+    const add = m => { this.gardenMixers.push(m); return m; };
+    if (models.workbench) {
+      const w = this.workbench, label = w.root.children.find(c => c.isSprite && c !== w.glow);
+      fresh(w.root, [label, w.glow]); const m = this.benchModel = add(new WildsModel(models.workbench, 'workbench'));
+      w.root.add(m.root); m.loop('Idle'); label.position.y = 1.75; w.glow.position.y = .8;
+    }
+    if (models.barrel) {
+      fresh(this.upgradeL1); const m = this.barrelModel = add(new WildsModel(models.barrel, 'barrel'));
+      m.root.rotation.y = Math.PI; m.root.position.x = -.43; this.upgradeL1.add(m.root);
+    }
+    if (models.shrine) {
+      fresh(this.upgradeL2); const m = this.shrineModel = add(new WildsModel(models.shrine, 'shrine'));
+      m.root.rotation.y = Math.PI / 2; this.upgradeL2.add(m.root); this.perkModels = {}; this.gardenPerkGltf = models;
+    }
+    if (models.hedge) {
+      fresh(this.upgradeL3); this.hedgeModels = HEDGE.map(([hx, hz]) => {
+        const m = add(new WildsModel(models.hedge, 'hedge', { node: 'Home_ThornHedge_Seg_Straight' }));
+        m.root.position.set(hx, 0, hz); m.root.rotation.y = Math.abs(hx) > 11 ? Math.PI / 2 : 0; this.upgradeL3.add(m.root); return m;
+      });
+    }
+    this.gardenModels = models;
+    this.threat?.useModels?.(models); this.pots?.useModels?.(models);
+    this.syncGardenModels(false);
+    for (const k of PERKS) if (this.profile.perks[k.id]) this.syncPerks(null);
+  }
+
+  // Built levels idle; the NEXT level shows its ghost silhouette (Locked) as a "build me here" hint.
+  syncGardenModels(celebrate) {
+    const lvl = this.profile.homeLevel;
+    const show = (group, model, level) => {
+      if (!model) return;
+      if (lvl >= level) { group.visible = true; if (celebrate && lvl === level) model.play(['Build'], () => model.loop('Idle')); else if (!model.busy()) model.loop('Idle'); }
+      else if (lvl === level - 1 && model.has('Locked')) { group.visible = true; model.loop('Locked'); }
+      else group.visible = false;
+    };
+    show(this.upgradeL1, this.barrelModel, 1); show(this.upgradeL2, this.shrineModel, 2);
+    if (this.hedgeModels) { this.upgradeL3.visible = lvl >= 3; for (const m of this.hedgeModels) { if (lvl >= 3 && celebrate) m.play(['Build'], () => m.loop('Idle')); else if (lvl >= 3 && !m.busy()) m.loop('Idle'); } }
+  }
+
+  // Perk plants sit in the shrine's Slot_0-3 (PERKS order). `grown` = the one just planted (plays Grow).
+  syncPerks(grown) {
+    if (!this.shrineModel || !this.gardenPerkGltf) return;
+    PERKS.forEach((k, i) => {
+      if (!this.profile.perks[k.id] || this.perkModels[k.id] || !this.gardenPerkGltf[k.id]) return;
+      const slot = this.shrineModel.root.getObjectByName(`Home_SeedShrine_Slot_${i}`); if (!slot) return;
+      const m = this.perkModels[k.id] = new WildsModel(this.gardenPerkGltf[k.id], k.id); m.root.scale.setScalar(1); slot.add(m.root); this.gardenMixers.push(m);
+      if (grown === k.id) m.play(['Grow'], () => m.loop('Idle')); else m.loop('Idle');
+    });
   }
 
   // ---------- R59 authored models ----------
@@ -398,7 +496,8 @@ export class WildsLoopSystem {
       if (node.state === 'gathering') { node.body.position.y = 0; this.finishGather(node); } // placeholder anim was mid-way
       if (node.state === 'growing') { node.state = 'ready'; }
       const m = node.model = new WildsModel(g, node.kind); swap(node.body, m);
-      node.glow.visible = false; node.ring.visible = false; node.body.position.y = 0;
+      node.ring.visible = false; node.body.position.y = 0;
+      node.bubble.userData.baseY = m.top + .55; node.glow.position.y = Math.max(.35, m.top * .6);
       if (node.kind === 'oldlog') { // fit the three colliders to the authored log (≈1.5 m long)
         const ax = Math.cos(node.root.rotation.y), az = -Math.sin(node.root.rotation.y);
         node.obstacles.forEach((o, i) => { const off = (i - 1) * .48; o.x = node.x + ax * off; o.z = node.z + az * off; o.r = .36; o.height = .7; });
@@ -411,7 +510,7 @@ export class WildsLoopSystem {
       if (t.phase === 'cutting') { t.brush.visible = false; this.clearThorn(t); }
       if (t.phase === 'looting') t.phase = 'looted';
       if (tg) {
-        const m = t.thicket = new WildsModel(tg, 'thicket'); swap(t.brush, m); t.brush.scale.set(1, 1, 1); t.brush.rotation.y = 0;
+        const m = t.thicket = new WildsModel(tg, 'thicket'); swap(t.brush, m); t.bubble.userData.baseY = m.top + .6; t.brush.scale.set(1, 1, 1); t.brush.rotation.y = 0;
         t.brush.visible = true; if (t.phase === 'wild') m.loop('Idle'); else m.loop('Cleared');
       }
       if (cg) {
@@ -495,10 +594,11 @@ export class WildsLoopSystem {
       if (d > 70 && (node.state === 'ready' || node.state === 'regrowing')) { if (node.state === 'regrowing' && now >= (this.profile.nodes[node.id] || 0)) this.regrown(node, true); continue; }
       const inReach = d < node.reach && node.state === 'ready';
       node.near += ((inReach ? 1 : 0) - node.near) * damp(6, dt);
-      if (node.model) { if (d < 45 || node.model.busy()) node.model.update(dt); node.model.ring(node.state === 'ready' ? node.near : 0); }
+      if (node.model && (d < 45 || node.model.busy())) node.model.update(dt);
+      const nodeLocked = !!(node.def.requires && !this.has(node.def.requires));
+      this.cue(node, node.model, d, node.near, node.state === 'ready', node.kind, nodeLocked, time);
       if (node.state === 'ready') {
-        node.glow.material.opacity = .14 + node.near * .3 + Math.sin(time * 2 + node.x) * .03;
-        node.ring.material.opacity = node.near * .45; node.ring.rotation.z += dt * .2;
+        if (!node.model) { node.ring.material.opacity = node.near * .45; node.ring.rotation.z += dt * .2; }
         if (inReach) {
           const locked = node.def.requires && !this.has(node.def.requires);
           const tool = locked && TOOLS.find(t => t.id === node.def.requires);
@@ -524,7 +624,10 @@ export class WildsLoopSystem {
       if (t.thicket && (d < 45 || t.thicket.busy())) t.thicket.update(dt);
       if (t.cacheModel && (d < 45 || t.cacheModel.busy())) t.cacheModel.update(dt);
       t.near += (((t.phase === 'wild' && d < 2.65) || (t.phase === 'cleared' && d < 1.4) ? 1 : 0) - t.near) * damp(6, dt);
-      t.thicket?.ring(t.phase === 'wild' ? t.near : 0); t.cacheModel?.ring(t.phase === 'cleared' ? t.near : 0);
+      const wild = t.phase === 'wild', open = t.phase === 'cleared', golden = GOLDEN_CACHES.includes(t.id);
+      if (open) t.bubble.userData.baseY = (t.cacheModel?.top ?? .6) + .55;
+      this.cue(t, wild ? t.thicket : t.cacheModel, d, t.near, wild || open, wild ? 'thorn' : golden ? 'golden' : 'amber', wild && !this.canCut(), time);
+      if (wild) t.cacheModel?.ring(0); else t.thicket?.ring(0);
       t.halo.material.opacity = .5 + Math.sin(time * 2.2 + t.x) * .12;
       t.crystals.forEach((c, i) => { c.rotation.y += dt * (.5 + i * .2); });
       if (t.phase === 'wild') {
@@ -557,7 +660,8 @@ export class WildsLoopSystem {
     w.near += ((wNear ? 1 : 0) - w.near) * damp(6, dt);
     w.glow.material.opacity = .16 + w.near * .3 + Math.sin(time * 1.6) * .04;
     if (wNear) offer({ type: 'wilds-workbench', distance: wd, label: 'Use Workbench' });
-    if (this.upgradeL2.visible) { this.shrineSeed.position.y = 1.45 + Math.sin(time * 1.7) * .06; this.shrineSeed.rotation.y += dt * .8; }
+    for (const m of this.gardenMixers || []) m.update(dt);
+    if (this.upgradeL2.visible && !this.shrineModel) { this.shrineSeed.position.y = 1.45 + Math.sin(time * 1.7) * .06; this.shrineSeed.rotation.y += dt * .8; }
     this.current = result();
     return { interaction: this.current };
   }

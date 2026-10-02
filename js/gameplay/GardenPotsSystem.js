@@ -5,6 +5,8 @@
 import * as THREE from 'three';
 import { loadGLTF } from '../core/AssetManager.js';
 import { POTS, MATERIALS } from '../data/wildsCatalog.js';
+import { WildsModel } from './WildsModels.js';
+const PLANT_CLIPS = ['Seed', 'Sprout', 'Bud', 'Bloom']; // R59.2 garden_pot_plant.glb stage loops
 
 const GH = { x: 6.5, z: -11.2 };                 // GreenhouseProgressionSystem ROOT_X / ROOT_Z
 // Slots per greenhouse level, local to the greenhouse root: [x, y(top of furniture), z].
@@ -67,6 +69,12 @@ export class GardenPotsSystem {
     }
     return g;
   }
+  // R59.2: Jannik's potted-plant model replaces the placeholder stages (origin = the pot's soil surface).
+  useModels(models) {
+    if (!models.potplant) return;
+    for (const v of this.slots) { v.pm = new WildsModel(models.potplant, 'potplant'); v.pm.root.visible = false; v.plant.add(v.pm.root); v.shown = -2; }
+  }
+
   swapPotModel(s) {
     if (!this.potTemplate) return;
     s.pot.clear(); s.pot.add(this.potTemplate.clone(true));
@@ -146,7 +154,16 @@ export class GardenPotsSystem {
     this.slots.forEach((v, i) => {
       v.g.visible = visible && i < this.owned(); if (!v.g.visible) return;
       const s = this.p.pots.slots[i], stage = s ? s.stage : -1;
-      if (stage !== v.shown) { v.stages.forEach((g, k) => g.visible = k === stage); v.shown = stage; v.pop = 0; }
+      if (stage !== v.shown) {
+        if (v.pm) {
+          v.stages.forEach(g => g.visible = false);
+          if (stage >= 0) { v.pm.root.visible = true; v.pm.loop(PLANT_CLIPS[stage]); v.pop = 0; }
+          else if (v.shown === 3) { v.pop = 1; v.plant.scale.setScalar(1); v.pm.play(['Harvest'], () => { v.pm.root.visible = false; }); } // flower lifts out, ends empty
+          else v.pm.root.visible = false;
+        } else { v.stages.forEach((g, k) => g.visible = k === stage); v.pop = 0; }
+        v.shown = stage;
+      }
+      v.pm?.update(dt);
       if (v.pop < 1) { v.pop = Math.min(1, v.pop + dt * 2.5); v.plant.scale.setScalar(Math.max(.001, ease(v.pop))); }
       v.soil.material = s?.wet ? this.m.wet : this.m.soil;
       const thirsty = !!s && !s.wet && s.stage < 3;

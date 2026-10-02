@@ -109,9 +109,12 @@ try {
       const g = window.__tgw, w = g.wilds, kinds = new Set(w.nodes.filter(n => n.model).map(n => n.kind)), n = w.nodes.find(x => x.kind === 'wood' && x.state === 'ready');
       const wood = g.state.inventory.get('wood') || 0; w.gather(n, g.character);
       for (let i = 0; i < 90 && n.state === 'gathering'; i++) await new Promise(x => setTimeout(x, 1000));
-      return { kinds: kinds.size, thorns: w.thorns.every(t => t.thicket && t.cacheModel), state: n.state, gained: (g.state.inventory.get('wood') || 0) > wood, hidden: !n.body.visible };
+      for (let i = 0; i < 60 && !w.gardenModels; i++) await new Promise(x => setTimeout(x, 1000));
+      const ring = n.model?.ringMat && n.model.root.getObjectByName(n.model.root.children[0].name + '_Ring')?.scale.x === 1;
+      return { kinds: kinds.size, thorns: w.thorns.every(t => t.thicket && t.cacheModel), state: n.state, gained: (g.state.inventory.get('wood') || 0) > wood, hidden: !n.body.visible, ring, bubbles: w.nodes.every(x => x.bubble),
+        garden: !!(w.benchModel && w.barrelModel && w.shrineModel && w.hedgeModels?.length && w.pots?.slots.every(v => v.pm) && w.threat?.weedGltf) };
     }) : {};
-    check('wilds GLBs: 6 node kinds + thicket + caches, gather clip completes', r.kinds === 6 && r.thorns && r.state === 'regrowing' && r.gained && r.hidden && !errors.length, errors[0] || JSON.stringify(r));
+    check('wilds + garden GLBs: nodes, thicket, caches, ring/bubble cues, garden builds; gather clip completes', r.kinds === 6 && r.thorns && r.state === 'regrowing' && r.gained && r.hidden && r.ring && r.bubbles && r.garden && !errors.length, errors[0] || JSON.stringify(r));
     await ctx.close(); }
   // 5. DEV disabled: no dev UI or handles leak into normal play
   { const ctx = await context({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true }); const { p, errors, ok } = await startGame(ctx, 'daisy', { dev: false });
