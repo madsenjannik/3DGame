@@ -186,18 +186,40 @@ export class WoodGiantBoss {
     this.updateRoots(dt, px, pz);
     this.giant.position.set(this.gx - this.site.x, 0, this.gz - this.site.z); this.syncObstacle();
   }
+  // R64.1: the closed gate (arch, doors, gate roots) turns see-through while the boss camera is right behind it.
+  fadeGate(o) {
+    if (!this.gateMats) {
+      const arena = this.arena?.root; if (!arena) return; this.gateMats = [];
+      const own = x => { const c = x.clone(); c.userData.base = { t: x.transparent, o: x.opacity, d: x.depthWrite }; this.gateMats.push(c); return c; };
+      for (const n of ['Arena_WoodGiant_Gate', 'Arena_WoodGiant_DoorL', 'Arena_WoodGiant_DoorR', 'Arena_WoodGiant_GateRoots']) arena.getObjectByName(n)?.traverse(m => {
+        if (m.isMesh) m.material = Array.isArray(m.material) ? m.material.map(own) : own(m.material);
+      });
+      const l = arena.getObjectByName('Arena_WoodGiant_DoorL'), r = arena.getObjectByName('Arena_WoodGiant_DoorR');
+      if (l && r) { arena.updateMatrixWorld(true); const a = l.getWorldPosition(new THREE.Vector3()), b = r.getWorldPosition(new THREE.Vector3()); this.gatePos = { x: (a.x + b.x) / 2, z: (a.z + b.z) / 2 }; }
+      this.gateO = 1;
+    }
+    if (Math.abs(o - this.gateO) < .01) return; this.gateO = o;
+    for (const m of this.gateMats) { const B = m.userData.base; m.transparent = B.t || o < 1; m.opacity = B.o * o; m.depthWrite = o < 1 ? false : B.d; m.needsUpdate = true; }
+  }
   // R63.1 low-angle boss camera (Shadow of the Colossus idea): low behind you, looking up between your head
   // and the Giant's chest, kept inside the arena while the gate is closed.
   applyCamera(camera, ch) {
-    if (!this.site || !this.fighting()) { if (this.camActive) { this.camActive = false; this.g.resize?.(); } return; }
+    if (!this.site || !this.fighting()) { if (this.camActive) { this.camActive = false; this.g.resize?.(); this.fadeGate(1); } return; }
     const C = GIANT.camera, cam = this.g.followCamera, yaw = cam?.yaw ?? Math.atan2(ch.position.x - this.gx, ch.position.z - this.gz);
-    let x = ch.position.x + Math.sin(yaw) * C.distance, z = ch.position.z + Math.cos(yaw) * C.distance;
-    const max = GIANT.arenaRadius - 1.2, dx = x - this.site.x, dz = z - this.site.z, d = Math.hypot(dx, dz);
+    // R64.1: always straight behind you (no swing: a swing at the edge ends up looking out of the arena). Near the edge
+    // it may go up to `outside` m beyond the arena and rises over the wall by wallLift per metre outside; past that it
+    // is pulled in (and lifted by edgeLift per metre lost).
+    const px = ch.position.x, pz = ch.position.z, inner = GIANT.arenaRadius - 1.2, max = GIANT.arenaRadius + C.outside;
+    let x = px + Math.sin(yaw) * C.distance, z = pz + Math.cos(yaw) * C.distance;
+    const dx = x - this.site.x, dz = z - this.site.z, d = Math.hypot(dx, dz);
     if (d > max) { x = this.site.x + dx * max / d; z = this.site.z + dz * max / d; }
-    const y = Math.max(ch.position.y + C.height, this.L.groundHeight(x, z) + .8);
+    const out = Math.max(0, Math.min(d, max) - inner), lost = Math.max(0, C.distance - Math.hypot(x - px, z - pz));
+    const lift = Math.min(out * C.wallLift + lost * C.edgeLift, C.liftMax);
+    const y = Math.max(ch.position.y + C.height + lift, this.L.groundHeight(x, z) + .8);
     camera.position.set(x, y, z);
+    this.fadeGate(this.gatePos ? Math.min(1, Math.max(C.gateFade, (Math.hypot(x - this.gatePos.x, z - this.gatePos.z) - 3) / 3)) : 1);
     const chest = this.site.y + C.chestY, head = ch.position.y + 1.2, k = C.lookBlend;
-    camera.lookAt(ch.position.x + (this.gx - ch.position.x) * k, head + (chest - head) * k, ch.position.z + (this.gz - ch.position.z) * k);
+    camera.lookAt(px + (this.gx - px) * k, head + (chest - head) * k, pz + (this.gz - pz) * k);
     const fov = camera.aspect < .8 ? C.fovPortrait : C.fovLandscape;
     if (Math.abs(camera.fov - fov) > .01) { camera.fov = fov; camera.updateProjectionMatrix(); }
     this.camActive = true;

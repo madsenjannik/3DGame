@@ -265,6 +265,25 @@ try {
       return o; }) : {};
     check('wood giant: wake + boss camera lock, stomp hurts, weak window x3, bark 1, roots + weak point, shockwave (hop to dodge), defeat + golden seed + saved', ready && r.wake && r.stomp && r.weak && r.bark && r.roots && r.wave && r.win && !errors.length, errors[0] || JSON.stringify(r));
     await ctx.close(); }
+  // 17b. R64.1 wilting mid-fight in the real frame loop ends the fight; the shed door back to the world does not
+  // drop you into it again; the boss camera keeps the ground around you in view (camera above head height)
+  { const ctx = await context({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true }); const { p, errors, ok } = await startGame(ctx, 'fern');
+    const ready = ok && await p.waitForFunction(() => window.__tgw?.combat?.boss?.giant, null, { timeout: 240000 }).then(() => true, () => false);
+    const r = ready ? await p.evaluate(async () => {
+      const g = window.__tgw, c = g.combat, B = c.boss, o = {}, w = ms => new Promise(x => setTimeout(x, ms));
+      g.devMenu.teleport('world', B.site.x, B.site.z + 6, Math.PI);
+      for (let i = 0; i < 300 && !B.fighting(); i++) await w(100);
+      o.fight = B.fighting(); await w(1500); o.camHigh = g.camera.position.y - g.character.position.y > 2.5;
+      c.invuln = 0; c.hurt(99, g.character.position.x + .1, g.character.position.z);
+      for (let i = 0; i < 400 && (c.wilting || g.world.space !== 'garden'); i++) await w(100);
+      o.ended = g.world.space === 'garden' && !B.fighting() && !g.followCamera.lockYaw && B.hp === 60;
+      g.homePortal.interact('home-exit', g.character, g.followCamera, g.hud);
+      for (let i = 0; i < 400 && (g.homePortal.busy || g.world.space !== 'world'); i++) await w(100);
+      await w(2500); const ch = g.character.position; o.d = Math.hypot(ch.x - B.site.x, ch.z - B.site.z); o.free = g.world.space === 'world' && !B.fighting() && o.d > 20;
+      return o;
+    }) : {};
+    check('wood giant: wilt mid-fight ends the fight, back to the world is not pulled into the arena, camera above head', ready && r.fight && r.camHigh && r.ended && r.free && !errors.length, errors[0] || JSON.stringify(r));
+    await ctx.close(); }
   // 5. DEV disabled: no dev UI or handles leak into normal play
   { const ctx = await context({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true }); const { p, errors, ok } = await startGame(ctx, 'daisy', { dev: false });
     const leak = ok && await p.evaluate(() => !!document.querySelector('.dev-menu-btn') || !!window.__tgw || !document.getElementById('dev-badge').hidden);

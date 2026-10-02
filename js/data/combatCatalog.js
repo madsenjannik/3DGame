@@ -70,7 +70,8 @@ export const GIANT = {
   phases: [ { at: 1, roots: 2, every: 7, speed: 1 }, { at: .6, roots: 4, every: 5, speed: 1 }, { at: .25, roots: 6, every: 4, speed: 1.3 } ],
   root: { warn: 1.2, radius: 1.05, damage: 2, weakRange: 1.9, weakDamage: 3, spacing: .9, lead: .6 },
   regenInFight: false,
-  camera: { distance: 7.5, height: 1.4, chestY: 5.2, lookBlend: .45, fovPortrait: 68, fovLandscape: 58 },
+  // R64.1: higher and further back so the root warnings on the ground around you are in view (was 7.5 / 1.4 / .45 / 68 / 58).
+  camera: { distance: 9.5, height: 3.0, chestY: 5.2, lookBlend: .3, fovPortrait: 74, fovLandscape: 62, outside: 2, wallLift: .9, edgeLift: .3, liftMax: 3.5, gateFade: .2 },
   rematchHours: 24,
   reward: { first: { golden_seed: 1, amber: 3, wood: 10 }, again: { amber: 2, wood: 8 } }
 };

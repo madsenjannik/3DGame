@@ -208,6 +208,9 @@ export class CombatSystem {
   // ---------- wilting (death) ----------
   async wilt() {
     if (this.wilting) return; this.wilting = true;
+    // R64.1: end a boss fight right here. The portal fade below pauses the combat update, so the boss never saw
+    // the wilt and the fight (arena pull-in, camera lock, no regen) resumed on the way back to the world.
+    if (this.boss?.fighting()) this.boss.end(false);
     const g = this.g, hp = g.homePortal, ch = g.character, now = Date.now();
     const mercy = now < (this.p.mercyUntil || 0); let dropped = 0; const items = {};
     if (!mercy) {
