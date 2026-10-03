@@ -7,3 +7,4 @@
 5. Bump `version.js` on every build; run `node tests/smoke.mjs` (must be all PASS) and check the change in a browser (touch + desktop) before pushing — the branch is the live GitHub Pages test site.
 6. New GLBs load through `js/core/AssetManager.js`; new interactions offer through `js/core/InteractionResolver.js`; optional systems must fail soft (see MASTER §31).
 7. Private-garden structures are placed by `js/gameplay/GardenBuildSystem.js` (data: `js/data/gardenCatalog.js`). Never hard-code their x/z in gameplay code; ask the placed transform. House, gate, pond and story spots stay fixed.
+8. **Never guess, never build on a gap.** If anything is missing (an asset, a value, a rule, a decision, proof that something works on the device), say "Mangler: …" and stop. Do not fill the gap yourself and present it as done. Never build while something is missing, even with a GO.

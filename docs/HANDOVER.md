@@ -9,6 +9,7 @@
 - **Rules:** never build without Jannik's explicit **GO**; analyze, find root cause and define exact scope first.
   **Every build updates `docs/HANDOVER.md` and `docs/MASTER-PROJECT-DOCUMENT.md` in the same commit** (MASTER §1.7).
   Building lives in the **private garden**. **Do not change the three greenhouse levels.**
+  **Never guess (CLAUDE.md rule 8, Jannik 03/10):** if anything is missing, write 'Mangler: …' and stop; never build while something is missing.
 
 ## What changed since R45 (all CANDIDATE)
 | Build | What |
