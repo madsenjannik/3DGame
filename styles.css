@@ -1336,3 +1336,74 @@ body.fishing-active #joy-rest,body.stable-race-active #joy-rest,body.stable-talk
 body:has(.dev-menu-btn) #key-hints{left:104px}
 @media (max-width:700px){#hud #objective.objective-card{max-width:168px;flex-basis:168px}#hud .seed-card small{display:none}#hud .seed-card.inventory-card{padding:0 11px 0 9px}}
 .touch .special-btn b{bottom:auto;top:-17px}
+
+/* ===== R69 fishing + stable race HUD in the R68 dark design (generated from the existing rules: same selectors scoped to #fishing-v1 / #stable-race-ui, only colours/fonts swapped; Thora talk, shop and the podium result stay as they are) ===== */
+#fishing-v1{color:var(--tgw-cream)}
+#fishing-v1 .fishing-glass{background:var(--tgw-glass);border:1px solid rgba(246,240,220,0.20)}
+#fishing-v1 .fishing-pill{font:600 13px/1 'Manrope',system-ui,sans-serif;color:var(--tgw-cream)}
+#fishing-v1 .fishing-badge{background:var(--tgw-gold);font:700 11px/20px 'Manrope',system-ui,sans-serif}
+#fishing-v1 .fishing-panel h3{font:700 11px/1 'Manrope',system-ui,sans-serif;color:rgba(246,240,220,1.00)}
+#fishing-v1 .fishing-row{font:600 13px/1.3 'Manrope',system-ui,sans-serif}
+#fishing-v1 .fishing-row span:last-child{color:rgba(246,240,220,1.00)}
+#fishing-v1 .fishing-row.unk span:first-child{color:rgba(246,240,220,0.93)}
+#fishing-v1 .fishing-empty{font:500 13px/1.4 'Manrope',system-ui,sans-serif;color:rgba(246,240,220,1.00)}
+#fishing-v1 .fishing-close{font:600 14px/1 'Manrope',system-ui,sans-serif}
+#fishing-v1 .fishing-close .k{background:rgba(246,240,220,0.04)}
+#fishing-v1 .fishing-opt{border:1px solid rgba(246,240,220,0.22);background:var(--tgw-glass);font:600 14px/1.3 'Manrope',system-ui,sans-serif;color:var(--tgw-cream)}
+#fishing-v1 .fishing-opt:hover{background:var(--tgw-glass-2)}
+#fishing-v1 .fishing-opt .n{background:var(--tgw-gold);font:700 11px/22px 'Manrope',system-ui,sans-serif}
+#fishing-v1 .fishing-opt.quiet{color:rgba(246,240,220,1.00)}
+#fishing-v1 .fishing-nav{border:1px solid rgba(246,240,220,0.24);background:var(--tgw-glass);font:600 20px/1 'Manrope',system-ui,sans-serif;color:var(--tgw-cream)}
+#fishing-v1 .fishing-nav:hover{background:var(--tgw-glass-2)}
+#fishing-v1 .fishing-card-name{font:700 18px/1.2 'Manrope',system-ui,sans-serif}
+#fishing-v1 .fishing-card-sub{font:500 13px/1.4 'Manrope',system-ui,sans-serif;color:rgba(246,240,220,1.00)}
+#fishing-v1 .fishing-card-index{font:600 11px/1 'Manrope',system-ui,sans-serif;color:rgba(246,240,220,1.00)}
+#fishing-v1 .fishing-tag{font:700 9px/1 'Manrope',system-ui,sans-serif;background:var(--tgw-gold)}
+#fishing-v1 .fishing-card-state{font:700 14px/1 'Manrope',system-ui,sans-serif;border:1px dashed rgba(246,240,220,0.35);color:rgba(246,240,220,1.00)}
+#fishing-v1 .fishing-card-state.own{background:var(--tgw-gold)}
+#fishing-v1 .fishing-ring{box-shadow:0 0 0 4px rgba(246,240,220,0.26)}
+#fishing-v1 .fishing-fbtn{border:1px solid rgba(246,240,220,0.20);background:var(--tgw-glass);color:var(--tgw-cream);font:800 15px/1.05 'Manrope',system-ui,sans-serif}
+#fishing-v1 .fishing-fbtn::after{border:1px solid rgba(246,240,220,0.15)}
+#fishing-v1 .fishing-fbtn small{font:650 8.5px/1 'Manrope',system-ui,sans-serif;color:rgba(246,240,220,1.00)}
+#fishing-v1 .fishing-reel-ui .lbl{font:700 11px/1 'Manrope',system-ui,sans-serif;color:rgba(246,240,220,1.00)}
+#fishing-v1 .fishing-reel-ui .lbl b{color:var(--tgw-cream)}
+#fishing-v1 .fishing-reel-ui .bar{background:rgba(246,240,220,0.13)}
+#fishing-v1 .fishing-reel-ui .prog{background:rgba(246,240,220,0.13)}
+#fishing-v1 .fishing-reel-ui .prog i{background:var(--tgw-gold)}
+#fishing-v1 .fishing-message{font:700 13px/1 'Manrope',system-ui,sans-serif}
+#fishing-v1 .fishing-result-kicker,#fishing-v1 #fishing-result-kicker{font:700 10px/1 'Manrope',system-ui,sans-serif}
+#fishing-v1 .fishing-result-name,#fishing-v1 #fishing-result-name{font:800 30px/1 'Manrope',system-ui,sans-serif}
+#fishing-v1 .fishing-result-size,#fishing-v1 #fishing-result-size{font:600 16px/1 'Manrope',system-ui,sans-serif;color:rgba(246,240,220,1.00)}
+#fishing-v1 #fishing-result-button{background:var(--tgw-gold);font:700 13px/1 'Manrope',system-ui,sans-serif}
+#stable-race-ui .stable-race-title small{font:700 11px/1 'Manrope',system-ui,sans-serif}
+#stable-race-ui .stable-race-title b{font:800 46px/1 'Manrope',system-ui,sans-serif}
+#stable-race-ui .stable-race-title span{font:600 14px/1.4 'Manrope',system-ui,sans-serif}
+#stable-race-ui .stable-race-message{font:800 30px/1.15 'Manrope',system-ui,sans-serif}
+#stable-race-ui .stable-race-hud span{font:700 9px/1 'Manrope',system-ui,sans-serif;color:rgba(246,240,220,1.00)}
+#stable-race-ui .stable-race-hud b{font:800 20px/1 'Manrope',system-ui,sans-serif}
+#stable-race-ui .stable-race-controls button{border:1px solid rgba(246,240,220,0.24);background:var(--tgw-glass);font:600 12px/1 'Manrope',system-ui,sans-serif}
+#stable-race-ui .stable-race-controls kbd{font:700 10px/1 'Manrope',system-ui,sans-serif;background:rgba(246,240,220,0.11)}
+#stable-race-ui .stable-race-stamina>div{background:rgba(246,240,220,0.12)}
+#fishing-v1 .fishing-fbtn-halo{background:radial-gradient(circle,rgba(var(--fish-glow-rgb,176,196,104),.88),rgba(246,240,220,0.00) 66%)}
+#fishing-v1 .fishing-result{background:var(--tgw-glass);border:1px solid rgba(246,240,220,0.20)}
+#fishing-v1 #fishing-result-kicker{font:700 10px/1 'Manrope',system-ui,sans-serif;background:var(--tgw-gold)}
+#fishing-v1 #fishing-result-name{font:800 26px/1.1 'Manrope',system-ui,sans-serif}
+#fishing-v1 #fishing-result-size{font:700 18px/1 'Manrope',system-ui,sans-serif;color:var(--tgw-cream)}
+#fishing-v1 #fishing-result-line{font:500 12px/1.4 'Manrope',system-ui,sans-serif;color:rgba(246,240,220,1.00)}
+#fishing-v1 #fishing-result-button{background:var(--tgw-gold);font:700 14px/1 'Manrope',system-ui,sans-serif}
+/* R69 hand tweaks on top of the generated block */
+#fishing-v1 .fishing-glass,#stable-race-ui .fishing-glass{border-color:var(--tgw-line);box-shadow:var(--tgw-shadow)}
+#stable-race-ui .fishing-glass{background:var(--tgw-glass);-webkit-backdrop-filter:var(--tgw-blur);backdrop-filter:var(--tgw-blur)}
+#stable-race-ui .stable-race-hud,#stable-race-ui .stable-race-hud b{color:var(--tgw-cream)}
+#stable-race-ui .stable-race-hud span{color:rgba(246,240,220,.72)}
+#stable-race-ui .stable-race-controls button{color:var(--tgw-cream);border-color:var(--tgw-line)}
+#fishing-v1 .fishing-badge,#fishing-v1 .fishing-opt .n{color:#2a2112}
+#fishing-v1 .fishing-row span:last-child,#fishing-v1 .fishing-panel h3{color:rgba(246,240,220,.72)}
+#fishing-v1 .fishing-panel h3{color:var(--tgw-gold)}
+#fishing-v1 .fishing-reel-ui .bar{background:rgba(10,14,8,.55);border:1px solid rgba(246,240,220,.2)}
+#fishing-v1 #fishing-tension{background:linear-gradient(90deg,#6fae45,#9bd36a)}
+#fishing-v1 .fishing-pill{border-color:var(--tgw-line)}
+#fishing-v1 .fishing-result #fishing-result-name{font-family:'Lilita One',Manrope,system-ui,sans-serif;font-weight:400;color:#ffd45a;letter-spacing:.01em}
+#fishing-v1 #fishing-result-kicker,#fishing-v1 #fishing-result-button,#fishing-v1 .fishing-badge{color:#2a2112}
+/* R69: on short landscape screens the race HUD sat under Restart/Quit; it now starts below them */
+@media (max-height:520px){#stable-race-ui .stable-race-hud{top:calc(max(12px,env(safe-area-inset-top)) + 54px);padding:7px 14px;gap:14px}}
