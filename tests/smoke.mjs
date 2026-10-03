@@ -60,16 +60,23 @@ try {
     }
     check('landscape-only phones: portrait shows rotate screen + pauses, landscape resumes + moves', ok && r.gate && r.paused && r.open && r.runs && r.moved && !errors.length, errors[0] || JSON.stringify(r));
     await ctx.close(); }
-  // 2b. R66 minimal phone HUD: only minimap + 2 buttons by default; bag opens the inventory; a gain peeks; canvas fills the screen
+  // 2b. R69a unified landscape HUD: one top row (objective, Golden Seed, resources side by side), minimap ring, resting joystick,
+  //     gains pulse the chip, canvas fills, build bar hidden; desktop shows key hints and no joystick
   { const ctx = await context({ viewport: { width: 844, height: 390 }, isMobile: true, hasTouch: true }); const { p, errors, ok } = await startGame(ctx, 'tulip');
-    const r = ok ? await p.evaluate(async () => { const g = window.__tgw, op = id => +getComputedStyle(document.getElementById(id)).opacity, w = ms => new Promise(x => setTimeout(x, ms)), o = {};
-      await w(6000); document.body.classList.remove('goal-peek'); await w(400);
-      o.clean = op('inventory') === 0 && op('objective') === 0 && op('hud-quick') === 1;
-      document.getElementById('hud-bag').dispatchEvent(new PointerEvent('pointerdown', { bubbles: true })); for (let i = 0; i < 40 && op('inventory') < .99; i++) await w(100); o.bag = document.body.classList.contains('hud-bag-open') && op('inventory') > .99;
-      g.state.addItem('wood', 2); await w(300); o.peek = document.getElementById('hud-peek').textContent.includes('Wood +2');
+    const r = ok ? await p.evaluate(async () => { const g = window.__tgw, w = ms => new Promise(x => setTimeout(x, ms)), op = el => +getComputedStyle(el).opacity, o = {};
+      await w(1500); const obj = document.getElementById('objective'), seed = document.querySelector('.seed-card'), wood = document.querySelector('.material-chip.wood'), stone = document.querySelector('.material-chip.stone');
+      const b = el => el.getBoundingClientRect();
+      o.row = obj.parentElement.id === 'hud' && op(obj) > .9 && Math.abs(b(wood).top - b(stone).top) < 2 && b(stone).left > b(wood).left && b(seed).left > b(obj).left && b(wood).left > b(seed).left && b(obj).top < 60;
+      const mini = document.querySelector('.tgw-minimap'); o.minimap = !!mini && b(wood).right < b(mini).left;
+      o.joy = getComputedStyle(document.getElementById('joy-rest')).display === 'block';
+      g.state.addItem('wood', 2); await w(100); o.bump = wood.classList.contains('bump') && document.getElementById('wood-count').textContent !== '0';
       const c = document.querySelector('#app canvas'); o.fill = c.getBoundingClientRect().height === innerHeight && !c.style.height;
-      o.bar = getComputedStyle(document.querySelector('.build-bar')).visibility === 'hidden'; return o; }) : {};
-    check('phone HUD: minimap + 2 buttons only, bag opens inventory, gains peek, canvas fills, build bar hidden', ok && r.clean && r.bag && r.peek && r.fill && r.bar && !errors.length, errors[0] || JSON.stringify(r));
+      o.bar = getComputedStyle(document.querySelector('.build-bar')).visibility === 'hidden'; o.keys = getComputedStyle(document.getElementById('key-hints')).display === 'none'; return o; }) : {};
+    check('landscape HUD (phone): objective + seed + resources in one top row, minimap clear, resting joystick, gain pulse, canvas fills, no desktop hints', ok && r.row && r.minimap && r.joy && r.bump && r.fill && r.bar && r.keys && !errors.length, errors[0] || JSON.stringify(r));
+    await ctx.close(); }
+  { const ctx = await context({ viewport: { width: 1280, height: 720 } }); const { p, errors, ok } = await startGame(ctx, 'tulip');
+    const r = ok ? await p.evaluate(() => ({ keys: getComputedStyle(document.getElementById('key-hints')).display === 'flex', joy: getComputedStyle(document.getElementById('joy-rest')).display === 'none', mats: +getComputedStyle(document.getElementById('materials')).opacity === 1 })) : {};
+    check('landscape HUD (desktop): key hints, no joystick, resources visible', ok && r.keys && r.joy && r.mats && !errors.length, errors[0] || JSON.stringify(r));
     await ctx.close(); }
   // 3. Missing assets must not black-screen the game
   { const ctx = await context({ viewport: { width: 844, height: 390 }, isMobile: true, hasTouch: true }, [/assets\/stable\//, /lake_cabin|cabin_fishing_runtime/, /greenhouse-l1/, /characters\/fern\.glb/]);

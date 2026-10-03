@@ -165,6 +165,7 @@ export class WoodGiantBoss {
   // R63.1 boss camera: the free camera's yaw glides to 'behind you, facing the Giant' (swipe still looks
   // around), then applyCamera() places it low and looks up between your head and the Giant's chest.
   setZoom(on) {
+    document.body.classList.toggle('boss-active', !!on);   // R69a: the normal top HUD steps aside for the boss bar
     const cam = this.g.followCamera; if (!cam) return;
     cam.lockYaw = on ? () => Math.atan2(this.g.character.position.x - this.gx, this.g.character.position.z - this.gz) : null;
     if (!on && this.camActive) { this.camActive = false; this.g.resize?.(); }

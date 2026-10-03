@@ -1110,25 +1110,6 @@ body.hurt-flash::after{content:'';position:fixed;inset:0;pointer-events:none;z-i
 .touch .special-btn .key{display:none}
 body:not(.touch) .special-btn{bottom:calc(96px + env(safe-area-inset-bottom))}
 
-/* ===== R66 minimal phone HUD: minimap + two small buttons; everything else on demand or for a moment ===== */
-#hud-quick,#hud-peek{display:none}
-.touch #hud-quick{display:flex;gap:8px;position:fixed;z-index:21;top:calc(env(safe-area-inset-top) + 134px);right:calc(27px + env(safe-area-inset-right))}
-.touch #hud-quick button{position:relative;width:40px;height:40px;border-radius:50%;border:1px solid rgba(255,255,255,.24);background:rgba(28,36,24,.5);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);color:#fff1b8;display:grid;place-items:center;padding:0;cursor:pointer}
-.touch #hud-quick button i{font-style:normal;font:800 17px Manrope,system-ui,sans-serif;line-height:1}
-.touch #hud-quick #hud-goal.new::after{content:'';position:absolute;top:2px;right:2px;width:9px;height:9px;border-radius:50%;background:#ffd76a;box-shadow:0 0 6px #ffd76a}
-.touch.hud-bag-open #hud-bag,.touch.goal-peek #hud-goal{background:rgba(217,164,65,.85);color:#2a2112}
-.touch #hud-peek{display:block;position:fixed;z-index:21;top:calc(env(safe-area-inset-top) + 134px);right:calc(127px + env(safe-area-inset-right));height:40px;line-height:40px;padding:0 14px;border-radius:999px;background:rgba(28,36,24,.62);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);color:#fff1b8;font:800 13px Manrope,system-ui,sans-serif;white-space:nowrap;opacity:0;transform:translateX(8px);transition:opacity .25s ease,transform .25s ease;pointer-events:none}
-.touch #hud-peek.show{opacity:1;transform:none}
-/* bag: inventory hidden until opened, then a panel under the buttons */
-.touch #inventory{position:fixed;top:calc(env(safe-area-inset-top) + 184px);right:max(14px,env(safe-area-inset-right));margin:0!important;align-items:flex-end;opacity:0;transform:translateY(-6px);pointer-events:none;transition:opacity .22s ease,transform .22s ease}
-.touch.hud-bag-open #inventory{opacity:1;transform:none;pointer-events:auto}
-.touch #inventory #materials.materials-card{position:static;opacity:1;transform:none}
-/* objective: hidden on phones until it peeks (new step, or the ! button) */
-.touch #objective{opacity:0;transform:translateY(-6px);pointer-events:none;transition:opacity .25s ease,transform .25s ease}
-.touch.goal-peek #objective{opacity:1;transform:none}
-body.fishing-active #hud-quick,body.fishing-active #hud-peek,body.stable-talk-active #hud-quick,body.stable-race-active #hud-quick,body.stable-shop-scene #hud-quick,body.stable-race-result-active #hud-quick,body.world-map-open #hud-quick{opacity:0;pointer-events:none}
-.touch.hud-bag-open #inventory .inventory-card,.touch.hud-bag-open #inventory #materials.materials-card{background:rgba(28,36,24,.78)}
-
 /* ===== R67 landscape-only on phones: portrait shows a 'turn your phone' screen, the game pauses behind it ===== */
 /* R67.1 in the Growing Wilds style (brand/README: Lilita One + #2B2A24 outline, gold #FFD45A, green #8FD14F, sun burst) */
 #rotate-gate{display:none}
@@ -1178,18 +1159,11 @@ body.rotate-gated #hud,body.rotate-gated #joy,body.rotate-gated #action,body.rot
 .objective-card small{color:var(--tgw-gold);opacity:.9}
 @media (max-height:620px){.objective-card{padding:7px 28px 7px 46px}.objective-card::before{width:28px;height:28px;margin-top:-14px;background-size:20px}}
 
-/* phone quick buttons + peek: clay icons on glass */
-.touch #hud-quick button{width:44px;height:44px;background:var(--tgw-glass);border:1px solid var(--tgw-line);box-shadow:var(--tgw-shadow)}
-.touch #hud-quick button img{width:28px;height:28px;object-fit:contain;filter:drop-shadow(0 2px 3px rgba(0,0,0,.3))}
-.touch.hud-bag-open #hud-bag,.touch.goal-peek #hud-goal{background:rgba(233,196,106,.9);border-color:#fff1b8}
-.touch #hud-quick{top:calc(env(safe-area-inset-top) + 132px);right:calc(23px + env(safe-area-inset-right))}
-.touch #hud-peek{background:var(--tgw-glass);border:1px solid var(--tgw-line);color:var(--tgw-cream);box-shadow:var(--tgw-shadow);height:44px;line-height:44px;top:calc(env(safe-area-inset-top) + 132px)}
 .inventory-card,.materials-card{border-color:var(--tgw-line)!important}
 
 /* vitals: hearts pill + special meter bar, top left */
 .hearts{left:max(18px,env(safe-area-inset-left));top:calc(max(14px,env(safe-area-inset-top)) + 4px);transform:none;padding:7px 12px;gap:5px;border-radius:999px;background:var(--tgw-glass);border:1px solid var(--tgw-line);box-shadow:var(--tgw-shadow);-webkit-backdrop-filter:var(--tgw-blur);backdrop-filter:var(--tgw-blur)}
 .hearts i{width:20px;height:18px}
-body.goal-peek .hearts,body.goal-peek .special-bar{transform:translateY(64px)}
 .hearts,.special-bar{transition:opacity .3s ease,transform .3s ease}
 .special-bar{position:fixed;z-index:30;left:max(18px,env(safe-area-inset-left));top:calc(max(14px,env(safe-area-inset-top)) + 44px);display:flex;align-items:center;gap:8px;padding:4px 10px 4px 4px;border-radius:999px;opacity:0;pointer-events:none}
 .special-bar.show{opacity:1}
@@ -1262,10 +1236,103 @@ body.goal-peek .hearts,body.goal-peek .special-bar{transform:translateY(64px)}
 .lakerun-result .lr-btns button[data-lr="again"]{border-color:var(--tgw-line);background:rgba(233,196,106,.16)}
 .lakerun-result .lr-btns button span{width:20px;text-align:center;color:var(--tgw-gold)}.lakerun-result .lr-btns button em{margin-left:auto;font-style:normal;opacity:.7}
 @media (max-height:430px){.lakerun-result{max-height:calc(100vh - 20px)}.lakerun-result .lr-board li:nth-child(n+4):not(.you){display:none}}
-body.vitals-on:not(.touch) .objective-card{transform:translateY(40px)}
 body.lakerun-active .hearts,body.lakerun-active .special-bar,body.lakerun-active .special-btn,body.fishing-active .special-bar,body.fishing-active .special-btn{opacity:0!important;pointer-events:none!important}
 .lakerun-result .lr-medal.gold{color:#ffd45a}
 .lakerun-result .lr-laurel i{width:24px;height:52px}
 .lakerun-result .lr-btns{flex-direction:row}.lakerun-result .lr-btns button{flex:1}
 @media (max-height:430px){.lakerun-result{padding:10px 14px}.lakerun-result>header{padding-bottom:6px}.lakerun-result .lr-top{padding:6px 2px 2px}.lakerun-result .lr-big{font-size:26px}
   .lakerun-result .lr-info{margin:2px 2px 4px}.lakerun-result .lr-board{margin-bottom:4px;padding-top:3px;padding-bottom:3px}.lakerun-result .lr-board li{padding:1px 0}.lakerun-result .lr-reward{margin-bottom:6px}.lakerun-result .lr-btns button{min-height:40px}}
+
+/* =====================================================================================================
+   R69a unified landscape gameplay HUD (Jannik's 'Gameplay HUD concept', 03/10): one top row
+   [objective chip][Golden Seed chip][resource chips], minimap top right, phone controls bottom corners,
+   desktop key hints bottom. Same tokens as R68; existing data only. Special HUDs keep their own layout.
+   ===================================================================================================== */
+#hud{left:max(14px,env(safe-area-inset-left));right:calc(212px + env(safe-area-inset-right));top:max(12px,env(safe-area-inset-top));justify-content:flex-start;align-items:center;gap:8px;flex-wrap:nowrap}
+.touch #hud{right:calc(140px + env(safe-area-inset-right))}
+#hud .inventory-stack{flex-direction:row;align-items:center;gap:8px;margin:0!important;min-width:0}
+#hud .seed-card{align-self:center}
+
+/* objective chip: clay leaf, title + one short line, chevron */
+#hud #objective.objective-card{position:relative!important;top:auto!important;left:auto!important;display:block!important;flex:0 1 auto;min-width:0;width:auto;max-width:260px;
+  min-height:0;height:44px;box-sizing:border-box;padding:6px 28px 6px 48px;border-radius:14px;transform:none}
+#hud #objective.objective-card::before{left:8px;width:30px;height:30px;margin-top:-15px;background-size:20px}
+#hud #objective.objective-card::after{right:10px;font-size:18px}
+#hud #objective small{display:none!important}
+#hud #objective b{display:block;margin:0;font:700 13px/1.25 Manrope,system-ui,sans-serif;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#hud #objective #objective-copy{display:block!important;margin-top:1px;font:600 10.5px/1.3 Manrope,system-ui,sans-serif;opacity:.78;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+/* Golden Seed chip */
+#hud .seed-card.inventory-card{display:flex;align-items:center;gap:8px;height:44px;box-sizing:border-box;padding:0 14px 0 11px;border-radius:14px;background:var(--tgw-glass);box-shadow:var(--tgw-shadow);-webkit-backdrop-filter:var(--tgw-blur);backdrop-filter:var(--tgw-blur)}
+#hud .seed-card .inventory-icon{font-size:17px;color:var(--tgw-gold);line-height:1}
+#hud .seed-card small{display:block;font:800 7.5px/1 Manrope,system-ui,sans-serif;letter-spacing:.14em;opacity:.72}
+#hud .seed-card b{display:block;font:800 17px/1.1 Manrope,system-ui,sans-serif}
+
+/* resources: one horizontal row of small chips (no box) */
+#hud #materials.materials-card{position:static!important;display:flex!important;flex-wrap:nowrap;align-items:center;gap:6px;padding:0!important;margin:0;background:none!important;border:0!important;box-shadow:none!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important;opacity:1!important;transform:none!important;top:auto!important;right:auto!important}
+#hud #materials .material-chip{display:flex!important;align-items:center;gap:6px;min-width:0!important;height:30px;box-sizing:border-box;padding:0 11px 0 9px!important;border-radius:999px!important;background:var(--tgw-glass)!important;border:1px solid var(--tgw-line);box-shadow:var(--tgw-shadow);-webkit-backdrop-filter:var(--tgw-blur);backdrop-filter:var(--tgw-blur);color:var(--tgw-cream)}
+#hud #materials .material-chip small{display:none!important}
+#hud #materials .material-chip i{grid-row:auto!important;font-style:normal;font-size:12px!important;line-height:1}
+#hud #materials .material-chip b{font:800 13px/1 Manrope,system-ui,sans-serif!important;min-width:0!important;text-align:left!important}
+#hud .material-chip.wood i{color:#c98a4b}#hud .material-chip.stone i{color:#cfd3d8}#hud .material-chip.clay i{color:#e0734f}#hud .material-chip.fiber i{color:#9bd36a}
+#hud .material-chip.amber i{color:#e9b44c}#hud .material-chip.shell i{color:#efe2c4}#hud .material-chip.wild_seed i{color:#f2a7c3}
+#hud #materials .material-chip.wild_seed.zero{display:none!important}
+#hud #tools-row.tools-row{display:flex!important;align-items:center;gap:6px;height:30px;box-sizing:border-box;padding:0 10px;margin:0!important;border-radius:999px;background:var(--tgw-glass);border:1px solid var(--tgw-line);grid-column:auto!important;width:auto!important}
+#hud #tools-row i:not(.owned){display:none!important}
+#hud #tools-row:not(:has(i.owned)){display:none!important}
+#hud .bump{animation:tgw-bump .55s cubic-bezier(.3,1.6,.5,1)}
+@keyframes tgw-bump{40%{transform:scale(1.14);box-shadow:0 0 0 2px rgba(233,196,106,.7),0 0 16px rgba(233,196,106,.6)}}
+@media (max-width:760px){#hud #objective.objective-card{max-width:190px}#hud #materials .material-chip.amber.zero,#hud #materials .material-chip.shell.zero{display:none!important}}
+@media (max-height:430px){#hud{top:max(8px,env(safe-area-inset-top))}#hud #objective.objective-card,#hud .seed-card.inventory-card{height:40px}#hud #objective b{font-size:12px}#hud #objective #objective-copy{font-size:9.5px}
+  #hud #materials .material-chip,#hud #tools-row.tools-row{height:28px;padding:0 9px 0 7px!important}#hud #materials .material-chip b{font-size:12px!important}}
+
+/* minimap: same map, clean cream ring */
+.tgw-minimap{box-shadow:0 0 0 2px rgba(246,240,220,.85),0 0 0 4px rgba(233,196,106,.28),0 8px 22px rgba(10,16,8,.3)!important}
+
+/* combat vitals sit under the top row; the row steps aside for the boss bar and Lake Run */
+.hearts{top:calc(max(12px,env(safe-area-inset-top)) + 54px)}
+.special-bar{top:calc(max(12px,env(safe-area-inset-top)) + 92px)}
+@media (max-height:430px){.hearts{top:calc(max(8px,env(safe-area-inset-top)) + 48px)}.special-bar{top:calc(max(8px,env(safe-area-inset-top)) + 82px)}}
+body.boss-active #hud,body.lakerun-active #hud{opacity:0!important;pointer-events:none!important}
+body.boss-active .hearts{top:calc(max(12px,env(safe-area-inset-top)) + 4px)}body.boss-active .special-bar{top:calc(max(12px,env(safe-area-inset-top)) + 42px)}
+
+/* phone controls: resting joystick bottom left (the real floating stick still appears where you touch) */
+#joy-rest{display:none}
+.touch #joy-rest{display:block;position:fixed;z-index:9;left:calc(max(18px,env(safe-area-inset-left)) + 6px);bottom:calc(18px + env(safe-area-inset-bottom));width:112px;height:112px;border-radius:50%;pointer-events:none;
+  background:rgba(30,40,28,.28);border:1px solid rgba(246,240,220,.32);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);box-shadow:var(--tgw-shadow);opacity:.85;transition:opacity .2s ease}
+.touch #joy-rest i{position:absolute;left:50%;top:50%;width:46px;height:46px;margin:-23px 0 0 -23px;border-radius:50%;background:rgba(246,240,220,.5);box-shadow:0 3px 10px rgba(10,16,8,.25)}
+.touch:has(#joy.active) #joy-rest{opacity:0}
+.touch #joy{background:rgba(30,40,28,.3);border-color:rgba(246,240,220,.38)}
+
+/* phone action: one round main button bottom right, its label as a chip above it */
+.touch #action{left:auto;right:calc(max(18px,env(safe-area-inset-right)) + 4px);bottom:calc(20px + env(safe-area-inset-bottom));width:72px;height:72px;min-width:0;padding:0;border-radius:50%;justify-content:center;
+  background:var(--tgw-glass);border:1px solid var(--tgw-line);box-shadow:var(--tgw-shadow),inset 0 0 0 3px rgba(246,240,220,.1);transform:scale(.9)}
+.touch #action.show{transform:none}
+.touch #action::before{content:'';width:38px;height:38px;background:url(./brand/icons/64/icon-leaf.png) center/contain no-repeat;filter:drop-shadow(0 2px 3px rgba(0,0,0,.35))}
+.touch #action #action-label{position:absolute;right:0;bottom:calc(100% + 8px);padding:6px 12px;border-radius:999px;background:var(--tgw-glass-2);border:1px solid var(--tgw-line);font:700 12px/1.2 Manrope,system-ui,sans-serif;color:var(--tgw-cream);white-space:nowrap}
+.touch #action .key{display:none}
+.touch .special-btn{right:calc(max(18px,env(safe-area-inset-right)) + 88px);bottom:calc(24px + env(safe-area-inset-bottom));width:60px;height:60px}
+@media (max-height:430px){.touch #action{width:64px;height:64px;bottom:calc(14px + env(safe-area-inset-bottom))}.touch .special-btn{right:calc(max(18px,env(safe-area-inset-right)) + 80px);bottom:calc(16px + env(safe-area-inset-bottom));width:56px;height:56px}}
+
+/* desktop: no joystick/bubbles; discreet key hints, interact prompt bottom right */
+#key-hints{display:none}
+body:not(.touch) #key-hints{display:flex;justify-content:space-between;align-items:flex-end;position:fixed;z-index:8;left:24px;right:24px;bottom:18px;pointer-events:none;opacity:.8;transition:opacity .3s ease}
+#key-hints>div{display:flex;align-items:center;gap:8px;padding:7px 12px;border-radius:12px;background:rgba(30,40,28,.38);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)}
+#key-hints kbd{display:inline-grid;place-items:center;min-width:20px;height:20px;padding:0 5px;border:1px solid rgba(246,240,220,.6);border-radius:5px;font:700 10px/1 Manrope,system-ui,sans-serif;color:var(--tgw-cream);background:rgba(246,240,220,.08)}
+#key-hints b{font:600 11px/1 Manrope,system-ui,sans-serif;color:var(--tgw-cream);margin-right:8px}
+#key-hints .kh-wasd{display:inline-flex;flex-direction:column;align-items:center;gap:2px}#key-hints .kh-wasd span{display:flex;gap:2px}
+#key-hints .kh-mouse{width:12px;height:18px;border:1.5px solid rgba(246,240,220,.7);border-radius:7px;position:relative}
+#key-hints .kh-mouse::after{content:'';position:absolute;left:50%;top:3px;width:1.5px;height:5px;margin-left:-.75px;background:rgba(246,240,220,.7)}
+body:not(.touch) #action{left:auto;right:24px;bottom:70px;transform:translateY(10px)}
+body:not(.touch) #action.show{transform:none}
+body.fishing-active #key-hints,body.stable-talk-active #key-hints,body.stable-race-active #key-hints,body.stable-shop-scene #key-hints,body.stable-race-result-active #key-hints,body.lakerun-active #key-hints,body.world-map-open #key-hints,
+body.fishing-active #joy-rest,body.stable-race-active #joy-rest,body.stable-talk-active #joy-rest,body.rotate-gated #joy-rest{opacity:0!important}
+/* R69a fixes: the dev version badge leaves the row; chips never run under the minimap; zero rare chips hide on phones */
+#hud .dev-badge{position:absolute;left:0;top:calc(100% + 6px)}
+#hud{overflow:visible}
+#hud #objective.objective-card{flex:0 1 260px;min-width:132px}
+#hud .inventory-stack{flex:0 1 auto;overflow:hidden;padding:4px 6px 8px 2px;margin:-4px 0 -8px!important}
+.touch #hud #materials .material-chip.amber.zero,.touch #hud #materials .material-chip.shell.zero{display:none!important}
+body:has(.dev-menu-btn) #key-hints{left:104px}
+@media (max-width:700px){#hud #objective.objective-card{max-width:168px;flex-basis:168px}#hud .seed-card small{display:none}#hud .seed-card.inventory-card{padding:0 11px 0 9px}}
+.touch .special-btn b{bottom:auto;top:-17px}

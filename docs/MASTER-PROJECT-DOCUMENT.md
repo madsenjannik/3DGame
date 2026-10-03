@@ -1576,6 +1576,7 @@ are only touched where a measured hotspot requires it, minimally.
    failure. Must pass before every push (CLAUDE.md rule 5).
 
 **B status 02/10/2026: complete (R51–R57).** On-device check (iPhone, Jannik 02/10): 60 fps steady (frame max 20–24 ms), 217 draw calls / 370k tris in the garden, 363 / 433k at the lake, mobile-high, 1 WebGL context → no perf work needed before C.
+**Landscape gameplay HUD (R69a, v0.8.40):** one top row (objective chip, Golden Seed chip, horizontal resource chips), minimap top right with a cream ring; phone = resting joystick + round action button; desktop = key hints. Supersedes R66's hidden phone HUD (Jannik's HUD concept 03/10).
 **HUD design system (R68, v0.8.30, step 1/3):** shared glass/cream/gold tokens; objective pill with clay leaf; hearts + special bar top left; red Wood Giant bar; Lake Run corner HUD + new result card. Only existing data/icons. Next: R69 fishing + stable restyle (CSS only), R70 3D look pass (measured).
 **Rotate screen styled (R67.1, v0.8.21):** brand look (sun burst, logo, outlined phone with a sprout, Lilita One title, leaves).
 **Landscape-only phones (R67, v0.8.20, Jannik's decision 03/10):** the game is played in landscape on phones; portrait shows a 'Turn your phone' screen and pauses (iOS cannot lock orientation for home-screen apps). New work is designed and tested for landscape phones, tablets and desktop only.
