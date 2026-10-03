@@ -176,11 +176,11 @@ export class GardenPotsSystem {
       v.plant.rotation.z = Math.sin(time * 1.4 + i) * .03;
       const d = Math.hypot(px - v.g.position.x, pz - v.g.position.z);
       if (d > 1.25) return;
-      if (!s) offer({ type: 'wilds-pot', slot: i, act: 'plant', distance: d, disabled: !(this.w.inv().get('wild_seed') > 0), label: this.w.inv().get('wild_seed') > 0 ? 'Plant Wild Seed' : 'Empty pot · find Wild Seeds in Wild Grass' });
+      if (!s) { const has = this.w.inv().get('wild_seed') > 0; offer({ type: 'wilds-pot', slot: i, act: 'plant', distance: d, disabled: !has, locked: !has, label: has ? 'Plant Wild Seed' : 'Locked' }); }   // R72: Wild Seeds come from Wild Grass
       else if (s.stage >= 3) offer({ type: 'wilds-pot', slot: i, act: 'harvest', distance: d, label: 'Harvest plant' });
       else if (!s.wet) {
         const can = this.w.has('can'), ok = can && this.p.water > 0;
-        offer({ type: 'wilds-pot', slot: i, act: 'water', distance: d, disabled: !ok, label: ok ? 'Water plant' : can ? 'Thirsty · fill your can at the pond' : 'Thirsty · craft a Watering Can' });
+        offer({ type: 'wilds-pot', slot: i, act: 'water', distance: d, disabled: !ok, locked: !ok, label: ok ? 'Water plant' : 'Locked' });   // R72: fill the can at the pond / craft a Watering Can
       } else if (this.w.threat?.chokesAt(v.g.position.x, v.g.position.z, true)) offer({ type: 'wilds-pot', slot: i, act: 'none', distance: d, disabled: true, label: 'Growth paused · weeds nearby' });
       else offer({ type: 'wilds-pot', slot: i, act: 'none', distance: d, disabled: true, label: `Growing · ${Math.max(1, Math.ceil((s.readyAt - now) / 60000))} min` });
     });

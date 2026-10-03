@@ -157,7 +157,7 @@ export class DevMenu {
       else if (t === 'pond') this.teleport('garden', -3.9, 1.15, Math.PI);
       else if (t === 'gate') { const s = hp?.gardenSpawn?.() || { x: 0, z: 9.65, heading: Math.PI }; this.teleport('garden', s.x, s.z, s.heading); }
       else if (t === 'dock') { const sp = g.fishing?.shopPoint; if (!sp) return this.toast('Fiskeri er ikke indlæst endnu'); this.teleport('world', sp.x, sp.z, 0); }
-      else if (t === 'stable') { const s = g.world.sharedLandscape?.landmarks?.stable || { x: 70, z: -136, heading: Math.PI }; this.teleport('world', s.x, s.z, s.heading); }
+      else if (t === 'stable') { const st = g.stable; if (!st?.localToWorld) return this.toast('Stalden er ikke indlæst endnu'); const p = st.localToWorld(3.3, -16.25), q = st.localToWorld(3.3, -14.3); this.teleport('world', p.x, p.z, Math.atan2(q.x - p.x, q.z - p.z)); }   // R72: Thora's talk point, facing her
       else if (t === 'world') { const s = hp?.worldSpawn?.() || { x: .1, z: 14.3, heading: 0 }; this.teleport('world', s.x, s.z, s.heading); }
       else {
         const from = g.world.space === 'world' ? g.character.position : { x: 0, z: 14 };

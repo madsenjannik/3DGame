@@ -214,7 +214,7 @@ export class WildsThreatSystem {
         const d = Math.hypot(px - w.x, pz - w.z);
         if (d < 1.4) {
           const ok = this.canPull(st), names = ['Pull Sprouts', 'Pull Overgrowth', 'Cut Thorny Overgrowth'];
-          offer({ type: 'wilds-weed', weed: w, distance: d, disabled: !ok, label: ok ? names[st - 1] : 'Thorny Overgrowth · needs Sickle' });
+          offer({ type: 'wilds-weed', weed: w, distance: d, disabled: !ok, locked: !ok, label: ok ? names[st - 1] : 'Locked' });
         }
       } else if (w.state === 'pulling') {
         if (w.model) { w.model.update(dt); continue; }

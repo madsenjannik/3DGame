@@ -10,7 +10,7 @@ import { SNAPSHOT_SAVE, collectGardenSnapshot } from './garden-snapshot.mjs';
 const ROOT = path.resolve(path.dirname(new URL(import.meta.url).pathname), '..');
 const require = createRequire(import.meta.url);
 let pw; try { pw = require('playwright'); } catch { pw = require('/opt/node22/lib/node_modules/playwright'); }
-const TYPES = { '.html': 'text/html', '.js': 'text/javascript', '.mjs': 'text/javascript', '.css': 'text/css', '.json': 'application/json', '.webmanifest': 'application/manifest+json', '.png': 'image/png', '.glb': 'model/gltf-binary' };
+const TYPES = { '.html': 'text/html', '.js': 'text/javascript', '.mjs': 'text/javascript', '.css': 'text/css', '.json': 'application/json', '.webmanifest': 'application/manifest+json', '.png': 'image/png', '.svg': 'image/svg+xml', '.glb': 'model/gltf-binary' };
 const server = http.createServer((q, s) => {
   const file = path.join(ROOT, decodeURIComponent(new URL(q.url, 'http://x').pathname));
   if (!file.startsWith(ROOT) || !fs.existsSync(file) || fs.statSync(file).isDirectory()) { s.writeHead(404); return s.end(); }
@@ -136,7 +136,12 @@ try {
       const g = window.__tgw, f = g.fishing, L = g.lakeRun, B = f.boat, o = {}, inv = id => g.state.inventory.get(id) || 0;
       // R71: the course is hidden until you start at the gold circle at the end of Sigurd's dock (on foot)
       // R71: shore fishing anywhere along the lake and the stream (on foot)
-      { const Ld = g.world.sharedLandscape, [a, b] = [Ld.stream[3], Ld.stream[4]], dx = b[0] - a[0], dz = b[1] - a[1], l = Math.hypot(dx, dz); f.starter = true;
+      { const Ld = g.world.sharedLandscape, [a, b] = [Ld.stream[3], Ld.stream[4]], dx = b[0] - a[0], dz = b[1] - a[1], l = Math.hypot(dx, dz);
+        // R72 general rule: a missing requirement keeps the button, grey 'Locked' (no rod yet / no boat access)
+        f.starter = false; g.devMenu.teleport('world', Ld.lake.x, Ld.lake.z - Ld.lake.r - 1.2, 0); const lf = f.interaction(g.character.position);
+        g.devMenu.teleport('world', L.spot.x, L.spot.z, 0); const ll = f.hasBoatAccess() ? { locked: true, label: 'Locked' } : L.interaction();
+        o.locked = lf?.locked && lf.disabled && lf.label === 'Locked' && ll?.locked && ll.label === 'Locked';
+        f.starter = true;
         const at = (x, z) => { g.devMenu.teleport('world', x, z, 0); return f.interaction(g.character.position)?.type; };
         o.shore = at((a[0] + b[0]) / 2 - dz / l * 3.2, (a[1] + b[1]) / 2 + dx / l * 3.2) === 'fishing-shore' && at(Ld.lake.x, Ld.lake.z - Ld.lake.r - 1.2) === 'fishing-shore' && at(.1, 20) !== 'fishing-shore'; }
       g.devMenu.run('lr:start'); await new Promise(x => setTimeout(x, 600)); L.update(.016);
@@ -153,7 +158,7 @@ try {
       g.save.flush(); o.saved = JSON.parse(localStorage.getItem('tgw.save')).profiles.fern.lakeRun.best === res.best;
       o.t = res.best; return o;
     }) : {};
-    check('lake race: hidden until the dock circle, start there, shore fishing on lake + stream, countdown hold, buoys in order, log penalty, finish + medal reward, PB + ghost saved', ready && r.offer && r.shore && r.held && r.order && r.state === 'result' && r.pen && r.pb && r.reward && r.card && r.saved && !errors.length, errors[0] || JSON.stringify(r));
+    check('lake race: hidden until the dock circle, start there, shore fishing on lake + stream, grey Locked without rod/boat (R72), countdown hold, buoys in order, log penalty, finish + medal reward, PB + ghost saved', ready && r.offer && r.shore && r.locked && r.held && r.order && r.state === 'result' && r.pen && r.pb && r.reward && r.card && r.saved && !errors.length, errors[0] || JSON.stringify(r));
     await ctx.close(); }
   // 8. R58.2 free-camera collision: backing into the workbench, a tree or the cabin never puts the camera inside the character
   { const ctx = await context({ viewport: { width: 844, height: 390 }, isMobile: true, hasTouch: true }); const { p, errors, ok } = await startGame(ctx, 'fern');
@@ -290,9 +295,9 @@ try {
     const r = ready ? await p.evaluate(() => { const g = window.__tgw, c = g.combat, B = c.boss, ch = g.character, o = {}; g.wilds.profile.tools.axe = true;
       // R65.1: walking close no longer wakes it; arena walls collide; the FIGHT marker starts it and the doors close
       g.devMenu.teleport('world', B.site.x, B.site.z + 6, Math.PI); B.update(.1, ch); o.sleeps = B.state === 'sleep';
-      const wo = B.arenaObstacles[5], q = { x: wo.x + .05, z: wo.z }; g.world.resolveCollisions(q, .3); o.walls = B.arenaObstacles.length > 30 && Math.hypot(q.x - wo.x, q.z - wo.z) >= wo.r + .29 && B.doorObstacles.every(d => d.r < .1) && B.openDoorObstacles.length > 0 && B.openDoorObstacles.every(d => d.r > .3) && B.bodyParts.length === 2 && B.bodyParts.every(b => b.bone && b.o.space === 'world' && b.o.r < .1) && !B.giant.visible;   // R71: hidden (no body) until the FIGHT circle
+      const wo = B.arenaObstacles[5], q = { x: wo.x + .05, z: wo.z }; g.world.resolveCollisions(q, .3); o.walls = B.arenaObstacles.length > 30 && Math.hypot(q.x - wo.x, q.z - wo.z) >= wo.r + .29 && B.doorObstacles.every(d => d.r < .1) && B.openDoorObstacles.length > 0 && B.openDoorObstacles.every(d => d.r > .3) && B.bodyParts.length === 2 && B.bodyParts.every(b => b.bone && b.o.space === 'world' && b.o.r > .5) && B.giant.visible && B.cur?.getClip().name === 'Sleep' && !B.target(B.gx, B.gz, 9) && B.eyes.every(e => !e.visible);   // R72: sits asleep (Sleep), solid, not hittable, eyes dark
       g.devMenu.teleport('world', B.fightPoint.x, B.fightPoint.z, 0); o.offer = c.update(.016, c.time, ch, true).interaction?.type === 'combat-fight';
-      c.interact('combat-fight'); o.wake = o.sleeps && o.offer && B.state === 'wake' && typeof g.followCamera.lockYaw === 'function' && B.doorObstacles.every(d => d.r > .3) && B.openDoorObstacles.every(d => d.r < .1);
+      c.interact('combat-fight'); o.wake = o.sleeps && o.offer && B.state === 'wake' && B.cur?.getClip().name === 'WakeUp' && typeof g.followCamera.lockYaw === 'function' && B.doorObstacles.every(d => d.r > .3) && B.openDoorObstacles.every(d => d.r < .1);
       for (let i = 0; i < 20; i++) B.update(.1, ch);
       const mid = { x: (B.bodyParts[0].o.x + B.bodyParts[1].o.x) / 2, z: (B.bodyParts[0].o.z + B.bodyParts[1].o.z) / 2 }, mq = { ...mid }; g.world.resolveCollisions(mq, .3); o.between = B.giant.visible && B.bodyParts.every(b => b.o.r > .5) && Math.hypot(mq.x - mid.x, mq.z - mid.z) < .01;   // R71: checked once it has risen
       let hp0 = c.hp; for (let i = 0; i < 120 && B.state !== 'stuck'; i++) { if (B.state === 'walk') ch.position.set(B.gx, ch.position.y, B.gz + 3.5); else if (B.state === 'stomp' || B.state === 'slam') { const Q = B.local(...(B.state === 'stomp' ? [2.9, -.5] : [0, 3.2])); ch.position.set(Q.x + .3, ch.position.y, Q.z); } B.update(.1, ch); }
@@ -311,7 +316,7 @@ try {
       o.win = B.state === 'resting' && B.p.wins === 1 && c.loot.some(l => l.kind === 'golden_seed') && !g.followCamera.bossZoom || g.followCamera.bossZoom === 1;
       o.win = o.win && B.state === 'resting' && B.p.wins === 1 && c.loot.some(l => l.kind === 'golden_seed');
       return o; }) : {};
-    check('wood giant: hidden until the FIGHT circle (R71), arena walls collide, free between the legs, thrown back by big hits, FIGHT marker starts it + doors close, camera lock, stomp hurts, weak window x3, bark 1, roots + weak point, shockwave (hop to dodge), defeat + golden seed + saved', ready && r.walls && r.between && r.thrown && r.wake && r.stomp && r.weak && r.bark && r.roots && r.wave && r.win && !errors.length, errors[0] || JSON.stringify(r));
+    check('wood giant: asleep until the FIGHT circle (R72 Sleep/WakeUp), arena walls collide, free between the legs, thrown back by big hits, FIGHT marker starts it + doors close, camera lock, stomp hurts, weak window x3, bark 1, roots + weak point, shockwave (hop to dodge), defeat + golden seed + saved', ready && r.walls && r.between && r.thrown && r.wake && r.stomp && r.weak && r.bark && r.roots && r.wave && r.win && !errors.length, errors[0] || JSON.stringify(r));
     await ctx.close(); }
   // 17c. R65 character specials: Swing/Throw overlays on the locked character, landed hits fill the meter, all nine
   // specials hurt a Mole, the Giant's bark takes 0 and its weak window takes damage, a garden snail can be hit

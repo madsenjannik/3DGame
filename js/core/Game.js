@@ -246,7 +246,7 @@ export class Game {
     // story (private garden, until the plant/donate choice) owns the card.
     const nowMs=performance.now();
     if(this.wilds&&nowMs-(this._objAt||0)>1000){this._objAt=nowMs;if(!(gardenSpace&&!this.state.choice.resolved))this.hud.setObjective?.('NEXT STEP',this.wilds.goal());}
-    this.hud.setActionVisible(!!interaction,interaction?.label||'Collect',interaction);this.hud.action.classList.toggle('wilds-locked',!!(interaction?.disabled&&interaction.type?.startsWith?.('wilds-')));
+    this.hud.setActionVisible(!!interaction,interaction?.label||'Collect',interaction);this.hud.action.classList.toggle('locked',!!interaction?.locked);this.hud.action.classList.toggle('wilds-locked',!!(interaction?.disabled&&!interaction?.locked)); // R72: requirement missing = grey 'Locked'; other disabled states (growing) keep their text
     const action=this.input.consumeAction();
     if(!this.state.choice.open&&action&&interaction&&!interaction.disabled){
       if(interaction.type==='home-enter'||interaction.type==='home-exit')this.homePortal?.interact(interaction.type,this.character,this.followCamera,this.hud);

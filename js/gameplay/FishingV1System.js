@@ -477,9 +477,9 @@ export class FishingV1System{
     if(this.mode!=='world'||!p)return null;
     if(this.fishBoardPoint&&Math.hypot(p.x-this.fishBoardPoint.x,p.z-this.fishBoardPoint.z)<1.55)return {type:'fish-board',label:'Read Fish Board'};
     if(Math.hypot(p.x-this.shopPoint.x,p.z-this.shopPoint.z)<1.05)return {type:'fishing-shop',label:'Talk to Sigurd'};
-    if(this.hasBoatAccess()&&this.boatBerthPoint&&Math.hypot(p.x-this.boatBerthPoint.x,p.z-this.boatBerthPoint.z)<1.05)return {type:'boat-board',label:'Board boat'};
+    if(this.boatBerthPoint&&Math.hypot(p.x-this.boatBerthPoint.x,p.z-this.boatBerthPoint.z)<1.05)return this.hasBoatAccess()?{type:'boat-board',label:'Board boat'}:{type:'boat-board',label:'Locked',disabled:true,locked:true};   // R72 general rule
     // R71: fish from any shore of the lake, the stream and the waterfall basin (the old fixed dock-end spot is now the Lake Race circle).
-    if(this.starter){const d=this.shoreDir(p);if(d)return {type:'fishing-shore',label:'Fish',distance:2};}
+    {const d=this.shoreDir(p);if(d)return this.starter?{type:'fishing-shore',label:'Fish',distance:2}:{type:'fishing-shore',label:'Locked',disabled:true,locked:true,distance:2};}   // R72: no rod yet = grey Locked
     return null;
   }
   // R71: unit direction from p towards boat-navigable water 2.4 and 3.4 m out (the side nearest the player's facing), or null.
@@ -497,13 +497,13 @@ export class FishingV1System{
   toGreet(){if(this.mode!=='shop')return;this.mode='greet';this.T=0;this._snapExterior=true;this.renderDialog();this.say('Anything else?',60);this.syncClasses();}
   closeContext(){if(this.mode==='board'){this.closeFishBoard();return;}if(this.mode==='shop'){this.toGreet();return;}if(this.mode==='greet'){this.closeShop();return;}if(this.mode==='fishing'){if(this.phase==='ready')this.leaveFish();return;}}
 
-  greetLine(){if(!this.starter)return 'Want to try your luck? Start with the bamboo rod.';const n=Object.values(this.log).reduce((a,e)=>a+(e?.count||0),0);return n?['Back again? How are they biting?','Good day for it. What can I do for you?','Still smelling of fish, I see.'][Math.floor(Math.random()*3)]:'No luck yet? The end of the dock is the spot.';}
+  greetLine(){if(!this.starter)return 'Want to try your luck? Start with the bamboo rod.';const n=Object.values(this.log).reduce((a,e)=>a+(e?.count||0),0);return n?['Back again? How are they biting?','Good day for it. What can I do for you?','Still smelling of fish, I see.'][Math.floor(Math.random()*3)]:'No luck yet? Try any shore. The whole lake bites, and the stream too.';}
   dialogOptions(){return this.starter?[['tip',"What's biting today?"],['boat',this.hasBoatAccess()?'About the boat…':'Can I take the boat out?'],['log','Show me my catches'],['look','Let me look at your gear'],['bye','See you']]:[['gift',"Sure, I'll give it a go"],['look','What else have you got?'],['bye','Maybe later']];}
   renderDialog(){if(!this.ui.dlg)return;this.ui.dlg.innerHTML=this.dialogOptions().map(([k,t],i)=>`<button class="fishing-opt${k==='bye'?' quiet':''}" data-k="${k}"><span class="n">${i+1}</span>${t}</button>`).join('');this.ui.dlg.querySelectorAll('.fishing-opt').forEach(b=>b.addEventListener('click',()=>this.choose(b.dataset.k)));}
   choose(k){if(this.mode!=='greet')return;
     if(k==='bye'){this.say(this.starter?'Tight lines out there.':'The rod will be here.',2);this.closeShop();return;}
     if(k==='tip'){this.say(TIPS[Math.floor(Math.random()*TIPS.length)],5);this.markSigurdNod();return;}
-    if(k==='gift'){this.starter=true;this.own.rodBamboo=1;this.own.worms=1;this.markSigurdNod();this.markSigurdGift();this.triggerGiftHandover(['rodBamboo','worms']);this.say('There. My old bamboo rod and a tin of worms. Go to the end of the dock, and come back and show me what you catch.',6);this.hud.showToast('Bamboo Rod + Worms added');this.renderDialog();this.renderAll();return;}
+    if(k==='gift'){this.starter=true;this.own.rodBamboo=1;this.own.worms=1;this.markSigurdNod();this.markSigurdGift();this.triggerGiftHandover(['rodBamboo','worms']);this.say('There. My old bamboo rod and a tin of worms. Fish from any shore, then come back and show me.',6);this.hud.showToast('Bamboo Rod + Worms added');this.renderDialog();this.renderAll();return;}
     if(k==='boat'){const n=this.speciesN();if(this.boat.owned){this.say('Your boat is waiting at the dock.',4);return;}if(this.boat.rented){this.say('She is waiting at the dock. Bring her back in one piece.',4);return;}if(n>=3&&this.own.vest){this.setBoatAccess({rented:true});this.markSigurdNod();this.say('You have earned it. She is at the dock. Tie her up when you are done.',5);this.hud.showToast('Boat ready at the dock');this.renderDialog();return;}this.say(`Not yet. Show me three different fish first (${Math.min(n,3)}/3)`+(this.own.vest?'.':', and you will need a life vest. None for sale yet.'),5.5);return;}
     if(k==='log'){this.openPanel('log',true);const best=FISH_ORDER.filter(id=>this.log[id]?.best).sort((a,b)=>this.log[b].best/FISH[b].max-this.log[a].best/FISH[a].max)[0];this.say(best?`Let's see… a ${FISH[best].name.toLowerCase()} of ${this.log[best].best} cm. Not bad at all.`:'Nothing in the book yet? Off to the dock with you.',4.5);this.markSigurdNod();return;}
     this.shopIndex=0;this.renderCard();this.say('Have a look. The rest you will earn in time.',3.4);this.markSigurdNod();this.mode='shop';this.T=0;this.syncClasses();

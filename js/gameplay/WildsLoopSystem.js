@@ -625,7 +625,7 @@ export class WildsLoopSystem {
         if (inReach) {
           const locked = node.def.requires && !this.has(node.def.requires);
           const tool = locked && TOOLS.find(t => t.id === node.def.requires);
-          offer({ type: 'wilds-gather', node, distance: d, disabled: !!locked, label: locked ? `${node.def.name} · needs ${tool.name}` : `Gather ${node.def.name}` });
+          offer({ type: 'wilds-gather', node, distance: d, disabled: !!locked, locked: !!locked, label: locked ? 'Locked' : `Gather ${node.def.name}` });   // R72: needs ${tool.name}
         }
       } else if (node.state === 'gathering') {
         if (node.model) continue;           // the GLB clip ends the gather (WildsModel.play callback)
@@ -655,7 +655,7 @@ export class WildsLoopSystem {
       t.crystals.forEach((c, i) => { c.rotation.y += dt * (.5 + i * .2); });
       if (t.phase === 'wild') {
         if (d < 30 && !this.profile.thorns[t.id]) { this.profile.thorns[t.id] = 'seen'; this.save.persist(); this.hud?.showToast('Thornbrush spotted: something glows inside'); }
-        if (d < 2.65) offer({ type: 'wilds-cut', thorn: t, distance: d, disabled: !this.canCut(), label: this.canCut() ? 'Cut Thornbrush' : 'Thornbrush · needs Sickle' });
+        if (d < 2.65) offer({ type: 'wilds-cut', thorn: t, distance: d, disabled: !this.canCut(), locked: !this.canCut(), label: this.canCut() ? 'Cut Thornbrush' : 'Locked' });
       } else if (t.phase === 'cutting') {
         if (t.thicket) continue;            // Cut clip → clearThorn
         t.t += dt; const p = Math.min(1, t.t / .7), e = ease(p);

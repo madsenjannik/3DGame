@@ -53,6 +53,9 @@ export class WoodGiantBoss {
       s.traverse(o => { if (o.isMesh) { o.castShadow = !/FX_/.test(o.name); o.receiveShadow = true; o.frustumCulled = false; } });
       this.mixer = new THREE.AnimationMixer(s); this.fxMixer = new THREE.AnimationMixer(s);
       this.clips = Object.fromEntries(giant.animations.map(c => [c.name, c]));
+      // R72: eye glow (material 'eye_glow') is dark while it sleeps and lights up during WakeUp.
+      this.eyes = []; s.traverse(o => { if (o.isMesh && o.material?.name === 'eye_glow') this.eyes.push(o); });
+      this.eyeOn = this.eyes[0]?.material?.emissiveIntensity ?? 1;
       // R65.2/R65.3: only the two feet block and follow the animated bones every frame, so you can run between the
       // legs (a hip circle closed that gap). space = 'world' explicitly: before R65.1 it took the space active at
       // load time, so it could end up registered for the garden and never block in the world.
@@ -69,6 +72,7 @@ export class WoodGiantBoss {
   once(name, speed = 1) { this.mixer.stopAllAction(); const a = this.mixer.clipAction(this.clips[name]); a.reset().setLoop(THREE.LoopOnce, 1); a.clampWhenFinished = true; a.timeScale = speed; a.play(); this.cur = a; return a.getClip().duration / speed; }
   fx(name) { const c = this.clips[name]; if (!c) return; this.fxMixer.stopAllAction(); const a = this.fxMixer.clipAction(c); a.reset().setLoop(THREE.LoopOnce, 1); a.play(); }
   local(lx, lz) { const y = this.giant.rotation.y, s = GIANT.scale, c = Math.cos(y), n = Math.sin(y); return { x: this.gx + (lx * c + lz * n) * s, z: this.gz + (-lx * n + lz * c) * s }; }
+  setEyes(k) { for (const e of this.eyes || []) { e.visible = k > .02; if (e.material) e.material.emissiveIntensity = this.eyeOn * k; } }
   phase() { const f = this.hp / GIANT.hp; let ph = GIANT.phases[0]; for (const p of GIANT.phases) if (f <= p.at) ph = p; return ph; }
 
   // ---------- telegraph + UI ----------
@@ -91,8 +95,8 @@ export class WoodGiantBoss {
   available(now = Date.now()) { return !this.p.defeatedAt || now - this.p.defeatedAt > GIANT.rematchHours * 3600000; }
   reset() {
     this.state = this.available() ? 'sleep' : 'resting'; this.t = 0; this.hp = GIANT.hp; this.weak = 0; this.rootT = 0;
-    this.gx = this.site.x; this.gz = this.site.z - 2; this.giant.position.set(0, 0, -2); this.giant.rotation.set(0, 0, 0); this.giant.visible = false;   // R71: the Giant only shows once you step into the FIGHT circle
-    this.loop('Idle', .6); this.arena.loop('Idle');
+    this.gx = this.site.x; this.gz = this.site.z - 2; this.giant.position.set(0, 0, -2); this.giant.rotation.set(0, 0, 0); this.giant.position.y = 0; this.giant.visible = this.state === 'sleep';   // R72: sits asleep in the arena (Sleep); only active after FIGHT
+    if (this.clips.Sleep) this.loop('Sleep'); else this.loop('Idle', .6); this.setEyes(this.clips.Sleep ? 0 : 1); this.arena.loop('Idle');
     for (const r of this.roots) this.c.root.remove(r.model.root); this.roots = [];
     this.tele.visible = false; this.ui.classList.remove('show'); this.setZoom(false); this.syncObstacle();
     for (const wv of this.waves || []) this.c.root.remove(wv.mesh); this.waves = [];
@@ -172,8 +176,10 @@ export class WoodGiantBoss {
   }
   begin() {
     this.state = 'wake'; this.t = 0; this.arena.play(['GateClose'], () => this.arena.loop('Idle'));
-    this.ui.classList.add('show'); this.renderUi(); this.setZoom(true); this.loop('Idle', 1.4);
-    this.giant.visible = true; this.giant.position.y = -6; this.fx('Slam_FX'); this.shake = .9;   // R71: rises out of the arena floor
+    this.ui.classList.add('show'); this.renderUi(); this.setZoom(true);
+    // R72: it stands up from its sleeping pose (WakeUp ends exactly in the Idle pose), leaves fall, then the fight starts.
+    this.giant.visible = true; this.giant.position.y = 0;
+    this.wakeLen = this.clips.WakeUp ? this.once('WakeUp') : 1.6; if (this.clips.WakeUp_FX) this.fx('WakeUp_FX'); else this.loop('Idle', 1.4);
     this.g.hud?.showToast('The Wood Giant wakes!');
   }
   end(won) {
@@ -231,7 +237,7 @@ export class WoodGiantBoss {
     const d = Math.hypot(px - this.gx, pz - this.gz);
     this.ui.classList.add('show'); this.c.lastCombat = this.c.time;
     switch (this.state) {
-      case 'wake': { const k = Math.min(1, this.t / 1.4); this.giant.position.y = -6 * (1 - k * k * (3 - 2 * k)); if (this.t > 1.9) { this.giant.position.y = 0; this.state = 'walk'; this.t = 0; } } break;
+      case 'wake': { const k = Math.min(1, Math.max(0, (this.t / this.wakeLen - .35) / .4)); this.setEyes(k); if (this.t >= this.wakeLen) { this.setEyes(1); this.state = 'walk'; this.t = 0; } } break;
       case 'stuck': this.loop('Idle', .5); if (this.t > this.stuckFor) { this.state = 'walk'; this.t = 0; } break;
       case 'walk': {
         face(); this.loop('Walk', ph.speed);

@@ -150,19 +150,23 @@ export class LakeRunSystem {
   buildMarker() {
     const P = this.f.fishingPoint; if (!P) return;
     this.spot = { x: P.x, z: P.z };
-    const holo = createHoloIndicator({ radius: .58, height: 1.3, intensity: .48, breath: 2.4, scanSpeed: 2.0, scanDensity: 90, baseRing: true, groundHalo: true, fadeIn: .35 });
-    const c = document.createElement('canvas'); c.width = 330; c.height = 78; const x = c.getContext('2d');
-    x.font = '800 44px Manrope, system-ui, sans-serif'; x.textAlign = 'center'; x.textBaseline = 'middle'; x.shadowColor = 'rgba(0,0,0,.45)'; x.shadowBlur = 8; x.fillStyle = '#ffe9a3'; x.fillText('LAKE RACE', 165, 41);
-    const tex = new THREE.CanvasTexture(c); tex.colorSpace = THREE.SRGBColorSpace;
-    const label = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, transparent: true, depthWrite: false })); label.scale.set(1.8, .43, 1); label.position.y = 1.58;
-    const m = new THREE.Group(); m.name = 'WILDS_LAKE_RACE_MARKER'; m.add(holo.group, label);
+    // R72: gold when you may race, grey + LOCKED until Sigurd lends you the boat (3 species + life vest).
+    const opt = { radius: .58, height: 1.3, intensity: .48, breath: 2.4, scanSpeed: 2.0, scanDensity: 90, baseRing: true, groundHalo: true, fadeIn: .35 };
+    const holo = createHoloIndicator(opt), grey = createHoloIndicator({ ...opt, color: 0x9a9f98, intensity: .34, breath: 4 }); holo.setInstant(false); grey.setInstant(false);   // the right one fades in on the first update
+    const tex = (text, col) => { const c = document.createElement('canvas'); c.width = 330; c.height = 78; const x = c.getContext('2d');
+      x.font = '800 44px Manrope, system-ui, sans-serif'; x.textAlign = 'center'; x.textBaseline = 'middle'; x.shadowColor = 'rgba(0,0,0,.45)'; x.shadowBlur = 8; x.fillStyle = col; x.fillText(text, 165, 41);
+      const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; return t; };
+    this.labelTex = { open: tex('LAKE RACE', '#ffe9a3'), locked: tex('LOCKED', '#d6d8d2') };
+    const label = new THREE.Sprite(new THREE.SpriteMaterial({ map: this.labelTex.open, transparent: true, depthWrite: false })); label.scale.set(1.8, .43, 1); label.position.y = 1.58;
+    const m = new THREE.Group(); m.name = 'WILDS_LAKE_RACE_MARKER'; m.add(holo.group, grey.group, label);
     m.position.set(P.x, this.L.groundHeight(P.x, P.z) + .015, P.z); this.L.root.add(m);
-    this.marker = { m, holo, label };
+    this.marker = { m, holo, grey, label };
   }
   nearSpot(p) { return this.spot && p ? Math.hypot(p.x - this.spot.x, p.z - this.spot.z) : Infinity; }
   interaction() {
     if (this.state !== 'idle' || this.f.mode !== 'world') return null;
     const d = this.nearSpot(this.g.character?.position); if (d > 1.2) return null;
+    if (!this.f.hasBoatAccess()) return { type: 'lakerun-start', label: 'Locked', disabled: true, locked: true, distance: d };   // R72 general rule
     return { type: 'lakerun-start', label: 'Lake Race', distance: d };
   }
   interact(type) { if (type === 'lakerun-start') this.startFromSpot(); }
@@ -204,7 +208,10 @@ export class LakeRunSystem {
   update(dt) {
     const f = this.f; if (!f?.boat) return;
     const on = this.state !== 'idle'; this.root.visible = on;
-    if (this.marker) { const show = !on && f.mode === 'world'; show ? this.marker.holo.show() : this.marker.holo.hide(); this.marker.holo.update(this.clock, dt); this.marker.label.visible = show && this.nearSpot(this.g.character?.position) < 9; }
+    if (this.marker) { const M = this.marker, show = !on && f.mode === 'world', open = f.hasBoatAccess();
+      (show && open) ? M.holo.show() : M.holo.hide(); (show && !open) ? M.grey.show() : M.grey.hide(); M.holo.update(this.clock, dt); M.grey.update(this.clock, dt);
+      const t = open ? this.labelTex.open : this.labelTex.locked; if (M.label.material.map !== t) { M.label.material.map = t; M.label.material.needsUpdate = true; }
+      M.label.visible = show && this.nearSpot(this.g.character?.position) < 9; }
     if (!on) { this.clock += dt; return; }
     this.updateLogs(dt);
     if (this.state === 'result' && !this.inBoat()) this.closeResult();
