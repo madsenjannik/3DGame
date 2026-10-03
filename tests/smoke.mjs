@@ -75,8 +75,10 @@ try {
     check('landscape HUD (phone): objective + seed + resources in one top row, minimap clear, resting joystick, gain pulse, canvas fills, no desktop hints', ok && r.row && r.minimap && r.joy && r.bump && r.fill && r.bar && r.keys && !errors.length, errors[0] || JSON.stringify(r));
     await ctx.close(); }
   { const ctx = await context({ viewport: { width: 1280, height: 720 } }); const { p, errors, ok } = await startGame(ctx, 'tulip');
-    const r = ok ? await p.evaluate(() => ({ keys: getComputedStyle(document.getElementById('key-hints')).display === 'flex', joy: getComputedStyle(document.getElementById('joy-rest')).display === 'none', mats: +getComputedStyle(document.getElementById('materials')).opacity === 1 })) : {};
-    check('landscape HUD (desktop): key hints, no joystick, resources visible', ok && r.keys && r.joy && r.mats && !errors.length, errors[0] || JSON.stringify(r));
+    const r = ok ? await p.evaluate(async () => { const g = window.__tgw, w = ms => new Promise(x => setTimeout(x, ms)), o = { keys: getComputedStyle(document.getElementById('key-hints')).display === 'flex', joy: getComputedStyle(document.getElementById('joy-rest')).display === 'none', mats: +getComputedStyle(document.getElementById('materials')).opacity === 1 };
+      g.devMenu.teleport('world', .1, 20, Math.PI); await w(600); o.lookWorld = g.look?.applied === true && g.renderer.toneMappingExposure > 1.05;
+      g.devMenu.teleport('garden', 0, 6, Math.PI); await w(600); o.lookGarden = g.look?.applied === false && Math.abs(g.renderer.toneMappingExposure - 1.02) < 1e-6; return o; }) : {};
+    check('landscape HUD (desktop): key hints, no joystick, resources visible; R70 look on in the world, off in the garden', ok && r.keys && r.joy && r.mats && r.lookWorld && r.lookGarden && !errors.length, errors[0] || JSON.stringify(r));
     await ctx.close(); }
   // 3. Missing assets must not black-screen the game
   { const ctx = await context({ viewport: { width: 844, height: 390 }, isMobile: true, hasTouch: true }, [/assets\/stable\//, /lake_cabin|cabin_fishing_runtime/, /greenhouse-l1/, /characters\/fern\.glb/]);

@@ -29,6 +29,7 @@ import { PerfHud } from '../dev/PerfHud.js';
 import { QualityManager, QUALITY } from './Quality.js';
 import { InteractionResolver } from './InteractionResolver.js';
 import { log, warn } from '../dev/Log.js';
+import { LookPass } from '../visual/LookPass.js';
 import { BoatEconomySystem } from '../gameplay/BoatEconomySystem.js';
 import { LakeRunSystem } from '../gameplay/LakeRunSystem.js';
 import { GardenBuildSystem } from '../gameplay/GardenBuildSystem.js';
@@ -179,6 +180,8 @@ export class Game {
     if(this.input.moved&&!this.lastMoved){this.lastMoved=true;this.hud.markMoved();}
 
     const gardenSpace=this.world.isGardenSpace();
+    if(!this.look)try{this.look=new LookPass(this);}catch(e){this.look={update(){}};warn('LOOK','look pass disabled',e);}
+    this.look.update(gardenSpace);   // R70: shared-world grade on, private garden (greenhouse) untouched
     const portalBusy=this.homePortal?.busy||false;
     const fishingBusy=!gardenSpace&&(this.fishing?.isBusy?.()||false);
     const stableBusy=!gardenSpace&&(this.stable?.isBusy?.()||false);
