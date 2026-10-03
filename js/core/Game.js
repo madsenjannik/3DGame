@@ -153,7 +153,12 @@ export class Game {
   isPhone(){return !!this.input?.isTouch&&Math.min(screen.width||innerWidth,screen.height||innerHeight)<600;}
   setupRotateGate(){
     const el=document.createElement('div');el.id='rotate-gate';el.setAttribute('role','alert');
-    el.innerHTML='<div class="rg-phone"><i></i></div><b>Turn your phone</b><span>The Growing Wilds is played in landscape.</span>';
+    // R67.1 Growing Wilds style: sun burst + logo, a clay-style phone with a sprout that tips over, drifting leaves.
+    el.innerHTML='<div class="rg-burst"></div><div class="rg-leaves">'+'<i></i>'.repeat(7)+'</div>'
+      +'<img class="rg-logo" src="./brand/logo/logo-growing-wilds-620w.png" alt="The Growing Wilds">'
+      +'<div class="rg-stage"><svg class="rg-arrow" viewBox="0 0 120 120" aria-hidden="true"><path d="M30 96 A46 46 0 0 1 24 40" fill="none" stroke="#fff1b8" stroke-width="7" stroke-linecap="round"/><path d="M10 46 L24 30 L36 50 Z" fill="#fff1b8"/></svg>'
+      +'<div class="rg-phone"><div class="rg-screen"><span class="rg-sprout"><s></s><s></s></span></div><i></i></div></div>'
+      +'<b class="rg-title">Turn your phone</b><span class="rg-copy">The wilds grow sideways. Rotate to keep playing.</span>';
     document.body.appendChild(el);this.rotateGate=el;
     if(this.isPhone())screen.orientation?.lock?.('landscape').catch(()=>{});   // Android (installed/fullscreen) can lock; iOS cannot
     const check=()=>{const g=this.isPhone()&&innerHeight>innerWidth;if(g!==this.gated){this.gated=g;document.body.classList.toggle('rotate-gated',g);if(g){this.save?.flush?.();this.input?.resetTouchPointers?.();}this.syncRun(g?'portrait':'landscape');}};
