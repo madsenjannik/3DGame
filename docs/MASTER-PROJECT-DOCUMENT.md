@@ -13,7 +13,8 @@
 
 - **Active baseline: GitHub HEAD** of `madsenjannik/3DGame`, branch `claude/magical-lovelace-nuka97`, live at
   `https://madsenjannik.github.io/3DGame/`. `version.js` holds the version/build label. ZIP packages are no longer produced.
-- **R50.3 (v0.5.30, `CAMERA-R50.3-20261002A`) is LOCKED** (Jannik's plan, 02/10/2026) and is the baseline for all new work:
+- **v0.8.21 (R67.1, `LANDSCAPE-R67.1-20261003A`) is LOCKED** (Jannik, 03/10/2026) and is now the baseline for all new work: R51–R67.1 incl. boat economy, combat, Wood Giant, Lake Run, specials, minimal phone HUD and landscape-only phones. Changing any of it needs a GO for that exact scope.
+- Previous lock: **R50.3 (v0.5.30, `CAMERA-R50.3-20261002A`)** (Jannik's plan, 02/10/2026):
   R46.2 start/splash, offline cleanup, wilds core loop (R47–R49), dev menu (R50), free camera everywhere (R50.3).
 - **R45 is historical** — a rollback reference only. New builds do **not** start from R45.
 - **In progress: gameplay C (section 31)**: Boat economy (R58) → combat foundation + Mole (R61) → snail (R62) → Wood Giant (R63) → Lake Run (R64) done → Thora next.
