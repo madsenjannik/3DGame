@@ -123,8 +123,11 @@ export class Game {
     // without a delta-time jump (timestamp-based systems catch up on their own).
     document.addEventListener('visibilitychange',()=>{
       if(document.hidden){this.renderer.setAnimationLoop(null);this.save?.flush?.();log('LIFE','paused (hidden)');}
-      else{this.clock.getDelta();this.renderer.setAnimationLoop(()=>this.frame());log('LIFE','resumed');}
+      else this.syncRun('visible');
     });
+    // R67 landscape-only on phones (Jannik 03/10): iOS cannot lock orientation for a home-screen app, so in
+    // portrait a 'turn your phone' screen covers the game and the loop pauses (same contract as a hidden page).
+    this.setupRotateGate();
     this.hud.ready();mark('firstPlayableMs');
     // Attach background systems as they arrive (each is optional; null when it failed).
     const attach=(promise,fn)=>promise.then(v=>{if(v)fn(v);return v;});
@@ -147,6 +150,20 @@ export class Game {
     setTimeout(()=>{if(!this.input.moved&&!this.homePortal?.usesMoveInCamera?.())this.hud.hint.style.opacity='0';},9000);
   }
 
+  isPhone(){return !!this.input?.isTouch&&Math.min(screen.width||innerWidth,screen.height||innerHeight)<600;}
+  setupRotateGate(){
+    const el=document.createElement('div');el.id='rotate-gate';el.setAttribute('role','alert');
+    el.innerHTML='<div class="rg-phone"><i></i></div><b>Turn your phone</b><span>The Growing Wilds is played in landscape.</span>';
+    document.body.appendChild(el);this.rotateGate=el;
+    if(this.isPhone())screen.orientation?.lock?.('landscape').catch(()=>{});   // Android (installed/fullscreen) can lock; iOS cannot
+    const check=()=>{const g=this.isPhone()&&innerHeight>innerWidth;if(g!==this.gated){this.gated=g;document.body.classList.toggle('rotate-gated',g);if(g){this.save?.flush?.();this.input?.resetTouchPointers?.();}this.syncRun(g?'portrait':'landscape');}};
+    addEventListener('resize',check);addEventListener('orientationchange',()=>setTimeout(check,250));visualViewport?.addEventListener('resize',check);check();
+  }
+  // One place decides whether the frame loop runs: page visible and not gated by portrait.
+  syncRun(why){
+    if(document.hidden||this.gated){this.renderer.setAnimationLoop(null);log('LIFE',`paused (${why})`);return;}
+    this.clock.getDelta();this.resize();this.renderer.setAnimationLoop(()=>this.frame());log('LIFE',`resumed (${why})`);
+  }
   // R66: size from the fixed #app box and let CSS stretch the canvas (inset:0), not window.innerHeight px: iOS home-screen
   // apps can report a shorter innerHeight than the screen, which left a strip under the canvas.
   viewSize(){const a=document.getElementById('app'),r=a?.getBoundingClientRect();const w=Math.round(r?.width||innerWidth),h=Math.round(Math.max(r?.height||0,innerHeight,visualViewport?.height||0));return{w,h};}

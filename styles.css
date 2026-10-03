@@ -1128,3 +1128,14 @@ body:not(.touch) .special-btn{bottom:calc(96px + env(safe-area-inset-bottom))}
 .touch.goal-peek #objective{opacity:1;transform:none}
 body.fishing-active #hud-quick,body.fishing-active #hud-peek,body.stable-talk-active #hud-quick,body.stable-race-active #hud-quick,body.stable-shop-scene #hud-quick,body.stable-race-result-active #hud-quick,body.world-map-open #hud-quick{opacity:0;pointer-events:none}
 .touch.hud-bag-open #inventory .inventory-card,.touch.hud-bag-open #inventory #materials.materials-card{background:rgba(28,36,24,.78)}
+
+/* ===== R67 landscape-only on phones: portrait shows a 'turn your phone' screen, the game pauses behind it ===== */
+#rotate-gate{display:none}
+body.rotate-gated #rotate-gate{display:flex;position:fixed;inset:0;z-index:20000;flex-direction:column;align-items:center;justify-content:center;gap:10px;padding:24px;text-align:center;
+  background:radial-gradient(circle at 50% 40%,#3d5236,#1f2a1c 70%);color:#f4efe4;font-family:Manrope,system-ui,sans-serif;touch-action:none}
+#rotate-gate b{font-size:22px;font-weight:800;letter-spacing:.02em;color:#fff1b8}
+#rotate-gate span{font-size:14px;opacity:.82;max-width:260px}
+#rotate-gate .rg-phone{width:54px;height:92px;border:3px solid #fff1b8;border-radius:12px;position:relative;margin-bottom:14px;animation:rg-turn 2.4s ease-in-out infinite}
+#rotate-gate .rg-phone i{position:absolute;left:50%;bottom:6px;width:14px;height:3px;border-radius:2px;background:#fff1b8;transform:translateX(-50%)}
+@keyframes rg-turn{0%,20%{transform:rotate(0)}50%,75%{transform:rotate(-90deg)}100%{transform:rotate(0)}}
+body.rotate-gated #hud,body.rotate-gated #joy,body.rotate-gated #action,body.rotate-gated .special-btn,body.rotate-gated #hud-quick{visibility:hidden}

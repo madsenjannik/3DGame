@@ -42,15 +42,26 @@ try {
     check('desktop: start screen -> selector, selector renders', p.url().includes('selector.html') && await p.evaluate(() => document.querySelectorAll('canvas').length > 0) && !errs.length, errs[0]);
     await ctx.close(); }
   // 2. Game on desktop + three phone viewports; move + objective + no page errors
-  for (const [name, opts] of [['desktop 1280x720', { viewport: { width: 1280, height: 720 } }], ['phone 390x844', { viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true }], ['phone 844x390', { viewport: { width: 844, height: 390 }, isMobile: true, hasTouch: true }], ['phone 667x375', { viewport: { width: 667, height: 375 }, isMobile: true, hasTouch: true }]]) {
+  for (const [name, opts] of [['desktop 1280x720', { viewport: { width: 1280, height: 720 } }], ['phone 844x390', { viewport: { width: 844, height: 390 }, isMobile: true, hasTouch: true }], ['phone 667x375', { viewport: { width: 667, height: 375 }, isMobile: true, hasTouch: true }]]) {
     const ctx = await context(opts); const { p, errors, ok } = await startGame(ctx, 'fern');
     const moved = ok && await p.evaluate(async () => { const g = window.__tgw, z = g.character.position.z; g.input.keys.KeyW = true; await new Promise(r => setTimeout(r, 2500)); g.input.keys.KeyW = false; return Math.abs(g.character.position.z - z) > .05; });
     const obj = ok && await p.evaluate(() => document.getElementById('objective-title').textContent);
     check(`game ${name}: loads, player moves, objective shown`, ok && moved && !!obj && !errors.length, errors[0] || obj);
     await ctx.close();
   }
+  // 2a. R67 landscape-only on phones: portrait shows the rotate screen and pauses the loop; turning resumes and you can move
+  { const ctx = await context({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true }); const { p, errors, ok } = await startGame(ctx, 'fern');
+    let r = {};
+    if (ok) {
+      r = await p.evaluate(async () => { const g = window.__tgw, w = ms => new Promise(x => setTimeout(x, ms)), t0 = g.time; await w(1500); return { gate: document.body.classList.contains('rotate-gated') && getComputedStyle(document.getElementById('rotate-gate')).display === 'flex', paused: g.time === t0 }; });
+      await p.setViewportSize({ width: 844, height: 390 }); await p.waitForTimeout(1500);
+      Object.assign(r, await p.evaluate(async () => { const g = window.__tgw, z = g.character.position.z, t0 = g.time; g.input.keys.KeyW = true; await new Promise(x => setTimeout(x, 2500)); g.input.keys.KeyW = false;
+        return { open: !document.body.classList.contains('rotate-gated'), runs: g.time > t0, moved: Math.abs(g.character.position.z - z) > .05 }; }));
+    }
+    check('landscape-only phones: portrait shows rotate screen + pauses, landscape resumes + moves', ok && r.gate && r.paused && r.open && r.runs && r.moved && !errors.length, errors[0] || JSON.stringify(r));
+    await ctx.close(); }
   // 2b. R66 minimal phone HUD: only minimap + 2 buttons by default; bag opens the inventory; a gain peeks; canvas fills the screen
-  { const ctx = await context({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true }); const { p, errors, ok } = await startGame(ctx, 'tulip');
+  { const ctx = await context({ viewport: { width: 844, height: 390 }, isMobile: true, hasTouch: true }); const { p, errors, ok } = await startGame(ctx, 'tulip');
     const r = ok ? await p.evaluate(async () => { const g = window.__tgw, op = id => +getComputedStyle(document.getElementById(id)).opacity, w = ms => new Promise(x => setTimeout(x, ms)), o = {};
       await w(6000); document.body.classList.remove('goal-peek'); await w(400);
       o.clean = op('inventory') === 0 && op('objective') === 0 && op('hud-quick') === 1;
@@ -72,7 +83,7 @@ try {
       const b = new SaveGame({ characterId: 'fern' }); return { migrated, persisted: b.profile.inventory.stone === 4 && b.profile.inventory.wood === 5, version: JSON.parse(localStorage.getItem('tgw.save')).version }; });
     check('save: v1 -> v3 migration + reload persistence', r.migrated && r.persisted && r.version === 3, JSON.stringify(r)); await ctx.close(); }
   // 6. R58 boat economy: vest -> rent -> waterfall reward -> fishing + boat persist across reload
-  { const ctx = await context({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true }); const { p, errors, ok } = await startGame(ctx, 'fern');
+  { const ctx = await context({ viewport: { width: 844, height: 390 }, isMobile: true, hasTouch: true }); const { p, errors, ok } = await startGame(ctx, 'fern');
     const ready = ok && await p.waitForFunction(() => window.__tgw?.boatEco, null, { timeout: 240000 }).then(() => true, () => false);
     let r = {};
     if (ready) r = await p.evaluate(async () => {
@@ -93,7 +104,7 @@ try {
     check('boat economy: vest, rent, waterfall reward, persists after reload', ready && r.opts?.includes('vest') && r.vest && r.rented && r.reward && r.trips === 1 && persisted && !errors.length, errors[0] || JSON.stringify(r) + ' persisted=' + persisted);
     await ctx.close(); }
   // 7. R58.1 boat camera (free profile): follows behind the boat after turning; a swipe looks around
-  { const ctx = await context({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true }); const { p, errors, ok } = await startGame(ctx, 'fern');
+  { const ctx = await context({ viewport: { width: 844, height: 390 }, isMobile: true, hasTouch: true }); const { p, errors, ok } = await startGame(ctx, 'fern');
     const ready = ok && await p.waitForFunction(() => window.__tgw?.fishing, null, { timeout: 240000 }).then(() => true, () => false);
     const r = ready ? await p.evaluate(async () => {
       const g = window.__tgw, f = g.fishing, c = g.followCamera, w = ms => new Promise(x => setTimeout(x, ms)), off = () => Math.abs(Math.atan2(Math.sin(c.yaw - g.character.heading - Math.PI), Math.cos(c.yaw - g.character.heading - Math.PI)));
@@ -105,7 +116,7 @@ try {
     check('boat camera: follows behind the boat, swipe looks around', r.mode === 'boat' && r.behind < .45 && r.swiped && !errors.length, errors[0] || JSON.stringify(r));
     await ctx.close(); }
   // 7b. R64 Lake Run: start offer at the buoys, countdown holds the boat, buoys in order, log penalty, finish, medal reward, PB + ghost saved
-  { const ctx = await context({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true }); const { p, errors, ok } = await startGame(ctx, 'fern');
+  { const ctx = await context({ viewport: { width: 844, height: 390 }, isMobile: true, hasTouch: true }); const { p, errors, ok } = await startGame(ctx, 'fern');
     const ready = ok && await p.waitForFunction(() => window.__tgw?.lakeRun, null, { timeout: 240000 }).then(() => true, () => false);
     const r = ready ? await p.evaluate(async () => {
       const g = window.__tgw, f = g.fishing, L = g.lakeRun, B = f.boat, o = {}, inv = id => g.state.inventory.get(id) || 0;
@@ -125,7 +136,7 @@ try {
     check('lake run: start at buoys, countdown hold, buoys in order, log penalty, finish + medal reward, PB + ghost saved', ready && r.offer && r.held && r.order && r.state === 'result' && r.pen && r.pb && r.reward && r.card && r.saved && !errors.length, errors[0] || JSON.stringify(r));
     await ctx.close(); }
   // 8. R58.2 free-camera collision: backing into the workbench, a tree or the cabin never puts the camera inside the character
-  { const ctx = await context({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true }); const { p, errors, ok } = await startGame(ctx, 'fern');
+  { const ctx = await context({ viewport: { width: 844, height: 390 }, isMobile: true, hasTouch: true }); const { p, errors, ok } = await startGame(ctx, 'fern');
     const ready = ok && await p.waitForFunction(() => window.__tgw?.fishing, null, { timeout: 240000 }).then(() => true, () => false);
     const r = [];
     if (ready) { const probes = await p.evaluate(() => { const g = window.__tgw, t = g.world.obstacles.find(o => o.space !== 'garden' && o.height > 2 && o.r > .25 && o.r < .7), sp = g.fishing.shopPoint;
@@ -135,7 +146,7 @@ try {
     check('free camera collision: never inside the character (bench, tree, cabin)', r.length === 3 && r.every(x => x.horiz >= .85 && x.up >= 1.3) && !errors.length, errors[0] || JSON.stringify(r));
     await ctx.close(); }
   // 9. R59 wilds GLBs: all nine models load, nodes/thornbrush/caches use them, a gather clip completes
-  { const ctx = await context({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true }); const { p, errors, ok } = await startGame(ctx, 'fern');
+  { const ctx = await context({ viewport: { width: 844, height: 390 }, isMobile: true, hasTouch: true }); const { p, errors, ok } = await startGame(ctx, 'fern');
     const ready = ok && await p.waitForFunction(() => window.__tgw?.wilds?.modelsReady, null, { timeout: 240000 }).then(() => true, () => false);
     const r = ready ? await p.evaluate(async () => {
       const g = window.__tgw, w = g.wilds, kinds = new Set(w.nodes.filter(n => n.model).map(n => n.kind)), n = w.nodes.find(x => x.kind === 'wood' && x.state === 'ready');
@@ -186,7 +197,7 @@ try {
     check('garden build: defaults valid, pond/overlap rejected, old saves load, structures follow placement', r.valid && r.pondBlocked && r.overlap && r.weedsXZ && r.saved && r.follows && r.back && r.oldOk === true && !errors.length, errors[0] || JSON.stringify(r));
     await ctx.close(); }
   // 12. R60 step 2 build mode: ghost validity, cancel = no change, place moves group/collider/vegetation, persists, reset restores
-  { const ctx = await context({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true }); const p = await ctx.newPage(); const errors = []; p.on('pageerror', e => errors.push(e.message));
+  { const ctx = await context({ viewport: { width: 844, height: 390 }, isMobile: true, hasTouch: true }); const p = await ctx.newPage(); const errors = []; p.on('pageerror', e => errors.push(e.message));
     await p.addInitScript(() => { localStorage.setItem('dym.homeMovedIn.v1.fern', '1'); localStorage.setItem('tgw.devMenu', '1'); localStorage.setItem('dym-gh-level', '1'); });
     await p.goto(B + 'game.html?char=fern', { waitUntil: 'load' });
     const ok = await p.waitForFunction(() => window.__tgw?.wilds?.gardenModels && window.__tgw.greenhouse?.entries.size === 3, null, { timeout: 240000 }).then(() => true, () => false);
@@ -215,7 +226,7 @@ try {
     await ctx.close(); }
   // 13. R61 combat: Mole warning→emerge→up, strike with the axe, defeat → loot (walk over) + first bonus, Mole hurts,
   //     wilt drops half the common materials in a pouch + sends you home, pouch recovers them, mercy drops nothing
-  { const ctx = await context({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true }); const { p, errors, ok } = await startGame(ctx, 'fern');
+  { const ctx = await context({ viewport: { width: 844, height: 390 }, isMobile: true, hasTouch: true }); const { p, errors, ok } = await startGame(ctx, 'fern');
     const ready = ok && await p.waitForFunction(() => window.__tgw?.combat?.models?.mole, null, { timeout: 240000 }).then(() => true, () => false);
     let r = {};
     if (ready) {
@@ -254,7 +265,7 @@ try {
     await ctx.close(); }
   // 14. R63 Wood Giant: arena placed, wake + camera pull-back, stomp hurts 1 heart, weak window doubles damage,
   //     roots hurt + weak point damages the Giant, defeat → sinks, gate opens, Golden Seed loot, win saved
-  { const ctx = await context({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true }); const { p, errors, ok } = await startGame(ctx, 'fern');
+  { const ctx = await context({ viewport: { width: 844, height: 390 }, isMobile: true, hasTouch: true }); const { p, errors, ok } = await startGame(ctx, 'fern');
     const ready = ok && await p.waitForFunction(() => window.__tgw?.combat?.boss?.giant, null, { timeout: 240000 }).then(() => true, () => false);
     const r = ready ? await p.evaluate(() => { const g = window.__tgw, c = g.combat, B = c.boss, ch = g.character, o = {}; g.wilds.profile.tools.axe = true;
       // R65.1: walking close no longer wakes it; arena walls collide; the FIGHT marker starts it and the doors close
@@ -284,7 +295,7 @@ try {
     await ctx.close(); }
   // 17c. R65 character specials: Swing/Throw overlays on the locked character, landed hits fill the meter, all nine
   // specials hurt a Mole, the Giant's bark takes 0 and its weak window takes damage, a garden snail can be hit
-  { const ctx = await context({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true }); const { p, errors, ok } = await startGame(ctx, 'spire');
+  { const ctx = await context({ viewport: { width: 844, height: 390 }, isMobile: true, hasTouch: true }); const { p, errors, ok } = await startGame(ctx, 'spire');
     const ready = ok && await p.waitForFunction(() => window.__tgw?.combat?.boss?.giant && window.__tgw.combat.models?.mole && window.__tgw.combat.special, null, { timeout: 240000 }).then(() => true, () => false);
     const r = ready ? await p.evaluate(async () => {
       const g = window.__tgw, c = g.combat, S = c.special, m = c.moles[0], ch = g.character, B = c.boss, o = {}, w = ms => new Promise(x => setTimeout(x, ms));
@@ -308,7 +319,7 @@ try {
     await ctx.close(); }
   // 17b. R64.1 wilting mid-fight in the real frame loop ends the fight; the shed door back to the world does not
   // drop you into it again; the boss camera keeps the ground around you in view (camera above head height)
-  { const ctx = await context({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true }); const { p, errors, ok } = await startGame(ctx, 'fern');
+  { const ctx = await context({ viewport: { width: 844, height: 390 }, isMobile: true, hasTouch: true }); const { p, errors, ok } = await startGame(ctx, 'fern');
     const ready = ok && await p.waitForFunction(() => window.__tgw?.combat?.boss?.giant, null, { timeout: 240000 }).then(() => true, () => false);
     const r = ready ? await p.evaluate(async () => {
       const g = window.__tgw, c = g.combat, B = c.boss, o = {}, w = ms => new Promise(x => setTimeout(x, ms));
@@ -328,7 +339,7 @@ try {
     check('wood giant: wilt mid-fight ends the fight + camera shake, back to the world is not pulled into the arena, camera above head', ready && r.fight && r.camHigh && r.ended && r.still && r.free && !errors.length, errors[0] || JSON.stringify(r));
     await ctx.close(); }
   // 5. DEV disabled: no dev UI or handles leak into normal play
-  { const ctx = await context({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true }); const { p, errors, ok } = await startGame(ctx, 'daisy', { dev: false });
+  { const ctx = await context({ viewport: { width: 844, height: 390 }, isMobile: true, hasTouch: true }); const { p, errors, ok } = await startGame(ctx, 'daisy', { dev: false });
     const leak = ok && await p.evaluate(() => !!document.querySelector('.dev-menu-btn') || !!window.__tgw || !document.getElementById('dev-badge').hidden);
     check('dev disabled: no dev button, handle or badge', ok && !leak && !errors.length, errors[0]); await ctx.close(); }
 } finally {
