@@ -40,7 +40,7 @@ export class Game {
   async init({characterId='succulent',devMode=false}={}){
     this.state=new GameState();this.state.player.characterId=characterId;this.registry=new AssetRegistry(characterCatalog);this.uTime={value:0};
     this.renderer=new THREE.WebGLRenderer({antialias:true,powerPreference:'high-performance',preserveDrawingBuffer:false});
-    this.renderer.setPixelRatio(Math.min(devicePixelRatio,2));this.renderer.setSize(innerWidth,innerHeight);
+    this.renderer.setPixelRatio(Math.min(devicePixelRatio,2));this.renderer.setSize(innerWidth,innerHeight,false);
     this.renderer.outputColorSpace=THREE.SRGBColorSpace;this.renderer.toneMapping=THREE.ACESFilmicToneMapping;this.renderer.toneMappingExposure=1.02;
     this.renderer.setClearColor(0xdde5d3,1);this.renderer.shadowMap.enabled=true;this.renderer.shadowMap.type=THREE.PCFSoftShadowMap;
     document.getElementById('app').appendChild(this.renderer.domElement);
@@ -117,7 +117,7 @@ export class Game {
     this.cameraOcclusion.setFreeRules(this.followCamera.profileId==='free'); // profile was applied before occlusion existed
     this.structureVisibility=new StructureVisibilitySystem({world:this.world,greenhouse:this.greenhouse,orangery:this.orangery,stable:this.stable,cameraOcclusion:this.cameraOcclusion});
     this.clock=new THREE.Clock();this.time=0;this.lastMoved=false;
-    addEventListener('resize',()=>this.resize());this.resize();this.homePortal?.prepareMoveInCamera?.(this.camera,this.character);this.renderer.setAnimationLoop(()=>this.frame());
+    addEventListener('resize',()=>this.resize());visualViewport?.addEventListener('resize',()=>this.resize());addEventListener('orientationchange',()=>setTimeout(()=>this.resize(),250));this.resize();this.homePortal?.prepareMoveInCamera?.(this.camera,this.character);this.renderer.setAnimationLoop(()=>this.frame());
     this.quality=new QualityManager(this,this.input.isTouch);
     // R55 lifecycle contract: hidden page → stop rendering + flush save; visible again → resume
     // without a delta-time jump (timestamp-based systems catch up on their own).
@@ -147,7 +147,10 @@ export class Game {
     setTimeout(()=>{if(!this.input.moved&&!this.homePortal?.usesMoveInCamera?.())this.hud.hint.style.opacity='0';},9000);
   }
 
-  resize(){if(this.quality)this.renderer.setPixelRatio(Math.min(devicePixelRatio||1,QUALITY[this.quality.id].dpr));this.renderer.setSize(innerWidth,innerHeight);this.camera.aspect=innerWidth/innerHeight;this.camera.fov=this.camera.aspect<.8?58:48;this.camera.updateProjectionMatrix();}
+  // R66: size from the fixed #app box and let CSS stretch the canvas (inset:0), not window.innerHeight px: iOS home-screen
+  // apps can report a shorter innerHeight than the screen, which left a strip under the canvas.
+  viewSize(){const a=document.getElementById('app'),r=a?.getBoundingClientRect();const w=Math.round(r?.width||innerWidth),h=Math.round(Math.max(r?.height||0,innerHeight,visualViewport?.height||0));return{w,h};}
+  resize(){if(this.quality)this.renderer.setPixelRatio(Math.min(devicePixelRatio||1,QUALITY[this.quality.id].dpr));const{w,h}=this.viewSize();this.renderer.setSize(w,h,false);this.camera.aspect=w/h;this.camera.fov=this.camera.aspect<.8?58:48;this.camera.updateProjectionMatrix();}
   frame(){
     const rawDt=this.clock.getDelta();this.quality?.sample(rawDt);const dt=Math.min(rawDt,1/20);this.time+=dt;this.uTime.value=this.time;this.input.update();
     if(this.input.moved&&!this.lastMoved){this.lastMoved=true;this.hud.markMoved();}

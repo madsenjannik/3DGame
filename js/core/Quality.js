@@ -23,7 +23,8 @@ export class QualityManager {
   }
   apply() {
     const q = QUALITY[this.id], r = this.g.renderer;
-    r.setPixelRatio(Math.min(devicePixelRatio || 1, q.dpr)); r.setSize(innerWidth, innerHeight);
+    r.setPixelRatio(Math.min(devicePixelRatio || 1, q.dpr));
+    if (this.g.viewSize) { const { w, h } = this.g.viewSize(); r.setSize(w, h, false); } else r.setSize(innerWidth, innerHeight, false);   // R66: CSS owns the canvas box
     const sun = this.g.world?.sun;
     if (sun && sun.shadow.mapSize.x !== q.shadow) { sun.shadow.mapSize.set(q.shadow, q.shadow); sun.shadow.map?.dispose(); sun.shadow.map = null; }
     log('PERF', `quality ${this.id} (dpr ${r.getPixelRatio().toFixed(2)}, shadow ${q.shadow})`);

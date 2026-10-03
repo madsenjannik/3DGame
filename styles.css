@@ -1029,6 +1029,7 @@ body.stable-race-result-active .stable-race-controls,body.stable-race-result-act
 .build-bar{position:fixed;left:50%;bottom:calc(16px + env(safe-area-inset-bottom));transform:translate(-50%,140%);z-index:60;display:flex;gap:12px;align-items:center;
   padding:10px 12px 10px 16px;border-radius:22px;background:rgba(28,36,24,.86);color:#f4f1e8;font-family:Manrope,system-ui,sans-serif;
   box-shadow:0 10px 30px rgba(0,0,0,.28);transition:transform .25s ease;max-width:calc(100vw - 24px);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px)}
+.build-bar:not(.open){visibility:hidden;transition:transform .25s ease,visibility 0s .25s}   /* R66: it peeked out under the screen edge on tall phones */
 .build-bar.open{transform:translate(-50%,0)}
 .build-info{display:flex;flex-direction:column;min-width:0}
 .build-info small{font-size:10px;letter-spacing:.16em;opacity:.65}
@@ -1108,3 +1109,22 @@ body.hurt-flash::after{content:'';position:fixed;inset:0;pointer-events:none;z-i
 @keyframes special-pulse{50%{transform:scale(1.08)}}
 .touch .special-btn .key{display:none}
 body:not(.touch) .special-btn{bottom:calc(96px + env(safe-area-inset-bottom))}
+
+/* ===== R66 minimal phone HUD: minimap + two small buttons; everything else on demand or for a moment ===== */
+#hud-quick,#hud-peek{display:none}
+.touch #hud-quick{display:flex;gap:8px;position:fixed;z-index:21;top:calc(env(safe-area-inset-top) + 134px);right:calc(27px + env(safe-area-inset-right))}
+.touch #hud-quick button{position:relative;width:40px;height:40px;border-radius:50%;border:1px solid rgba(255,255,255,.24);background:rgba(28,36,24,.5);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);color:#fff1b8;display:grid;place-items:center;padding:0;cursor:pointer}
+.touch #hud-quick button i{font-style:normal;font:800 17px Manrope,system-ui,sans-serif;line-height:1}
+.touch #hud-quick #hud-goal.new::after{content:'';position:absolute;top:2px;right:2px;width:9px;height:9px;border-radius:50%;background:#ffd76a;box-shadow:0 0 6px #ffd76a}
+.touch.hud-bag-open #hud-bag,.touch.goal-peek #hud-goal{background:rgba(217,164,65,.85);color:#2a2112}
+.touch #hud-peek{display:block;position:fixed;z-index:21;top:calc(env(safe-area-inset-top) + 134px);right:calc(127px + env(safe-area-inset-right));height:40px;line-height:40px;padding:0 14px;border-radius:999px;background:rgba(28,36,24,.62);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);color:#fff1b8;font:800 13px Manrope,system-ui,sans-serif;white-space:nowrap;opacity:0;transform:translateX(8px);transition:opacity .25s ease,transform .25s ease;pointer-events:none}
+.touch #hud-peek.show{opacity:1;transform:none}
+/* bag: inventory hidden until opened, then a panel under the buttons */
+.touch #inventory{position:fixed;top:calc(env(safe-area-inset-top) + 184px);right:max(14px,env(safe-area-inset-right));margin:0!important;align-items:flex-end;opacity:0;transform:translateY(-6px);pointer-events:none;transition:opacity .22s ease,transform .22s ease}
+.touch.hud-bag-open #inventory{opacity:1;transform:none;pointer-events:auto}
+.touch #inventory #materials.materials-card{position:static;opacity:1;transform:none}
+/* objective: hidden on phones until it peeks (new step, or the ! button) */
+.touch #objective{opacity:0;transform:translateY(-6px);pointer-events:none;transition:opacity .25s ease,transform .25s ease}
+.touch.goal-peek #objective{opacity:1;transform:none}
+body.fishing-active #hud-quick,body.fishing-active #hud-peek,body.stable-talk-active #hud-quick,body.stable-race-active #hud-quick,body.stable-shop-scene #hud-quick,body.stable-race-result-active #hud-quick,body.world-map-open #hud-quick{opacity:0;pointer-events:none}
+.touch.hud-bag-open #inventory .inventory-card,.touch.hud-bag-open #inventory #materials.materials-card{background:rgba(28,36,24,.78)}

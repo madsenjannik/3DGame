@@ -1575,6 +1575,7 @@ are only touched where a measured hotspot requires it, minimally.
    failure. Must pass before every push (CLAUDE.md rule 5).
 
 **B status 02/10/2026: complete (R51–R57).** On-device check (iPhone, Jannik 02/10): 60 fps steady (frame max 20–24 ms), 217 draw calls / 370k tris in the garden, 363 / 433k at the lake, mobile-high, 1 WebGL context → no perf work needed before C.
+**Phone HUD (R66, v0.8.10):** on touch only the minimap + two buttons (! objective, bag) are always visible; inventory opens from the bag, gains peek for 2.5 s, a new objective peeks for 5 s. Canvas sizing no longer pins innerHeight px; the closed build bar is truly hidden.
 **Knockback + legs (R65.3, v0.8.03):** only the Giant's feet block (you can run between its legs); hits throw you back with a short slide (big Stomp/Slam hits arc with a hop and lock control ~0.45 s) instead of a 0.75 m teleport. Tunables: `PLAYER.knockback/knockTime`, `GIANT.*.push`.
 **Arena collision fix (R65.2, v0.8.02):** the Wood Giant blocks with body + both feet (bone-following colliders, world space); open gate leaves block outside the fight, the gate line during it.
 **Arena (R65.1, v0.8.01):** stones/wall/gate posts collide (277 circles from the model's vertices), doors only while the fight is on; the Giant wakes only from the golden FIGHT holo marker outside the gate (no more 9 m auto-wake).

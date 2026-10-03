@@ -3,6 +3,7 @@ export class Hud {
   constructor(state){
     this.seed=document.getElementById('seed-count');this.action=document.getElementById('action');this.toast=document.getElementById('toast');this.objective=document.getElementById('objective');this.kicker=document.getElementById('objective-kicker');this.title=document.getElementById('objective-title');this.copy=document.getElementById('objective-copy');this.hint=document.getElementById('hint');this.loading=document.getElementById('loading');this.materials=document.getElementById('materials');
     this.materialIds=['wood','stone','clay','fiber','amber','shell','wild_seed'];
+    this.buildQuick(state);
     this.seed.textContent=String(state.inventory.get('rare_seed')||0);
     this.materialIds.forEach(id=>this.setMaterial(id,state.inventory.get(id)||0));
     // Golden Seeds from the wilds (golden_seed) and the first-discovery seed share one counter.
@@ -35,11 +36,31 @@ export class Hud {
     state.events.on('golden-lotus:grown',()=>{this.objective.classList.add('complete');this.kicker.textContent='GOLDEN GROWTH';this.title.textContent='Golden Lotus';this.copy.textContent='Your first rare payoff plant has bloomed.';this.showToast('Golden Lotus bloomed');});
     state.events.on('greenhouse:level-changed',e=>{this.showToast(e.level===1?'Drivhus bygget':'Drivhus opgraderet');});
   }
+  // R66 minimal phone HUD (CSS applies it on .touch only; desktop keeps the full HUD). Always on screen: the minimap
+  // plus two small buttons under it. Bag = materials, tools and Golden Seeds; the goal button shows the objective.
+  // A changed material peeks for 2.5 s ("▰ Wood +2"), a new objective peeks for 5 s.
+  buildQuick(state){
+    const q=document.createElement('div');q.id='hud-quick';
+    q.innerHTML='<button type="button" id="hud-goal" aria-label="Objective"><i>!</i></button><button type="button" id="hud-bag" aria-label="Bag"><i>🎒</i></button>';
+    const peek=document.createElement('div');peek.id='hud-peek';
+    document.body.append(q,peek);this.peekEl=peek;
+    const tap=(el,fn)=>el.addEventListener('pointerdown',e=>{e.stopPropagation();e.preventDefault();fn();});
+    tap(q.querySelector('#hud-bag'),()=>this.toggleBag());
+    tap(q.querySelector('#hud-goal'),()=>this.showGoal(!document.body.classList.contains('goal-peek'),6000));
+    const names={wood:'Wood',stone:'Stone',clay:'Clay',fiber:'Fiber',amber:'Amber',shell:'Snail Shell',wild_seed:'Wild Seed',golden_seed:'Golden Seed',rare_seed:'Golden Seed'};
+    const icons={wood:'▰',stone:'◆',clay:'●',fiber:'≋',amber:'⬣',shell:'◎',wild_seed:'❀',golden_seed:'✦',rare_seed:'✦'};
+    this._last={};for(const id of Object.keys(names))this._last[id]=state.inventory.get(id)||0;
+    state.events.on('inventory:changed',e=>{if(!(e.id in names))return;const d=(e.amount||0)-(this._last[e.id]||0);this._last[e.id]=e.amount||0;if(d>0)this.peek(`${icons[e.id]} ${names[e.id]} +${d}`);});
+  }
+  peek(text){const p=this.peekEl;if(!p)return;p.textContent=text;p.classList.add('show');clearTimeout(this._peekT);this._peekT=setTimeout(()=>p.classList.remove('show'),2500);}
+  toggleBag(on=!document.body.classList.contains('hud-bag-open')){document.body.classList.toggle('hud-bag-open',on);if(on)this.showGoal(false);clearTimeout(this._bagT);if(on)this._bagT=setTimeout(()=>this.toggleBag(false),8000);}
+  showGoal(on,ms=5000){document.body.classList.toggle('goal-peek',on);clearTimeout(this._goalT);if(on){document.getElementById('hud-goal')?.classList.remove('new');document.body.classList.remove('hud-bag-open');this._goalT=setTimeout(()=>this.showGoal(false),ms);}}
   setMaterial(id,value){const el=document.getElementById(`${id}-count`);if(el)el.textContent=String(value);}
   setObjective(kicker,goal){
     if(!goal||(this._goalTitle===goal.title&&this.kicker.textContent===kicker))return;
     this._goalTitle=goal.title;this.objective.classList.remove('complete');
     this.kicker.textContent=kicker;this.title.textContent=goal.title;this.copy.textContent=goal.copy;
+    document.getElementById('hud-goal')?.classList.add('new');this.showGoal(true,5000);   // R66: a new step peeks on phones
   }
   setTools(tools,water){
     const row=document.getElementById('tools-row');if(!row)return;

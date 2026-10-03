@@ -49,6 +49,17 @@ try {
     check(`game ${name}: loads, player moves, objective shown`, ok && moved && !!obj && !errors.length, errors[0] || obj);
     await ctx.close();
   }
+  // 2b. R66 minimal phone HUD: only minimap + 2 buttons by default; bag opens the inventory; a gain peeks; canvas fills the screen
+  { const ctx = await context({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true }); const { p, errors, ok } = await startGame(ctx, 'tulip');
+    const r = ok ? await p.evaluate(async () => { const g = window.__tgw, op = id => +getComputedStyle(document.getElementById(id)).opacity, w = ms => new Promise(x => setTimeout(x, ms)), o = {};
+      await w(6000); document.body.classList.remove('goal-peek'); await w(400);
+      o.clean = op('inventory') === 0 && op('objective') === 0 && op('hud-quick') === 1;
+      document.getElementById('hud-bag').dispatchEvent(new PointerEvent('pointerdown', { bubbles: true })); for (let i = 0; i < 40 && op('inventory') < .99; i++) await w(100); o.bag = document.body.classList.contains('hud-bag-open') && op('inventory') > .99;
+      g.state.addItem('wood', 2); await w(300); o.peek = document.getElementById('hud-peek').textContent.includes('Wood +2');
+      const c = document.querySelector('#app canvas'); o.fill = c.getBoundingClientRect().height === innerHeight && !c.style.height;
+      o.bar = getComputedStyle(document.querySelector('.build-bar')).visibility === 'hidden'; return o; }) : {};
+    check('phone HUD: minimap + 2 buttons only, bag opens inventory, gains peek, canvas fills, build bar hidden', ok && r.clean && r.bag && r.peek && r.fill && r.bar && !errors.length, errors[0] || JSON.stringify(r));
+    await ctx.close(); }
   // 3. Missing assets must not black-screen the game
   { const ctx = await context({ viewport: { width: 844, height: 390 }, isMobile: true, hasTouch: true }, [/assets\/stable\//, /lake_cabin|cabin_fishing_runtime/, /greenhouse-l1/, /characters\/fern\.glb/]);
     const { p, errors, ok } = await startGame(ctx, 'fern'); const failed = ok ? await p.evaluate(() => window.__tgw.failed) : [];
