@@ -1162,3 +1162,110 @@ body.rotate-gated #rotate-gate{display:flex;position:fixed;inset:0;z-index:20000
 @keyframes rg-fall{0%{transform:translate(0,0) rotate(0)}50%{transform:translate(28px,55vh) rotate(200deg)}100%{transform:translate(-12px,110vh) rotate(420deg)}}
 @media (prefers-reduced-motion:reduce){#rotate-gate *{animation:none!important}}
 body.rotate-gated #hud,body.rotate-gated #joy,body.rotate-gated #action,body.rotate-gated .special-btn,body.rotate-gated #hud-quick{visibility:hidden}
+
+/* =====================================================================================================
+   R68 HUD design system (Jannik's landscape HUD sheet, 03/10). Dark green glass, cream text, thin gold
+   line, Manrope; big moments in Lilita One. Only the game's own data and icons (brand/icons, character icons).
+   ===================================================================================================== */
+:root{--tgw-glass:rgba(30,40,28,.62);--tgw-glass-2:rgba(24,32,22,.84);--tgw-line:rgba(233,196,106,.38);--tgw-cream:#f6f0dc;--tgw-gold:#e9c46a;
+  --tgw-green:#8fd14f;--tgw-good:#9be38a;--tgw-red:#e8604a;--tgw-r:16px;--tgw-blur:blur(12px) saturate(1.15);--tgw-shadow:0 8px 22px rgba(10,16,8,.28)}
+.tgw-glass{background:var(--tgw-glass);border:1px solid var(--tgw-line);border-radius:var(--tgw-r);-webkit-backdrop-filter:var(--tgw-blur);backdrop-filter:var(--tgw-blur);box-shadow:var(--tgw-shadow);color:var(--tgw-cream)}
+
+/* objective: pill with a clay leaf, title + one line, chevron */
+.objective-card{background:var(--tgw-glass);border:1px solid var(--tgw-line);box-shadow:var(--tgw-shadow);padding:10px 30px 10px 54px;min-height:44px;border-radius:18px}
+.objective-card::before{content:'';position:absolute;left:10px;top:50%;width:34px;height:34px;margin-top:-17px;border-radius:50%;background:rgba(246,240,220,.12) url(./brand/icons/64/icon-leaf.png) center/24px no-repeat;border:1px solid var(--tgw-line)}
+.objective-card::after{content:'›';position:absolute;right:12px;top:50%;transform:translateY(-52%);font:700 20px/1 Manrope,system-ui,sans-serif;color:rgba(246,240,220,.7)}
+.objective-card small{color:var(--tgw-gold);opacity:.9}
+@media (max-height:620px){.objective-card{padding:7px 28px 7px 46px}.objective-card::before{width:28px;height:28px;margin-top:-14px;background-size:20px}}
+
+/* phone quick buttons + peek: clay icons on glass */
+.touch #hud-quick button{width:44px;height:44px;background:var(--tgw-glass);border:1px solid var(--tgw-line);box-shadow:var(--tgw-shadow)}
+.touch #hud-quick button img{width:28px;height:28px;object-fit:contain;filter:drop-shadow(0 2px 3px rgba(0,0,0,.3))}
+.touch.hud-bag-open #hud-bag,.touch.goal-peek #hud-goal{background:rgba(233,196,106,.9);border-color:#fff1b8}
+.touch #hud-quick{top:calc(env(safe-area-inset-top) + 132px);right:calc(23px + env(safe-area-inset-right))}
+.touch #hud-peek{background:var(--tgw-glass);border:1px solid var(--tgw-line);color:var(--tgw-cream);box-shadow:var(--tgw-shadow);height:44px;line-height:44px;top:calc(env(safe-area-inset-top) + 132px)}
+.inventory-card,.materials-card{border-color:var(--tgw-line)!important}
+
+/* vitals: hearts pill + special meter bar, top left */
+.hearts{left:max(18px,env(safe-area-inset-left));top:calc(max(14px,env(safe-area-inset-top)) + 4px);transform:none;padding:7px 12px;gap:5px;border-radius:999px;background:var(--tgw-glass);border:1px solid var(--tgw-line);box-shadow:var(--tgw-shadow);-webkit-backdrop-filter:var(--tgw-blur);backdrop-filter:var(--tgw-blur)}
+.hearts i{width:20px;height:18px}
+body.goal-peek .hearts,body.goal-peek .special-bar{transform:translateY(64px)}
+.hearts,.special-bar{transition:opacity .3s ease,transform .3s ease}
+.special-bar{position:fixed;z-index:30;left:max(18px,env(safe-area-inset-left));top:calc(max(14px,env(safe-area-inset-top)) + 44px);display:flex;align-items:center;gap:8px;padding:4px 10px 4px 4px;border-radius:999px;opacity:0;pointer-events:none}
+.special-bar.show{opacity:1}
+.special-bar i{width:26px;height:26px;border-radius:50%;background:rgba(246,240,220,.12) center/22px no-repeat;border:1px solid var(--tgw-line)}
+.special-bar span{display:block;width:120px;height:9px;border-radius:999px;background:rgba(10,14,8,.5);overflow:hidden;border:1px solid rgba(246,240,220,.2)}
+.special-bar em{display:block;height:100%;width:0;background:linear-gradient(90deg,#e2b552,#ffe08a);transition:width .25s ease}
+.special-bar.full em{box-shadow:0 0 10px #ffe08a}
+@media (max-height:430px){.hearts{top:calc(max(8px,env(safe-area-inset-top)) + 2px);padding:5px 10px}.hearts i{width:16px;height:14px}.special-bar{top:calc(max(8px,env(safe-area-inset-top)) + 34px)}.special-bar span{width:90px}}
+@media (max-width:700px) and (orientation:portrait){.hearts{top:auto;bottom:calc(max(14px,env(safe-area-inset-bottom)) + 92px)}}
+
+/* special + action buttons: glass with gold rim */
+.special-btn{box-shadow:var(--tgw-shadow),0 0 0 1px var(--tgw-line)}
+#action{background:var(--tgw-glass);border-color:var(--tgw-line);box-shadow:var(--tgw-shadow)}
+#action .key{background:rgba(233,196,106,.22);color:#fff1b8}
+
+/* Wood Giant bar: centred top, red fill in a cream frame, gold while the weak window is open */
+.boss-bar{top:calc(max(14px,env(safe-area-inset-top)) + 6px);width:min(460px,calc(100vw - 340px));letter-spacing:.3em}
+.boss-bar b{display:inline-flex;align-items:center;gap:8px}
+.boss-bar b::before{content:'';width:18px;height:18px;background:url(./brand/icons/64/icon-leaf.png) center/contain no-repeat}
+.boss-track{height:14px;border:2px solid rgba(246,240,220,.75);background:rgba(20,12,10,.6);box-shadow:var(--tgw-shadow)}
+.boss-track i{background:linear-gradient(90deg,#c94a36,#ef6a50)}
+@media (max-width:700px){.boss-bar{width:calc(100vw - 32px)}}
+
+/* Lake Run: clock + split top left, buoys + best top centre, penalties under the clock */
+.lakerun-hud{left:max(18px,env(safe-area-inset-left));right:auto;top:calc(max(14px,env(safe-area-inset-top)) + 4px);transform:translateY(-10px);min-width:0;padding:0;border:0;background:none;text-align:left;letter-spacing:0;text-transform:none}
+.lakerun-hud.show{transform:none}
+.lakerun-hud .lr-clock{display:flex;align-items:center;gap:10px;padding:8px 16px 8px 12px}
+.lakerun-hud .lr-clock i,.lakerun-hud .lr-flags i,.lakerun-hud .lr-pen i{display:block;width:26px;height:26px}
+.lakerun-hud svg{width:100%;height:100%;display:block}
+.lakerun-hud .lr-time{font:800 30px/1 Manrope,system-ui,sans-serif;color:#fff;font-variant-numeric:tabular-nums;letter-spacing:.01em}
+.lakerun-hud .lr-split{display:inline-block;height:auto;margin:6px 0 0 10px;padding:3px 12px;border-radius:999px;background:var(--tgw-glass-2);font:800 15px/1.3 Manrope,system-ui,sans-serif;font-variant-numeric:tabular-nums;opacity:0;transition:opacity .25s ease}
+.lakerun-hud .lr-split.show{opacity:1;height:auto}
+.lakerun-hud .lr-split.good{color:var(--tgw-good)}.lakerun-hud .lr-split.bad{color:#ff9f7a}
+.lakerun-hud .lr-pen{display:flex;align-items:center;gap:8px;margin-top:8px;padding:6px 14px 6px 10px;width:max-content;opacity:0;transform:translateY(-4px);transition:opacity .25s ease,transform .25s ease}
+.lakerun-hud .lr-pen.show{opacity:1;transform:none}
+.lakerun-hud .lr-pen small{display:block;font:800 9px/1 Manrope,system-ui,sans-serif;letter-spacing:.2em;color:rgba(246,240,220,.75)}
+.lakerun-hud .lr-pen b{font:800 16px/1.2 Manrope,system-ui,sans-serif;color:#ff9f7a;font-variant-numeric:tabular-nums}
+.lakerun-hud .lr-pen.flash{animation:lr-pen 0.6s ease}
+@keyframes lr-pen{30%{transform:scale(1.12);box-shadow:0 0 0 3px rgba(232,96,74,.5)}}
+.lakerun-hud .lr-flags{position:fixed;left:50%;top:calc(max(14px,env(safe-area-inset-top)) + 4px);transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;gap:6px}
+.lakerun-hud .lr-buoys{display:flex;align-items:center;gap:10px;padding:7px 16px 7px 12px}
+.lakerun-hud .lr-buoys b{font:800 24px/1 Manrope,system-ui,sans-serif;color:#fff;font-variant-numeric:tabular-nums}
+.lakerun-hud .lr-best{display:flex;align-items:center;gap:7px;padding:4px 12px 4px 8px;border-radius:999px}
+.lakerun-hud .lr-best i{width:16px!important;height:16px!important}
+.lakerun-hud .lr-best small{font:800 9px/1 Manrope,system-ui,sans-serif;letter-spacing:.18em;color:rgba(246,240,220,.75)}
+.lakerun-hud .lr-best b{font:800 13px/1 Manrope,system-ui,sans-serif;font-variant-numeric:tabular-nums}
+.lakerun-count{font-family:'Lilita One',Manrope,system-ui,sans-serif;font-weight:400;color:#ffd45a;text-shadow:4px 0 0 #2b2a24,-4px 0 0 #2b2a24,0 4px 0 #2b2a24,0 -4px 0 #2b2a24,3px 3px 0 #2b2a24,-3px 3px 0 #2b2a24,3px -3px 0 #2b2a24,-3px -3px 0 #2b2a24,0 8px 0 #2b2a24,0 14px 18px rgba(0,0,0,.35)}
+@media (max-height:430px){.lakerun-hud .lr-time{font-size:24px}.lakerun-hud .lr-buoys b{font-size:19px}.lakerun-hud .lr-clock{padding:6px 12px 6px 9px}}
+
+/* Lake Run result card: header + laurel medal + time and PB delta + board + reward + row buttons */
+.lakerun-result{width:min(380px,calc(100vw - 32px));padding:14px 16px 14px;border-radius:22px;background:var(--tgw-glass-2);border:1px solid var(--tgw-line);text-align:left;box-shadow:0 18px 40px rgba(0,0,0,.35)}
+.lakerun-result>header{display:flex;align-items:center;gap:8px;padding:2px 2px 10px;border-bottom:1px solid rgba(246,240,220,.14)}
+.lakerun-result>header b{font:800 12px/1 Manrope,system-ui,sans-serif;letter-spacing:.24em;color:var(--tgw-cream)}
+.lakerun-result>header i{width:18px;height:18px}.lakerun-result svg{width:100%;height:100%;display:block}
+.lakerun-result .lr-top{display:flex;align-items:center;gap:14px;padding:12px 2px 6px}
+.lakerun-result .lr-laurel{display:flex;align-items:center;gap:2px}
+.lakerun-result .lr-laurel i{width:20px;height:44px}.lakerun-result .lr-laurel i.r{transform:scaleX(-1)}
+.lakerun-result .lr-laurel.none i{opacity:.25}
+.lakerun-result .lr-medal{background:none!important;padding:0 4px;font:400 30px/1 'Lilita One',Manrope,system-ui,sans-serif;letter-spacing:0;text-transform:none;color:#ffd45a;text-shadow:2px 0 0 #2b2a24,-2px 0 0 #2b2a24,0 2px 0 #2b2a24,0 -2px 0 #2b2a24,0 4px 0 #2b2a24}
+.lakerun-result .lr-medal.silver{color:#dfe3e8}.lakerun-result .lr-medal.bronze{color:#d9945a}.lakerun-result .lr-medal.none{color:rgba(246,240,220,.6)}
+.lakerun-result .lr-times{margin-left:auto;text-align:right}
+.lakerun-result .lr-big{margin:0;font:800 30px/1 Manrope,system-ui,sans-serif;color:#fff;font-variant-numeric:tabular-nums}
+.lakerun-result .lr-delta{display:flex;justify-content:flex-end;align-items:center;gap:5px;margin-top:5px;font:800 14px/1 Manrope,system-ui,sans-serif;font-variant-numeric:tabular-nums}
+.lakerun-result .lr-delta svg{width:15px;height:15px}.lakerun-result .lr-delta.good{color:var(--tgw-good)}.lakerun-result .lr-delta.bad{color:#ff9f7a}
+.lakerun-result .lr-info{margin:4px 2px 8px;font-size:12px;color:rgba(246,240,220,.8)}
+.lakerun-result .lr-board{margin:0 0 8px;padding:6px 10px 6px 30px;border-radius:12px;background:rgba(246,240,220,.06)}
+.lakerun-result .lr-reward{margin:0 2px 10px;font-size:12.5px;color:#fff1b8}
+.lakerun-result .lr-btns{flex-direction:column;gap:8px}
+.lakerun-result .lr-btns button,.lakerun-result .lr-btns button[data-lr="again"]{display:flex;align-items:center;gap:12px;min-height:46px;padding:0 14px;border-radius:14px;background:rgba(246,240,220,.08);border:1px solid rgba(246,240,220,.18);color:var(--tgw-cream);font:700 14px Manrope,system-ui,sans-serif;text-align:left}
+.lakerun-result .lr-btns button[data-lr="again"]{border-color:var(--tgw-line);background:rgba(233,196,106,.16)}
+.lakerun-result .lr-btns button span{width:20px;text-align:center;color:var(--tgw-gold)}.lakerun-result .lr-btns button em{margin-left:auto;font-style:normal;opacity:.7}
+@media (max-height:430px){.lakerun-result{max-height:calc(100vh - 20px)}.lakerun-result .lr-board li:nth-child(n+4):not(.you){display:none}}
+body.vitals-on:not(.touch) .objective-card{transform:translateY(40px)}
+body.lakerun-active .hearts,body.lakerun-active .special-bar,body.lakerun-active .special-btn,body.fishing-active .special-bar,body.fishing-active .special-btn{opacity:0!important;pointer-events:none!important}
+.lakerun-result .lr-medal.gold{color:#ffd45a}
+.lakerun-result .lr-laurel i{width:24px;height:52px}
+.lakerun-result .lr-btns{flex-direction:row}.lakerun-result .lr-btns button{flex:1}
+@media (max-height:430px){.lakerun-result{padding:10px 14px}.lakerun-result>header{padding-bottom:6px}.lakerun-result .lr-top{padding:6px 2px 2px}.lakerun-result .lr-big{font-size:26px}
+  .lakerun-result .lr-info{margin:2px 2px 4px}.lakerun-result .lr-board{margin-bottom:4px;padding-top:3px;padding-bottom:3px}.lakerun-result .lr-board li{padding:1px 0}.lakerun-result .lr-reward{margin-bottom:6px}.lakerun-result .lr-btns button{min-height:40px}}

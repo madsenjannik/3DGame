@@ -277,9 +277,9 @@ export class CombatSystem {
       ch.position.x += k.x * step; ch.position.z += k.z * step; this.g.world.resolveCollisions?.(ch.position, ch.radius || .3); ch.velocity?.set(0, 0, 0);
       if (k.t >= k.dur || this.wilting) this.kb = null;
     }
-    if (this.special) { this.special.update(dt); this.special.btn?.classList.toggle('show', !!this.special.charge || time - this.lastCombat < 6); }  // R65
+    if (this.special) { this.special.update(dt); const on = !!this.special.charge || time - this.lastCombat < 6; this.special.btn?.classList.toggle('show', on); this.special.bar?.classList.toggle('show', on && this.hudEl.classList.contains('show')); }  // R65
     if (!this.wilting && this.hp < MAX_HP && !this.boss?.fighting() && time - this.lastHit > PLAYER.regenDelay && (time - (this.lastRegen || 0)) > PLAYER.regenEvery) { this.lastRegen = time; this.heal(false); }
-    this.hudEl.classList.toggle('show', this.hp < MAX_HP || time - this.lastCombat < 4);
+    const vitals = this.hp < MAX_HP || time - this.lastCombat < 4; this.hudEl.classList.toggle('show', vitals); document.body.classList.toggle('vitals-on', vitals);   // R68: desktop objective steps aside
     if (this.g.world.space === 'garden') {
       if (!active || this.wilting) return { interaction: null };
       const wpn = this.weapon(), t = this.target(wpn.reach + .6);

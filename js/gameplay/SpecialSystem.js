@@ -30,6 +30,10 @@ export class SpecialSystem {
     b.innerHTML = `<i style="background-image:url(./assets/combat/specials/icon_${this.def.file}.png)"></i><span class="key">F</span><b>${this.def.meter}</b>`;
     b.addEventListener('pointerdown', e => { e.stopPropagation(); e.preventDefault(); this.use(); });
     document.body.appendChild(b); this.btn = b;
+    // R68: the same meter as a bar under the hearts (landscape HUD sheet): character icon + gold fill.
+    const bar = document.createElement('div'); bar.className = 'special-bar tgw-glass';
+    bar.innerHTML = `<i style="background-image:url(./assets/combat/specials/icon_${this.def.file}.png)"></i><span><em></em></span>`;
+    document.body.appendChild(bar); this.bar = bar; this.barFill = bar.querySelector('em');
     addEventListener('keydown', e => { if (e.code === 'KeyF' && !e.repeat && !/INPUT|TEXTAREA/.test(document.activeElement?.tagName || '')) this.use(); });
     this.render();
   }
@@ -37,6 +41,7 @@ export class SpecialSystem {
     if (!this.btn) return;
     const k = Math.min(1, this.charge / SPECIAL.chargeHits);
     this.btn.style.setProperty('--k', `${k * 360}deg`); this.btn.classList.toggle('full', k >= 1);
+    if (this.barFill) { this.barFill.style.width = `${k * 100}%`; this.bar.classList.toggle('full', k >= 1); }
     this.btn.title = `${this.def.name} (${this.def.meter} ${Math.round(k * 100)}%)`;
   }
   // Called by CombatSystem when a melee strike lands.

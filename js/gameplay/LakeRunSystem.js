@@ -14,6 +14,16 @@ const dayKey = (d = new Date()) => `${d.getFullYear()}-${String(d.getMonth() + 1
 const weekStart = () => { const d = new Date(); d.setHours(12, 0, 0, 0); d.setDate(d.getDate() - (d.getDay() + 6) % 7); return d; };
 const weekDays = () => { const s = weekStart(), out = []; for (let i = 0; i < 7; i++) { const x = new Date(s); x.setDate(s.getDate() + i); out.push(dayKey(x)); } return out; };
 const fmt = t => `${Math.floor(t / 60)}:${(t % 60).toFixed(1).padStart(4, '0')}`;
+const fmt2 = t => `${String(Math.floor(t / 60)).padStart(2, '0')}:${(t % 60).toFixed(2).padStart(5, '0')}`;   // R68 race clock
+// R68 HUD icons (inline SVG, game palette)
+const ICON = {
+  clock: '<svg viewBox="0 0 24 24"><circle cx="12" cy="13.5" r="8" fill="none" stroke="#e9c46a" stroke-width="2.4"/><path d="M12 13.5V9M9.5 3h5M12 3v2.5" stroke="#e9c46a" stroke-width="2.4" stroke-linecap="round"/></svg>',
+  flag: '<svg viewBox="0 0 24 24"><path d="M6 21V4" stroke="#fff1b8" stroke-width="2.4" stroke-linecap="round"/><path d="M6 4h11l-2.5 4L17 12H6z" fill="#e9c46a"/></svg>',
+  crown: '<svg viewBox="0 0 24 24"><path d="M4 17 3 7l5 4 4-6 4 6 5-4-1 10z" fill="#e9c46a"/></svg>',
+  cone: '<svg viewBox="0 0 24 24"><path d="M12 3 5 20h14z" fill="#e8604a"/><path d="M8.3 12h7.4M6.8 16h10.4" stroke="#fff1b8" stroke-width="2"/></svg>',
+  leaf: '<svg viewBox="0 0 24 24"><path d="M5 19C5 10 11 5 20 4c0 9-5 15-14 15z" fill="#8fd14f"/><path d="M6 18 15 9" stroke="#3f7a2a" stroke-width="1.6"/></svg>',
+  laurel: '<svg viewBox="0 0 40 64"><g fill="#e9c46a"><ellipse cx="14" cy="10" rx="4" ry="7" transform="rotate(-30 14 10)"/><ellipse cx="10" cy="22" rx="4" ry="7" transform="rotate(-15 10 22)"/><ellipse cx="9" cy="35" rx="4" ry="7"/><ellipse cx="11" cy="48" rx="4" ry="7" transform="rotate(20 11 48)"/></g><path d="M24 4C10 20 10 44 26 60" fill="none" stroke="#e9c46a" stroke-width="2.4"/></svg>'
+};
 const costText = c => Object.entries(c).map(([id, n]) => `${MATERIALS[id]?.name || id} +${n}`).join('  ');
 const RIVALS = ['Aloe', 'Cactus', 'Daisy', 'Fern', 'Sigurd', 'Moss', 'Nettle', 'Clover', 'Reed', 'Birch', 'Poppy'];
 function rng(s) { let h = 2166136261; for (const c of s) h = Math.imul(h ^ c.charCodeAt(0), 16777619); return () => { h += 0x6D2B79F5; let t = h; t = Math.imul(t ^ t >>> 15, t | 1); t ^= t + Math.imul(t ^ t >>> 7, t | 61); return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
@@ -103,19 +113,29 @@ export class LakeRunSystem {
   // ---------- UI ----------
   buildUi() {
     const hud = document.createElement('div'); hud.className = 'lakerun-hud';
-    hud.innerHTML = '<b>Lake Run</b><div class="lr-time">0:00.0</div><div class="lr-sub"></div><div class="lr-split"></div>';
+    // R68: corner layout like the landscape HUD sheet: clock + split (top left), buoys + best (top centre), penalties.
+    hud.innerHTML = `<div class="lr-clock tgw-glass"><i>${ICON.clock}</i><div class="lr-time">00:00.00</div></div><div class="lr-split"></div>`
+      + `<div class="lr-pen tgw-glass"><i>${ICON.cone}</i><span><small>PENALTIES</small><b>+0.00</b></span></div>`
+      + `<div class="lr-flags"><div class="tgw-glass lr-buoys"><i>${ICON.flag}</i><b class="lr-sub">0 / 7</b></div><div class="tgw-glass lr-best"><i>${ICON.crown}</i><small>BEST</small><b>--:--.--</b></div></div>`;
     const count = document.createElement('div'); count.className = 'lakerun-count';
     const res = document.createElement('div'); res.className = 'lakerun-result';
-    res.innerHTML = '<b>Lake Run</b><div class="lr-big"></div><div class="lr-medal"></div><div class="lr-info"></div><ol class="lr-board"></ol><div class="lr-reward"></div><div class="lr-btns"><button data-lr="again">Again</button><button data-lr="close">Close</button></div>';
-    res.addEventListener('click', e => { const a = e.target?.dataset?.lr; if (a === 'again') this.again(); else if (a === 'close') this.closeResult(); });
+    res.innerHTML = `<header><b>LAKE RUN COMPLETE</b><i>${ICON.leaf}</i></header>`
+      + `<div class="lr-top"><div class="lr-laurel"><i class="l">${ICON.laurel}</i><span class="lr-medal"></span><i class="r">${ICON.laurel}</i></div><div class="lr-times"><div class="lr-big"></div><div class="lr-delta"></div></div></div>`
+      + '<div class="lr-info"></div><ol class="lr-board"></ol><div class="lr-reward"></div>'
+      + '<div class="lr-btns"><button data-lr="again"><span>↻</span>Try again<em>→</em></button><button data-lr="close"><span>✕</span>Close<em>→</em></button></div>';
     for (const el of [hud, count, res]) document.body.appendChild(el);
-    this.ui = { hud, count, res, time: hud.querySelector('.lr-time'), sub: hud.querySelector('.lr-sub'), split: hud.querySelector('.lr-split') };
+    res.addEventListener('click', e => { const a = e.target?.closest?.('[data-lr]')?.dataset?.lr; if (a === 'again') this.again(); else if (a === 'close') this.closeResult(); });
+    this.ui = { hud, count, res, time: hud.querySelector('.lr-time'), sub: hud.querySelector('.lr-sub'), split: hud.querySelector('.lr-split'), pen: hud.querySelector('.lr-pen'), penVal: hud.querySelector('.lr-pen b'), best: hud.querySelector('.lr-best b') };
   }
   renderHud() {
-    const u = this.ui; u.time.textContent = fmt(this.t + this.pen);
-    u.sub.textContent = `Buoys ${Math.min(this.next, this.seq.length)}/${this.seq.length}${this.pen ? `  ·  +${this.pen} s` : ''}`;
+    const u = this.ui; u.time.textContent = fmt2(this.t + this.pen);
+    u.sub.textContent = `${Math.min(this.next, this.seq.length)} / ${this.seq.length}`;
+    u.best.textContent = this.p.best ? fmt2(this.p.best) : '--:--.--';
+    u.pen.classList.toggle('show', this.pen > 0); u.penVal.textContent = `+${this.pen.toFixed(2)}`;
   }
-  flashSplit(text, good) { const s = this.ui.split; s.textContent = text; s.className = `lr-split show ${good ? 'good' : 'bad'}`; clearTimeout(this._splitT); this._splitT = setTimeout(() => { s.className = 'lr-split'; }, 1600); }
+  // The split vs your PB stays under the clock until the next buoy; penalties flash the penalty pill.
+  flashSplit(text, good) { const s = this.ui.split; s.textContent = text; s.className = `lr-split show ${good ? 'good' : 'bad'}`; }
+  flashPenalty() { const p = this.ui.pen; p.classList.remove('flash'); void p.offsetWidth; p.classList.add('flash'); }
 
   // ---------- state ----------
   inBoat() { const f = this.f; return f.mode === 'boat' && f.boat.on && !f.boat.docking; }
@@ -135,7 +155,7 @@ export class LakeRunSystem {
     this.closeResult(true);
     this.state = 'countdown'; this.cd = LAKE_RUN.countdown; this.t = 0; this.pen = 0; this.next = 0; this.prevV = 0;
     this.rec = []; this.recAt = 0; this.splits = []; for (const l of this.logs) l.hit = false;
-    this.ui.hud.classList.add('show'); this.renderHud(); this.highlight(); this.ensureGhost();
+    this.ui.hud.classList.add('show'); document.body.classList.add('lakerun-active'); this.renderHud(); this.highlight(); this.ensureGhost();
     return true;
   }
   again() {
@@ -144,7 +164,7 @@ export class LakeRunSystem {
     return false;
   }
   cancel(msg) {
-    this.state = 'idle'; this.ui.hud.classList.remove('show'); this.ui.count.classList.remove('show'); this.highlight(); if (this.ghost) this.ghost.visible = false;
+    this.state = 'idle'; this.ui.hud.classList.remove('show'); document.body.classList.remove('lakerun-active'); this.ui.count.classList.remove('show'); this.highlight(); if (this.ghost) this.ghost.visible = false;
     if (msg) this.g.hud?.showToast(msg);
   }
   closeResult(silent) { this.ui.res.classList.remove('show'); if (this.state === 'result') this.state = 'idle'; if (!silent) this.highlight(); }
@@ -181,7 +201,7 @@ export class LakeRunSystem {
     if (q && Math.hypot(p.x - q.x, p.z - q.z) < LAKE_RUN.gateWidth / 2) {
       this.splits.push(+(this.t + this.pen).toFixed(2));
       const pb = this.p.splits[this.next];
-      if (pb) { const d = this.t + this.pen - pb; this.flashSplit(`${d <= 0 ? '−' : '+'}${Math.abs(d).toFixed(1)}`, d <= 0); }
+      if (pb) { const d = this.t + this.pen - pb; this.flashSplit(`${d <= 0 ? '−' : '+'} ${fmt2(Math.abs(d))}`, d <= 0); }
       this.next++; this.highlight();
       if (this.next >= this.seq.length) return this.finish();
     }
@@ -193,7 +213,7 @@ export class LakeRunSystem {
 
   penalty(kind) {
     const s = LAKE_RUN.penalty[kind]; this.pen += s;
-    this.flashSplit(`+${s} s ${kind === 'log' ? 'log' : 'bump'}`, false); this.renderHud();
+    this.flashPenalty(); this.renderHud();
   }
 
   // Ghost = a see-through clone of the boat in the same parent frame, replaying the PB samples.
@@ -216,7 +236,7 @@ export class LakeRunSystem {
 
   finish() {
     const total = +(this.t + this.pen).toFixed(2), p = this.p, today = dayKey(), M = LAKE_RUN.medals;
-    this.state = 'result'; this.ui.hud.classList.remove('show'); if (this.ghost) this.ghost.visible = false; this.highlight();
+    this.state = 'result'; this.ui.hud.classList.remove('show'); document.body.classList.remove('lakerun-active'); if (this.ghost) this.ghost.visible = false; this.highlight();
     const medal = total <= M[0] ? 'gold' : total <= M[1] ? 'silver' : total <= M[2] ? 'bronze' : null;
     const prev = p.best, pb = !prev || total < prev;
     if (pb) { p.best = total; p.splits = this.splits.slice(); p.ghost = this.rec.slice(0, 3 * 1500); }
@@ -245,11 +265,12 @@ export class LakeRunSystem {
 
   showResult({ total, medal, pb, prev, rewarded, gains }) {
     const r = this.ui.res, left = Math.max(0, LAKE_RUN.attemptsPerDay - this.p.attempts), M = LAKE_RUN.medals;
-    r.querySelector('.lr-big').textContent = fmt(total);
+    r.querySelector('.lr-big').textContent = fmt2(total);
+    const dl = r.querySelector('.lr-delta'); dl.innerHTML = prev ? `${ICON.crown}<span>${total <= prev ? '−' : '+'} ${fmt2(Math.abs(prev - total))}</span>` : ''; dl.className = `lr-delta ${prev && total <= prev ? 'good' : 'bad'}`;
     const m = r.querySelector('.lr-medal'); m.className = `lr-medal ${medal || 'none'}`;
-    m.textContent = medal ? `${medal[0].toUpperCase()}${medal.slice(1)}` : `No medal (bronze ${fmt(M[2])})`;
+    m.textContent = medal ? `${medal[0].toUpperCase()}${medal.slice(1)}` : '–'; r.querySelector('.lr-laurel').className = `lr-laurel ${medal || 'none'}`;
     const pen = this.pen ? ` · penalties +${this.pen} s` : '';
-    r.querySelector('.lr-info').textContent = pb ? (prev ? `New personal best (−${(prev - total).toFixed(1)} s)${pen}` : `First time on the board${pen}`) : `Personal best ${fmt(this.p.best)}${pen}`;
+    r.querySelector('.lr-info').textContent = (pb ? (prev ? 'New personal best' : 'First time on the board') : `Personal best ${fmt2(this.p.best)}`) + pen + (medal ? '' : ` · bronze is under ${fmt(M[2])}`);
     const b = this.board(), you = b.findIndex(x => x.you), top = b.slice(0, 5);
     if (you >= 5) top.push(b[you]);
     r.querySelector('.lr-board').innerHTML = top.map(x => `<li class="${x.you ? 'you' : ''}" value="${b.indexOf(x) + 1}"><span>${x.name}</span><span>${fmt(x.t)}</span></li>`).join('');

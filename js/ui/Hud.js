@@ -41,7 +41,8 @@ export class Hud {
   // A changed material peeks for 2.5 s ("▰ Wood +2"), a new objective peeks for 5 s.
   buildQuick(state){
     const q=document.createElement('div');q.id='hud-quick';
-    q.innerHTML='<button type="button" id="hud-goal" aria-label="Objective"><i>!</i></button><button type="button" id="hud-bag" aria-label="Bag"><i>🎒</i></button>';
+    // R68: the game's own clay icons (brand/icons) instead of glyphs.
+    q.innerHTML='<button type="button" id="hud-goal" aria-label="Objective"><img src="./brand/icons/64/icon-leaf.png" alt=""></button><button type="button" id="hud-bag" aria-label="Bag"><img src="./brand/icons/64/icon-bag.png" alt=""></button>';
     const peek=document.createElement('div');peek.id='hud-peek';
     document.body.append(q,peek);this.peekEl=peek;
     const tap=(el,fn)=>el.addEventListener('pointerdown',e=>{e.stopPropagation();e.preventDefault();fn();});
