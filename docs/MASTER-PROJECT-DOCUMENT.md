@@ -397,6 +397,7 @@ Preserve:
 - Sigurd conversation framing with no wall/facade camera clipping;
 - visible dialog replies, rod+bait handover, worms tin, pipe smoke and shop/dialog flow;
 - Bamboo Rod + Worms progression into the fishing spot;
+- **R71 (GO 03/10):** the fixed dock-end fishing spot is retired; fishing on foot works along any shore of the lake, stream and waterfall basin (`shoreDir`), the dock-end gold circle now starts the Lake Race. Cast/bite/reel/catch loop unchanged.
 - approved cast / bite / reel / catch / Catch Log loop;
 - approved Fishing camera, FishButton, visible hooked-fish fight and final catch presentation;
 - Fish Board / Catch Log / boat fishing / docking / Boat -> Waterfall integration;
@@ -1576,6 +1577,7 @@ are only touched where a measured hotspot requires it, minimally.
    failure. Must pass before every push (CLAUDE.md rule 5).
 
 **B status 02/10/2026: complete (R51–R57).** On-device check (iPhone, Jannik 02/10): 60 fps steady (frame max 20–24 ms), 217 draw calls / 370k tris in the garden, 363 / 433k at the lake, mobile-high, 1 WebGL context → no perf work needed before C.
+**R71 fix list (v0.8.61, GO 03/10):** contextual action icons (hammer at the workbench …); Lake Run → **Lake Race**, course hidden until started at the gold circle at the end of Sigurd's dock; Wood Giant hidden until the FIGHT circle (rises from the floor); phone HUD: quest + resources fold to round buttons, minimap = map icon; fishing on foot along the whole lake/stream/waterfall shore + from the boat; stronger golden look pass; DEV stable teleport.
 **3D look pass (R70, v0.8.60):** mild shared-world grade (exposure, sky, sun, haze), parameter-only, off in the private garden (greenhouses unchanged), DEV toggle.
 **Fishing + stable race HUD (R69, v0.8.50):** dark glass/cream/gold like the rest (CSS only, scoped; Thora talk, shop, podium unchanged).
 **Landscape gameplay HUD (R69a, v0.8.40):** one top row (objective chip, Golden Seed chip, horizontal resource chips), minimap top right with a cream ring; phone = resting joystick + round action button; desktop = key hints. Supersedes R66's hidden phone HUD (Jannik's HUD concept 03/10).

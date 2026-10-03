@@ -237,7 +237,7 @@ export class Game {
         // Boat mode keeps the controller paused while still exposing FishingV1-owned E interactions.
         R.offer('stable',this.stable?.interaction?.(this.character.position));
         R.offer('lakerun',this.lakeRun?.interaction());
-        if(!this.lakeRun?.busy())R.offer('fishing',this.fishing?.interaction?.(this.character.position)); // R64: no Fish/Dock mid-race
+        if(!this.lakeRun?.busy()){const fi=this.fishing?.interaction?.(this.character.position);R.offer(fi?.type==='fishing-shore'?'shorefish':'fishing',fi);} // R64: no Fish/Dock mid-race; R71 shore Fish yields to everything
       }
     }
     const interaction=R.resolve();
@@ -246,7 +246,7 @@ export class Game {
     // story (private garden, until the plant/donate choice) owns the card.
     const nowMs=performance.now();
     if(this.wilds&&nowMs-(this._objAt||0)>1000){this._objAt=nowMs;if(!(gardenSpace&&!this.state.choice.resolved))this.hud.setObjective?.('NEXT STEP',this.wilds.goal());}
-    this.hud.setActionVisible(!!interaction,interaction?.label||'Collect');this.hud.action.classList.toggle('wilds-locked',!!(interaction?.disabled&&interaction.type?.startsWith?.('wilds-')));
+    this.hud.setActionVisible(!!interaction,interaction?.label||'Collect',interaction);this.hud.action.classList.toggle('wilds-locked',!!(interaction?.disabled&&interaction.type?.startsWith?.('wilds-')));
     const action=this.input.consumeAction();
     if(!this.state.choice.open&&action&&interaction&&!interaction.disabled){
       if(interaction.type==='home-enter'||interaction.type==='home-exit')this.homePortal?.interact(interaction.type,this.character,this.followCamera,this.hud);
@@ -256,7 +256,7 @@ export class Game {
       else if(interaction.type?.startsWith?.('wilds-'))this.wilds.interact(interaction,this.character);
       else if(interaction.type?.startsWith?.('combat-'))this.combat?.interact(interaction.type);
       else if(interaction.type?.startsWith?.('lakerun-'))this.lakeRun?.interact(interaction.type);
-      else if(['fish-board','fishing-shop','fishing-spot','boat-board','boat-fish','boat-dock'].includes(interaction.type))this.fishing?.interact(interaction.type);
+      else if(['fish-board','fishing-shop','fishing-spot','fishing-shore','boat-board','boat-fish','boat-dock'].includes(interaction.type))this.fishing?.interact(interaction.type);
     }
 
     // Fishing owns camera only in the shared world. The private garden keeps the

@@ -1,4 +1,5 @@
 // @ts-nocheck
+import { actionIcon, actionIconName } from './actionIcons.js';
 export class Hud {
   constructor(state){
     this.seed=document.getElementById('seed-count');this.action=document.getElementById('action');this.toast=document.getElementById('toast');this.objective=document.getElementById('objective');this.kicker=document.getElementById('objective-kicker');this.title=document.getElementById('objective-title');this.copy=document.getElementById('objective-copy');this.hint=document.getElementById('hint');this.loading=document.getElementById('loading');this.materials=document.getElementById('materials');
@@ -43,8 +44,23 @@ export class Hud {
     if(hud&&this.objective&&this.objective.parentElement!==hud)hud.insertBefore(this.objective,inv||hud.firstChild);
     const chip=id=>id==='golden_seed'||id==='rare_seed'?document.querySelector('.seed-card'):document.querySelector(`.material-chip.${id}`);
     const last={};const ids=['wood','stone','clay','fiber','amber','shell','wild_seed','golden_seed','rare_seed'];for(const id of ids)last[id]=state.inventory.get(id)||0;
-    state.events.on('inventory:changed',e=>{if(!ids.includes(e.id))return;const up=(e.amount||0)>last[e.id];last[e.id]=e.amount||0;const c=chip(e.id);if(up&&c){c.classList.remove('bump');void c.offsetWidth;c.classList.add('bump');}});
+    state.events.on('inventory:changed',e=>{if(!ids.includes(e.id))return;const up=(e.amount||0)>last[e.id];last[e.id]=e.amount||0;const c=chip(e.id);if(up&&c){c.classList.remove('bump');void c.offsetWidth;c.classList.add('bump');if(this.touch())this.peek(inv,2600);}});
+    this.buildCollapse(hud,inv);
   }
+  // R71 phone HUD: the quest card and the resources fold away to two round buttons (top left); only the map
+  // icon stays top right. Tap to open/close; a new quest step or a gain opens them briefly by itself.
+  touch(){return document.body.classList.contains('touch');}
+  buildCollapse(hud,inv){
+    if(!hud||!inv||!this.objective)return;
+    const bag=document.createElement('button');bag.type='button';bag.id='hud-bag';bag.className='hud-fold-btn';bag.setAttribute('aria-label','Resources');
+    hud.insertBefore(bag,inv);this.bag=bag;this._peekT=new Map();
+    const pin=(el,btn)=>{const on=!el.classList.contains('pinned');el.classList.toggle('pinned',on);el.classList.toggle('open',on);btn?.classList.toggle('active',on);el.classList.remove('fresh');clearTimeout(this._peekT.get(el));};
+    bag.addEventListener('click',e=>{e.stopPropagation();pin(inv,bag);});
+    this.objective.addEventListener('click',e=>{if(!this.touch())return;e.stopPropagation();pin(this.objective);});
+    const title=document.getElementById('objective-title');
+    if(title)new MutationObserver(()=>{if(this.touch()){this.objective.classList.add('fresh');this.peek(this.objective,5000);}}).observe(title,{childList:true,characterData:true,subtree:true});
+  }
+  peek(el,ms){if(!el||el.classList.contains('pinned'))return;el.classList.add('open');clearTimeout(this._peekT?.get(el));this._peekT?.set(el,setTimeout(()=>el.classList.remove('open'),ms));}
   setMaterial(id,value){const el=document.getElementById(`${id}-count`);if(el){el.textContent=String(value);el.closest('.material-chip')?.classList.toggle('zero',!value);}}
   setObjective(kicker,goal){
     if(!goal||(this._goalTitle===goal.title&&this.kicker.textContent===kicker))return;
@@ -57,7 +73,9 @@ export class Hud {
     const w=document.getElementById('tool-water');if(w)w.textContent=tools.can?String(water):'';
     if(Object.values(tools).some(Boolean))this.materials.classList.add('show');
   }
-  setActionVisible(v,label='Collect'){document.getElementById('action-label').textContent=label;this.action.classList.toggle('show',!!v);}
+  setActionVisible(v,label='Collect',it=null){document.getElementById('action-label').textContent=label;this.action.classList.toggle('show',!!v);
+    // R71: contextual icon (hammer at the workbench, rod at the shore ...)
+    const ico=document.getElementById('action-ico');if(ico&&v){const n=actionIconName(it);if(n!==this._icoName){this._icoName=n;ico.innerHTML=actionIcon(it);this.action.dataset.icon=n;}}}
   showToast(text){this.toast.textContent=text;this.toast.classList.add('show');clearTimeout(this.toastTimer);this.toastTimer=setTimeout(()=>this.toast.classList.remove('show'),2200);}
   markMoved(){this.hint.style.opacity='0';}
   ready(){requestAnimationFrame(()=>{this.loading.classList.add('hide');setTimeout(()=>this.loading.remove(),1000);});}

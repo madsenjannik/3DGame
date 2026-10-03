@@ -1,5 +1,7 @@
 // @ts-nocheck
-// R64 Lake Run: a timed buoy course on the lake for Sigurd's boat.
+// R64 Lake Run, renamed Lake Race in R71: a timed buoy course on the lake for Sigurd's boat.
+// R71: the course is hidden until you start a race at the gold circle at the end of Sigurd's dock
+// (the old fixed fishing spot; fishing now works anywhere along the shore). The save key stays 'lakeRun'.
 // Stable-race principles (checkpoints in order, timer, penalties, PB, ghost, seeded weekly rivals) with
 // its own small logic and UI; the Stable race and FishingV1 / Boat stay locked. Like BoatEconomySystem it
 // only reads the live boat state (f.boat) and nudges its speed (countdown hold, log hits); the boat's
@@ -8,6 +10,7 @@
 // rent per trip, an owned one does not, so racing is the reason to buy her.
 import * as THREE from 'three';
 import { LAKE_RUN, MATERIALS } from '../data/wildsCatalog.js';
+import { createHoloIndicator } from '../visual/holo-indicator.js';
 
 const V3 = THREE.Vector3;
 const dayKey = (d = new Date()) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
@@ -37,7 +40,7 @@ export class LakeRunSystem {
     this.seq = [...LAKE_RUN.gates.map(([x, z]) => ({ x, z })), { ...LAKE_RUN.start }];
     this.rec = []; this.recAt = 0; this.splits = []; this.ghost = null;
     this.root = new THREE.Group(); this.root.name = 'WILDS_LAKE_RUN'; this.L.root.add(this.root);
-    this.buildCourse(); this.buildUi();
+    this.buildCourse(); this.buildUi(); this.root.visible = false; this.buildMarker();
     const orig = this.w.boatGoal; this.w.boatGoal = () => orig?.() || this.goal(); // objective card after the boat is yours
   }
 
@@ -78,7 +81,7 @@ export class LakeRunSystem {
     }
     // Start banner: a small sign on the start buoys so the course reads from the dock.
     const c = document.createElement('canvas'); c.width = 256; c.height = 64; const x = c.getContext('2d');
-    x.fillStyle = '#3d6b4f'; x.fillRect(0, 0, 256, 64); x.fillStyle = '#fff1b8'; x.font = '800 34px Manrope, system-ui, sans-serif'; x.textAlign = 'center'; x.textBaseline = 'middle'; x.fillText('LAKE RUN', 128, 34);
+    x.fillStyle = '#3d6b4f'; x.fillRect(0, 0, 256, 64); x.fillStyle = '#fff1b8'; x.font = '800 34px Manrope, system-ui, sans-serif'; x.textAlign = 'center'; x.textBaseline = 'middle'; x.fillText('LAKE RACE', 128, 34);
     const tex = new THREE.CanvasTexture(c); tex.colorSpace = THREE.SRGBColorSpace;
     // Two-sided board on the start gate's red buoy pole (not over the gate, where it would fill the boat camera).
     const sg = this.gates[this.gates.length - 1].grp.children[0], sign = new THREE.Mesh(new THREE.PlaneGeometry(1.2, .3), new THREE.MeshBasicMaterial({ map: tex, side: THREE.DoubleSide }));
@@ -119,7 +122,7 @@ export class LakeRunSystem {
       + `<div class="lr-flags"><div class="tgw-glass lr-buoys"><i>${ICON.flag}</i><b class="lr-sub">0 / 7</b></div><div class="tgw-glass lr-best"><i>${ICON.crown}</i><small>BEST</small><b>--:--.--</b></div></div>`;
     const count = document.createElement('div'); count.className = 'lakerun-count';
     const res = document.createElement('div'); res.className = 'lakerun-result';
-    res.innerHTML = `<header><b>LAKE RUN COMPLETE</b><i>${ICON.leaf}</i></header>`
+    res.innerHTML = `<header><b>LAKE RACE COMPLETE</b><i>${ICON.leaf}</i></header>`
       + `<div class="lr-top"><div class="lr-laurel"><i class="l">${ICON.laurel}</i><span class="lr-medal"></span><i class="r">${ICON.laurel}</i></div><div class="lr-times"><div class="lr-big"></div><div class="lr-delta"></div></div></div>`
       + '<div class="lr-info"></div><ol class="lr-board"></ol><div class="lr-reward"></div>'
       + '<div class="lr-btns"><button data-lr="again"><span>↻</span>Try again<em>→</em></button><button data-lr="close"><span>✕</span>Close<em>→</em></button></div>';
@@ -143,12 +146,41 @@ export class LakeRunSystem {
   busy() { return this.state === 'countdown' || this.state === 'racing'; }
   nearStart() { if (!this.inBoat()) return Infinity; const p = this.boatWorld(); return Math.hypot(p.x - LAKE_RUN.start.x, p.z - LAKE_RUN.start.z); }
 
-  interaction() {
-    if (this.state !== 'idle') return null;
-    const d = this.nearStart(); if (d > LAKE_RUN.startZone) return null;
-    return { type: 'lakerun-start', label: 'Start Lake Run', distance: d };
+  // R71: gold circle at the end of Sigurd's dock (FishingV1's old fixed spot). On foot only.
+  buildMarker() {
+    const P = this.f.fishingPoint; if (!P) return;
+    this.spot = { x: P.x, z: P.z };
+    const holo = createHoloIndicator({ radius: .58, height: 1.3, intensity: .48, breath: 2.4, scanSpeed: 2.0, scanDensity: 90, baseRing: true, groundHalo: true, fadeIn: .35 });
+    const c = document.createElement('canvas'); c.width = 330; c.height = 78; const x = c.getContext('2d');
+    x.font = '800 44px Manrope, system-ui, sans-serif'; x.textAlign = 'center'; x.textBaseline = 'middle'; x.shadowColor = 'rgba(0,0,0,.45)'; x.shadowBlur = 8; x.fillStyle = '#ffe9a3'; x.fillText('LAKE RACE', 165, 41);
+    const tex = new THREE.CanvasTexture(c); tex.colorSpace = THREE.SRGBColorSpace;
+    const label = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, transparent: true, depthWrite: false })); label.scale.set(1.8, .43, 1); label.position.y = 1.58;
+    const m = new THREE.Group(); m.name = 'WILDS_LAKE_RACE_MARKER'; m.add(holo.group, label);
+    m.position.set(P.x, this.L.groundHeight(P.x, P.z) + .015, P.z); this.L.root.add(m);
+    this.marker = { m, holo, label };
   }
-  interact(type) { if (type === 'lakerun-start') this.begin(); }
+  nearSpot(p) { return this.spot && p ? Math.hypot(p.x - this.spot.x, p.z - this.spot.z) : Infinity; }
+  interaction() {
+    if (this.state !== 'idle' || this.f.mode !== 'world') return null;
+    const d = this.nearSpot(this.g.character?.position); if (d > 1.2) return null;
+    return { type: 'lakerun-start', label: 'Lake Race', distance: d };
+  }
+  interact(type) { if (type === 'lakerun-start') this.startFromSpot(); }
+  // Board Sigurd's boat, put her on the start line and count down. The course only exists while racing.
+  startFromSpot() {
+    const f = this.f;
+    if (!f.hasBoatAccess()) { this.g.hud?.showToast('Sigurd lends you the boat once you have shown him three fish'); return false; }
+    if (f.mode === 'world') f.boardBoat();
+    if (!this.toStart()) return false;
+    return this.begin();
+  }
+  toStart() {
+    const f = this.f; if (!f.boat.object || !this.inBoat()) return false;
+    const B = f.boat, s = f.boatWorldToLocal(new V3(LAKE_RUN.start.x, B.homePos.y, LAKE_RUN.start.z)), g1 = f.boatWorldToLocal(new V3(this.seq[0].x, B.homePos.y, this.seq[0].z));
+    B.pos.x = s.x; B.pos.z = s.z; B.yaw = Math.atan2(-(g1.z - s.z), g1.x - s.x); B.v = B.w = 0; B.tgt = null; B.left = true;
+    f.updateBoatSeat?.();
+    return true;
+  }
 
   begin() {
     if (!this.inBoat() || this.busy()) return false;
@@ -159,8 +191,8 @@ export class LakeRunSystem {
     return true;
   }
   again() {
-    if (this.nearStart() <= LAKE_RUN.startZone + 2) return this.begin();
-    this.closeResult(); this.g.hud?.showToast(this.inBoat() ? 'Row back to the start buoys' : 'Take the boat out to race');
+    if (this.inBoat() && this.toStart()) return this.begin();
+    this.closeResult(); this.g.hud?.showToast('Start a race at the gold circle on Sigurd\'s dock');
     return false;
   }
   cancel(msg) {
@@ -171,11 +203,14 @@ export class LakeRunSystem {
 
   update(dt) {
     const f = this.f; if (!f?.boat) return;
+    const on = this.state !== 'idle'; this.root.visible = on;
+    if (this.marker) { const show = !on && f.mode === 'world'; show ? this.marker.holo.show() : this.marker.holo.hide(); this.marker.holo.update(this.clock, dt); this.marker.label.visible = show && this.nearSpot(this.g.character?.position) < 9; }
+    if (!on) { this.clock += dt; return; }
     this.updateLogs(dt);
     if (this.state === 'result' && !this.inBoat()) this.closeResult();
     if (!this.busy()) return;
     const B = f.boat;
-    if (!this.inBoat()) return this.cancel('Lake Run cancelled');
+    if (!this.inBoat()) return this.cancel('Lake Race cancelled');
     if (this.state === 'countdown') {
       B.v = 0; B.w = 0; B.tgt = null; this.cd -= dt;
       const n = Math.ceil(this.cd), c = this.ui.count;
@@ -184,7 +219,7 @@ export class LakeRunSystem {
       return;
     }
     const p = this.boatWorld(), lake = this.L.lake;
-    if (Math.hypot(p.x - lake.x, p.z - lake.z) > lake.r - .3) return this.cancel('Lake Run cancelled: you left the lake');
+    if (Math.hypot(p.x - lake.x, p.z - lake.z) > lake.r - .3) return this.cancel('Lake Race cancelled: you left the lake');
     this.t += dt;
     // Shore bump: FishingV1 bounces the boat (v → −v/4) when the bow or stern would leave the water.
     if (this.prevV > .35 && B.v < 0) this.penalty('shore');
@@ -282,16 +317,14 @@ export class LakeRunSystem {
 
   goal() {
     const owned = this.g.save.profile.boat?.owned; if (!owned || this.p.golds) return null;
-    if (!this.p.best) return { title: 'Race the Lake Run', copy: 'Row to the buoys off Sigurd\'s dock and start the run.' };
-    return { title: 'Win Lake Run gold', copy: `Your best is ${fmt(this.p.best)}. Gold is under ${fmt(LAKE_RUN.medals[0])}.` };
+    if (!this.p.best) return { title: 'Try the Lake Race', copy: 'Step into the gold circle at the end of Sigurd\'s dock.' };
+    return { title: 'Win Lake Race gold', copy: `Your best is ${fmt(this.p.best)}. Gold is under ${fmt(LAKE_RUN.medals[0])}.` };
   }
 
   // DEV: put the (rented) boat at the start buoys, facing the first buoy.
   devToStart() {
     const f = this.f; if (!f.boat.object) return false;
     if (f.mode !== 'boat') { if (!f.hasBoatAccess()) f.setBoatAccess({ rented: true }); this.g.devMenu?.teleport?.('world', f.boatBerthPoint.x, f.boatBerthPoint.z, 0); f.boardBoat(); }
-    const B = f.boat, s = f.boatWorldToLocal(new V3(LAKE_RUN.start.x, B.homePos.y, LAKE_RUN.start.z)), g1 = f.boatWorldToLocal(new V3(this.seq[0].x, B.homePos.y, this.seq[0].z));
-    B.pos.x = s.x; B.pos.z = s.z; B.yaw = Math.atan2(-(g1.z - s.z), g1.x - s.x); B.v = B.w = 0; B.tgt = null; B.left = true;
-    return true;
+    return this.toStart();
   }
 }

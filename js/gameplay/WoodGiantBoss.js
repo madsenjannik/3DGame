@@ -91,7 +91,7 @@ export class WoodGiantBoss {
   available(now = Date.now()) { return !this.p.defeatedAt || now - this.p.defeatedAt > GIANT.rematchHours * 3600000; }
   reset() {
     this.state = this.available() ? 'sleep' : 'resting'; this.t = 0; this.hp = GIANT.hp; this.weak = 0; this.rootT = 0;
-    this.gx = this.site.x; this.gz = this.site.z - 2; this.giant.position.set(0, 0, -2); this.giant.rotation.set(0, 0, 0); this.giant.visible = this.state === 'sleep';
+    this.gx = this.site.x; this.gz = this.site.z - 2; this.giant.position.set(0, 0, -2); this.giant.rotation.set(0, 0, 0); this.giant.visible = false;   // R71: the Giant only shows once you step into the FIGHT circle
     this.loop('Idle', .6); this.arena.loop('Idle');
     for (const r of this.roots) this.c.root.remove(r.model.root); this.roots = [];
     this.tele.visible = false; this.ui.classList.remove('show'); this.setZoom(false); this.syncObstacle();
@@ -173,6 +173,7 @@ export class WoodGiantBoss {
   begin() {
     this.state = 'wake'; this.t = 0; this.arena.play(['GateClose'], () => this.arena.loop('Idle'));
     this.ui.classList.add('show'); this.renderUi(); this.setZoom(true); this.loop('Idle', 1.4);
+    this.giant.visible = true; this.giant.position.y = -6; this.fx('Slam_FX'); this.shake = .9;   // R71: rises out of the arena floor
     this.g.hud?.showToast('The Wood Giant wakes!');
   }
   end(won) {
@@ -230,7 +231,7 @@ export class WoodGiantBoss {
     const d = Math.hypot(px - this.gx, pz - this.gz);
     this.ui.classList.add('show'); this.c.lastCombat = this.c.time;
     switch (this.state) {
-      case 'wake': if (this.t > 1.6) { this.state = 'walk'; this.t = 0; } break;
+      case 'wake': { const k = Math.min(1, this.t / 1.4); this.giant.position.y = -6 * (1 - k * k * (3 - 2 * k)); if (this.t > 1.9) { this.giant.position.y = 0; this.state = 'walk'; this.t = 0; } } break;
       case 'stuck': this.loop('Idle', .5); if (this.t > this.stuckFor) { this.state = 'walk'; this.t = 0; } break;
       case 'walk': {
         face(); this.loop('Walk', ph.speed);
@@ -256,7 +257,7 @@ export class WoodGiantBoss {
     if (ph.roots) { this.rootT += dt; if (this.rootT > ph.every) { this.rootT = 0; const v = ch.velocity || { x: 0, z: 0 }, L = GIANT.root.lead; this.spawnRoots(ph.roots, px + v.x * L, pz + v.z * L); } }  // aim where you are heading
     this.updateWaves(dt, ch);
     this.updateRoots(dt, px, pz);
-    this.giant.position.set(this.gx - this.site.x, 0, this.gz - this.site.z); this.syncObstacle();
+    this.giant.position.set(this.gx - this.site.x, this.giant.position.y, this.gz - this.site.z); this.syncObstacle();
   }
   // R64.1: the closed gate (arch, doors, gate roots) turns see-through while the boss camera is right behind it.
   fadeGate(o) {

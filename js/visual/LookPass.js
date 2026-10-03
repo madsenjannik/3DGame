@@ -1,18 +1,21 @@
 // @ts-nocheck
-// R70 3D look pass (HUD step 3/3). Parameter-only grade for the shared world: bluer zenith, warmer sun,
+// R70 3D look pass (HUD step 3/3), R71 stronger. Parameter-only grade for the shared world: bluer zenith, warmer sun,
 // a little more exposure and atmospheric haze. No extra render passes, so it costs no frame time.
 // It is applied only in the shared world and reverted in the private garden, so the garden and the
 // three greenhouse levels keep their exact current look. DEV menu → 3D-LOOK toggles it (localStorage).
 import * as THREE from 'three';
 
 const KEY = 'tgw.look';
+// R71: R70's grade sat too close to the base (Jannik could not see it). Now a clear 'golden afternoon':
+// warmer, stronger low sun against a weaker sky fill (more light/shadow contrast), deeper blue zenith,
+// warm horizon haze that starts nearer (depth), a touch more exposure.
 const LOOK = {
-  exposure: 1.14,
-  horizon: 0xe2ead8, zenith: 0x6fa9d6, sun: 0xfff3dc,
-  fog: { near: 38, far: 240 },
-  hemi: { sky: 0xd4e8f4, ground: 0x6f7d3c, intensity: 1.08 },
-  sunLight: { color: 0xffe0b2, intensity: 3.25 },
-  envIntensity: .56
+  exposure: 1.30,
+  horizon: 0xf3d9ad, zenith: 0x3f86d4, sun: 0xffdc98,
+  fog: { near: 22, far: 175 },
+  hemi: { sky: 0xb4d2ee, ground: 0x4a5626, intensity: .64 },
+  sunLight: { color: 0xffbd70, intensity: 4.6 },
+  envIntensity: .34
 };
 const read = () => { try { return localStorage.getItem(KEY); } catch { return null; } };
 

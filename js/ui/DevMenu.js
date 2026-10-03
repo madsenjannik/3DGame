@@ -27,13 +27,13 @@ export class DevMenu {
         </div></section>
         <section><small>TELEPORT</small><div class="dev-grid">
           <button data-a="tp:bench">Arbejdsbænk</button><button data-a="tp:greenhouse">Drivhus</button><button data-a="tp:pond">Dam</button><button data-a="tp:gate">Havelåge</button>
-          <button data-a="tp:world">Verden (hjem)</button><button data-a="tp:node">Nærmeste node</button><button data-a="tp:thorn">Nærmeste tornekrat</button>
+          <button data-a="tp:world">Verden (hjem)</button><button data-a="tp:stable">Stald (Thora)</button><button data-a="tp:node">Nærmeste node</button><button data-a="tp:thorn">Nærmeste tornekrat</button>
         </div></section>
         <section><small>BÅD (R58)</small><div class="dev-grid">
           <button data-a="boat:ready">Stang + 3 fiskearter</button><button data-a="boat:vest">Redningsvest</button><button data-a="boat:trips">+2 vandfaldsture (kan købe)</button><button data-a="boat:reset">Nulstil båd + fiskeri</button><button data-a="tp:dock">Teleport: Sigurd / bro</button>
         </div></section>
-        <section><small>LAKE RUN (R64)</small><div class="dev-grid">
-          <button data-a="lr:start">Båd ved startbøjerne</button><button data-a="lr:go">Start Lake Run</button><button data-a="lr:gold">Gennemfør (guldtid)</button><button data-a="lr:reset">Nulstil Lake Run</button>
+        <section><small>LAKE RACE (R64/R71)</small><div class="dev-grid">
+          <button data-a="lr:start">Til guldcirklen (broen)</button><button data-a="lr:go">Start Lake Race</button><button data-a="lr:gold">Gennemfør (guldtid)</button><button data-a="lr:reset">Nulstil Lake Run</button>
         </div></section>
         <section><small>KAMP (R61)</small><div class="dev-grid">
           <button data-a="cb:tp">Teleport til Mole</button><button data-a="cb:heal">Fuld liv</button><button data-a="cb:special">Fyld special-måler</button><button data-a="cb:hurt">Tag 1 hjerte skade</button><button data-a="cb:respawn">Respawn moles</button><button data-a="cb:mercy">Nulstil mercy + poser</button><button data-a="cb:arena">Teleport til Wood Giant</button><button data-a="cb:bosslow">Boss: 4 liv tilbage</button><button data-a="cb:bossreset">Boss: klar igen</button>
@@ -108,11 +108,11 @@ export class DevMenu {
       return;
     }
     if (a.startsWith('lr:')) {
-      const L = g.lakeRun, op = a.slice(3); if (!L) return this.toast('Lake Run er ikke indlæst endnu');
-      if (op === 'start') { this.hide(); L.devToStart(); return this.toast('Båden ligger ved startbøjerne'); }
-      if (op === 'go') { this.hide(); if (L.nearStart() > 6) L.devToStart(); L.begin(); return; }
+      const L = g.lakeRun, op = a.slice(3); if (!L) return this.toast('Lake Race er ikke indlæst endnu');
+      if (op === 'start') { this.hide(); const f = g.fishing; if (f?.mode === 'boat') f.dockNow(); if (!f.hasBoatAccess()) f.setBoatAccess({ rented: true }); this.teleport('world', L.spot.x, L.spot.z, 0); return this.toast('Guldcirklen for enden af broen'); }
+      if (op === 'go') { this.hide(); L.devToStart(); L.begin(); return; }
       if (op === 'gold') { if (L.state !== 'racing') return this.toast('Start et løb først'); this.hide(); L.t = 40; L.next = L.seq.length - 1; L.seq.slice(0, -1).forEach((q, i) => { L.splits[i] = 6 * (i + 1); }); const q = L.seq[L.next], f = g.fishing, B = f.boat, s = f.boatWorldToLocal(B.homePos.clone().set(q.x, B.homePos.y, q.z)); B.pos.x = s.x; B.pos.z = s.z; return; }
-      if (op === 'reset') { L.cancel(); L.closeResult(); Object.assign(L.p, { best: 0, splits: [], ghost: [], runs: [], day: '', attempts: 0, golds: 0, weekGold: '' }); g.save.persist(); return this.toast('Lake Run nulstillet'); }
+      if (op === 'reset') { L.cancel(); L.closeResult(); Object.assign(L.p, { best: 0, splits: [], ghost: [], runs: [], day: '', attempts: 0, golds: 0, weekGold: '' }); g.save.persist(); return this.toast('Lake Race nulstillet'); }
       return;
     }
     if (a.startsWith('cb:')) {
@@ -157,6 +157,7 @@ export class DevMenu {
       else if (t === 'pond') this.teleport('garden', -3.9, 1.15, Math.PI);
       else if (t === 'gate') { const s = hp?.gardenSpawn?.() || { x: 0, z: 9.65, heading: Math.PI }; this.teleport('garden', s.x, s.z, s.heading); }
       else if (t === 'dock') { const sp = g.fishing?.shopPoint; if (!sp) return this.toast('Fiskeri er ikke indlæst endnu'); this.teleport('world', sp.x, sp.z, 0); }
+      else if (t === 'stable') { const s = g.world.sharedLandscape?.landmarks?.stable || { x: 70, z: -136, heading: Math.PI }; this.teleport('world', s.x, s.z, s.heading); }
       else if (t === 'world') { const s = hp?.worldSpawn?.() || { x: .1, z: 14.3, heading: 0 }; this.teleport('world', s.x, s.z, s.heading); }
       else {
         const from = g.world.space === 'world' ? g.character.position : { x: 0, z: 14 };

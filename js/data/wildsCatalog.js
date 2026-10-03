@@ -126,7 +126,7 @@ export const LAKE_RUN = {
   start: { x: 105.5, z: 9.5 },
   gates: [[95, 7], [84, 12], [82, 24], [90, 33], [102, 32], [108, 22]],
   gateWidth: 5.2,                 // buoy to buoy; you pass when the boat is within half of it
-  startZone: 4,                   // 'Start Lake Run' is offered this close to the start buoys (dock is ~6 m away)
+  startZone: 4,                   // R71: unused for the offer (the race starts at the dock circle); kept for DEV
   countdown: 3,
   // Drifting logs between gates: centre, drift direction, amplitude (m), period (s).
   logs: [[100.5, 7.5, 0, 1, 1.6, 5.5], [83, 18, 1, 0, 1.8, 6.5], [96, 33.5, 0, 1, 1.6, 6], [105.5, 27, 1, 0, 1.6, 5]],

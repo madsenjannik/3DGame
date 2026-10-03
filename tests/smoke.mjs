@@ -60,19 +60,24 @@ try {
     }
     check('landscape-only phones: portrait shows rotate screen + pauses, landscape resumes + moves', ok && r.gate && r.paused && r.open && r.runs && r.moved && !errors.length, errors[0] || JSON.stringify(r));
     await ctx.close(); }
-  // 2b. R69a unified landscape HUD: one top row (objective, Golden Seed, resources side by side), minimap ring, resting joystick,
+  // 2b. R69a unified landscape HUD, R71 phone fold: quest + resources behind two round buttons, map icon, resting joystick,
   //     gains pulse the chip, canvas fills, build bar hidden; desktop shows key hints and no joystick
   { const ctx = await context({ viewport: { width: 844, height: 390 }, isMobile: true, hasTouch: true }); const { p, errors, ok } = await startGame(ctx, 'tulip');
     const r = ok ? await p.evaluate(async () => { const g = window.__tgw, w = ms => new Promise(x => setTimeout(x, ms)), op = el => +getComputedStyle(el).opacity, o = {};
       await w(1500); const obj = document.getElementById('objective'), seed = document.querySelector('.seed-card'), wood = document.querySelector('.material-chip.wood'), stone = document.querySelector('.material-chip.stone');
       const b = el => el.getBoundingClientRect();
-      o.row = obj.parentElement.id === 'hud' && op(obj) > .9 && Math.abs(b(wood).top - b(stone).top) < 2 && b(stone).left > b(wood).left && b(seed).left > b(obj).left && b(wood).left > b(seed).left && b(obj).top < 60;
-      const mini = document.querySelector('.tgw-minimap'); o.minimap = !!mini && b(wood).right < b(mini).left;
+      // R71: quest + resources fold to two round buttons top left; tapping the bag opens the resource row
+      const bag = document.getElementById('hud-bag'), inv = document.getElementById('inventory');
+      obj.classList.remove('open', 'fresh'); await w(50);
+      o.row = obj.parentElement.id === 'hud' && op(obj) > .9 && b(obj).width <= 46 && b(obj).top < 60 && !!bag && b(bag).left > b(obj).left && getComputedStyle(inv).display === 'none';
+      bag.click(); await w(300); o.row = o.row && inv.classList.contains('open') && Math.abs(b(wood).top - b(stone).top) < 2 && b(stone).left > b(wood).left && b(wood).left > b(seed).left && b(seed).left > b(bag).left;
+      const mini = document.querySelector('.tgw-minimap'); o.minimap = !!mini && b(mini).width <= 50 && !mini.querySelector('canvas').getBoundingClientRect().width && b(wood).right < b(mini).left;
+      obj.click(); await w(100); o.row = o.row && obj.classList.contains('open') && b(obj).width > 120; bag.click(); obj.click();
       o.joy = getComputedStyle(document.getElementById('joy-rest')).display === 'block';
-      g.state.addItem('wood', 2); await w(100); o.bump = wood.classList.contains('bump') && document.getElementById('wood-count').textContent !== '0';
+      g.state.addItem('wood', 2); await w(100); o.bump = wood.classList.contains('bump') && document.getElementById('wood-count').textContent !== '0' && document.getElementById('inventory').classList.contains('open');   // R71: a gain peeks the row open
       const c = document.querySelector('#app canvas'); o.fill = c.getBoundingClientRect().height === innerHeight && !c.style.height;
       o.bar = getComputedStyle(document.querySelector('.build-bar')).visibility === 'hidden'; o.keys = getComputedStyle(document.getElementById('key-hints')).display === 'none'; return o; }) : {};
-    check('landscape HUD (phone): objective + seed + resources in one top row, minimap clear, resting joystick, gain pulse, canvas fills, no desktop hints', ok && r.row && r.minimap && r.joy && r.bump && r.fill && r.bar && r.keys && !errors.length, errors[0] || JSON.stringify(r));
+    check('landscape HUD (phone): quest + resources fold to buttons (R71), tap opens them, map is an icon, resting joystick, gain pulse, canvas fills, no desktop hints', ok && r.row && r.minimap && r.joy && r.bump && r.fill && r.bar && r.keys && !errors.length, errors[0] || JSON.stringify(r));
     await ctx.close(); }
   { const ctx = await context({ viewport: { width: 1280, height: 720 } }); const { p, errors, ok } = await startGame(ctx, 'tulip');
     const r = ok ? await p.evaluate(async () => { const g = window.__tgw, w = ms => new Promise(x => setTimeout(x, ms)), o = { keys: getComputedStyle(document.getElementById('key-hints')).display === 'flex', joy: getComputedStyle(document.getElementById('joy-rest')).display === 'none', mats: +getComputedStyle(document.getElementById('materials')).opacity === 1 };
@@ -124,14 +129,20 @@ try {
     }) : {};
     check('boat camera: follows behind the boat, swipe looks around', r.mode === 'boat' && r.behind < .45 && r.swiped && !errors.length, errors[0] || JSON.stringify(r));
     await ctx.close(); }
-  // 7b. R64 Lake Run: start offer at the buoys, countdown holds the boat, buoys in order, log penalty, finish, medal reward, PB + ghost saved
+  // 7b. R64 Lake Run / R71 Lake Race: hidden course, start at the dock circle, countdown holds the boat, buoys in order, log penalty, finish, medal reward, PB + ghost saved
   { const ctx = await context({ viewport: { width: 844, height: 390 }, isMobile: true, hasTouch: true }); const { p, errors, ok } = await startGame(ctx, 'fern');
     const ready = ok && await p.waitForFunction(() => window.__tgw?.lakeRun, null, { timeout: 240000 }).then(() => true, () => false);
     const r = ready ? await p.evaluate(async () => {
       const g = window.__tgw, f = g.fishing, L = g.lakeRun, B = f.boat, o = {}, inv = id => g.state.inventory.get(id) || 0;
-      L.devToStart(); await new Promise(x => setTimeout(x, 600)); L.devToStart();
-      o.offer = g.interactions.resolve()?.type === 'lakerun-start' || L.interaction()?.type === 'lakerun-start';
-      const amber = inv('amber'); L.begin(); f.input.frameMove = { x: 0, y: 0 };
+      // R71: the course is hidden until you start at the gold circle at the end of Sigurd's dock (on foot)
+      // R71: shore fishing anywhere along the lake and the stream (on foot)
+      { const Ld = g.world.sharedLandscape, [a, b] = [Ld.stream[3], Ld.stream[4]], dx = b[0] - a[0], dz = b[1] - a[1], l = Math.hypot(dx, dz); f.starter = true;
+        const at = (x, z) => { g.devMenu.teleport('world', x, z, 0); return f.interaction(g.character.position)?.type; };
+        o.shore = at((a[0] + b[0]) / 2 - dz / l * 3.2, (a[1] + b[1]) / 2 + dx / l * 3.2) === 'fishing-shore' && at(Ld.lake.x, Ld.lake.z - Ld.lake.r - 1.2) === 'fishing-shore' && at(.1, 20) !== 'fishing-shore'; }
+      g.devMenu.run('lr:start'); await new Promise(x => setTimeout(x, 600)); L.update(.016);
+      o.hidden = !L.root.visible && f.mode === 'world';
+      o.offer = o.hidden && L.interaction()?.type === 'lakerun-start';
+      const amber = inv('amber'); o.offer = o.offer && L.startFromSpot() && L.state === 'countdown' && f.mode === 'boat'; L.update(.016); o.offer = o.offer && L.root.visible; f.input.frameMove = { x: 0, y: 0 };
       const dt = 1 / 30; let t = 0; const step = () => { t += dt; f.updateBoat(dt, t, true); L.update(dt); };
       const x0 = B.pos.x; B.tgt = { x: x0 + 5, z: B.pos.z }; for (let i = 0; i < 60; i++) step(); o.held = Math.abs(B.pos.x - x0) < .2 && L.state === 'countdown';
       for (let i = 0; i < 60 && L.state === 'countdown'; i++) step();
@@ -142,7 +153,7 @@ try {
       g.save.flush(); o.saved = JSON.parse(localStorage.getItem('tgw.save')).profiles.fern.lakeRun.best === res.best;
       o.t = res.best; return o;
     }) : {};
-    check('lake run: start at buoys, countdown hold, buoys in order, log penalty, finish + medal reward, PB + ghost saved', ready && r.offer && r.held && r.order && r.state === 'result' && r.pen && r.pb && r.reward && r.card && r.saved && !errors.length, errors[0] || JSON.stringify(r));
+    check('lake race: hidden until the dock circle, start there, shore fishing on lake + stream, countdown hold, buoys in order, log penalty, finish + medal reward, PB + ghost saved', ready && r.offer && r.shore && r.held && r.order && r.state === 'result' && r.pen && r.pb && r.reward && r.card && r.saved && !errors.length, errors[0] || JSON.stringify(r));
     await ctx.close(); }
   // 8. R58.2 free-camera collision: backing into the workbench, a tree or the cabin never puts the camera inside the character
   { const ctx = await context({ viewport: { width: 844, height: 390 }, isMobile: true, hasTouch: true }); const { p, errors, ok } = await startGame(ctx, 'fern');
@@ -279,11 +290,11 @@ try {
     const r = ready ? await p.evaluate(() => { const g = window.__tgw, c = g.combat, B = c.boss, ch = g.character, o = {}; g.wilds.profile.tools.axe = true;
       // R65.1: walking close no longer wakes it; arena walls collide; the FIGHT marker starts it and the doors close
       g.devMenu.teleport('world', B.site.x, B.site.z + 6, Math.PI); B.update(.1, ch); o.sleeps = B.state === 'sleep';
-      const wo = B.arenaObstacles[5], q = { x: wo.x + .05, z: wo.z }; g.world.resolveCollisions(q, .3); o.walls = B.arenaObstacles.length > 30 && Math.hypot(q.x - wo.x, q.z - wo.z) >= wo.r + .29 && B.doorObstacles.every(d => d.r < .1) && B.openDoorObstacles.length > 0 && B.openDoorObstacles.every(d => d.r > .3) && B.bodyParts.length === 2 && B.bodyParts.every(b => b.bone && b.o.space === 'world' && b.o.r > .5);
-      const mid = { x: (B.bodyParts[0].o.x + B.bodyParts[1].o.x) / 2, z: (B.bodyParts[0].o.z + B.bodyParts[1].o.z) / 2 }, mq = { ...mid }; g.world.resolveCollisions(mq, .3); o.between = Math.hypot(mq.x - mid.x, mq.z - mid.z) < .01;
+      const wo = B.arenaObstacles[5], q = { x: wo.x + .05, z: wo.z }; g.world.resolveCollisions(q, .3); o.walls = B.arenaObstacles.length > 30 && Math.hypot(q.x - wo.x, q.z - wo.z) >= wo.r + .29 && B.doorObstacles.every(d => d.r < .1) && B.openDoorObstacles.length > 0 && B.openDoorObstacles.every(d => d.r > .3) && B.bodyParts.length === 2 && B.bodyParts.every(b => b.bone && b.o.space === 'world' && b.o.r < .1) && !B.giant.visible;   // R71: hidden (no body) until the FIGHT circle
       g.devMenu.teleport('world', B.fightPoint.x, B.fightPoint.z, 0); o.offer = c.update(.016, c.time, ch, true).interaction?.type === 'combat-fight';
       c.interact('combat-fight'); o.wake = o.sleeps && o.offer && B.state === 'wake' && typeof g.followCamera.lockYaw === 'function' && B.doorObstacles.every(d => d.r > .3) && B.openDoorObstacles.every(d => d.r < .1);
       for (let i = 0; i < 20; i++) B.update(.1, ch);
+      const mid = { x: (B.bodyParts[0].o.x + B.bodyParts[1].o.x) / 2, z: (B.bodyParts[0].o.z + B.bodyParts[1].o.z) / 2 }, mq = { ...mid }; g.world.resolveCollisions(mq, .3); o.between = B.giant.visible && B.bodyParts.every(b => b.o.r > .5) && Math.hypot(mq.x - mid.x, mq.z - mid.z) < .01;   // R71: checked once it has risen
       let hp0 = c.hp; for (let i = 0; i < 120 && B.state !== 'stuck'; i++) { if (B.state === 'walk') ch.position.set(B.gx, ch.position.y, B.gz + 3.5); else if (B.state === 'stomp' || B.state === 'slam') { const Q = B.local(...(B.state === 'stomp' ? [2.9, -.5] : [0, 3.2])); ch.position.set(Q.x + .3, ch.position.y, Q.z); } B.update(.1, ch); }
       o.stomp = hp0 - c.hp >= 2 && B.state === 'stuck'; c.heal(true); c.invuln = 0;
       { const s0 = { x: ch.position.x, z: ch.position.z }; c.hurt(2, s0.x - 1, s0.z, 3.5); const lock = ch.controlLock > .3; for (let i = 0; i < 20; i++) c.update(.03, c.time + .03, ch, true); o.thrown = lock && Math.hypot(ch.position.x - s0.x, ch.position.z - s0.z) > 2 && !c.kb; c.heal(true); c.invuln = 0; }
@@ -300,7 +311,7 @@ try {
       o.win = B.state === 'resting' && B.p.wins === 1 && c.loot.some(l => l.kind === 'golden_seed') && !g.followCamera.bossZoom || g.followCamera.bossZoom === 1;
       o.win = o.win && B.state === 'resting' && B.p.wins === 1 && c.loot.some(l => l.kind === 'golden_seed');
       return o; }) : {};
-    check('wood giant: sleeps when you walk in, arena walls collide, free between the legs, thrown back by big hits, FIGHT marker starts it + doors close, camera lock, stomp hurts, weak window x3, bark 1, roots + weak point, shockwave (hop to dodge), defeat + golden seed + saved', ready && r.walls && r.between && r.thrown && r.wake && r.stomp && r.weak && r.bark && r.roots && r.wave && r.win && !errors.length, errors[0] || JSON.stringify(r));
+    check('wood giant: hidden until the FIGHT circle (R71), arena walls collide, free between the legs, thrown back by big hits, FIGHT marker starts it + doors close, camera lock, stomp hurts, weak window x3, bark 1, roots + weak point, shockwave (hop to dodge), defeat + golden seed + saved', ready && r.walls && r.between && r.thrown && r.wake && r.stomp && r.weak && r.bark && r.roots && r.wave && r.win && !errors.length, errors[0] || JSON.stringify(r));
     await ctx.close(); }
   // 17c. R65 character specials: Swing/Throw overlays on the locked character, landed hits fill the meter, all nine
   // specials hurt a Mole, the Giant's bark takes 0 and its weak window takes damage, a garden snail can be hit

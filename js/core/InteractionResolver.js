@@ -4,13 +4,14 @@
 // The priorities encode the established precedence (locked systems over the wilds loop).
 export const PRIORITY = {
   combat: 70,      // R61: strike a Mole / pick up your wilt pouch (a fight beats everything nearby)
-  lakerun: 65,     // R64: 'Start Lake Run' at the start buoys beats 'Fish' there (Dock is ~6 m away)
+  lakerun: 65,     // R71: 'Lake Race' at the gold circle on Sigurd's dock beats shore 'Fish' there
   fishing: 60,     // FishingV1 incl. boat board/dock
   stable: 50,      // Stable doors, Thora, RIDE/JUMP
   home: 45,        // shed door / back to the world
   greenhouse: 35,  // build / upgrade greenhouse
   'first-seed': 30,// first Golden Seed
-  wilds: 10        // nodes, thornbrush, workbench, pots, weeds, snails
+  wilds: 10,       // nodes, thornbrush, workbench, pots, weeds, snails
+  shorefish: 9     // R71: 'Fish' anywhere along the lake/stream shore; anything else nearby wins
 };
 
 export class InteractionResolver {

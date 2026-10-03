@@ -1308,7 +1308,9 @@ body.boss-active .hearts{top:calc(max(12px,env(safe-area-inset-top)) + 4px)}body
 .touch #action{left:auto;right:calc(max(18px,env(safe-area-inset-right)) + 4px);bottom:calc(20px + env(safe-area-inset-bottom));width:72px;height:72px;min-width:0;padding:0;border-radius:50%;justify-content:center;
   background:var(--tgw-glass);border:1px solid var(--tgw-line);box-shadow:var(--tgw-shadow),inset 0 0 0 3px rgba(246,240,220,.1);transform:scale(.9)}
 .touch #action.show{transform:none}
-.touch #action::before{content:'';width:38px;height:38px;background:url(./brand/icons/64/icon-leaf.png) center/contain no-repeat;filter:drop-shadow(0 2px 3px rgba(0,0,0,.35))}
+/* R71: contextual icon (js/ui/actionIcons.js) replaces the fixed leaf */
+#action-ico{display:grid;place-items:center;width:24px;height:24px;flex:none}#action-ico svg{width:100%;height:100%;filter:drop-shadow(0 2px 3px rgba(0,0,0,.35))}
+.touch #action-ico{width:40px;height:40px}
 .touch #action #action-label{position:absolute;right:0;bottom:calc(100% + 8px);padding:6px 12px;border-radius:999px;background:var(--tgw-glass-2);border:1px solid var(--tgw-line);font:700 12px/1.2 Manrope,system-ui,sans-serif;color:var(--tgw-cream);white-space:nowrap}
 .touch #action .key{display:none}
 .touch .special-btn{right:calc(max(18px,env(safe-area-inset-right)) + 88px);bottom:calc(24px + env(safe-area-inset-bottom));width:60px;height:60px}
@@ -1407,3 +1409,24 @@ body:has(.dev-menu-btn) #key-hints{left:104px}
 #fishing-v1 #fishing-result-kicker,#fishing-v1 #fishing-result-button,#fishing-v1 .fishing-badge{color:#2a2112}
 /* R69: on short landscape screens the race HUD sat under Restart/Quit; it now starts below them */
 @media (max-height:520px){#stable-race-ui .stable-race-hud{top:calc(max(12px,env(safe-area-inset-top)) + 54px);padding:7px 14px;gap:14px}}
+
+/* R71 phone HUD: the quest card and the resources fold away to two round buttons top left (tap to open,
+   a new quest step / a gain opens them briefly by itself); the minimap becomes a map icon top right. */
+.hud-fold-btn{display:none}
+.touch #hud{right:calc(84px + env(safe-area-inset-right))}
+.touch #hud .hud-fold-btn{display:block;flex:none;width:44px;height:44px;padding:0;border-radius:50%;background:var(--tgw-glass) url(./brand/icons/64/icon-bag.png) center/24px no-repeat;border:1px solid var(--tgw-line);box-shadow:var(--tgw-shadow);-webkit-backdrop-filter:var(--tgw-blur);backdrop-filter:var(--tgw-blur);pointer-events:auto;cursor:pointer}
+.touch #hud .hud-fold-btn.active{box-shadow:0 0 0 2px var(--tgw-gold),var(--tgw-shadow)}
+.touch #hud #objective.objective-card{pointer-events:auto;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.touch #hud #objective.objective-card:not(.open){flex:none!important;width:44px!important;min-width:0!important;max-width:44px!important;height:44px!important;padding:0!important;border-radius:50%}
+.touch #hud #objective:not(.open) b,.touch #hud #objective:not(.open) #objective-copy{display:none!important}
+.touch #hud #objective.objective-card:not(.open)::before{left:50%;margin-left:-15px}
+.touch #hud #objective.objective-card:not(.open)::after{content:none}
+.touch #hud #objective.objective-card.fresh:not(.open)::after{content:'';right:1px;top:1px;width:10px;height:10px;transform:none;border-radius:50%;background:var(--tgw-gold);box-shadow:0 0 0 2px rgba(30,40,28,.6)}
+.touch #hud #objective.objective-card.open{max-width:min(330px,48vw)!important;flex:0 1 330px!important;animation:tgw-fold-in .22s ease-out}
+.touch #hud #objective.objective-card.open::after{content:'‹'}
+.touch #hud #objective.open #objective-copy{white-space:normal!important;display:-webkit-box!important;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+.touch #hud .inventory-stack:not(.open){display:none!important}
+.touch #hud .inventory-stack.open{animation:tgw-fold-in .22s ease-out}
+@keyframes tgw-fold-in{from{opacity:0;transform:translateX(-8px)}to{opacity:1;transform:none}}
+.touch .tgw-minimap{width:48px!important;height:48px!important;background:var(--tgw-glass) url(./brand/icons/64/icon-map.png) center/26px no-repeat!important;border:1px solid var(--tgw-line)!important;box-shadow:var(--tgw-shadow)!important;-webkit-backdrop-filter:var(--tgw-blur);backdrop-filter:var(--tgw-blur);cursor:pointer}
+.touch .tgw-minimap canvas{display:none!important}
