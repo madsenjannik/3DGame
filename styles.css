@@ -1647,3 +1647,20 @@ body.hud-test-v1.touch .special-btn{
 body.hud-test-v1.fishing-active #hud,
 body.hud-test-v1.stable-race-active #hud,
 body.hud-test-v1.lakerun-active #hud{opacity:0!important;pointer-events:none!important}
+
+
+/* R73.1 exact viewport centering + persistent action-button polish for the DEV HUD test. */
+body.hud-test-v1 #hud .inventory-stack{
+  position:fixed!important;
+  left:50vw!important;
+  top:max(18px,env(safe-area-inset-top))!important;
+  transform:translateX(-50%)!important;
+}
+body.hud-test-v1.touch #action{
+  opacity:1;
+  transform:none;
+  pointer-events:auto;
+}
+@media (max-height:430px){
+  body.hud-test-v1 #hud .inventory-stack{top:max(10px,env(safe-area-inset-top))!important}
+}
