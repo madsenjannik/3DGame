@@ -61,11 +61,9 @@ export class WoodGiantBoss {
       // load time, so it could end up registered for the garden and never block in the world.
       this.bodyParts = [['Foot_L', .8], ['Foot_R', .8]].map(([n, r]) => ({ bone: s.getObjectByName(n), r, o: Object.assign(this.g.world.addObstacle({ x: this.site.x, z: this.site.z, r, height: 6, kind: 'boss-wood-giant' }), { space: 'world' }) }));
       this.obstacle = this.bodyParts[0].o;
-      // R72.1: one extra body circle for the sitting, sleeping Giant (torso footprint measured in the Sleep pose:
-      // 2.85 x 2.98 m around the Hips bone). Only while it sleeps; in the fight the two feet stay the only body colliders.
-      this.sleepBody = { bone: s.getObjectByName('Hips'), r: 1.5, o: Object.assign(this.g.world.addObstacle({ x: this.site.x, z: this.site.z, r: 1.5, height: 6, kind: 'boss-wood-giant' }), { space: 'world' }) };
+      // R72.2: the sleeping Giant's colliders are built from the model itself (buildSleepColliders, after reset).
       this.buildArenaColliders(); this.buildFightMarker();   // R65.1
-      this.reset();
+      this.reset(); this.buildSleepColliders();   // R72.2
     } catch (e) { console.warn('[TGW] Wood Giant unavailable (fails soft)', e); this.site = null; }
     return this;
   }
@@ -108,7 +106,7 @@ export class WoodGiantBoss {
     if (this.bodyParts) {
       this.giant.updateMatrixWorld(true);
       for (const b of this.bodyParts) { const p = b.bone ? b.bone.getWorldPosition(new THREE.Vector3()) : new THREE.Vector3(this.gx, 0, this.gz); b.o.x = p.x; b.o.z = p.z; b.o.r = this.giant.visible ? b.r : 0.01; }
-      const S = this.sleepBody; if (S) { const p = S.bone ? S.bone.getWorldPosition(new THREE.Vector3()) : new THREE.Vector3(this.gx, 0, this.gz); S.o.x = p.x; S.o.z = p.z; S.o.r = this.state === 'sleep' && this.giant.visible ? S.r : 0.01; }
+      const asleep = this.state === 'sleep' && this.giant.visible; for (const o of this.sleepObstacles || []) o.r = asleep ? o.r0 : 0.01;   // R72.2
     }
     const closed = this.fighting(); for (const o of this.doorObstacles || []) o.r = closed ? o.r0 : 0.01;   // closed line only during the fight
     for (const o of this.openDoorObstacles || []) o.r = closed ? 0.01 : o.r0;                               // open leaves otherwise
@@ -116,6 +114,20 @@ export class WoodGiantBoss {
   // R65.1: before this the stones, wall and gate had no collision at all (only the Giant's body); outside a fight
   // you walked straight through them. Colliders are circles laid over the arena model's own low vertices
   // (≤ 1.8 m), greedily thinned, so they follow the stones/wall exactly; the doors get their own set.
+  // R72.2: while it sits asleep the whole body blocks (feet, legs, hands, torso). Same method as the arena walls:
+  // circles over the skinned 'bark' vertices in the Sleep pose up to 2.2 m, greedily thinned. Only active in 'sleep';
+  // in the fight the two foot bones stay the only body colliders (free between the legs).
+  buildSleepColliders() {
+    const s = this.giant, v = new THREE.Vector3(), base = this.site.y ?? 0, R = .55, GAP = .8, pts = [];
+    this.mixer.update(0); this.root.updateMatrixWorld(true);
+    s.traverse(m => {
+      if (!m.isSkinnedMesh || m.material?.name !== 'bark') return; const pos = m.geometry.attributes.position;
+      for (let i = 0; i < pos.count; i++) { v.fromBufferAttribute(pos, i); m.applyBoneTransform(i, v); v.applyMatrix4(m.matrixWorld); if (v.y - base < 2.2) pts.push([v.x, v.z]); }
+    });
+    const keep = []; for (const [x, z] of pts) if (!keep.some(c => Math.hypot(c.x - x, c.z - z) < GAP)) keep.push({ x, z });
+    this.sleepObstacles = keep.map(c => { const o = this.g.world.addObstacle({ x: c.x, z: c.z, r: R, height: 2.2, kind: 'boss-wood-giant-sleep' }); o.space = 'world'; o.r0 = R; return o; });
+    this.syncObstacle();
+  }
   buildArenaColliders() {
     const arena = this.arena.root; arena.updateMatrixWorld(true);
     const v = new THREE.Vector3(), base = this.site.y, R = .42, GAP = .5;
