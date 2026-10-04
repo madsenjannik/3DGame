@@ -5,7 +5,9 @@ import { MATERIALS, TOOLS } from '../data/wildsCatalog.js';
 import { PROFILES, CONTROL_PROFILE_KEY, savedProfile, applyControlProfile } from '../core/ControlProfiles.js';
 
 export const DEV_MENU_KEY = 'tgw.devMenu';
+export const HUD_TEST_KEY = 'tgw.hudTestV1';
 export function devMenuEnabled() { try { return localStorage.getItem(DEV_MENU_KEY) === '1'; } catch { return false; } }
+function hudTestEnabled() { try { return localStorage.getItem(HUD_TEST_KEY) === '1'; } catch { return false; } }
 
 const SKIP_MS = 5 * 60 * 1000;
 
@@ -21,6 +23,7 @@ export class DevMenu {
       <header><div><small>TEST · RIGTIG SAVE</small><h2>Dev menu</h2></div><button type="button" class="wilds-close" aria-label="Close">✕</button></header>
       <div class="dev-menu-body">
         <section><small>KAMERA & STYRING (kun dev)</small><div class="dev-grid profiles">${Object.entries(PROFILES).map(([id, p]) => `<button data-a="cam:${id}">${p.name}</button>`).join('')}</div><p class="dev-note"></p></section>
+        <section><small>HUD TEST · NORMAL GAMEPLAY</small><div class="dev-grid hud-tests"><button data-a="hud:current">Current HUD</button><button data-a="hud:test">Test HUD</button></div><p class="dev-note hud-test-note">Kun visuelt layout. Ingen gameplay-logik ændres.</p></section>
         <section><small>MÅLING</small><div class="dev-grid"><button data-a="perf">Performance-HUD til/fra</button><button data-a="metrics">Vis startup-tider</button><button data-a="look">3D-look (R70) til/fra</button></div><div class="dev-grid four"><button data-a="q:auto">Auto</button><button data-a="q:mobile-low">Lav</button><button data-a="q:mobile-high">Høj</button><button data-a="q:desktop">Desktop</button></div></section>
         <section><small>RESSOURCER</small><div class="dev-grid">
           <button data-a="mats">+20 materialer</button><button data-a="tools">Alle redskaber</button><button data-a="pots">3 potter + vand</button><button data-a="skip">Spol 5 min frem</button>
@@ -52,6 +55,7 @@ export class DevMenu {
       </div></div>`;
     document.body.appendChild(el); this.el = el; this.open = false;
     this.profile = applyControlProfile(game, savedProfile()); this.markProfile();
+    this.hudTest = hudTestEnabled(); this.applyHudTest();
     for (const t of ['pointerdown', 'pointermove', 'pointerup']) { el.addEventListener(t, e => e.stopPropagation()); btn.addEventListener(t, e => e.stopPropagation()); }
     btn.addEventListener('click', () => this.show());
     el.addEventListener('click', e => {
@@ -66,6 +70,10 @@ export class DevMenu {
   markProfile() {
     this.el.querySelectorAll('[data-a^="cam:"]').forEach(b => b.classList.toggle('active', b.dataset.a === `cam:${this.profile}`));
     this.el.querySelector('.dev-note').textContent = PROFILES[this.profile]?.text || '';
+  }
+  applyHudTest() {
+    document.body.classList.toggle('hud-test-v1', !!this.hudTest);
+    this.el.querySelectorAll('[data-a^="hud:"]').forEach(b => b.classList.toggle('active', b.dataset.a === (this.hudTest ? 'hud:test' : 'hud:current')));
   }
   toast(t) { this.g.hud?.showToast(t); }
 
@@ -82,6 +90,14 @@ export class DevMenu {
 
   run(a) {
     const g = this.g, w = g.wilds, p = w.profile;
+    if (a.startsWith('hud:')) {
+      this.hudTest = a === 'hud:test';
+      try { localStorage.setItem(HUD_TEST_KEY, this.hudTest ? '1' : '0'); } catch {}
+      this.applyHudTest();
+      this.toast(this.hudTest ? 'Test HUD til' : 'Current HUD gendannet');
+      this.hide();
+      return;
+    }
     if (a.startsWith('cam:')) {
       const id = a.slice(4); try { localStorage.setItem(CONTROL_PROFILE_KEY, id); } catch {}
       this.profile = applyControlProfile(g, id); this.markProfile(); this.toast(`Kamera: ${PROFILES[this.profile].name}`);

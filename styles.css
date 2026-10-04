@@ -1480,3 +1480,192 @@ body.touch #stable-race-quit::before{content:'✕';font:700 15px/1 'Manrope',sys
 body.touch .fishing-fwrap{transform:none!important;left:calc(50% - min(160px,50% - 12px))!important}
 body.touch .fishing-fbtn-shell{position:fixed!important;right:calc(max(8px,env(safe-area-inset-right)));bottom:calc(6px + env(safe-area-inset-bottom))}
 @media (max-height:430px){body.touch .fishing-fbtn-shell{transform:scale(.86);transform-origin:100% 100%}}
+
+/* =====================================================================================================
+   R73 DEV-only normal HUD test.
+   Toggle: Dev menu -> HUD TEST -> Test HUD. The production/current HUD rules above stay untouched.
+   This block is purely visual and only applies while body.hud-test-v1 is present.
+   ===================================================================================================== */
+body.hud-test-v1{
+  --hudtest-fg:#f7f2e6;
+  --hudtest-muted:rgba(247,242,230,.76);
+  --hudtest-line:rgba(247,242,230,.34);
+  --hudtest-shadow:0 2px 12px rgba(18,26,15,.28);
+}
+
+/* Top HUD becomes three quiet zones: objective text / resources / minimap. */
+body.hud-test-v1 #hud{
+  left:max(26px,env(safe-area-inset-left));
+  right:calc(178px + env(safe-area-inset-right));
+  top:max(18px,env(safe-area-inset-top));
+  height:54px;
+  display:flex;
+  align-items:flex-start;
+  gap:0;
+  overflow:visible;
+}
+body.hud-test-v1.touch #hud{right:calc(154px + env(safe-area-inset-right))}
+
+/* Objective: no card, no blur, no border. */
+body.hud-test-v1 #hud #objective.objective-card{
+  position:relative!important;
+  width:min(330px,31vw)!important;
+  max-width:330px!important;
+  height:auto!important;
+  min-height:44px!important;
+  flex:0 0 auto!important;
+  padding:3px 0 0 42px!important;
+  margin:0!important;
+  border:0!important;
+  border-radius:0!important;
+  background:none!important;
+  box-shadow:none!important;
+  -webkit-backdrop-filter:none!important;
+  backdrop-filter:none!important;
+  color:var(--hudtest-fg)!important;
+  text-shadow:0 2px 10px rgba(14,24,12,.72);
+  pointer-events:none!important;
+}
+body.hud-test-v1 #hud #objective.objective-card::before{
+  left:0!important;top:3px!important;width:28px!important;height:28px!important;margin:0!important;
+  background-size:25px!important;filter:drop-shadow(0 2px 6px rgba(18,28,14,.34));
+}
+body.hud-test-v1 #hud #objective.objective-card::after{display:none!important}
+body.hud-test-v1 #hud #objective small{display:none!important}
+body.hud-test-v1 #hud #objective b{
+  margin:0!important;font:800 14px/1.2 Manrope,system-ui,sans-serif!important;
+  color:var(--hudtest-fg)!important;letter-spacing:-.01em;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+body.hud-test-v1 #hud #objective #objective-copy{
+  display:block!important;margin-top:4px!important;font:600 11px/1.25 Manrope,system-ui,sans-serif!important;
+  color:var(--hudtest-muted)!important;opacity:1!important;
+  white-space:nowrap!important;overflow:hidden;text-overflow:ellipsis;
+}
+
+/* Inventory is a centered, unboxed icon+number line. */
+body.hud-test-v1 #hud .hud-fold-btn{display:none!important}
+body.hud-test-v1 #hud .inventory-stack{
+  position:absolute!important;
+  left:50%!important;top:0!important;transform:translateX(-50%)!important;
+  display:flex!important;flex-direction:row!important;align-items:center!important;gap:0!important;
+  padding:0!important;margin:0!important;overflow:visible!important;
+  color:var(--hudtest-fg)!important;
+}
+body.hud-test-v1 #hud .seed-card.inventory-card{
+  height:32px!important;padding:0 17px 0 0!important;margin:0 15px 0 0!important;
+  gap:7px!important;border:0!important;border-radius:0!important;background:none!important;
+  box-shadow:none!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important;
+  border-right:1px solid var(--hudtest-line)!important;
+}
+body.hud-test-v1 #hud .seed-card .inventory-icon{
+  font-size:22px!important;color:#f5c84c!important;filter:drop-shadow(0 2px 6px rgba(18,28,14,.34));
+}
+body.hud-test-v1 #hud .seed-card span:last-child{display:flex!important;align-items:center!important;gap:7px!important}
+body.hud-test-v1 #hud .seed-card small{display:none!important}
+body.hud-test-v1 #hud .seed-card b{
+  font:800 14px/1 Manrope,system-ui,sans-serif!important;color:var(--hudtest-fg)!important;
+  text-shadow:0 2px 8px rgba(14,24,12,.6);
+}
+body.hud-test-v1 #hud #materials.materials-card{
+  display:flex!important;align-items:center!important;gap:0!important;height:32px!important;
+  padding:0!important;margin:0!important;border:0!important;background:none!important;box-shadow:none!important;
+  -webkit-backdrop-filter:none!important;backdrop-filter:none!important;opacity:1!important;transform:none!important;
+}
+body.hud-test-v1 #hud #materials .material-chip{
+  position:relative!important;display:flex!important;align-items:center!important;gap:7px!important;
+  min-width:0!important;height:32px!important;padding:0 18px!important;margin:0!important;
+  border:0!important;border-radius:0!important;background:none!important;box-shadow:none!important;
+  -webkit-backdrop-filter:none!important;backdrop-filter:none!important;color:var(--hudtest-fg)!important;
+}
+body.hud-test-v1 #hud #materials .material-chip:not(:last-of-type)::after{
+  content:"";position:absolute;right:0;top:7px;width:1px;height:18px;background:var(--hudtest-line);
+}
+body.hud-test-v1 #hud #materials .material-chip small{display:none!important}
+body.hud-test-v1 #hud #materials .material-chip i{
+  font-size:14px!important;line-height:1!important;filter:drop-shadow(0 2px 5px rgba(18,28,14,.3));
+}
+body.hud-test-v1 #hud #materials .material-chip b{
+  font:800 13px/1 Manrope,system-ui,sans-serif!important;color:var(--hudtest-fg)!important;
+  text-shadow:0 2px 8px rgba(14,24,12,.6);
+}
+body.hud-test-v1 #hud #materials .material-chip.wild_seed.zero,
+body.hud-test-v1 #hud #materials .material-chip.shell.zero{display:none!important}
+body.hud-test-v1 #hud #tools-row.tools-row{display:none!important}
+
+/* Keep the existing minimap data/logic; only make the ring quieter/smaller visually. */
+body.hud-test-v1 .tgw-minimap{
+  transform:scale(.88);transform-origin:top right;
+  box-shadow:0 0 0 1px rgba(247,242,230,.82),0 5px 18px rgba(10,18,8,.22)!important;
+}
+
+/* Touch: no folding behavior in the test layout; always show the actual test HUD. */
+body.hud-test-v1.touch #hud #objective.objective-card:not(.open),
+body.hud-test-v1.touch #hud #objective.objective-card.open{
+  width:min(250px,34vw)!important;max-width:250px!important;padding:3px 0 0 38px!important;
+  border-radius:0!important;animation:none!important;
+}
+body.hud-test-v1.touch #hud #objective:not(.open) b,
+body.hud-test-v1.touch #hud #objective:not(.open) #objective-copy{display:block!important}
+body.hud-test-v1.touch #hud .inventory-stack:not(.open),
+body.hud-test-v1.touch #hud .inventory-stack.open{display:flex!important;animation:none!important}
+body.hud-test-v1.touch #hud #materials .material-chip{padding:0 12px!important}
+
+/* Mobile landscape controls: low-profile, no glass blur. */
+body.hud-test-v1.touch #joy{
+  width:132px;height:132px;left:calc(max(22px,env(safe-area-inset-left)));
+  top:auto;bottom:calc(20px + env(safe-area-inset-bottom));
+  border:1.5px solid rgba(247,242,230,.62);background:rgba(20,29,18,.24)!important;
+  -webkit-backdrop-filter:none!important;backdrop-filter:none!important;box-shadow:none!important;
+}
+body.hud-test-v1.touch #joy-knob{
+  width:52px;height:52px;margin:-26px 0 0 -26px;background:rgba(247,242,230,.68)!important;
+  border:1px solid rgba(255,255,255,.75);box-shadow:0 4px 12px rgba(12,22,10,.22);
+}
+body.hud-test-v1.touch #action{
+  width:70px;height:70px;right:calc(max(22px,env(safe-area-inset-right)));bottom:calc(22px + env(safe-area-inset-bottom));
+  padding:0!important;border-radius:50%;background:rgba(20,29,18,.72)!important;
+  border:1.5px solid rgba(247,242,230,.70)!important;box-shadow:0 5px 16px rgba(12,22,10,.24)!important;
+  -webkit-backdrop-filter:none!important;backdrop-filter:none!important;
+}
+body.hud-test-v1.touch #action-ico{width:36px;height:36px}
+body.hud-test-v1.touch #action #action-label{display:none!important}
+body.hud-test-v1.touch .special-btn{
+  background:rgba(20,29,18,.72)!important;border:1.5px solid rgba(247,242,230,.70)!important;
+  -webkit-backdrop-filter:none!important;backdrop-filter:none!important;
+}
+
+/* Small landscape phones: shrink, never stack. */
+@media (max-height:430px){
+  body.hud-test-v1 #hud{top:max(10px,env(safe-area-inset-top));left:max(18px,env(safe-area-inset-left))}
+  body.hud-test-v1 #hud #objective.objective-card{width:min(220px,32vw)!important}
+  body.hud-test-v1 #hud #objective b{font-size:12px!important}
+  body.hud-test-v1 #hud #objective #objective-copy{font-size:9.5px!important}
+  body.hud-test-v1 #hud #materials .material-chip{padding:0 9px!important;gap:5px!important}
+  body.hud-test-v1 #hud #materials .material-chip i{font-size:12px!important}
+  body.hud-test-v1 #hud #materials .material-chip b{font-size:12px!important}
+  body.hud-test-v1.touch #joy{width:116px;height:116px;bottom:calc(12px + env(safe-area-inset-bottom))}
+  body.hud-test-v1.touch #action{width:62px;height:62px;bottom:calc(14px + env(safe-area-inset-bottom))}
+}
+
+/* Never restyle special-mode HUDs: their own body-state rules remain source of truth. */
+body.hud-test-v1.fishing-active #hud,
+body.hud-test-v1.stable-race-active #hud,
+body.hud-test-v1.lakerun-active #hud{opacity:0!important;pointer-events:none!important}
+
+
+/* R73.1 exact viewport centering + persistent action-button polish for the DEV HUD test. */
+body.hud-test-v1 #hud .inventory-stack{
+  position:fixed!important;
+  left:50vw!important;
+  top:max(18px,env(safe-area-inset-top))!important;
+  transform:translateX(-50%)!important;
+}
+body.hud-test-v1.touch #action{
+  opacity:1;
+  transform:none;
+  pointer-events:auto;
+}
+@media (max-height:430px){
+  body.hud-test-v1 #hud .inventory-stack{top:max(10px,env(safe-area-inset-top))!important}
+}

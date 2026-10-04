@@ -73,9 +73,14 @@ export class Hud {
     const w=document.getElementById('tool-water');if(w)w.textContent=tools.can?String(water):'';
     if(Object.values(tools).some(Boolean))this.materials.classList.add('show');
   }
-  setActionVisible(v,label='Collect',it=null){document.getElementById('action-label').textContent=label;this.action.classList.toggle('show',!!v);
-    // R71: contextual icon (hammer at the workbench, rod at the shore ...)
-    const ico=document.getElementById('action-ico');if(ico&&v){const n=actionIconName(it);if(n!==this._icoName){this._icoName=n;ico.innerHTML=actionIcon(it);this.action.dataset.icon=n;}}}
+  setActionVisible(v,label='Collect',it=null){
+    const hudTest=document.body.classList.contains('hud-test-v1'),fallback=hudTest&&!v;
+    document.getElementById('action-label').textContent=fallback?'Strike':label;
+    this.action.classList.toggle('show',!!v||hudTest);
+    // R73.1 test HUD: when nothing contextual is in range, the persistent button becomes the normal strike.
+    const visualIt=fallback?{type:'combat-strike'}:it,ico=document.getElementById('action-ico');
+    if(ico&&(v||hudTest)){const n=actionIconName(visualIt);if(n!==this._icoName){this._icoName=n;ico.innerHTML=actionIcon(visualIt);this.action.dataset.icon=n;}}
+  }
   showToast(text){this.toast.textContent=text;this.toast.classList.add('show');clearTimeout(this.toastTimer);this.toastTimer=setTimeout(()=>this.toast.classList.remove('show'),2200);}
   markMoved(){this.hint.style.opacity='0';}
   ready(){requestAnimationFrame(()=>{this.loading.classList.add('hide');setTimeout(()=>this.loading.remove(),1000);});}

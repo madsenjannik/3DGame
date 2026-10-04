@@ -257,6 +257,9 @@ export class Game {
       else if(interaction.type?.startsWith?.('combat-'))this.combat?.interact(interaction.type);
       else if(interaction.type?.startsWith?.('lakerun-'))this.lakeRun?.interact(interaction.type);
       else if(['fish-board','fishing-shop','fishing-spot','fishing-shore','boat-board','boat-fish','boat-dock'].includes(interaction.type))this.fishing?.interact(interaction.type);
+    } else if(document.body.classList.contains('hud-test-v1')&&!this.state.choice.open&&action&&!interaction&&!specialBusy&&!portalBusy&&!building&&!wildsPanel){
+      // R73.1 DEV HUD test: the persistent action button swings in empty space; contextual interactions still take priority.
+      this.combat?.attack?.();
     }
 
     // Fishing owns camera only in the shared world. The private garden keeps the
