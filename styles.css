@@ -1474,3 +1474,9 @@ body.touch #stable-race-quit::before{content:'✕';font:700 15px/1 'Manrope',sys
   body.touch .stable-podie-card .stable-result-actions{position:sticky;bottom:0}
   body.touch .stable-podie-card .stable-result-actions button{min-height:40px!important;font-size:12.5px!important;border-radius:13px!important}
 }
+
+/* R72.1 phone fishing: the Cast / Reel button sits bottom right under the right thumb (the tension bar stays centred).
+   fwrap loses its transform so the button can be fixed to the screen edge. */
+body.touch .fishing-fwrap{transform:none!important;left:calc(50% - min(160px,50% - 12px))!important}
+body.touch .fishing-fbtn-shell{position:fixed!important;right:calc(max(8px,env(safe-area-inset-right)));bottom:calc(6px + env(safe-area-inset-bottom))}
+@media (max-height:430px){body.touch .fishing-fbtn-shell{transform:scale(.86);transform-origin:100% 100%}}

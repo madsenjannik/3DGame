@@ -53,10 +53,12 @@ export function createHoloIndicator(options = {}) {
   const o = { ...DEFAULTS, ...options };
   const group = new THREE.Group(); group.name = 'HoloIndicator';
   const col = new THREE.Color(o.color);
+  // R72.1: blending 'normal' lets a grey (locked) indicator read as grey on bright ground; default stays additive.
+  const BL = o.blending === 'normal' ? THREE.NormalBlending : THREE.AdditiveBlending;
   let vis = 1, target = 1;
 
   const holoMat = new THREE.ShaderMaterial({
-    transparent: true, depthWrite: false, side: THREE.DoubleSide, blending: THREE.AdditiveBlending,
+    transparent: true, depthWrite: false, side: THREE.DoubleSide, blending: BL,
     uniforms: { uT: { value: 0 }, uI: { value: o.intensity }, uBreath: { value: o.breath }, uScanSpeed: { value: o.scanSpeed }, uScanDensity: { value: o.scanDensity }, uVis: { value: 1 }, uCol: { value: col } },
     vertexShader: VERT, fragmentShader: FRAG
   });
@@ -66,12 +68,12 @@ export function createHoloIndicator(options = {}) {
   let ring = null, halo = null;
   if (o.baseRing) {
     const s = o.radius * 2.47;
-    ring = new THREE.Mesh(new THREE.PlaneGeometry(s, s), new THREE.MeshBasicMaterial({ map: ringTexture(), color: col, transparent: true, depthWrite: false, side: THREE.DoubleSide, blending: THREE.AdditiveBlending }));
+    ring = new THREE.Mesh(new THREE.PlaneGeometry(s, s), new THREE.MeshBasicMaterial({ map: ringTexture(), color: col, transparent: true, depthWrite: false, side: THREE.DoubleSide, blending: BL }));
     ring.rotation.x = -Math.PI / 2; ring.position.y = 0.06; ring.renderOrder = 2; group.add(ring);
   }
   if (o.groundHalo) {
     const s = o.radius * 3.5;
-    halo = new THREE.Mesh(new THREE.PlaneGeometry(s, s), new THREE.MeshBasicMaterial({ map: haloTexture(), color: col, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending }));
+    halo = new THREE.Mesh(new THREE.PlaneGeometry(s, s), new THREE.MeshBasicMaterial({ map: haloTexture(), color: col, transparent: true, depthWrite: false, blending: BL }));
     halo.rotation.x = -Math.PI / 2; halo.position.y = 0.05; group.add(halo);
   }
 

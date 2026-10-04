@@ -152,7 +152,7 @@ export class LakeRunSystem {
     this.spot = { x: P.x, z: P.z };
     // R72: gold when you may race, grey + LOCKED until Sigurd lends you the boat (3 species + life vest).
     const opt = { radius: .58, height: 1.3, intensity: .48, breath: 2.4, scanSpeed: 2.0, scanDensity: 90, baseRing: true, groundHalo: true, fadeIn: .35 };
-    const holo = createHoloIndicator(opt), grey = createHoloIndicator({ ...opt, color: 0x9a9f98, intensity: .34, breath: 4 }); holo.setInstant(false); grey.setInstant(false);   // the right one fades in on the first update
+    const holo = createHoloIndicator(opt), grey = createHoloIndicator({ ...opt, color: 0x8b8f8a, intensity: .55, breath: 4, blending: 'normal' });   // R72.1: normal blending, otherwise grey turns gold on the sunlit deck holo.setInstant(false); grey.setInstant(false);   // the right one fades in on the first update
     const tex = (text, col) => { const c = document.createElement('canvas'); c.width = 330; c.height = 78; const x = c.getContext('2d');
       x.font = '800 44px Manrope, system-ui, sans-serif'; x.textAlign = 'center'; x.textBaseline = 'middle'; x.shadowColor = 'rgba(0,0,0,.45)'; x.shadowBlur = 8; x.fillStyle = col; x.fillText(text, 165, 41);
       const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; return t; };
