@@ -11,7 +11,7 @@ import { WildsModel } from './WildsModels.js';
 import { WoodGiantBoss } from './WoodGiantBoss.js';
 import { SpecialSystem } from './SpecialSystem.js';
 import { MATERIALS } from '../data/wildsCatalog.js';
-import { PLAYER, WEAPONS, WEAPON_ORDER, ATTACK_COOLDOWN, MOLE, WILT, LOOT_FILES } from '../data/combatCatalog.js';
+import { PLAYER, WEAPONS, WEAPON_ORDER, ATTACK_COOLDOWN, MOLE, WILT, LOOT_FILES, SPECIAL } from '../data/combatCatalog.js';
 
 const DIR = './assets/combat/';
 const MAX_HP = PLAYER.hearts * 2;
@@ -277,7 +277,7 @@ export class CombatSystem {
       ch.position.x += k.x * step; ch.position.z += k.z * step; this.g.world.resolveCollisions?.(ch.position, ch.radius || .3); ch.velocity?.set(0, 0, 0);
       if (k.t >= k.dur || this.wilting) this.kb = null;
     }
-    if (this.special) { this.special.update(dt); const on = !!this.special.charge || time - this.lastCombat < 6; this.special.btn?.classList.toggle('show', on); this.special.bar?.classList.toggle('show', on && this.hudEl.classList.contains('show')); }  // R65
+    if (this.special) { this.special.update(dt); /* R75 HUD rule: only when full or in/just after a fight */ const on = this.special.charge >= SPECIAL.chargeHits || time - this.lastCombat < 6; this.special.btn?.classList.toggle('show', on); this.special.bar?.classList.toggle('show', on && this.hudEl.classList.contains('show')); }  // R65
     if (!this.wilting && this.hp < MAX_HP && !this.boss?.fighting() && time - this.lastHit > PLAYER.regenDelay && (time - (this.lastRegen || 0)) > PLAYER.regenEvery) { this.lastRegen = time; this.heal(false); }
     const vitals = this.hp < MAX_HP || time - this.lastCombat < 4; this.hudEl.classList.toggle('show', vitals); document.body.classList.toggle('vitals-on', vitals);   // R68: desktop objective steps aside
     if (this.g.world.space === 'garden') {

@@ -1577,6 +1577,13 @@ are only touched where a measured hotspot requires it, minimally.
    failure. Must pass before every push (CLAUDE.md rule 5).
 
 **B status 02/10/2026: complete (R51–R57).** On-device check (iPhone, Jannik 02/10): 60 fps steady (frame max 20–24 ms), 217 draw calls / 370k tris in the garden, 363 / 433k at the lake, mobile-high, 1 WebGL context → no perf work needed before C.
+**R75 (v0.8.75, GO 05/10):** the HUD rule below is now the phone HUD.
+**HUD RULE (Jannik 05/10, phones):**
+1. Always visible while exploring: joystick (left), main button (right: the action in reach, otherwise Strike, icon only), Hop button (above the main button), quest as one title line (tap = text), bag (resources, tools and the Golden Seed live in the bag), map button.
+2. On interaction: the main button shows the action's icon + label (or grey 'Locked'); world markers (gold circles, node icons).
+3. On events, briefly: resources on gain, toasts, a new quest step (gold outline).
+4. Per situation, replacing the normal controls: combat (hearts + special bar), special button only when the meter is full or in/just after a fight, boss bar, boat, fishing, riding, races, dialogs, build mode.
+5. Only when opened: full map, bag, quest text, workbench, DEV.
 **R74 (v0.8.74, GO 05/10):** DEV-only 'Test HUD B' (light/dark, touch) to compare a brand-styled HUD against the current one; no gameplay change.
 **R72.2 (v0.8.73, GO 04/10):** the sleeping Wood Giant's whole sitting body is solid (56 circles from the Sleep-pose mesh); fight colliders unchanged (feet only).
 **v0.8.72:** R72.1 merged with Jannik's HUD test R73.1 (DEV toggle), both kept.

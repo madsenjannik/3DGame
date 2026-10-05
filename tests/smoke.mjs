@@ -69,7 +69,8 @@ try {
       // R71: quest + resources fold to two round buttons top left; tapping the bag opens the resource row
       const bag = document.getElementById('hud-bag'), inv = document.getElementById('inventory');
       obj.classList.remove('open', 'fresh'); await w(50);
-      o.row = obj.parentElement.id === 'hud' && op(obj) > .9 && b(obj).width <= 46 && b(obj).top < 60 && !!bag && b(bag).left > b(obj).left && getComputedStyle(inv).display === 'none';
+      o.row = obj.parentElement.id === 'hud' && op(obj) > .9 && b(obj).width > 100 && b(obj).height <= 46 && getComputedStyle(document.getElementById('objective-title')).display !== 'none' && b(obj).top < 60 && !!bag && b(bag).left > b(obj).left && getComputedStyle(inv).display === 'none';   // R75: quest = one title line, Golden Seed in the bag
+      { const act = document.getElementById('action'), hop = document.getElementById('hop-btn'); o.row = o.row && act.classList.contains('show') && act.dataset.icon === 'sword' && !!hop && b(hop).width >= 44 && getComputedStyle(hop).display !== 'none'; }   // R75: main button always (Strike), Hop button
       bag.click(); await w(300); o.row = o.row && inv.classList.contains('open') && Math.abs(b(wood).top - b(stone).top) < 2 && b(stone).left > b(wood).left && b(wood).left > b(seed).left && b(seed).left > b(bag).left;
       const mini = document.querySelector('.tgw-minimap'); o.minimap = !!mini && b(mini).width <= 50 && !mini.querySelector('canvas').getBoundingClientRect().width && b(wood).right < b(mini).left;
       obj.click(); await w(100); o.row = o.row && obj.classList.contains('open') && b(obj).width > 120; bag.click(); obj.click();
@@ -77,7 +78,7 @@ try {
       g.state.addItem('wood', 2); await w(100); o.bump = wood.classList.contains('bump') && document.getElementById('wood-count').textContent !== '0' && document.getElementById('inventory').classList.contains('open');   // R71: a gain peeks the row open
       const c = document.querySelector('#app canvas'); o.fill = c.getBoundingClientRect().height === innerHeight && !c.style.height;
       o.bar = getComputedStyle(document.querySelector('.build-bar')).visibility === 'hidden'; o.keys = getComputedStyle(document.getElementById('key-hints')).display === 'none'; return o; }) : {};
-    check('landscape HUD (phone): quest + resources fold to buttons (R71), tap opens them, map is an icon, resting joystick, gain pulse, canvas fills, no desktop hints', ok && r.row && r.minimap && r.joy && r.bump && r.fill && r.bar && r.keys && !errors.length, errors[0] || JSON.stringify(r));
+    check('landscape HUD (phone): quest line + bag (R75), persistent Strike + Hop, tap opens them, map is an icon, resting joystick, gain pulse, canvas fills, no desktop hints', ok && r.row && r.minimap && r.joy && r.bump && r.fill && r.bar && r.keys && !errors.length, errors[0] || JSON.stringify(r));
     await ctx.close(); }
   { const ctx = await context({ viewport: { width: 1280, height: 720 } }); const { p, errors, ok } = await startGame(ctx, 'tulip');
     const r = ok ? await p.evaluate(async () => { const g = window.__tgw, w = ms => new Promise(x => setTimeout(x, ms)), o = { keys: getComputedStyle(document.getElementById('key-hints')).display === 'flex', joy: getComputedStyle(document.getElementById('joy-rest')).display === 'none', mats: +getComputedStyle(document.getElementById('materials')).opacity === 1 };

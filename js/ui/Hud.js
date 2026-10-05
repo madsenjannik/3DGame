@@ -77,13 +77,14 @@ export class Hud {
     const w=document.getElementById('tool-water');if(w)w.textContent=tools.can?String(water):'';
     if(Object.values(tools).some(Boolean))this.materials.classList.add('show');
   }
-  setActionVisible(v,label='Collect',it=null){
-    const hudTest=document.body.classList.contains('hud-test-v1'),fallback=hudTest&&!v;
-    document.getElementById('action-label').textContent=fallback?'Strike':label;
-    this.action.classList.toggle('show',!!v||hudTest);
+  // R75 HUD rule (phones): the main button is always there; with nothing in reach it is Strike (icon only).
+  setActionVisible(v,label='Collect',it=null,persistent=false){
+    const hudTest=document.body.classList.contains('hud-test-v1'),keep=hudTest||persistent,fallback=keep&&!v;
+    document.getElementById('action-label').textContent=fallback?(hudTest?'Strike':''):label;
+    this.action.classList.toggle('show',!!v||keep);this.action.classList.toggle('strike-idle',fallback);
     // R73.1 test HUD: when nothing contextual is in range, the persistent button becomes the normal strike.
     const visualIt=fallback?{type:'combat-strike'}:it,ico=document.getElementById('action-ico');
-    if(ico&&(v||hudTest)){const n=actionIconName(visualIt);if(n!==this._icoName){this._icoName=n;ico.innerHTML=actionIcon(visualIt);this.action.dataset.icon=n;}}
+    if(ico&&(v||keep)){const n=actionIconName(visualIt);if(n!==this._icoName){this._icoName=n;ico.innerHTML=actionIcon(visualIt);this.action.dataset.icon=n;}}
   }
   showToast(text){this.toast.textContent=text;this.toast.classList.add('show');clearTimeout(this.toastTimer);this.toastTimer=setTimeout(()=>this.toast.classList.remove('show'),2200);}
   markMoved(){this.hint.style.opacity='0';}

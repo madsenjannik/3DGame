@@ -246,7 +246,8 @@ export class Game {
     // story (private garden, until the plant/donate choice) owns the card.
     const nowMs=performance.now();
     if(this.wilds&&nowMs-(this._objAt||0)>1000){this._objAt=nowMs;if(!(gardenSpace&&!this.state.choice.resolved))this.hud.setObjective?.('NEXT STEP',this.wilds.goal());}
-    this.hud.setActionVisible(!!interaction,interaction?.label||'Collect',interaction);this.hud.action.classList.toggle('locked',!!interaction?.locked);this.hud.action.classList.toggle('wilds-locked',!!(interaction?.disabled&&!interaction?.locked)); // R72: requirement missing = grey 'Locked'; other disabled states (growing) keep their text
+    const mainIdle=this.input.isTouch&&!this.state.choice.open&&!specialBusy&&!portalBusy&&!building&&!wildsPanel&&!this.lakeRun?.busy?.()&&!this.mapBlocking; // R75: persistent main button on phones
+    this.hud.setActionVisible(!!interaction,interaction?.label||'Collect',interaction,mainIdle);this.hud.action.classList.toggle('locked',!!interaction?.locked);this.hud.action.classList.toggle('wilds-locked',!!(interaction?.disabled&&!interaction?.locked)); // R72: requirement missing = grey 'Locked'; other disabled states (growing) keep their text
     const action=this.input.consumeAction();
     if(!this.state.choice.open&&action&&interaction&&!interaction.disabled){
       if(interaction.type==='home-enter'||interaction.type==='home-exit')this.homePortal?.interact(interaction.type,this.character,this.followCamera,this.hud);
@@ -257,7 +258,7 @@ export class Game {
       else if(interaction.type?.startsWith?.('combat-'))this.combat?.interact(interaction.type);
       else if(interaction.type?.startsWith?.('lakerun-'))this.lakeRun?.interact(interaction.type);
       else if(['fish-board','fishing-shop','fishing-spot','fishing-shore','boat-board','boat-fish','boat-dock'].includes(interaction.type))this.fishing?.interact(interaction.type);
-    } else if(document.body.classList.contains('hud-test-v1')&&!this.state.choice.open&&action&&!interaction&&!specialBusy&&!portalBusy&&!building&&!wildsPanel){
+    } else if((document.body.classList.contains('hud-test-v1')||mainIdle)&&!this.state.choice.open&&action&&!interaction&&!specialBusy&&!portalBusy&&!building&&!wildsPanel){
       // R73.1 DEV HUD test: the persistent action button swings in empty space; contextual interactions still take priority.
       this.combat?.attack?.();
     }

@@ -24,6 +24,8 @@ export class InputManager {
     addEventListener('keyup', e=>{this.keys[e.code]=false;});
     addEventListener('blur', ()=>{for(const k in this.keys)this.keys[k]=false;this.hopPressed=false;this.actionPressed=false;this.resetTouchPointers();});
     actionButton.addEventListener('pointerdown', e=>{e.stopPropagation();e.preventDefault();this.actionPressed=true;});
+    // R75: visible Hop button on phones (the swipe-up gesture still works)
+    document.getElementById('hop-btn')?.addEventListener('pointerdown', e=>{e.stopPropagation();e.preventDefault();this.hopPressed=true;});
     addEventListener('pointerdown', e=>this.onPointerDown(e));
     addEventListener('pointermove', e=>this.onPointerMove(e));
     addEventListener('pointerup', e=>this.endPointer(e));
