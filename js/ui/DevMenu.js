@@ -42,7 +42,7 @@ export class DevMenu {
           <button data-a="lr:start">Til guldcirklen (broen)</button><button data-a="lr:go">Start Lake Race</button><button data-a="lr:gold">Gennemfør (guldtid)</button><button data-a="lr:reset">Nulstil Lake Run</button>
         </div></section>
         <section><small>KAMP (R61)</small><div class="dev-grid">
-          <button data-a="cb:tp">Teleport til Mole</button><button data-a="cb:heal">Fuld liv</button><button data-a="cb:special">Fyld special-måler</button><button data-a="cb:hurt">Tag 1 hjerte skade</button><button data-a="cb:respawn">Respawn moles</button><button data-a="cb:mercy">Nulstil mercy + poser</button><button data-a="cb:arena">Teleport til Wood Giant</button><button data-a="cb:bosslow">Boss: 4 liv tilbage</button><button data-a="cb:bossreset">Boss: klar igen</button><button data-a="cb:bear">Teleport til Root Bear</button><button data-a="cb:bearawake">Root Bear: vågen nu</button><button data-a="cb:bearlow">Root Bear: 4 liv</button><button data-a="cb:bearreset">Root Bear: klar igen</button>
+          <button data-a="cb:tp">Teleport til Mole</button><button data-a="cb:heal">Fuld liv</button><button data-a="cb:special">Fyld special-måler</button><button data-a="cb:hurt">Tag 1 hjerte skade</button><button data-a="cb:respawn">Respawn moles</button><button data-a="cb:mercy">Nulstil mercy + poser</button><button data-a="cb:arena">Teleport til Wood Giant</button><button data-a="cb:bosslow">Boss: 4 liv tilbage</button><button data-a="cb:bossreset">Boss: klar igen</button><button data-a="tid:night">Tid: nat nu</button><button data-a="tid:day">Tid: dag nu</button><button data-a="tid:clock">Tid: følg uret</button><button data-a="cb:bear">Teleport til Root Bear</button><button data-a="cb:bearawake">Root Bear: vågen nu</button><button data-a="cb:bearlow">Root Bear: 4 liv</button><button data-a="cb:bearreset">Root Bear: klar igen</button>
         </div></section>
         <section><small>HAVE-LAYOUT (R60)</small><div class="dev-grid">
           <button data-a="move:greenhouse">Flyt drivhus</button><button data-a="move:workshop">Flyt workshop</button><button data-a="move:rain">Flyt regntønde</button><button data-a="move:shrine">Flyt shrine</button><button data-a="layout:reset">Nulstil placeringer</button>
@@ -138,6 +138,7 @@ export class DevMenu {
       if (op === 'reset') { L.cancel(); L.closeResult(); Object.assign(L.p, { best: 0, splits: [], ghost: [], runs: [], day: '', attempts: 0, golds: 0, weekGold: '' }); g.save.persist(); return this.toast('Lake Race nulstillet'); }
       return;
     }
+    if (a.startsWith('tid:')) { const dn = g.dayNight; if (!dn) return this.toast('Døgnrytme ikke indlæst'); const op = a.slice(4); dn.force = op === 'night' ? 1 : op === 'day' ? 0 : null; return this.toast(op === 'night' ? 'Nat (DEV)' : op === 'day' ? 'Dag (DEV)' : 'Tiden følger uret igen'); }   // R81
     if (a.startsWith('cb:')) {
       const c = g.combat, op = a.slice(3); if (!c) return this.toast('Kamp er ikke indlæst');
       if (op === 'tp') { const m = c.moles.find(x => x.state !== 'gone') || c.moles[0]; if (!m) return this.toast('Ingen Mole fundet'); this.teleport('world', m.home.x + 4, m.home.z, -Math.PI / 2); return; }

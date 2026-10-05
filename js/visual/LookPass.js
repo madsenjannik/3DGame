@@ -9,7 +9,7 @@ const KEY = 'tgw.look';
 // R71: R70's grade sat too close to the base (Jannik could not see it). Now a clear 'golden afternoon':
 // warmer, stronger low sun against a weaker sky fill (more light/shadow contrast), deeper blue zenith,
 // warm horizon haze that starts nearer (depth), a touch more exposure.
-const LOOK = {
+export const LOOK = {
   exposure: 1.30,
   horizon: 0xf3d9ad, zenith: 0x3f86d4, sun: 0xffdc98,
   fog: { near: 22, far: 175 },
@@ -52,6 +52,13 @@ export class LookPass {
       if (b.bg) g.renderer.setClearColor(b.bg, 1);
     }
     this.applied = on;
+  }
+  // R81: the 'day' values the day/night cycle blends from (the grade when it is applied, else the base look).
+  dayValues() {
+    if (!this.base && !this.capture()) return null;
+    const b = this.base, c = v => new THREE.Color(v);
+    if (!this.applied) return { exposure: b.exposure, horizon: b.fogColor, zenith: b.uZ, sunGlow: b.uS, near: b.near, far: b.far, hemiSky: b.hemiSky, hemiGround: b.hemiGround, hemiI: b.hemiI, sunC: b.sunC, sunI: b.sunI, env: b.env };
+    return this._lookVals ||= { exposure: LOOK.exposure, horizon: c(LOOK.horizon), zenith: c(LOOK.zenith), sunGlow: c(LOOK.sun), near: LOOK.fog.near, far: LOOK.fog.far, hemiSky: c(LOOK.hemi.sky), hemiGround: c(LOOK.hemi.ground), hemiI: LOOK.hemi.intensity, sunC: c(LOOK.sunLight.color), sunI: LOOK.sunLight.intensity, env: LOOK.envIntensity };
   }
   // Called every frame: on in the shared world (when enabled), off in the private garden.
   update(gardenSpace) {

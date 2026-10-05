@@ -12,30 +12,32 @@ import { CollectibleSystem } from '../gameplay/CollectibleSystem.js';
 import { MeaningfulChoiceSystem } from '../gameplay/MeaningfulChoiceSystem.js';
 import { GreenhouseProgressionSystem } from '../gameplay/GreenhouseProgressionSystem.js?build=CAMERA-CUTAWAY-CONTEXT-R21D-20260928E';
 import { OrangeryHubSystem } from '../gameplay/OrangeryHubSystem.js?build=CAMERA-CUTAWAY-CONTEXT-R21D-20260928E';
-import { FishingV1System } from '../gameplay/FishingV1System.js?build=FISHGRIP-R80-20261005A';
+import { FishingV1System } from '../gameplay/FishingV1System.js?build=DAYNIGHT-R81-20261005A';
 import { ChoicePanel } from '../ui/ChoicePanel.js';
 import { Hud } from '../ui/Hud.js?build=HUDTEST-D-R78.1-20261005A';
 import { WorldMap } from '../ui/WorldMap.js?build=WORLD-MAP-R35B-20260930B';
-import { GardenEnvironment } from '../world/GardenEnvironment.js?build=ROOTBEAR-R79.1-20261005A';
+import { GardenEnvironment } from '../world/GardenEnvironment.js?build=DAYNIGHT-R81-20261005A';
 import { WildlifeSystem } from '../world/WildlifeSystem.js?build=CAMERA-CUTAWAY-CONTEXT-R21D-20260928E';
 import { PlayerHomePortalSystem } from '../world/PlayerHomePortalSystem.js?build=ENTRY-R29-20260929A';
 import { NorthStableSystem } from '../world/NorthStableSystem.js?build=STABLE-R42-20261001A';
-import { SaveGame } from './SaveGame.js?build=ROOTBEAR-R79.1-20261005A';
+import { SaveGame } from './SaveGame.js?build=DAYNIGHT-R81-20261005A';
 import { WildsLoopSystem } from '../gameplay/WildsLoopSystem.js?build=HUDTEST-D-R78.1-20261005A';
 import { WorkbenchPanel } from '../ui/WorkbenchPanel.js';
-import { DevMenu, devMenuEnabled } from '../ui/DevMenu.js?build=ROOTBEAR-R79.1-20261005A';
+import { DevMenu, devMenuEnabled } from '../ui/DevMenu.js?build=DAYNIGHT-R81-20261005A';
 import { applyControlProfile, defaultProfile } from './ControlProfiles.js';
 import { PerfHud } from '../dev/PerfHud.js';
 import { QualityManager, QUALITY } from './Quality.js';
 import { InteractionResolver } from './InteractionResolver.js';
 import { log, warn } from '../dev/Log.js';
-import { LookPass } from '../visual/LookPass.js';
+import { LookPass } from '../visual/LookPass.js?build=DAYNIGHT-R81-20261005A';
+import { DayNight } from '../visual/DayNight.js?build=DAYNIGHT-R81-20261005A';   // R81
+import { Lantern } from '../gameplay/Lantern.js?build=DAYNIGHT-R81-20261005A';     // R81
 import { BoatEconomySystem } from '../gameplay/BoatEconomySystem.js';
 import { LakeRunSystem } from '../gameplay/LakeRunSystem.js';
 import { GardenBuildSystem } from '../gameplay/GardenBuildSystem.js';
 import { GardenBuildMode } from '../ui/GardenBuildMode.js';
 import { GardenVegetationMask } from '../world/GardenVegetationMask.js';
-import { CombatSystem } from '../gameplay/CombatSystem.js?build=ROOTBEAR-R79.1-20261005A';
+import { CombatSystem } from '../gameplay/CombatSystem.js?build=DAYNIGHT-R81-20261005A';
 
 export class Game {
   async init({characterId='succulent',devMode=false}={}){
@@ -182,6 +184,10 @@ export class Game {
     const gardenSpace=this.world.isGardenSpace();
     if(!this.look)try{this.look=new LookPass(this);}catch(e){this.look={update(){}};warn('LOOK','look pass disabled',e);}
     this.look.update(gardenSpace);   // R70: shared-world grade on, private garden (greenhouse) untouched
+    if(!this.dayNight)try{this.dayNight=new DayNight(this);}catch(e){this.dayNight={update(){},isNight:()=>false};warn('DAYNIGHT','day/night disabled',e);}
+    this.dayNight.update(gardenSpace);   // R81: 30 min day/night on the shared world only (after the look pass)
+    if(!this.lantern&&this.character?.instance)try{this.lantern=new Lantern(this);}catch(e){this.lantern={update(){}};warn('LANTERN','lantern disabled',e);}
+    this.lantern?.update(dt);
     const portalBusy=this.homePortal?.busy||false;
     const fishingBusy=!gardenSpace&&(this.fishing?.isBusy?.()||false);
     const stableBusy=!gardenSpace&&(this.stable?.isBusy?.()||false);

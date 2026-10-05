@@ -1932,3 +1932,15 @@ body.hud-classic:not(.touch) .special-btn b{
 body.hud-classic:not(.touch) .special-btn.full i{
   box-shadow:inset 0 0 0 2px rgba(226,181,82,.55),0 0 12px rgba(226,181,82,.45)!important;
 }
+
+/* R81 lantern button (night only, phones): small round button above Hop; desktop uses L (key hint). Hidden wherever Hop is hidden. */
+#lantern-btn{display:none}
+#key-hints .kh-lantern{display:none;align-items:center;gap:8px}
+body.lantern-ready:not(.touch) #key-hints .kh-lantern{display:inline-flex}
+body.lantern-ready.touch #lantern-btn{display:grid;place-items:center;position:fixed;z-index:20;right:calc(max(18px,env(safe-area-inset-right)) + 16px);bottom:calc(20px + env(safe-area-inset-bottom) + 148px);width:48px;height:48px;padding:0;border-radius:50%;background:var(--tgw-glass);border:1px solid var(--tgw-line);box-shadow:var(--tgw-shadow);-webkit-backdrop-filter:var(--tgw-blur);backdrop-filter:var(--tgw-blur);color:var(--tgw-cream);pointer-events:auto;touch-action:none;-webkit-tap-highlight-color:transparent}
+#lantern-btn .ico-mask{display:block;width:24px;height:24px;background:currentColor;-webkit-mask:var(--ico) center/contain no-repeat;mask:var(--ico) center/contain no-repeat}
+#lantern-btn.on{color:#ffd27a;box-shadow:0 0 0 2px rgba(255,200,110,.55),var(--tgw-shadow)}
+#lantern-btn:active{transform:scale(.92)}
+@media (max-height:430px){body.lantern-ready.touch #lantern-btn{right:calc(max(18px,env(safe-area-inset-right)) + 14px);bottom:calc(14px + env(safe-area-inset-bottom) + 132px);width:46px;height:46px}}
+body.hud-classic.lantern-ready.touch #lantern-btn{right:calc(max(18px,env(safe-area-inset-right)) + 111px)!important;bottom:calc(92px + env(safe-area-inset-bottom))!important}
+body.fishing-active #lantern-btn,body.boating-active #lantern-btn,body.stable-talk-active #lantern-btn,body.stable-ride-active #lantern-btn,body.stable-race-active #lantern-btn,body.stable-setup-active #lantern-btn,body.stable-shop-scene #lantern-btn,body.stable-race-result-active #lantern-btn,body.lakerun-active #lantern-btn,body.build-mode #lantern-btn,body.choice-open #lantern-btn,body.rotate-gated #lantern-btn,body.world-map-open #lantern-btn,body.boss-active #lantern-btn{display:none!important}

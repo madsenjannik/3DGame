@@ -82,7 +82,8 @@ try {
     await ctx.close(); }
   { const ctx = await context({ viewport: { width: 1280, height: 720 } }); const { p, errors, ok } = await startGame(ctx, 'tulip');
     const r = ok ? await p.evaluate(async () => { const g = window.__tgw, w = ms => new Promise(x => setTimeout(x, ms)), o = { keys: getComputedStyle(document.getElementById('key-hints')).display === 'flex', joy: getComputedStyle(document.getElementById('joy-rest')).display === 'none', mats: +getComputedStyle(document.getElementById('materials')).opacity === 1 };
-      g.devMenu.teleport('world', .1, 20, Math.PI); await w(600); o.lookWorld = g.look?.applied === true && g.renderer.toneMappingExposure > 1.05;
+      if (g.dayNight) g.dayNight.force = 0; g.devMenu.teleport('world', .1, 20, Math.PI); await w(600);   // R81: the R70 grade is checked by day (the real clock may be at night)
+      o.lookWorld = g.look?.applied === true && g.renderer.toneMappingExposure > 1.05;
       g.devMenu.teleport('garden', 0, 6, Math.PI); await w(600); o.lookGarden = g.look?.applied === false && Math.abs(g.renderer.toneMappingExposure - 1.02) < 1e-6; return o; }) : {};
     check('landscape HUD (desktop): key hints, no joystick, resources visible; R70 look on in the world, off in the garden', ok && r.keys && r.joy && r.mats && r.lookWorld && r.lookGarden && !errors.length, errors[0] || JSON.stringify(r));
     await ctx.close(); }
@@ -439,6 +440,26 @@ try {
       f.phase = 'ready'; step(2); const base = G.saved.get(G.B.aR)?.base.clone(); f.leaveFish(); step(2); o.back = f.mode === 'world' && !f._rod.visible && !G.fist.visible && !G.active && (!base || G.B.aR.quaternion.angleTo(base) < .05);
       return o; }) : {};
     check('fishing grip (R80): rod in the right hand only while fishing, own hand colour, float dangles, wind-up, cast from the tip, reel cranks, bones back after', ready && ['hidden', 'inHand', 'colour', 'dangle', 'windUp', 'castFromTip', 'wait', 'crank', 'back'].every(k => r[k]) && !errors.length, errors[0] || JSON.stringify(r));
+    await ctx.close(); }
+  // 17f. R81 day/night + lantern + mud splat: the clock gives 21 min day / 9 min night per real half hour; night darkens
+  // the shared world only (garden untouched); the lantern can only be lit at night in the world, hangs from the left hand
+  // with its own light and is put away by day; Swamp's Mud Splat leaves a brown splat while it stuns; the Root Bear's
+  // rematch is one in-game day
+  { const ctx = await context({ viewport: { width: 844, height: 390 }, isMobile: true, hasTouch: true }); const { p, errors, ok } = await startGame(ctx, 'swamp');
+    const ready = ok && await p.waitForFunction(() => window.__tgw?.lantern?.ready && window.__tgw.dayNight && window.__tgw.combat?.special?.gltf, null, { timeout: 240000 }).then(() => true, () => false);
+    const r = ready ? await p.evaluate(async () => { const g = window.__tgw, dn = g.dayNight, L = g.lantern, o = {}, { nightAt, DAY_MS } = await import('./js/visual/DayNight.js');
+      const base = Math.floor(Date.now() / DAY_MS) * DAY_MS, m = x => base + x * 60000;
+      o.clock = DAY_MS === 1800000 && nightAt(m(10)) === 0 && nightAt(m(25)) === 1 && nightAt(m(21.7)) > 0 && nightAt(m(21.7)) < 1 && nightAt(m(.5)) > 0;
+      g.devMenu.teleport('world', 30, 40, 0); dn.force = 0; dn.update(false); const dayExp = g.renderer.toneMappingExposure, dayFog = g.scene.fog.color.getHex();
+      L.update(.016); o.dayLocked = !L.toggle() && !document.body.classList.contains('lantern-ready');
+      dn.force = 1; dn.update(false); L.update(.016); o.night = document.body.classList.contains('is-night') && g.scene.fog.color.getHex() !== dayFog && g.world.hemi.intensity < 1 && document.body.classList.contains('lantern-ready');
+      const lit = L.toggle(); L.update(.016); const sock = g.character.instance.socket('Hand_Socket_L'); let up = L.model.parent; o.lantern = lit && L.on && L.model.visible && L.model.parent === sock && L.light?.intensity > 0 && !L.light.castShadow;
+      g.world.setSpace('garden'); g.look.update(true); dn.update(true); L.update(.016); o.garden = !document.body.classList.contains('is-night') && Math.abs(g.renderer.toneMappingExposure - 1.02) < .01 && !L.model.visible && L.light.intensity === 0;
+      g.world.setSpace('world'); g.look.update(false); dn.force = 0; dn.update(false); L.update(.016); o.dayAgain = !L.model.visible && Math.abs(g.renderer.toneMappingExposure - dayExp) < .01; L.on = false; dn.force = null;
+      const S = g.combat.special, d = S.def; S.land({ land: { x: 30, z: 42 } }); const z = S.zones[S.zones.length - 1]; o.mud = d.stun > 0 && z?.mesh?.name === 'SPECIAL_MUD_SPLAT' && z.life === d.stun + .5; for (let i = 0; i < 50; i++) S.update(.05); o.mudGone = !S.zones.includes(z);
+      const B = g.combat.bear; if (B?.bear) { B.p.defeatedAt = Date.now() - 29 * 60000; const a = B.available(); B.p.defeatedAt = Date.now() - 31 * 60000; o.rematch = !a && B.available(); B.p.defeatedAt = 0; } else o.rematch = false;
+      return o; }) : {};
+    check('day/night + lantern (R81): 21/9 min clock, night darkens the world only, lantern only at night in the left hand with its own light, mud splat, bear rematch = 1 in-game day', ready && ['clock', 'dayLocked', 'night', 'lantern', 'garden', 'dayAgain', 'mud', 'mudGone', 'rematch'].every(k => r[k]) && !errors.length, errors[0] || JSON.stringify(r));
     await ctx.close(); }
   // 5. DEV disabled: no dev UI or handles leak into normal play
   { const ctx = await context({ viewport: { width: 844, height: 390 }, isMobile: true, hasTouch: true }); const { p, errors, ok } = await startGame(ctx, 'daisy', { dev: false });

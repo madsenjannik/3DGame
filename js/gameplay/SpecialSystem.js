@@ -5,7 +5,7 @@
 // Targets are the same as Strike: Moles in the wilds, snails in the garden, the Wood Giant (weak window only)
 // and its risen roots. Owned by CombatSystem; fails soft (no projectile GLB → simple sphere).
 import * as THREE from 'three';
-import { SPECIAL, GIANT, ROOT_BEAR } from '../data/combatCatalog.js?build=ROOTBEAR-R79.1-20261005A';
+import { SPECIAL, GIANT, ROOT_BEAR } from '../data/combatCatalog.js?build=DAYNIGHT-R81-20261005A';
 import { loadGLTF } from '../core/AssetManager.js';
 import { WildsModel } from './WildsModels.js';
 
@@ -200,6 +200,12 @@ export class SpecialSystem {
       const col = d.cloud ? 0xb79be8 : 0x9fd36a, mesh = new THREE.Mesh(new THREE.CircleGeometry(d.r, 28).rotateX(-Math.PI / 2), new THREE.MeshBasicMaterial({ color: col, transparent: true, opacity: .45, depthWrite: false }));
       mesh.position.set(p.x, this.L.groundHeight(p.x, p.z) + .06, p.z); mesh.renderOrder = 3; this.root.add(mesh);
       this.zones.push({ mesh, x: p.x, z: p.z, r: d.r, t: 0, life: d.pool || d.cloud, tick: d.cloud ? d.tick : 0, acc: 0, dmg: d.dmg, slow: !!d.slow });
+    }
+    // R81: Mud Splat leaves a brown splat on the ground for as long as it stuns (it used to be only a grey dust puff).
+    if (d.stun) {
+      const mesh = new THREE.Mesh(new THREE.CircleGeometry(d.r, 28).rotateX(-Math.PI / 2), new THREE.MeshBasicMaterial({ color: 0x5b3a1d, transparent: true, opacity: .45, depthWrite: false }));
+      mesh.name = 'SPECIAL_MUD_SPLAT'; mesh.position.set(p.x, this.L.groundHeight(p.x, p.z) + .06, p.z); mesh.renderOrder = 3; this.root.add(mesh);
+      this.zones.push({ mesh, x: p.x, z: p.z, r: d.r, t: 0, life: d.stun + .5, tick: 0, acc: 0, dmg: 0, slow: false });
     }
     this.c.spawnFx('Hit_Dust', p.x, p.z);
   }

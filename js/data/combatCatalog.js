@@ -94,7 +94,8 @@ export const ROOT_BEAR = {
   body: [['Hips', 1.3], ['Head', .85], ['Hand_L', .5], ['Hand_R', .5], ['Foot_L', .5], ['Foot_R', .5]],
   // Wood Giant's low boss camera, scaled to the bear (chest ≈ 0.65 × 5.2 m); kept inside the open core (no tree in view).
   camera: { distance: 8, height: 2.4, chestY: 3.1, lookBlend: .3, fovPortrait: 74, fovLandscape: 62, edgeLift: .35, liftMax: 3.5 },
-  rematchHours: 24,
+  rematchHours: 24,          // R81: replaced by rematchGameDays (Jannik: 'Golden seed og 1 døgn i spillet')
+  rematchGameDays: 1,        // one in-game day = 30 real minutes (DayNight.DAY_MS)
   reward: { first: { golden_seed: 1, amber: 3, wood: 10 }, again: { amber: 2, wood: 8 } },   // same as the Wood Giant
   grove: { seed: 7979, trees: 30, clusters: 8, ring: [17, 26], scale: [1.3, 1.8], rocks: 4 }
 };

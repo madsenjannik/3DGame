@@ -2,7 +2,7 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { createHoloIndicator } from '../visual/holo-indicator.js';
-import { FishingGrip } from './FishingGrip.js?build=FISHGRIP-R80-20261005A';   // R80 rod in the hand
+import { FishingGrip } from './FishingGrip.js?build=DAYNIGHT-R81-20261005A';   // R80 rod in the hand
 
 const BUILD='DEV-CLEAN-R16-SLIM-ASSETS-HUB-20260928A';
 const OVERLAY_URL=`./assets/environment/lake-cabin/cabin_fishing_runtime.glb?build=${BUILD}`;

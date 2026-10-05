@@ -17,7 +17,7 @@
 - Previous lock: **R50.3 (v0.5.30, `CAMERA-R50.3-20261002A`)** (Jannik's plan, 02/10/2026):
   R46.2 start/splash, offline cleanup, wilds core loop (R47–R49), dev menu (R50), free camera everywhere (R50.3).
 - **R45 is historical** — a rollback reference only. New builds do **not** start from R45.
-- **Current build: v0.8.80 · R80 fishing grip (`FISHGRIP-R80-20261005A`, CANDIDATE, GO 05/10)**; R79/R79.1 Root Bear before it: second boss in its own grove, see §16. HUD baseline = Test HUD D · Klassisk (R78–R78.3, Jannik 05/10: 'baseline nu', still to be polished).
+- **Current build: v0.8.81 · R81 day/night + lantern + mud splat (`DAYNIGHT-R81-20261005A`, CANDIDATE, GO 05/10)**; R80 fishing grip and R79/R79.1 Root Bear before it: second boss in its own grove, see §16. HUD baseline = Test HUD D · Klassisk (R78–R78.3, Jannik 05/10: 'baseline nu', still to be polished).
 - **In progress: gameplay C (section 31)**: Boat economy (R58) → combat foundation + Mole (R61) → snail (R62) → Wood Giant (R63) → Lake Run (R64) done → Thora next.
 - Rules: no build without **GO**; every build updates HANDOVER + MASTER in the same commit (§1.7); never change the three greenhouse levels;
   building happens in the private garden.
@@ -714,11 +714,11 @@ clips Idle/Walk/Sweep/Roots/Sleep/WakeUp/Hit + Roots_FX/Sweep_FX/WakeUp_FX/Hit_F
   **35 HP**, a little weaker than the Giant. Size **65 % of the Wood Giant's height** (scale 0.70, measured in Idle); **R79.1: 15 % smaller (0.595)**.
   Low boss camera like the Giant, kept inside the core; specials only hurt in the weak window.
 - **Reward = Wood Giant pattern:** first win 1 Golden Seed + 3 Amber + 10 Wood, later wins 2 Amber + 8 Wood; rematch after
-  **24 real hours** (switches to the in-game day once the day/night cycle exists). Saved in `profile.combat.bear`.
+  **24 real hours** (R81: one in-game day = 30 min). Saved in `profile.combat.bear`.
 - Data: `ROOT_BEAR` in `js/data/combatCatalog.js`; code `js/gameplay/RootBearBoss.js`; DEV → KAMP: teleport, 'vågen nu',
   4 liv, klar igen. Smoke check 17d.
 
-## 16.2 Day/night cycle — decided direction, NOT built (Jannik 05/10)
+## 16.2 Day/night cycle — BUILT in R81 (CANDIDATE, GO 05/10)
 
 - Time keeps running while the game is closed (clock-based). Night dark but still readable; a hand light later.
 - Gameplay may change at night later, not in the first version. Daily systems (daily requests, Lake Race/Stable boards,
@@ -726,7 +726,13 @@ clips Idle/Walk/Sweep/Roots/Sleep/WakeUp/Hit + Roots_FX/Sweep_FX/WakeUp_FX/Hit_F
 - Built after the Root Bear (Jannik: 'bjørnen implementeret først').
 - **Decided (Jannik 05/10):** 30 min per in-game day (≈21 day / 9 night). Light = Jannik's `lantern_round.glb` (696 tris, pivot
   at the handle top) in the **left hand**, switched on **by the player**, one point light without shadow, only at night.
-  Not built yet: needs its own GO.
+  **R81:** `js/visual/DayNight.js` (clock-based: minute 0–21 of each real half hour = day with a 1.5 min dawn, 21–30 =
+  night with a 1.5 min dusk through a warm sunset tint; blends exposure, sky, fog, hemisphere, sun → moonlight, env from
+  the R70 look values). **Shared world only, like the R70 look pass**: the private garden and the three greenhouse levels
+  keep their exact look (my call from the R70 precedent; tell me if the garden should get night too). `js/gameplay/Lantern.js`:
+  only at night in the world; phone button above Hop (own `icon-lantern.svg`, drawn by me at Jannik's request), desktop L;
+  hangs from Hand_Socket_L (~22 cm), flickering flame + one point light without shadow, added on first use. Root Bear
+  rematch = 1 in-game day (30 min). DEV → KAMP: Tid nat / dag / følg uret.
 
 ---
 
@@ -1611,7 +1617,8 @@ are only touched where a measured hotspot requires it, minimally.
    failure. Must pass before every push (CLAUDE.md rule 5).
 
 **B status 02/10/2026: complete (R51–R57).** On-device check (iPhone, Jannik 02/10): 60 fps steady (frame max 20–24 ms), 217 draw calls / 370k tris in the garden, 363 / 433k at the lake, mobile-high, 1 WebGL context → no perf work needed before C.
-**R80 (v0.8.80, GO 05/10):** fishing rod in the hand (see §9). Not built yet, decided (MASTER §16.2): day/night 30 min, lantern in the left hand, switched on by the player, own light only at night without shadow.
+**R81 (v0.8.81, GO 05/10):** day/night (30 min, world only) + lantern (left hand, player lights it, night only) + Swamp Mud Splat leaves a brown splat while it stuns + Root Bear rematch = 1 in-game day. See §16.2.
+**R80 (v0.8.80, GO 05/10):** fishing rod in the hand (see §9).
 **R79.1 (v0.8.79.1, Jannik 05/10):** Root Bear 15 % smaller (scale 0.70 → 0.595; Sweep/Roots/body/camera scaled with it) and a larger tree-free core (12 → 15 m, ring 17–26 m, grove 28 m, leash 33 m; the old plot post inside the core is hidden). Fix of an R79 bug: lobbed/chain specials (Mud Splat, Gel Bomb, Scent Cloud, Petal Star) aimed at the Root Bear flew to NaN and vanished; they now use the bear's position.
 **R79 (v0.8.79, GO 05/10):** Root Bear, second boss in its own grove (zone 2b): clock-based sleep/wander, auto-wake at 8 m, Wood Giant fight rules (Sweep + Roots, weak window, 35 HP, 65 % height), Golden Seed first win, 24 h rematch; grove = ~30 old conifers + darker floor + mossy rocks, nothing else in the world moves. See §16.1.
 **R78.3 (v0.8.78.3, GO 05/10):** Desktop-only Test HUD D pass. More space around the top-left objective; centred resources restyled as cream clay with Golden Seed gold; hearts only while an actual damaging threat is active and positioned bottom-centre; special button only while an actual damaging threat is active, restyled cream/moss/gold bottom-right; desktop special bar hidden because progress remains in the button ring. Touch/mobile rules are explicitly unchanged.

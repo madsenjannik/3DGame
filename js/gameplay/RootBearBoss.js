@@ -9,7 +9,8 @@
 // gives up (full HP again). First win: Golden Seed; rematch after 24 h. Fails soft: no GLB → no bear, no grove.
 import * as THREE from 'three';
 import { loadGLTF } from '../core/AssetManager.js';
-import { ROOT_BEAR as RB } from '../data/combatCatalog.js?build=ROOTBEAR-R79.1-20261005A';
+import { DAY_MS } from '../visual/DayNight.js?build=DAYNIGHT-R81-20261005A';
+import { ROOT_BEAR as RB } from '../data/combatCatalog.js?build=DAYNIGHT-R81-20261005A';
 
 const DIR = './assets/combat/';
 const ROCK = './assets/environment/pure-poly/PP_Rock_Moss_Grown_09.glb';
@@ -129,7 +130,7 @@ export class RootBearBoss {
 
   // ---------- clock + flow ----------
   awakeNow(now = Date.now()) { if (this.forceAwake != null) return this.forceAwake; return now < this.devAwakeUntil || (now / 1000) % RB.cycleSec < RB.awakeSec; }
-  available(now = Date.now()) { return !this.p.defeatedAt || now - this.p.defeatedAt > RB.rematchHours * 3600000; }
+  available(now = Date.now()) { return !this.p.defeatedAt || now - this.p.defeatedAt > (RB.rematchGameDays ? RB.rematchGameDays * DAY_MS : RB.rematchHours * 3600000); }   // R81: one in-game day
   fighting() { return FIGHT.includes(this.state); }
   reset() {
     this.hp = RB.hp; this.weak = 0; this.sink = 0; this.tilt = 0; this.hitT = 0; this.tele.visible = false; this.clearRootFx();
