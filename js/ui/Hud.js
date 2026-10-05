@@ -1,5 +1,5 @@
 // @ts-nocheck
-import { actionIcon, actionIconName } from './actionIcons.js';
+import { actionIcon, actionIconName } from './actionIcons.js?build=MOBILE-HUD-R83-20261005A';
 export class Hud {
   constructor(state){
     this.seed=document.getElementById('seed-count');this.action=document.getElementById('action');this.toast=document.getElementById('toast');this.objective=document.getElementById('objective');this.kicker=document.getElementById('objective-kicker');this.title=document.getElementById('objective-title');this.copy=document.getElementById('objective-copy');this.hint=document.getElementById('hint');this.loading=document.getElementById('loading');this.materials=document.getElementById('materials');
@@ -100,11 +100,14 @@ export class Hud {
   }
   // R75 HUD rule (phones): the main button is always there; with nothing in reach it is Strike (icon only).
   setActionVisible(v,label='Collect',it=null,persistent=false){
-    const hudTest=document.body.classList.contains('hud-test-v1'),classic=document.body.classList.contains('hud-classic'),keep=hudTest||persistent,fallback=keep&&!v;
-    document.getElementById('action-label').textContent=fallback?(classic?'Swing':hudTest?'Strike':''):(classic&&it?.type==='combat-strike'?'Swing':label);
+    const hudTest=document.body.classList.contains('hud-test-v1'),classic=document.body.classList.contains('hud-classic'),classicTouch=classic&&this.touch(),keep=hudTest||persistent,fallback=keep&&!v;
+    const actionLabel=document.getElementById('action-label');
+    actionLabel.textContent=classicTouch?'':fallback?(classic?'Swing':hudTest?'Strike':''):(classic&&it?.type==='combat-strike'?'Swing':label);
+    this.action.setAttribute('aria-label',fallback?'Strike':label);
     this.action.classList.toggle('show',!!v||keep);this.action.classList.toggle('strike-idle',fallback);
-    // R73.1 test HUD: when nothing contextual is in range, the persistent button becomes the normal strike.
-    const visualIt=fallback?{type:'combat-strike'}:it,ico=document.getElementById('action-ico');
+    let visualIt=fallback?(classicTouch?{type:'mobile-default-strike'}:{type:'combat-strike'}):it;
+    if(classicTouch&&it?.type==='combat-strike')visualIt={...it,type:'mobile-combat-strike',label};
+    const ico=document.getElementById('action-ico');
     if(ico&&(v||keep)){const n=actionIconName(visualIt);if(n!==this._icoName){this._icoName=n;ico.innerHTML=actionIcon(visualIt);this.action.dataset.icon=n;}}
   }
   showToast(text){this.toast.textContent=text;this.toast.classList.add('show');clearTimeout(this.toastTimer);this.toastTimer=setTimeout(()=>this.toast.classList.remove('show'),2200);}
