@@ -3,7 +3,7 @@
 ## Start here
 - **Repo:** `madsenjannik/3DGame`, branch `claude/magical-lovelace-nuka97` (GitHub replaces ZIP packages).
 - **Live test build:** `https://madsenjannik.github.io/3DGame/` (version shown bottom-left on the start screen).
-- **Current build:** v0.8.78.2 · `HUDTEST-D-CLASSIC-R78.2-20261005A` (see `version.js`; v0.8.72 = R72.1 merged with Jannik's HUD test R73.1): R72.1 merged with Jannik's own HUD test R73.1 commits (DEV toggle, isolated cardless landscape HUD), both kept.
+- **Current build:** v0.8.78.3 · `HUDTEST-D-DESKTOP-R78.3-20261005A` (see `version.js`; v0.8.72 = R72.1 merged with Jannik's HUD test R73.1): R72.1 merged with Jannik's own HUD test R73.1 commits (DEV toggle, isolated cardless landscape HUD), both kept.
 - **LOCKED baseline:** **v0.8.21 (R67.1, `LANDSCAPE-R67.1-20261003A`)**, locked by Jannik 03/10/2026 ('lås (v0.8.21). Det virker!'). Everything up to and including R67.1 (boat economy, combat + Mole + snail, Wood Giant + arena, Lake Run, specials, phone HUD, landscape-only) is the baseline; changes need a GO for that exact scope. Previous lock: R50.3 (v0.5.30). R45 is historical rollback reference only.
 - **Now:** R78 DEV-only Test HUD D · Klassisk is the active visual candidate, pending Jannik runtime/visual approval. Current/B/C HUD variants remain available.
 - **Rules:** never build without Jannik's explicit **GO**; analyze, find root cause and define exact scope first.
@@ -99,5 +99,6 @@ World movement/camera/collision · Private Garden enter/exit + MoveIn · greenho
 Stable RIDE/JUMP + Result/Standings · Fishing marker + loop · map/minimap · desktop + iPhone portrait/landscape.
 
 ## First line for the next chat
-`Fortsæt THE GROWING WILDS fra GitHub madsenjannik/3DGame (branch claude/magical-lovelace-nuka97). Brug docs/HANDOVER.md + docs/MASTER-PROJECT-DOCUMENT.md som source of truth. Ingen build uden mit GO.`| R78.2 · v0.8.78.2 | Live stylesheet cache fix: fresh `main.js` rewrites the `styles.css` query to R78.2 before gameplay, preventing Test HUD D logic from running with old HUD CSS. No gameplay/camera/movement changes. |
+`Fortsæt THE GROWING WILDS fra GitHub madsenjannik/3DGame (branch claude/magical-lovelace-nuka97). Brug docs/HANDOVER.md + docs/MASTER-PROJECT-DOCUMENT.md som source of truth. Ingen build uden mit GO.`| R78.3 · v0.8.78.3 | **Desktop-only Test HUD D polish (GO 05/10).** More air around objective top-left. Resource row remains centred but now uses Klassisk cream-clay chips; Golden Seed is gold. Hearts are hidden outside actual danger and moved bottom-centre, away from objective. Special attack is hidden outside actual danger, restyled cream/moss/gold and kept bottom-right; the redundant desktop special bar is hidden. **Touch/mobile CSS and controls untouched.** |
+| R78.2 · v0.8.78.2 | Live stylesheet cache fix: fresh `main.js` rewrites the `styles.css` query to R78.2 before gameplay, preventing Test HUD D logic from running with old HUD CSS. No gameplay/camera/movement changes. |
 
