@@ -4,6 +4,7 @@ export class Hud {
   constructor(state){
     this.seed=document.getElementById('seed-count');this.action=document.getElementById('action');this.toast=document.getElementById('toast');this.objective=document.getElementById('objective');this.kicker=document.getElementById('objective-kicker');this.title=document.getElementById('objective-title');this.copy=document.getElementById('objective-copy');this.hint=document.getElementById('hint');this.loading=document.getElementById('loading');this.materials=document.getElementById('materials');
     this.materialIds=['wood','stone','clay','fiber','amber','shell','wild_seed'];
+    this.setObjectiveIcon(this.title?.textContent);
     this.buildTopRow(state);
     this.seed.textContent=String(state.inventory.get('rare_seed')||0);
     this.materialIds.forEach(id=>this.setMaterial(id,state.inventory.get(id)||0));
@@ -50,6 +51,25 @@ export class Hud {
   // R71 phone HUD: the quest card and the resources fold away to two round buttons (top left); only the map
   // icon stays top right. Tap to open/close; a new quest step or a gain opens them briefly by itself.
   touch(){return document.body.classList.contains('touch');}
+  objectiveIconName(title=''){
+    const t=String(title||'').toLowerCase();
+    if(/craft|build|workbench|greenhouse|pot/.test(t))return 'hammer';
+    if(/water|fill/.test(t))return 'drop';
+    if(/golden seed|wild seed|plant|lotus/.test(t))return 'seed';
+    if(/thorn|overgrowth|weed/.test(t))return 'sickle';
+    if(/boat|lake race|waterfall/.test(t))return 'boat';
+    if(/fish/.test(t))return 'rod';
+    if(/stable|ride|horse/.test(t))return 'horseshoe';
+    if(/cache|hotspot/.test(t))return 'chest';
+    if(/gather|material/.test(t))return 'bag';
+    return 'leaf';
+  }
+  setObjectiveIcon(title){
+    if(!this.objective)return;
+    const n=this.objectiveIconName(title);
+    this.objective.dataset.objectiveIcon=n;
+    this.objective.style.setProperty('--objective-icon',`url(./brand/icons/svg/icon-${n}.svg)`);
+  }
   buildCollapse(hud,inv){
     if(!hud||!inv||!this.objective)return;
     const bag=document.createElement('button');bag.type='button';bag.id='hud-bag';bag.className='hud-fold-btn';bag.setAttribute('aria-label','Resources');
@@ -60,16 +80,17 @@ export class Hud {
     const x=document.createElement('i');x.className='obj-x';x.setAttribute('role','button');x.setAttribute('aria-label','Hide quest');x.textContent='×';this.objective.appendChild(x);
     const hudB=()=>document.body.classList.contains('hud-test-b');
     x.addEventListener('click',e=>{if(!hudB())return;e.stopPropagation();const o=this.objective;o.classList.add('b-hidden');o.classList.remove('open','pinned');clearTimeout(this._peekT.get(o));});
-    this.objective.addEventListener('click',e=>{if(!this.touch())return;e.stopPropagation();if(hudB()&&this.objective.classList.contains('b-hidden')){this.objective.classList.remove('b-hidden','fresh');return;}pin(this.objective);});
+    const classic=()=>document.body.classList.contains('hud-classic');
+    this.objective.addEventListener('click',e=>{if(!this.touch()&&!classic())return;e.stopPropagation();if(hudB()&&this.objective.classList.contains('b-hidden')){this.objective.classList.remove('b-hidden','fresh');return;}pin(this.objective);});
     const title=document.getElementById('objective-title');
-    if(title)new MutationObserver(()=>{if(this.touch()){this.objective.classList.add('fresh');this.peek(this.objective,5000);}}).observe(title,{childList:true,characterData:true,subtree:true});
+    if(title)new MutationObserver(()=>{this.setObjectiveIcon(title.textContent);if(this.touch()){this.objective.classList.add('fresh');this.peek(this.objective,5000);}}).observe(title,{childList:true,characterData:true,subtree:true});
   }
   peek(el,ms){if(!el||el.classList.contains('pinned'))return;el.classList.add('open');clearTimeout(this._peekT?.get(el));this._peekT?.set(el,setTimeout(()=>el.classList.remove('open'),ms));}
   setMaterial(id,value){const el=document.getElementById(`${id}-count`);if(el){el.textContent=String(value);el.closest('.material-chip')?.classList.toggle('zero',!value);}}
   setObjective(kicker,goal){
     if(!goal||(this._goalTitle===goal.title&&this.kicker.textContent===kicker))return;
     this._goalTitle=goal.title;this.objective.classList.remove('complete');
-    this.kicker.textContent=kicker;this.title.textContent=goal.title;this.copy.textContent=goal.copy;
+    this.kicker.textContent=kicker;this.title.textContent=goal.title;this.copy.textContent=goal.copy;this.setObjectiveIcon(goal.title);
   }
   setTools(tools,water){
     const row=document.getElementById('tools-row');if(!row)return;
@@ -79,8 +100,8 @@ export class Hud {
   }
   // R75 HUD rule (phones): the main button is always there; with nothing in reach it is Strike (icon only).
   setActionVisible(v,label='Collect',it=null,persistent=false){
-    const hudTest=document.body.classList.contains('hud-test-v1'),keep=hudTest||persistent,fallback=keep&&!v;
-    document.getElementById('action-label').textContent=fallback?(hudTest?'Strike':''):label;
+    const hudTest=document.body.classList.contains('hud-test-v1'),classic=document.body.classList.contains('hud-classic'),keep=hudTest||persistent,fallback=keep&&!v;
+    document.getElementById('action-label').textContent=fallback?(classic?'Swing':hudTest?'Strike':''):(classic&&it?.type==='combat-strike'?'Swing':label);
     this.action.classList.toggle('show',!!v||keep);this.action.classList.toggle('strike-idle',fallback);
     // R73.1 test HUD: when nothing contextual is in range, the persistent button becomes the normal strike.
     const visualIt=fallback?{type:'combat-strike'}:it,ico=document.getElementById('action-ico');
