@@ -2,6 +2,7 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { createHoloIndicator } from '../visual/holo-indicator.js';
+import { FishingGrip } from './FishingGrip.js?build=FISHGRIP-R80-20261005A';   // R80 rod in the hand
 
 const BUILD='DEV-CLEAN-R16-SLIM-ASSETS-HUB-20260928A';
 const OVERLAY_URL=`./assets/environment/lake-cabin/cabin_fishing_runtime.glb?build=${BUILD}`;
@@ -415,7 +416,8 @@ export class FishingV1System{
     const b1=new THREE.Mesh(new THREE.SphereGeometry(.055,10,8),white);b1.scale.y=.72;bob.add(b1);
     const b2=new THREE.Mesh(new THREE.SphereGeometry(.055,10,8,0,PI*2,0,PI/2),red);b2.scale.y=.72;b2.position.y=.005;bob.add(b2);
     const stem=new THREE.Mesh(new THREE.CylinderGeometry(.009,.009,.11,6),red);stem.position.y=.08;bob.add(stem);bob.visible=false;this.scene.add(bob);this.bobber=bob;
-    const geo=new THREE.BufferGeometry().setFromPoints([new V3(),new V3()]);this.line=new THREE.Line(geo,new THREE.LineBasicMaterial({color:0xe9e4d3,transparent:true,opacity:.80}));this.line.visible=false;this.scene.add(this.line);
+    const geo=new THREE.BufferGeometry().setFromPoints(Array.from({length:16},()=>new V3()));   // R80: 16 points so the line can sag
+    this.line=new THREE.Line(geo,new THREE.LineBasicMaterial({color:0xe9e4d3,transparent:true,opacity:.80}));this.line.visible=false;this.scene.add(this.line);
     this.buildFishingRod();this.buildFishingRipples();
   }
 
@@ -525,7 +527,8 @@ export class FishingV1System{
   leaveFish(){if(this.mode!=='fishing'||this.phase!=='ready')return;this.clearHeldFish();this.clearReelFish();this.clearLandFish();if(this._rod)this._rod.visible=false;this.bobber.visible=false;this.line.visible=false;this.mode=this.boat.on?'boat':'world';this.phase='idle';this.syncClasses();this.ui.root?.classList.remove('show');this.character.root.visible=true;this.character.velocity.set(0,0,0);this.character.currentSpeed=0;if(this.boat.on){this._fishingFromBoat=false;this.updateBoatSeat();this.showBoatHint(true);}else this.showBoatHint(false);}
   pressFishing(){if(this.mode!=='fishing')return;if(this.phase==='ready'){this.phase='charge';this.timer=0;this.castPower=0;this.setFishingButton('Release','to cast','charge');this.syncClasses();return;}if(this.phase==='wait'){this.fail('Too early!');return;}if(this.phase==='bite'){if(this.timer<=this.biteWindow){this.phase='reel';this.timer=0;this.tension=.22;this.progress=0;this.surgeT=.65;this.surge=0;this.holding=true;this.showReelFish();this.setFishingButton('Hold','to reel','');this.message('Hooked!');this.spawnFishingRipple(this.bobber.position,.55);this._fishingShake=Math.max(this._fishingShake,.035);this.syncClasses();}else this.fail('It got away…');return;}if(this.phase==='reel'){this.holding=true;this.updateFishButtonVisual();return;}if(this.phase==='result')this.closeResult();}
   releaseFishing(){if(this.mode!=='fishing'){this.holding=false;return;}if(this.phase==='charge')this.launchCast();this.holding=false;this.updateFishButtonVisual();}
-  launchCast(){this.phase='cast';this.timer=0;let d=2.0+4.6*this.castPower;if(this._shoreSpot&&!this._fishingFromBoat&&this.land?.isBoatNavigableWater)while(d>2.4&&!this.land.isBoatNavigableWater(this.castOrigin.x+this.castDir.x*d,this.castOrigin.z+this.castDir.z*d))d-=.2;this.castPoint.copy(this.castOrigin).addScaledVector(this.castDir,d);this.castPoint.y=this.land.WL;this.reelNear.copy(this.castOrigin).addScaledVector(this.castDir,.68);this.reelNear.y=this.land.WL;this.setFishingButton('Cast','…','idle');this.syncClasses();}
+  launchCast(){this.phase='cast';this.timer=0;this._castFrom=(this._castFrom||new V3()).copy(this.grip?.active?this.bobber.position:this.castOrigin);   // R80: the float leaves from under the rod tip
+    let d=2.0+4.6*this.castPower;if(this._shoreSpot&&!this._fishingFromBoat&&this.land?.isBoatNavigableWater)while(d>2.4&&!this.land.isBoatNavigableWater(this.castOrigin.x+this.castDir.x*d,this.castOrigin.z+this.castDir.z*d))d-=.2;this.castPoint.copy(this.castOrigin).addScaledVector(this.castDir,d);this.castPoint.y=this.land.WL;this.reelNear.copy(this.castOrigin).addScaledVector(this.castDir,.68);this.reelNear.y=this.land.WL;this.setFishingButton('Cast','…','idle');this.syncClasses();}
   fail(t){this.phase='failed';this.timer=0;this.holding=false;this.clearReelFish();this.clearLandFish();this.message(t);this.setFishingButton('…','Resetting','idle');this.syncClasses();}
   startLandFish(){if(!this.currentFish)return;this.phase='land';this.timer=0;this.holding=false;this.landFrom.copy(this.bobber.position);this.bobber.visible=false;this.clearReelFish();this.clearLandFish();const src=this.fishTemplates.get(this.currentFish.id);if(src){this.landFishObj=src.clone(true);this.landFishObj.name=`FISHING_R33_LAND_${this.currentFish.id}`;setShadows(this.landFishObj);this.landFishObj.position.copy(this.landFrom);this.scene.add(this.landFishObj);}this.spawnFishingRipple(this.landFrom,1.0);this._fishingShake=Math.max(this._fishingShake,.045);this.syncClasses();}
   finishLandFish(){const f=this.currentFish,cm=this.currentCm;if(!f)return;const prev=this.log[f.id],first=!prev,record=!!prev&&cm>prev.best;this.log[f.id]={count:(prev?.count||0)+1,best:Math.max(prev?.best||0,cm)};this.phase='result';this.timer=0;this.clearLandFish();this.line.visible=false;this.renderLog();this.renderFishBoard();this.ui.rK.textContent=first?'First catch!':record?'New record!':'Caught';this.ui.rK.classList.toggle('rec',first||record);this.ui.rN.textContent=f.name;this.ui.rS.textContent=`${cm} cm`;const e=this.log[f.id];if(this.ui.rL)this.ui.rL.textContent=`${e.count} caught · best ${e.best} cm`;this.showHeldFish(f.id);this.syncClasses();}
@@ -588,7 +591,11 @@ export class FishingV1System{
   syncClasses(){const r=this.ui.root;if(!r)return;for(const c of['busy','greet','shop','board','fishing','canleave','charging','casting','waiting','biting','reeling','landing','result'])r.classList.remove(c);const overlay=!['world','boat'].includes(this.mode);r.classList.toggle('show',overlay);if(this.mode==='enter'||this.mode==='exit'||this.mode==='board-exit')r.classList.add('busy');if(this.mode==='board'||this.mode==='board-exit')r.classList.add('board');if(this.mode==='greet')r.classList.add('greet');if(this.mode==='shop')r.classList.add('shop');if(this.mode==='fishing'){r.classList.add('fishing');if(this.phase==='ready')r.classList.add('canleave');if(this.phase==='charge')r.classList.add('charging');if(this.phase==='cast')r.classList.add('casting');if(this.phase==='wait')r.classList.add('waiting');if(this.phase==='bite')r.classList.add('biting');if(this.phase==='reel')r.classList.add('reeling');if(this.phase==='land')r.classList.add('landing');if(this.phase==='result')r.classList.add('result');}if(this.ui.closeL)this.ui.closeL.textContent=this.mode==='shop'?'Back to Sigurd':this.mode==='fishing'?(this.boat.on?'Back to boat':'Leave spot'):'Close';document.body.classList.toggle('fishing-active',overlay);document.body.classList.toggle('boating-active',this.mode==='boat');}
 
   updateFishingRod(dt,t){
-    if(!this._rod)return;this._rod.visible=this.mode==='fishing'&&this.phase!=='result';if(!this._rod.visible)return;
+    if(!this._rod)return;this._rod.visible=this.mode==='fishing'&&this.phase!=='result';
+    // R80: the rod sits in the right hand (FishingGrip); the old floating rod stays only as the fail-soft fallback.
+    if(this.grip===undefined){try{this.grip=new FishingGrip(this);}catch(e){console.warn('[TGW] fishing grip unavailable (fails soft)',e);this.grip=null;}}
+    if(this.grip?.ok&&this.grip.update(dt,t))return;
+    if(!this._rod.visible)return;
     const pp=this._tmpA.set(-this.castDir.z,0,this.castDir.x);this._rod.position.copy(this.character.position).addScaledVector(pp,.20).addScaledVector(this.castDir,.08);this._rod.position.y+=.82;this._rod.rotation.order='YXZ';this._rod.rotation.y=Math.atan2(this.castDir.x,this.castDir.z);
     let angle=.95,bend=.02;
     if(this.phase==='charge'){angle=.62-1.20*this.castPower;bend=-.08-.18*this.castPower;}
@@ -608,7 +615,7 @@ export class FishingV1System{
     if(this.phase==='charge'){// R33C: fixed outer ring; the olive button grows inward->outward with the repeating cast-power cycle.
       this.castPower=.5-.5*Math.cos((this.timer/.90)*PI);this.updateFishButtonVisual();return;}
     if(this.phase==='cast'){this.updateFishButtonVisual();
-      const u=Math.min(1,this.timer/.72);this.bobber.visible=this.line.visible=true;this.bobber.position.lerpVectors(this.castOrigin,this.castPoint,u);this.bobber.position.y=this.land.WL+( .72+1.1*this.castPower)*4*u*(1-u);this.updateLine();if(u>=1){this.phase='wait';this.timer=0;this.waitDur=2.5+Math.random()*3.5;const r=rollFish();this.currentFish=r.f;this.currentCm=r.cm;this.biteWindow=r.f.ring;this.nibbles=[...Array(Math.floor(Math.random()*3))].map(()=>.7+Math.random()*Math.max(.2,this.waitDur-1.4)).sort((a,b)=>a-b);this._nibbleIndex=0;this.spawnFishingRipple(this.castPoint,.72);this.setFishingButton('Wait…','for the bite','idle');this.syncClasses();}
+      const u=Math.min(1,this.timer/.72);this.bobber.visible=this.line.visible=true;this.bobber.position.lerpVectors(this._castFrom||this.castOrigin,this.castPoint,u);this.bobber.position.y=(this.grip?.active?(this._castFrom.y+(this.land.WL-this._castFrom.y)*u):this.land.WL)+( .72+1.1*this.castPower)*4*u*(1-u);this.updateLine();if(u>=1){this.phase='wait';this.timer=0;this.waitDur=2.5+Math.random()*3.5;const r=rollFish();this.currentFish=r.f;this.currentCm=r.cm;this.biteWindow=r.f.ring;this.nibbles=[...Array(Math.floor(Math.random()*3))].map(()=>.7+Math.random()*Math.max(.2,this.waitDur-1.4)).sort((a,b)=>a-b);this._nibbleIndex=0;this.spawnFishingRipple(this.castPoint,.72);this.setFishingButton('Wait…','for the bite','idle');this.syncClasses();}
       return;
     }
     if(this.phase==='wait'||this.phase==='bite'){this.updateFishButtonVisual();
@@ -631,7 +638,9 @@ export class FishingV1System{
     if(this.phase==='failed'&&this.timer>1.15){this.phase='ready';this.timer=0;this.bobber.visible=this.line.visible=false;this.castPower=0;this.setFishingButton('Cast','Hold','');this.syncClasses();}
   }
 
-  updateLine(){if(!this.line.visible)return;const a=(this._rod?.visible&&this._rodTip)?this._rodTipWorld:this._tmpA.copy(this.character.position).setY(this.character.position.y+1.0);const b=this.bobber.position;const p=this.line.geometry.attributes.position;p.setXYZ(0,a.x,a.y,a.z);p.setXYZ(1,b.x,b.y,b.z);p.needsUpdate=true;}
+  updateLine(){if(!this.line.visible)return;const a=(this._rod?.visible&&this._rodTip)?this._rodTipWorld:this._tmpA.copy(this.character.position).setY(this.character.position.y+1.0);const b=this.bobber.position;const p=this.line.geometry.attributes.position,n=p.count;
+    // R80: a slack line sags (waiting / dangling), a tight one is straight (reeling, landing).
+    const sag=this.phase==='reel'||this.phase==='land'||this.phase==='cast'?0:this.phase==='wait'||this.phase==='bite'?.12:.02,by=b.y+.085;for(let i=0;i<n;i++){const u=i/(n-1);p.setXYZ(i,a.x+(b.x-a.x)*u,a.y+(by-a.y)*u-sag*4*u*(1-u),a.z+(b.z-a.z)*u);}p.needsUpdate=true;this.line.geometry.computeBoundingSphere();}
 
   update(dt,t,character=this.character){
     this.character=character||this.character;this._time=t;this._hatchMixer?.update(dt);this.T+=this.mode==='world'?0:dt;if(this._bubbleTimer>0){this._bubbleTimer-=dt;if(this._bubbleTimer<=0)this.ui.bubble?.classList.remove('show');}
@@ -642,7 +651,7 @@ export class FishingV1System{
     else if(this.mode==='exit'){if(this.T>.9&&this._hatchTarget!==0)this.closeHatch();if(this.T>1.9){this.mode='world';this.T=0;this.ui.root?.classList.remove('show');document.body.classList.remove('fishing-active');this.character.root.visible=true;this.closePanels();}}
     else if(this.mode==='boat'){this.showBoatHint(true);this.updateBoat(dt,t,true);}
     else if(this.mode==='fishing'){if(this.boat.on)this.updateBoat(dt,t,false);else{this.scriptPlayerToward(this._shoreSpot||this.fishingPoint,dt);this.character.heading=this._shoreSpot?Math.atan2(this.castDir.x,this.castDir.z):this.localHeadingToWorld(PI/2);this.character.root.rotation.y=this.character.heading;}this.updateFishing(dt,t);}
-    this.updateFishingRod(dt,t);this.updateFishingEffects(dt);this._fishingShake*=Math.exp(-dt*6);
+    this.updateFishingRod(dt,t);if(this.grip?.active&&this.mode==='fishing'){if(this.phase==='ready'||this.phase==='charge'){this.grip.dangle(dt);this.line.visible=true;}this.updateLine();}this.updateFishingEffects(dt);this._fishingShake*=Math.exp(-dt*6);
     this.updateBoatWake(dt);this.syncPlayerVisibility();this.animateSigurd(t,dt);this.updateGiftFlights(dt);this.updatePipeSmoke(t);if(this.heldFish){this.heldFish.position.copy(this.character.position).addScaledVector(this.castDir,.48);this.heldFish.position.y+=3.05+.035*Math.sin(t*3);
       // R33J: keep the approved belly-down/back-up pose, then yaw the whole fish 90 deg camera-left so the head points left in the hero shot.
       this.heldFish.rotation.y=Math.atan2(this._activeCamera?.position.x-this.heldFish.position.x,this._activeCamera?.position.z-this.heldFish.position.z)-PI/2;}

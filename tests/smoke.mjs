@@ -421,6 +421,25 @@ try {
   B.forceAwake = null; return o; }) : {};
     check('root bear: grove + open core, asleep + solid, wakes at 8 m, sweep + roots hurt, weak x3 / bark 1, leash, wanders the core + aggro, lies down again, defeat + golden seed + saved, wilt ends it, giant arena unchanged', ready && ['grove', 'sleep', 'wake', 'risen', 'sweep', 'weak', 'bark', 'roots', 'lob', 'leash', 'wander', 'aggro', 'lie', 'win', 'saved', 'arena', 'wilt'].every(k => r[k]) && !errors.length, errors[0] || JSON.stringify(r));
     await ctx.close(); }
+  // 17e. R80 fishing grip: the bamboo rod sits in the right hand only while fishing (fist in the hand's own colour, float
+  // dangling under the tip, cast from the tip, wind-up moves the rod back, reel cranks the left hand), bones go back after
+  { const ctx = await context({ viewport: { width: 844, height: 390 }, isMobile: true, hasTouch: true }); const { p, errors, ok } = await startGame(ctx, 'swamp');
+    const ready = ok && await p.waitForFunction(() => window.__tgw?.fishing?._rod, null, { timeout: 240000 }).then(() => true, () => false);
+    const r = ready ? await p.evaluate(() => { const g = window.__tgw, f = g.fishing, ch = g.character, Ld = g.world.sharedLandscape, o = {}, step = (n, dt = .05) => { for (let i = 0; i < n; i++) f.update(dt, (f._tt = (f._tt || 0) + dt), ch); };
+      f.starter = true; g.devMenu.teleport('world', Ld.lake.x, Ld.lake.z - Ld.lake.r - 1.2, 0); step(1); o.hidden = !f._rod.visible;
+      f.enterFish(); step(20); const G = f.grip, V = f._rodTipWorld.constructor, hand = G.B.hR.getWorldPosition(new V());
+      o.inHand = G.ok && G.active && f._rod.visible && f._rod.position.distanceTo(hand) < .15 && G.fist.visible && G.fist.position.distanceTo(hand) < .1;
+      o.colour = G.fistMat.color.getHexString() !== '356a1c';   // swamp's own hand, not the default green
+      o.dangle = f.bobber.visible && f.line.visible && f.bobber.position.y < f._rodTipWorld.y && f.bobber.position.distanceTo(f._rodTipWorld) < .5;
+      const tip0 = f._rodTipWorld.clone(), back = new V(-Math.sin(ch.heading), 0, -Math.cos(ch.heading));
+      f.pressFishing(); f.timer = .8; step(12, .03); const tip1 = f._rodTipWorld.clone(); o.windUp = tip1.clone().sub(tip0).dot(back) > .3;
+      f.releaseFishing(); step(1, .03); o.castFromTip = f.bobber.position.distanceTo(tip1) < 1.2 && f.phase === 'cast';
+      step(30); f.waitDur = 99; step(2); o.wait = f.phase === 'wait' && f.line.visible;
+      f.phase = 'bite'; f.timer = 0; f.biteWindow = 9; f.pressFishing(); const l0 = G.B.hL.getWorldPosition(new V()); let moved = 0; for (let i = 0; i < 6; i++) { f.holding = true; step(1); moved = Math.max(moved, G.B.hL.getWorldPosition(new V()).distanceTo(l0)); } o.crank = f.phase === 'reel' && moved > .02;
+      f.phase = 'ready'; step(2); const base = G.saved.get(G.B.aR)?.base.clone(); f.leaveFish(); step(2); o.back = f.mode === 'world' && !f._rod.visible && !G.fist.visible && !G.active && (!base || G.B.aR.quaternion.angleTo(base) < .05);
+      return o; }) : {};
+    check('fishing grip (R80): rod in the right hand only while fishing, own hand colour, float dangles, wind-up, cast from the tip, reel cranks, bones back after', ready && ['hidden', 'inHand', 'colour', 'dangle', 'windUp', 'castFromTip', 'wait', 'crank', 'back'].every(k => r[k]) && !errors.length, errors[0] || JSON.stringify(r));
+    await ctx.close(); }
   // 5. DEV disabled: no dev UI or handles leak into normal play
   { const ctx = await context({ viewport: { width: 844, height: 390 }, isMobile: true, hasTouch: true }); const { p, errors, ok } = await startGame(ctx, 'daisy', { dev: false });
     const leak = ok && await p.evaluate(() => !!document.querySelector('.dev-menu-btn') || !!window.__tgw || !document.getElementById('dev-badge').hidden);
