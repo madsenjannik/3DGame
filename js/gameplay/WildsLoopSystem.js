@@ -129,11 +129,12 @@ export class WildsLoopSystem {
   // Returns { title, copy } for the single most useful next step.
   goal() {
     const p = this.profile, inv = id => this.state.inventory.get(id) || 0, pots = this.pots, g = (title, copy) => ({ title, copy });
-    if (!Object.keys(p.inventory).length && !this.has('axe')) return g('Gather natural materials', 'Head out through the garden gate. Look for things that glint: get close and an icon shows what you can gather.');
-    if (!this.has('axe')) return g('Craft your first tool', 'Bring Wood, Stone and Fiber to the workbench in your garden and craft the Stone Axe.');
+    const costText = cost => Object.entries(cost || {}).map(([id,n]) => `${n} ${MATERIALS[id]?.name || id}`).join(' · ');
+    if (!Object.keys(p.inventory).length && !this.has('axe')) return g('Gather natural materials', 'Outside your garden gate · Gather Wood, Stone, Clay and Fiber from the resources that glint.');
+    if (!this.has('axe')) { const axe = TOOLS.find(t => t.id === 'axe'); return g('Craft your first tool', `Workbench in your garden · Requires ${costText(axe?.cost)}. Craft the Stone Axe.`); }
     if (!pots?.available()) return g('Build your greenhouse', 'At the back of your garden. Pots and plants live there.');
     if (pots.owned() < 1) return g('Craft a pot', 'Workbench → Tools → Terracotta Pot. It goes straight onto the greenhouse shelf.');
-    if (!this.has('can')) return g('Craft a Watering Can', 'Fill it at the garden pond to water your pots.');
+    if (!this.has('can')) { const can = TOOLS.find(t => t.id === 'can'); return g('Craft a Watering Can', `Workbench in your garden · Requires ${costText(can?.cost)}. Fill it at the garden pond.`); }
     const slots = p.pots.slots;
     if (slots.every((x, i) => i >= pots.owned() || !x) && inv('wild_seed') < 1) return g('Find a Wild Seed', 'Wild Grass in the wilds sometimes drops one.');
     if (slots.some((x, i) => i < pots.owned() && !x) && inv('wild_seed') > 0) return g('Plant a Wild Seed', 'Plant it in an empty pot in your greenhouse.');
@@ -141,11 +142,11 @@ export class WildsLoopSystem {
     if (slots.some(x => x && x.stage >= 3)) return g('Harvest your plant', 'A plant in your greenhouse has flowered.');
     if (this.threat?.weeds.some(x => x.state === 'alive')) return g('Pull the overgrowth', 'Weeds are creeping into your garden. Pull them before they reach the greenhouse.');
     const tool = TOOLS.find(t => !this.has(t.id));
-    if (tool) return g(`Craft the ${tool.name}`, 'Gather what you are missing out in the wilds.');
+    if (tool) return g(`Craft the ${tool.name}`, `Workbench in your garden · Requires ${costText(tool.cost)}. Gather anything missing in the wilds.`);
     if (inv('amber') < 1 && p.homeLevel < 2 && Object.values(p.thorns).filter(v => v === 'looted').length < this.thorns.length)
       return g('Clear Thornbrush', 'Cut Thornbrush in the wilds with your Sickle to reach hidden amber caches.');
     const up = HOME_UPGRADES[p.homeLevel];
-    if (up) return g(`Build ${up.name}`, 'Upgrade your garden at the workbench.');
+    if (up) return g(`Build ${up.name}`, `Workbench in your garden · Requires ${costText(up.cost)}.`);
     if (inv('golden_seed') > 0 && PERKS.some(k => !p.perks[k.id])) return g('Plant your Golden Seed', 'At the Seed Shrine (workbench → Seeds).');
     const boat = this.boatGoal?.(); if (boat) return boat; // R58 boat economy (set by BoatEconomySystem)
     return g('Keep your garden growing', 'More of the wilds will open with the seasons.');
