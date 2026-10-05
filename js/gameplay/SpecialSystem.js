@@ -5,12 +5,14 @@
 // Targets are the same as Strike: Moles in the wilds, snails in the garden, the Wood Giant (weak window only)
 // and its risen roots. Owned by CombatSystem; fails soft (no projectile GLB → simple sphere).
 import * as THREE from 'three';
-import { SPECIAL, GIANT, ROOT_BEAR } from '../data/combatCatalog.js?build=ROOTBEAR-R79-20261005A';
+import { SPECIAL, GIANT, ROOT_BEAR } from '../data/combatCatalog.js?build=ROOTBEAR-R79.1-20261005A';
 import { loadGLTF } from '../core/AssetManager.js';
 import { WildsModel } from './WildsModels.js';
 
 const VULNERABLE = new Set(['emerge', 'up', 'attack', 'hit']);
 const V = new THREE.Vector3();
+// R79.1: where a target stands now (the Giant and the Root Bear keep their position in gx/gz and bx/bz, not x/z).
+const tx = t => t.kind === 'giant' ? t.m.gx : t.kind === 'bear' ? t.m.bx : t.m.x, tz = t => t.kind === 'giant' ? t.m.gz : t.kind === 'bear' ? t.m.bz : t.m.z;
 
 export class SpecialSystem {
   constructor(combat) {
@@ -125,9 +127,9 @@ export class SpecialSystem {
     if (d.kind === 'fan') { const n = d.count; for (let i = 0; i < n; i++) mk((i - (n - 1) / 2) * d.spread); return; }
     if (d.kind === 'lob') {
       // Land on the target's current spot (within range), else straight ahead.
-      const tx = target ? (target.kind === 'giant' ? target.m.gx : target.m.x) : 0, tz = target ? (target.kind === 'giant' ? target.m.gz : target.m.z) : 0;
-      const td = target ? Math.hypot(tx - from.x, tz - from.z) : 0, dist = target ? Math.min(d.range, td) : d.range * .7;
-      const land = target && td <= d.range ? new THREE.Vector3(tx, 0, tz) : new THREE.Vector3(from.x + dir.x * dist, 0, from.z + dir.z * dist);
+      const x = target ? tx(target) : 0, z = target ? tz(target) : 0;
+      const td = target ? Math.hypot(x - from.x, z - from.z) : 0, dist = target ? Math.min(d.range, td) : d.range * .7;
+      const land = target && td <= d.range ? new THREE.Vector3(x, 0, z) : new THREE.Vector3(from.x + dir.x * dist, 0, from.z + dir.z * dist);
       land.y = this.L.groundHeight(land.x, land.z); mk(0, { start: from.clone(), land, dur: .45 + dist * .06 }); return;
     }
     if (d.kind === 'chain') { mk(0, { target, jumps: d.jumps }); return; }
@@ -151,7 +153,7 @@ export class SpecialSystem {
         continue;
       }
       let speed = d.speed;
-      if (s.kind === 'chain' && s.target) { const tx = s.target.kind === 'giant' ? s.target.m.gx : s.target.m.x, tz = s.target.kind === 'giant' ? s.target.m.gz : s.target.m.z; s.dir.set(tx - s.pos.x, 0, tz - s.pos.z).normalize(); }
+      if (s.kind === 'chain' && s.target) s.dir.set(tx(s.target) - s.pos.x, 0, tz(s.target) - s.pos.z).normalize();
       if (s.kind === 'boomerang' && !s.out) s.dir.set(ch.position.x - s.pos.x, 0, ch.position.z - s.pos.z).normalize();
       const step = speed * dt; s.pos.addScaledVector(s.dir, step); s.dist += step;
       if (s.kind === 'roll') s.pos.y = this.L.groundHeight(s.pos.x, s.pos.z) + .2;

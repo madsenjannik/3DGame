@@ -9,7 +9,7 @@
 // gives up (full HP again). First win: Golden Seed; rematch after 24 h. Fails soft: no GLB → no bear, no grove.
 import * as THREE from 'three';
 import { loadGLTF } from '../core/AssetManager.js';
-import { ROOT_BEAR as RB } from '../data/combatCatalog.js?build=ROOTBEAR-R79-20261005A';
+import { ROOT_BEAR as RB } from '../data/combatCatalog.js?build=ROOTBEAR-R79.1-20261005A';
 
 const DIR = './assets/combat/';
 const ROCK = './assets/environment/pure-poly/PP_Rock_Moss_Grown_09.glb';
@@ -41,6 +41,10 @@ export class RootBearBoss {
       m.setMatrixAt(it.i, zero); touched.add(m); it.hidden = true; if (it.o) it.o.r = .01;
     }
     for (const m of touched) m.instanceMatrix.needsUpdate = true;
+    // R79.1: the old reserved-plot tape posts inside the larger core go too (4 instances per plot, corner order as built).
+    (L.plots || []).forEach((P, k) => [[-1, -1], [1, -1], [1, 1], [-1, 1]].forEach(([sx, sz], c) => {
+      if (L.plotPosts && Math.hypot(P.x + sx * 14 - G.x, P.z + sz * 14 - G.z) < G.core + 1) { L.plotPosts.setMatrixAt(k * 4 + c, zero); L.plotPosts.instanceMatrix.needsUpdate = true; this.clearedPosts = (this.clearedPosts || 0) + 1; }
+    }));
     this.clearedTrees = (L.forestItems || []).filter(it => it.hidden).length;
     // 2) ~30 old conifers in clusters of 3-5 on the ring, with walkable gaps between the clusters.
     const keep = (L.forestItems || []).filter(it => !it.hidden && Math.hypot(it.x - G.x, it.z - G.z) < G.r + 6);

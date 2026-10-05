@@ -376,7 +376,7 @@ try {
   // grove: 30 extra conifers on the ring, rocks, open core (no shared-forest tree blocks inside it), world colliders
   for (let i = 0; i < 100 && !B.rockSpots.every(r => r.o); i++) await w(100);
   const coreBlock = g.world.colliders.filter(q => q.space === 'world' && /world-(conifer|tree)/.test(q.kind) && q.r > .1 && Math.hypot(q.x - G.x, q.z - G.z) < G.core);
-  o.grove = B.groveTrees.length === 30 && B.groveTrees.every(t => { const d = Math.hypot(t.x - G.x, t.z - G.z); return d >= 14 && d <= 25 && t.s >= 1.3; }) && B.groveObstacles.every(q => q.space === 'world') && B.rockSpots.length === 4 && B.rockSpots.every(r => r.o?.space === 'world') && !coreBlock.length && B.groveMeshes.length > 0;
+  o.grove = B.groveTrees.length === 30 && B.groveTrees.every(t => { const d = Math.hypot(t.x - G.x, t.z - G.z); return d >= 17 && d <= 28 && t.s >= 1.3; }) && B.clearedPosts >= 1 && G.core === 15 && B.groveObstacles.every(q => q.space === 'world') && B.rockSpots.length === 4 && B.rockSpots.every(r => r.o?.space === 'world') && !coreBlock.length && B.groveMeshes.length > 0;
   // asleep on its den (clock forced to night side), solid, eyes dark, not hittable
   B.forceAwake = false; B.p.defeatedAt = 0; B.bx = B.den.x; B.bz = B.den.z; B.heading = B.den.heading; B.reset(); put(B.den.x + 30, B.den.z); run(1);
   const so = B.sleepObstacles[3], q = { x: so.x + .05, z: so.z }; g.world.resolveCollisions(q, .3);
@@ -385,7 +385,7 @@ try {
   const h = B.den.heading; put(B.den.x + Math.sin(h) * 9, B.den.z + Math.cos(h) * 9); run(1); const still = B.state === 'sleep';
   put(B.den.x + Math.sin(h) * 7.5, B.den.z + Math.cos(h) * 7.5); run(1);
   o.wake = still && B.state === 'wake' && B.cur?.getClip().name === 'WakeUp' && typeof g.followCamera.lockYaw === 'function' && B.ui.classList.contains('show') && document.body.classList.contains('boss-active');
-  run(45); o.risen = B.state === 'chase' && B.eyes.every(e => e.visible) && B.bodyParts.every(b => b.o.r > .5) && B.sleepObstacles.every(s => s.r < .1);
+  run(45); o.risen = B.state === 'chase' && B.eyes.every(e => e.visible) && B.bodyParts.every(b => b.o.r === b.r) && B.sleepObstacles.every(s => s.r < .1);
   // Sweep: ring telegraph in front, 1 heart
   c.heal(true); c.invuln = 0; let hp0 = c.hp;
   run(80, .1, () => { if (B.state === 'chase') { const f = B.local(0, 5); put(f.x, f.z); } else if (B.state === 'sweep') { const P = B.local(0, 4.5); put(P.x + .2, P.z); } }, () => B.state === 'stuck');
@@ -393,6 +393,8 @@ try {
   // weak window ×3 (axe 2 → 6), bark 1
   const f0 = B.local(0, 5); put(f0.x, f0.z); let hh = B.hp; c.cd = 0; c.attack(); o.weak = hh - B.hp === 6;
   B.weak = 0; hh = B.hp; c.cd = 0; c.attack(); o.bark = hh - B.hp === 1;
+  // R79.1: a lobbed special (Mud Splat / Gel Bomb / Scent Cloud) aimed at the bear lands on it (was NaN: bear keeps bx/bz)
+  { const S = c.special, d0 = S.def; S.def = { ...d0, kind: 'lob', range: 8, dmg: 3, r: 2 }; S.fire({ kind: 'bear', m: B, x: B.bx, z: B.bz }); const s = S.shots[S.shots.length - 1]; o.lob = !!s && Number.isFinite(s.land.x) && Math.hypot(s.land.x - B.bx, s.land.z - B.bz) < .1; S.root.remove(s.obj); S.shots.pop(); S.def = d0; }
   // Roots: its own spike line in front, 1½ hearts
   c.heal(true); c.invuln = 0; hp0 = c.hp; B.state = 'chase'; B.t = 0; B.startAttack('roots', B.phase()); const R = B.local(.6, 9.1); put(R.x, R.z);
   run(40, .1, () => { if (B.state !== 'roots') return; c.invuln = Math.min(c.invuln, .01); });
@@ -417,7 +419,7 @@ try {
   c.invuln = 0; c.hurt(99, ch.position.x + .1, ch.position.z); for (let i = 0; i < 400 && c.wilting; i++) await w(100);
   o.wilt = fought && !B.fighting() && !g.followCamera.lockYaw && B.hp === 35;
   B.forceAwake = null; return o; }) : {};
-    check('root bear: grove + open core, asleep + solid, wakes at 8 m, sweep + roots hurt, weak x3 / bark 1, leash, wanders the core + aggro, lies down again, defeat + golden seed + saved, wilt ends it, giant arena unchanged', ready && ['grove', 'sleep', 'wake', 'risen', 'sweep', 'weak', 'bark', 'roots', 'leash', 'wander', 'aggro', 'lie', 'win', 'saved', 'arena', 'wilt'].every(k => r[k]) && !errors.length, errors[0] || JSON.stringify(r));
+    check('root bear: grove + open core, asleep + solid, wakes at 8 m, sweep + roots hurt, weak x3 / bark 1, leash, wanders the core + aggro, lies down again, defeat + golden seed + saved, wilt ends it, giant arena unchanged', ready && ['grove', 'sleep', 'wake', 'risen', 'sweep', 'weak', 'bark', 'roots', 'lob', 'leash', 'wander', 'aggro', 'lie', 'win', 'saved', 'arena', 'wilt'].every(k => r[k]) && !errors.length, errors[0] || JSON.stringify(r));
     await ctx.close(); }
   // 5. DEV disabled: no dev UI or handles leak into normal play
   { const ctx = await context({ viewport: { width: 844, height: 390 }, isMobile: true, hasTouch: true }); const { p, errors, ok } = await startGame(ctx, 'daisy', { dev: false });

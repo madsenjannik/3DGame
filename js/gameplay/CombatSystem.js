@@ -9,8 +9,8 @@ import * as THREE from 'three';
 import { loadGLTF } from '../core/AssetManager.js';
 import { WildsModel } from './WildsModels.js';
 import { WoodGiantBoss } from './WoodGiantBoss.js';
-import { RootBearBoss } from './RootBearBoss.js?build=ROOTBEAR-R79-20261005A';
-import { SpecialSystem } from './SpecialSystem.js?build=ROOTBEAR-R79-20261005A';
+import { RootBearBoss } from './RootBearBoss.js?build=ROOTBEAR-R79.1-20261005A';
+import { SpecialSystem } from './SpecialSystem.js?build=ROOTBEAR-R79.1-20261005A';
 import { MATERIALS } from '../data/wildsCatalog.js';
 import { PLAYER, WEAPONS, WEAPON_ORDER, ATTACK_COOLDOWN, MOLE, WILT, LOOT_FILES, SPECIAL, SNAIL } from '../data/combatCatalog.js';
 
