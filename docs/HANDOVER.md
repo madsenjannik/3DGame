@@ -3,9 +3,9 @@
 ## Start here
 - **Repo:** `madsenjannik/3DGame`, branch `claude/magical-lovelace-nuka97` (GitHub replaces ZIP packages).
 - **Live test build:** `https://madsenjannik.github.io/3DGame/` (version shown bottom-left on the start screen).
-- **Current build:** v0.8.78.3 · `HUDTEST-D-DESKTOP-R78.3-20261005A` (see `version.js`; v0.8.72 = R72.1 merged with Jannik's HUD test R73.1): R72.1 merged with Jannik's own HUD test R73.1 commits (DEV toggle, isolated cardless landscape HUD), both kept.
+- **Current build:** v0.8.79 · `ROOTBEAR-R79-20261005A` (see `version.js`): R79 Root Bear, second boss in its own grove (CANDIDATE, needs Jannik's runtime test on iPhone + PC).
 - **LOCKED baseline:** **v0.8.21 (R67.1, `LANDSCAPE-R67.1-20261003A`)**, locked by Jannik 03/10/2026 ('lås (v0.8.21). Det virker!'). Everything up to and including R67.1 (boat economy, combat + Mole + snail, Wood Giant + arena, Lake Run, specials, phone HUD, landscape-only) is the baseline; changes need a GO for that exact scope. Previous lock: R50.3 (v0.5.30). R45 is historical rollback reference only.
-- **Now:** R78 DEV-only Test HUD D · Klassisk is the active visual candidate, pending Jannik runtime/visual approval. Current/B/C HUD variants remain available.
+- **Now:** R79 Root Bear built (GO 05/10, MASTER §16.1). HUD baseline = Test HUD D · Klassisk (Jannik 05/10: 'baseline nu', still to be polished). Next decided: day/night cycle (MASTER §16.2, not built; cycle length + light asset missing).
 - **Rules:** never build without Jannik's explicit **GO**; analyze, find root cause and define exact scope first.
   **Every build updates `docs/HANDOVER.md` and `docs/MASTER-PROJECT-DOCUMENT.md` in the same commit** (MASTER §1.7).
   Building lives in the **private garden**. **Do not change the three greenhouse levels.**
@@ -70,7 +70,7 @@
 Details: `docs/MASTER-PROJECT-DOCUMENT.md` section 30 and `docs/R47…R49*.md`.
 
 ## Automated check
-`node tests/smoke.mjs` from the repo root (needs Playwright + Chromium). 17/17 must pass before a push (incl. boat, cameras, wilds + garden GLBs, R60 garden, R61/R62 combat + snail, R63 Wood Giant).
+`node tests/smoke.mjs` from the repo root (needs Playwright + Chromium). 23/23 must pass before a push (incl. boat, cameras, wilds + garden GLBs, R60 garden, R61/R62 combat + snail, R63 Wood Giant, R79 Root Bear). Takes ~15 min.
 
 ## Quick test (with the dev menu)
 1. Start screen → Indstillinger → turn on **Dev-menu** → START → pick a character.
@@ -78,6 +78,7 @@ Details: `docs/MASTER-PROJECT-DOCUMENT.md` section 30 and `docs/R47…R49*.md`.
 3. DEV → **3 potter + vand** → **Drivhus** teleport → plant, water → DEV **Spol 5 min frem** ×3 → harvest.
 4. DEV → **Ukrudt nu** / **Snegl nu** to see the threat; **Arbejdsbænk** teleport for crafting/upgrades.
 5. DEV → **Nærmeste tornekrat** to test cutting + cache.
+10. Root Bear (R79): DEV → *Alle redskaber* → KAMP → *Teleport til Root Bear* (14 m from it) → walk closer: within 8 m it wakes. Step out of the orange ring (Sweep) and sideways out of the glowing strip in front of it (Roots); hit when the bar turns gold. *Root Bear: vågen nu* = it wanders the core for 90 s. *Root Bear: 4 liv* to test the win.
 9. Wood Giant (R63): DEV → *Alle redskaber* → KAMP → *Teleport til Wood Giant* → walk through the gate. Step out of the orange ring before it fills; from phase 2 hop over the shockwave ring; hit when the bar turns gold (bark hits only do 1); strike risen roots. *Boss: 4 liv tilbage* to test the win.
 8. Combat (R61): DEV → *Alle redskaber* → KAMP → *Teleport til Mole* → walk to the mound until it shakes → *Strike* when it is up (2 axe hits) → walk over the loot. DEV → *Tag 1 hjerte skade* ×5 to test wilting (pouch with a light beam where you fell).
 7. Garden layout (R60.1): workbench → Home → *Move Seed Shrine* (or DEV → HAVE-LAYOUT) → walk; the ghost turns red over the pond/trees/house → find a green spot → Place. Reload: it stays. DEV → *Nulstil placeringer* puts everything back.
@@ -99,6 +100,7 @@ World movement/camera/collision · Private Garden enter/exit + MoveIn · greenho
 Stable RIDE/JUMP + Result/Standings · Fishing marker + loop · map/minimap · desktop + iPhone portrait/landscape.
 
 ## First line for the next chat
-`Fortsæt THE GROWING WILDS fra GitHub madsenjannik/3DGame (branch claude/magical-lovelace-nuka97). Brug docs/HANDOVER.md + docs/MASTER-PROJECT-DOCUMENT.md som source of truth. Ingen build uden mit GO.`| R78.3 · v0.8.78.3 | **Desktop-only Test HUD D polish (GO 05/10).** More air around objective top-left. Resource row remains centred but now uses Klassisk cream-clay chips; Golden Seed is gold. Hearts are hidden outside actual danger and moved bottom-centre, away from objective. Special attack is hidden outside actual danger, restyled cream/moss/gold and kept bottom-right; the redundant desktop special bar is hidden. **Touch/mobile CSS and controls untouched.** |
+`Fortsæt THE GROWING WILDS fra GitHub madsenjannik/3DGame (branch claude/magical-lovelace-nuka97). Brug docs/HANDOVER.md + docs/MASTER-PROJECT-DOCUMENT.md som source of truth. Ingen build uden mit GO.`| R79 · v0.8.79 | **Root Bear (GO 05/10, MASTER §16.1).** Second boss (`assets/combat/root-bear.glb`, `js/gameplay/RootBearBoss.js`, data `ROOT_BEAR`). Grove at zone 2b (x −22, z 76): ~30 old conifers in clusters on a 14–25 m ring, open 12 m core (8 shared trees hidden there), darker forest floor, 4 mossy rocks; built after all placements so nothing else moves. Awake 1.5 of every real 10 min (clock), wanders the core; else asleep. Wakes on its own at 8 m (no circle), attacks within 8 m while awake, gives up beyond 30 m. Wood Giant rules: bark 1, weak window ×3 + Hit, Sweep (ring, 1 heart) + Roots (its own spike line, 1½ hearts), 35 HP, 65 % of the Giant's height, low boss camera inside the core. First win Golden Seed + Amber + Wood, 24 h rematch (saved). DEV → KAMP: Teleport til Root Bear / vågen nu / 4 liv / klar igen. Smoke 17d. |
+| R78.3 · v0.8.78.3 | **Desktop-only Test HUD D polish (GO 05/10).** More air around objective top-left. Resource row remains centred but now uses Klassisk cream-clay chips; Golden Seed is gold. Hearts are hidden outside actual danger and moved bottom-centre, away from objective. Special attack is hidden outside actual danger, restyled cream/moss/gold and kept bottom-right; the redundant desktop special bar is hidden. **Touch/mobile CSS and controls untouched.** |
 | R78.2 · v0.8.78.2 | Live stylesheet cache fix: fresh `main.js` rewrites the `styles.css` query to R78.2 before gameplay, preventing Test HUD D logic from running with old HUD CSS. No gameplay/camera/movement changes. |
 

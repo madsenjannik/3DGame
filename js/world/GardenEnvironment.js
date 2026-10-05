@@ -2,7 +2,7 @@
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { FoundationSample } from './FoundationSample.js';
-import { SharedLandscape } from './SharedLandscape.js?build=PRIVATE-GARDEN-R20-20260928A';
+import { SharedLandscape } from './SharedLandscape.js?build=ROOTBEAR-R79-20261005A';
 import { color, createSkyMaterial, patchMaterial, seededRandom, smooth } from '../visual/VisualKit.js';
 
 function paintGeometry(geometry, hex){

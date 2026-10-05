@@ -364,6 +364,61 @@ try {
     }) : {};
     check('wood giant: wilt mid-fight ends the fight + camera shake, back to the world is not pulled into the arena, camera above head', ready && r.fight && r.camHigh && r.ended && r.still && r.free && !errors.length, errors[0] || JSON.stringify(r));
     await ctx.close(); }
+  // 17d. R79 Root Bear: grove (30 conifers on the ring, open core, mossy rocks), asleep + solid, wakes on its own at
+  // 8 m (no circle), Sweep ring + its own Roots spike line hurt, weak window x3 / bark 1, gives up outside the grove,
+  // awake window = wanders the core + attacks within 8 m, lies down on its den again, defeat = Golden Seed + 24 h
+  // rematch saved, wilting ends the fight, Wood Giant arena unchanged
+  { const ctx = await context({ viewport: { width: 844, height: 390 }, isMobile: true, hasTouch: true }); const { p, errors, ok } = await startGame(ctx, 'fern');
+    const ready = ok && await p.waitForFunction(() => window.__tgw?.combat?.bear?.bear && window.__tgw.combat.models?.loot_golden_seed, null, { timeout: 240000 }).then(() => true, () => false);
+    const r = ready ? await p.evaluate(async () => { const g = window.__tgw, c = g.combat, B = c.bear, L = g.world.sharedLandscape, G = L.bearGrove, ch = g.character, o = {}, w = ms => new Promise(x => setTimeout(x, ms)); g.wilds.profile.tools.axe = true;
+  const run = (n, dt = .1, each, stop) => { for (let i = 0; i < n; i++) { each?.(); B.update(dt, ch); if (stop?.()) break; } };
+  const put = (x, z) => { ch.position.set(x, ch.position.y, z); ch.root.position.copy(ch.position); };
+  // grove: 30 extra conifers on the ring, rocks, open core (no shared-forest tree blocks inside it), world colliders
+  for (let i = 0; i < 100 && !B.rockSpots.every(r => r.o); i++) await w(100);
+  const coreBlock = g.world.colliders.filter(q => q.space === 'world' && /world-(conifer|tree)/.test(q.kind) && q.r > .1 && Math.hypot(q.x - G.x, q.z - G.z) < G.core);
+  o.grove = B.groveTrees.length === 30 && B.groveTrees.every(t => { const d = Math.hypot(t.x - G.x, t.z - G.z); return d >= 14 && d <= 25 && t.s >= 1.3; }) && B.groveObstacles.every(q => q.space === 'world') && B.rockSpots.length === 4 && B.rockSpots.every(r => r.o?.space === 'world') && !coreBlock.length && B.groveMeshes.length > 0;
+  // asleep on its den (clock forced to night side), solid, eyes dark, not hittable
+  B.forceAwake = false; B.p.defeatedAt = 0; B.bx = B.den.x; B.bz = B.den.z; B.heading = B.den.heading; B.reset(); put(B.den.x + 30, B.den.z); run(1);
+  const so = B.sleepObstacles[3], q = { x: so.x + .05, z: so.z }; g.world.resolveCollisions(q, .3);
+  o.sleep = B.state === 'sleep' && B.cur?.getClip().name === 'Sleep' && B.sleepObstacles.length > 20 && Math.hypot(q.x - so.x - .05, q.z - so.z) > .3 && B.eyes.every(e => !e.visible) && !B.target(B.bx, B.bz, 9) && B.bodyParts.every(b => b.o.r < .1);
+  // 8 m: wakes on its own (no circle), boss bar, camera yaw lock
+  const h = B.den.heading; put(B.den.x + Math.sin(h) * 9, B.den.z + Math.cos(h) * 9); run(1); const still = B.state === 'sleep';
+  put(B.den.x + Math.sin(h) * 7.5, B.den.z + Math.cos(h) * 7.5); run(1);
+  o.wake = still && B.state === 'wake' && B.cur?.getClip().name === 'WakeUp' && typeof g.followCamera.lockYaw === 'function' && B.ui.classList.contains('show') && document.body.classList.contains('boss-active');
+  run(45); o.risen = B.state === 'chase' && B.eyes.every(e => e.visible) && B.bodyParts.every(b => b.o.r > .5) && B.sleepObstacles.every(s => s.r < .1);
+  // Sweep: ring telegraph in front, 1 heart
+  c.heal(true); c.invuln = 0; let hp0 = c.hp;
+  run(80, .1, () => { if (B.state === 'chase') { const f = B.local(0, 5); put(f.x, f.z); } else if (B.state === 'sweep') { const P = B.local(0, 4.5); put(P.x + .2, P.z); } }, () => B.state === 'stuck');
+  o.sweep = hp0 - c.hp === 2 && B.state === 'stuck' && B.weak > 0;
+  // weak window ×3 (axe 2 → 6), bark 1
+  const f0 = B.local(0, 5); put(f0.x, f0.z); let hh = B.hp; c.cd = 0; c.attack(); o.weak = hh - B.hp === 6;
+  B.weak = 0; hh = B.hp; c.cd = 0; c.attack(); o.bark = hh - B.hp === 1;
+  // Roots: its own spike line in front, 1½ hearts
+  c.heal(true); c.invuln = 0; hp0 = c.hp; B.state = 'chase'; B.t = 0; B.startAttack('roots', B.phase()); const R = B.local(.6, 9.1); put(R.x, R.z);
+  run(40, .1, () => { if (B.state !== 'roots') return; c.invuln = Math.min(c.invuln, .01); });
+  o.roots = hp0 - c.hp === 3 && B.state === 'stuck' && B.spikes.length === 7 && B.spikes.every(s => s.scale.x === 0);
+  // run out of the grove: it gives up, full HP, camera free
+  B.hp = 20; put(B.den.x + 40, B.den.z); run(1); o.leash = B.state === 'calm' && B.hp === 35 && !g.followCamera.lockYaw && !B.ui.classList.contains('show');
+  // awake window: walks the core, never out of it; attacks within 8 m while wandering
+  B.forceAwake = true; run(30); let maxOff = 0; const p0 = { x: B.bx, z: B.bz }; run(300, .1, () => { maxOff = Math.max(maxOff, Math.hypot(B.bx - B.den.x, B.bz - B.den.z)); });
+  o.wander = B.state === 'wander' && Math.hypot(B.bx - p0.x, B.bz - p0.z) + maxOff > 1 && maxOff <= G.core - 2.4;
+  put(B.bx + 6, B.bz); run(1); o.aggro = B.state === 'chase';
+  // back to sleep when the window ends: walks to the den and lies down
+  B.end(false); put(B.den.x + 40, B.den.z); B.forceAwake = false; run(400); o.lie = B.state === 'sleep' && Math.hypot(B.bx - B.den.x, B.bz - B.den.z) < .1 && Math.abs(B.heading - B.den.heading) < .01;
+  // defeat: sinks, Golden Seed loot, win + 24 h rematch saved
+  put(B.den.x + Math.sin(h) * 7, B.den.z + Math.cos(h) * 7); run(1); run(45);
+  c.heal(true); for (let k = 0; k < 90 && B.hp > 0; k++) { B.weak = 1; const f = B.local(0, 5); put(f.x, f.z); c.cd = 0; c.invuln = 1; c.attack(); }
+  run(40); o.win = B.state === 'resting' && !B.bear.visible && B.p.wins === 1 && B.p.defeatedAt > 0 && c.loot.some(l => l.kind === 'golden_seed') && !B.available() && B.bodyParts.every(b => b.o.r < .1);
+  g.save.persist(); const saved = JSON.parse(JSON.stringify(g.save.profile.combat.bear)); o.saved = saved.wins === 1 && saved.defeatedAt === B.p.defeatedAt;
+  // R79 the giant arena did not move
+  o.arena = Math.round(c.boss.site.x) === 14 && Math.round(c.boss.site.z) === -79;
+  // wilting mid-fight ends it (no camera lock, full HP again)
+  B.p.defeatedAt = 0; B.bx = B.den.x; B.bz = B.den.z; B.heading = B.den.heading; B.reset(); put(B.den.x + Math.sin(h) * 7, B.den.z + Math.cos(h) * 7); run(1); const fought = B.fighting();
+  c.invuln = 0; c.hurt(99, ch.position.x + .1, ch.position.z); for (let i = 0; i < 400 && c.wilting; i++) await w(100);
+  o.wilt = fought && !B.fighting() && !g.followCamera.lockYaw && B.hp === 35;
+  B.forceAwake = null; return o; }) : {};
+    check('root bear: grove + open core, asleep + solid, wakes at 8 m, sweep + roots hurt, weak x3 / bark 1, leash, wanders the core + aggro, lies down again, defeat + golden seed + saved, wilt ends it, giant arena unchanged', ready && ['grove', 'sleep', 'wake', 'risen', 'sweep', 'weak', 'bark', 'roots', 'leash', 'wander', 'aggro', 'lie', 'win', 'saved', 'arena', 'wilt'].every(k => r[k]) && !errors.length, errors[0] || JSON.stringify(r));
+    await ctx.close(); }
   // 5. DEV disabled: no dev UI or handles leak into normal play
   { const ctx = await context({ viewport: { width: 844, height: 390 }, isMobile: true, hasTouch: true }); const { p, errors, ok } = await startGame(ctx, 'daisy', { dev: false });
     const leak = ok && await p.evaluate(() => !!document.querySelector('.dev-menu-btn') || !!window.__tgw || !document.getElementById('dev-badge').hidden);

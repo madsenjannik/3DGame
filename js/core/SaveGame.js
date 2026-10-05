@@ -21,7 +21,7 @@ function blankProfile() {
     daily: { date: '', done: {}, progress: {}, streak: 0, lastDate: '' },
     fishing: { starter: false, own: {}, log: {} },   // R58: Sigurd's gear + catch log (was memory-only)
     boat: { owned: false, trips: 0, waterfall: 0, lastReward: '' }, // R58 boat economy
-    combat: { moles: {}, firstMole: false, pouches: [], mercyUntil: 0, giant: { defeatedAt: 0, wins: 0 } }, // R61/R63 combat
+    combat: { moles: {}, firstMole: false, pouches: [], mercyUntil: 0, giant: { defeatedAt: 0, wins: 0 }, bear: { defeatedAt: 0, wins: 0 } }, // R61/R63/R79 combat
     lakeRun: { best: 0, splits: [], ghost: [], runs: [], day: '', attempts: 0, golds: 0, weekGold: '' }, // R64 Lake Run
     garden: null          // R60 GardenBuildSystem: { version, plots[], buildings[{ id, type, gx, gz, rot }] }
   };
@@ -87,6 +87,7 @@ function validProfile(p) {
   out.combat.firstMole = cb.firstMole === true;
   out.combat.mercyUntil = Number.isFinite(cb.mercyUntil) ? cb.mercyUntil : 0;
   out.combat.giant = { defeatedAt: Number.isFinite(cb.giant?.defeatedAt) ? cb.giant.defeatedAt : 0, wins: Math.max(0, cb.giant?.wins | 0) };
+  out.combat.bear = { defeatedAt: Number.isFinite(cb.bear?.defeatedAt) ? cb.bear.defeatedAt : 0, wins: Math.max(0, cb.bear?.wins | 0) };   // R79
   if (Array.isArray(cb.pouches)) out.combat.pouches = cb.pouches.filter(q => q && typeof q.id === 'string' && Number.isFinite(q.x) && Number.isFinite(q.z) && Number.isFinite(q.until) && q.items && typeof q.items === 'object').slice(-3)
     .map(q => ({ id: q.id, x: q.x, z: q.z, until: q.until, items: Object.fromEntries(Object.entries(q.items).filter(([, n]) => Number.isFinite(n) && n > 0).map(([k, n]) => [k, Math.floor(n)])) }));
   // R64 Lake Run (additive, v3). Ghost = flat [x, z, yaw, ...] samples of the PB run (boat-local).

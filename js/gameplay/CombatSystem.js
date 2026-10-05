@@ -9,7 +9,8 @@ import * as THREE from 'three';
 import { loadGLTF } from '../core/AssetManager.js';
 import { WildsModel } from './WildsModels.js';
 import { WoodGiantBoss } from './WoodGiantBoss.js';
-import { SpecialSystem } from './SpecialSystem.js';
+import { RootBearBoss } from './RootBearBoss.js?build=ROOTBEAR-R79-20261005A';
+import { SpecialSystem } from './SpecialSystem.js?build=ROOTBEAR-R79-20261005A';
 import { MATERIALS } from '../data/wildsCatalog.js';
 import { PLAYER, WEAPONS, WEAPON_ORDER, ATTACK_COOLDOWN, MOLE, WILT, LOOT_FILES, SPECIAL, SNAIL } from '../data/combatCatalog.js';
 
@@ -29,6 +30,7 @@ export class CombatSystem {
     this.moles = []; this.loot = []; this.fx = []; this.pouchViews = new Map(); this.models = {};
     this.buildHud(); this.placeMoles(); this.syncPouches();
     try { this.boss = new WoodGiantBoss(this); } catch (e) { console.warn('[TGW] Wood Giant disabled', e); }  // R63
+    try { this.bear = new RootBearBoss(this); } catch (e) { console.warn('[TGW] Root Bear disabled', e); }  // R79 (after the arena: its grove must not move any placement)
     try { this.special = new SpecialSystem(this); } catch (e) { console.warn('[TGW] specials disabled', e); }  // R65
     this.ready = this.loadModels();
   }
@@ -179,6 +181,7 @@ export class CombatSystem {
     if (garden) { for (const sn of this.w.threat?.snails || []) if (sn.state !== 'dying' && sn.state !== 'gone') consider('snail', sn); }
     else for (const m of this.moles) if (VULNERABLE.has(m.state)) consider('mole', m);
     if (!garden && this.boss) { const b = this.boss.target(ch.position.x, ch.position.z, reach); if (b && (!best || b.d <= best.d)) best = b; }  // R63
+    if (!garden && this.bear) { const b = this.bear.target(ch.position.x, ch.position.z, reach); if (b && (!best || b.d <= best.d)) best = b; }  // R79
     return best;
   }
   attack() {
@@ -191,6 +194,7 @@ export class CombatSystem {
     ch.flash?.(); ch.instance?.playOverlay?.('Swing');   // R65: Jannik's Swing clip (upper body) on top of the lunge
     let landed = false;
     if (t?.kind === 'giant' || t?.kind === 'root') landed = this.boss.hit(t, wpn.dmg);
+    else if (t?.kind === 'bear') landed = this.bear.hit(t, wpn.dmg);   // R79
     else if (t?.kind === 'snail') { this.lastCombat = this.time; landed = this.w.threat.swat(t.m, ch, wpn.dmg); }
     else if (t) landed = this.hitMole(t.m, wpn.dmg);   // same range as the Strike prompt: what you are offered, you hit
     if (landed) this.special?.gain();                  // R65: landed hits fill the character's special meter
@@ -219,6 +223,7 @@ export class CombatSystem {
     // R64.1: end a boss fight right here. The portal fade below pauses the combat update, so the boss never saw
     // the wilt and the fight (arena pull-in, camera lock, no regen) resumed on the way back to the world.
     if (this.boss?.fighting()) this.boss.end(false);
+    if (this.bear?.fighting()) this.bear.end(false);   // R79
     const g = this.g, hp = g.homePortal, ch = g.character, now = Date.now();
     const mercy = now < (this.p.mercyUntil || 0); let dropped = 0; const items = {};
     if (!mercy) {
@@ -280,9 +285,9 @@ export class CombatSystem {
     const classic = document.body.classList.contains('hud-classic'), classicDesktop = classic && !document.body.classList.contains('touch');
     const moleDanger = this.g.world.space === 'world' && this.moles.some(m => ['warning','emerge','up','attack','hit'].includes(m.state));
     const snailDanger = this.g.world.space === 'garden' && (this.w.threat?.snails || []).some(s => s.state !== 'dying' && s.state !== 'gone' && Math.hypot(ch.position.x - s.x, ch.position.z - s.z) <= SNAIL.biteRange + .4);
-    const desktopDanger = classicDesktop && (!!this.boss?.fighting() || moleDanger || snailDanger);
-    if (this.special) { this.special.update(dt); const combatNow = !!this.boss?.fighting() || time - this.lastCombat < 6; const on = classicDesktop ? desktopDanger : classic ? combatNow : this.special.charge >= SPECIAL.chargeHits || combatNow; this.special.btn?.classList.toggle('show', on); this.special.bar?.classList.toggle('show', !classicDesktop && on && this.hudEl.classList.contains('show')); }  // R78.3 desktop Test D: no combat UI outside actual danger
-    if (!this.wilting && this.hp < MAX_HP && !this.boss?.fighting() && time - this.lastHit > PLAYER.regenDelay && (time - (this.lastRegen || 0)) > PLAYER.regenEvery) { this.lastRegen = time; this.heal(false); }
+    const desktopDanger = classicDesktop && (this.bossFight() || moleDanger || snailDanger);
+    if (this.special) { this.special.update(dt); const combatNow = this.bossFight() || time - this.lastCombat < 6; const on = classicDesktop ? desktopDanger : classic ? combatNow : this.special.charge >= SPECIAL.chargeHits || combatNow; this.special.btn?.classList.toggle('show', on); this.special.bar?.classList.toggle('show', !classicDesktop && on && this.hudEl.classList.contains('show')); }  // R78.3 desktop Test D: no combat UI outside actual danger
+    if (!this.wilting && this.hp < MAX_HP && !this.bossFight() && time - this.lastHit > PLAYER.regenDelay && (time - (this.lastRegen || 0)) > PLAYER.regenEvery) { this.lastRegen = time; this.heal(false); }
     const vitals = classicDesktop ? desktopDanger : this.hp < MAX_HP || time - this.lastCombat < 4; this.hudEl.classList.toggle('show', vitals); document.body.classList.toggle('vitals-on', vitals);
     if (this.g.world.space === 'garden') {
       if (!active || this.wilting) return { interaction: null };
@@ -294,6 +299,7 @@ export class CombatSystem {
     if (!this._tick || time - this._tick > 1) { this._tick = time; this.respawnTick(now); if (this.p.pouches.some(p => p.until <= now)) this.syncPouches(); }
     for (const m of this.moles) this.updateMole(m, dt, ch);
     this.boss?.update(dt, ch);
+    this.bear?.update(dt, ch);   // R79
     for (const f of this.fx) if (f.busy) f.model.update(dt);
     this.updateLoot(dt, ch);
     for (const v of this.pouchViews.values()) v.children[0].position.y = .22 + Math.sin(time * 2) * .02;
@@ -305,5 +311,6 @@ export class CombatSystem {
     if (p) return { interaction: { type: 'combat-pouch', label: 'Pick up your pouch', distance: 0 } };
     return { interaction: null };
   }
+  bossFight() { return !!this.boss?.fighting() || !!this.bear?.fighting(); }   // R79: Wood Giant or Root Bear
   interact(type) { if (type === 'combat-fight') return this.boss?.startFight(); if (type === 'combat-strike') return this.attack(); if (type === 'combat-pouch') return this.pickUpPouch(); return false; }
 }

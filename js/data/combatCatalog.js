@@ -77,6 +77,28 @@ export const GIANT = {
   reward: { first: { golden_seed: 1, amber: 3, wood: 10 }, again: { amber: 2, wood: 8 } }
 };
 
+// R79 Root Bear, second boss (Jannik 05/10, GO): lives in its own grove (SharedLandscape.bearGrove), 65 % of the Wood
+// Giant's height, 35 HP and a little weaker. Awake 1.5 min of every real 10 min (clock-based, the same for everyone,
+// runs while the game is closed) and wanders the open core; otherwise asleep. Wakes on its own within 8 m (no
+// circle) and attacks when you come within 8 m while it wanders. Wood Giant rules: hard bark (1), weak window after
+// each attack (×3), first win 1 Golden Seed, rematch after 24 h. Sweep = paw swipe in front (ground ring
+// telegraph); Roots = the GLB's own line of root spikes in front (its own telegraph strip).
+export const ROOT_BEAR = {
+  file: 'root-bear', scale: .70,          // 0.65 × Wood Giant Idle height (11.66 m measured) / bear Idle height (10.75 units)
+  hp: 35, wakeRange: 8, leash: 30, coreMargin: 2.5, walkSpeed: 1.6, wanderSpeed: .9,
+  cycleSec: 600, awakeSec: 90,           // awake 1.5 of every 10 min
+  barkDamage: 1, weakMultiplier: 3, weakWindow: { sweep: 1.6, roots: 2.0 },
+  sweep: { range: 4.2, impactAt: 1.4, center: 4.5, radius: 3.2, damage: 2, push: 3 },          // centre/impact in clip units/seconds; 1 heart
+  roots: { range: 11, impactFrom: 1.6, radius: 1.3, damage: 3, push: 2.5 },                      // 1½ hearts per spike line
+  phases: [{ at: 1, speed: 1, roots: .35 }, { at: .5, speed: 1.2, roots: .55 }],
+  body: [['Hips', 1.5], ['Head', 1.0], ['Hand_L', .6], ['Hand_R', .6], ['Foot_L', .6], ['Foot_R', .6]],
+  // Wood Giant's low boss camera, scaled to the bear (chest ≈ 0.65 × 5.2 m); kept inside the open core (no tree in view).
+  camera: { distance: 9, height: 2.6, chestY: 3.6, lookBlend: .3, fovPortrait: 74, fovLandscape: 62, edgeLift: .35, liftMax: 3.5 },
+  rematchHours: 24,
+  reward: { first: { golden_seed: 1, amber: 3, wood: 10 }, again: { amber: 2, wood: 8 } },   // same as the Wood Giant
+  grove: { seed: 7979, trees: 30, clusters: 8, ring: [14, 23], scale: [1.3, 1.8], rocks: 4 }
+};
+
 // R65 character specials (Jannik's specials pack, assets/combat/specials/). A Sap meter fills from melee hits
 // that land; when full, F / the special button throws the character's own special (Throw clip, released at
 // 0.375 s from Hand_Socket_R). On the Wood Giant specials only hurt during a weak window (×weakMultiplier) and

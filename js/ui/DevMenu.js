@@ -42,7 +42,7 @@ export class DevMenu {
           <button data-a="lr:start">Til guldcirklen (broen)</button><button data-a="lr:go">Start Lake Race</button><button data-a="lr:gold">Gennemfør (guldtid)</button><button data-a="lr:reset">Nulstil Lake Run</button>
         </div></section>
         <section><small>KAMP (R61)</small><div class="dev-grid">
-          <button data-a="cb:tp">Teleport til Mole</button><button data-a="cb:heal">Fuld liv</button><button data-a="cb:special">Fyld special-måler</button><button data-a="cb:hurt">Tag 1 hjerte skade</button><button data-a="cb:respawn">Respawn moles</button><button data-a="cb:mercy">Nulstil mercy + poser</button><button data-a="cb:arena">Teleport til Wood Giant</button><button data-a="cb:bosslow">Boss: 4 liv tilbage</button><button data-a="cb:bossreset">Boss: klar igen</button>
+          <button data-a="cb:tp">Teleport til Mole</button><button data-a="cb:heal">Fuld liv</button><button data-a="cb:special">Fyld special-måler</button><button data-a="cb:hurt">Tag 1 hjerte skade</button><button data-a="cb:respawn">Respawn moles</button><button data-a="cb:mercy">Nulstil mercy + poser</button><button data-a="cb:arena">Teleport til Wood Giant</button><button data-a="cb:bosslow">Boss: 4 liv tilbage</button><button data-a="cb:bossreset">Boss: klar igen</button><button data-a="cb:bear">Teleport til Root Bear</button><button data-a="cb:bearawake">Root Bear: vågen nu</button><button data-a="cb:bearlow">Root Bear: 4 liv</button><button data-a="cb:bearreset">Root Bear: klar igen</button>
         </div></section>
         <section><small>HAVE-LAYOUT (R60)</small><div class="dev-grid">
           <button data-a="move:greenhouse">Flyt drivhus</button><button data-a="move:workshop">Flyt workshop</button><button data-a="move:rain">Flyt regntønde</button><button data-a="move:shrine">Flyt shrine</button><button data-a="layout:reset">Nulstil placeringer</button>
@@ -149,6 +149,12 @@ export class DevMenu {
       if (op === 'arena') { if (!B?.site) return this.toast('Ingen arena (model mangler?)'); const f = B.fightPoint || { x: B.site.x, z: B.site.z + 13.6 }; this.teleport('world', f.x + (f.x - B.site.x) * .06, f.z + (f.z - B.site.z) * .06, Math.atan2(B.site.x - f.x, B.site.z - f.z)); return; }
       if (op === 'bosslow') { if (!B?.fighting()) return this.toast('Start kampen først (gå ind i arenaen)'); B.hp = 4; B.renderUi(); return this.toast('Wood Giant: 4 liv'); }
       if (op === 'bossreset') { if (!B?.giant) return this.toast('Ingen boss'); B.p.defeatedAt = 0; B.end(false); g.save.persist(); return this.toast('Wood Giant er klar igen'); }
+      const RB = c.bear;   // R79
+      if (op.startsWith('bear') && !RB?.bear) return this.toast('Ingen Root Bear (model mangler?)');
+      if (op === 'bear') { const d = RB.den, h = d.heading; this.teleport('world', d.x + Math.sin(h) * 14, d.z + Math.cos(h) * 14, h + Math.PI); return; }
+      if (op === 'bearawake') { RB.devAwakeUntil = Date.now() + 90000; return this.toast('Root Bear er vågen de næste 90 s'); }
+      if (op === 'bearlow') { if (!RB.fighting()) return this.toast('Gå tæt på bjørnen først (8 m)'); RB.hp = 4; RB.renderUi(); return this.toast('Root Bear: 4 liv'); }
+      if (op === 'bearreset') { RB.p.defeatedAt = 0; RB.devAwakeUntil = 0; if (RB.fighting()) RB.end(false); RB.bx = RB.den.x; RB.bz = RB.den.z; RB.heading = RB.den.heading; RB.reset(); g.save.persist(); return this.toast('Root Bear er klar igen'); }
       if (op === 'mercy') { c.p.mercyUntil = 0; c.p.pouches = []; c.syncPouches(); g.save.persist(); return this.toast('Mercy og poser nulstillet'); }
       return;
     }

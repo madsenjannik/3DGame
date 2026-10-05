@@ -5,7 +5,7 @@
 // Targets are the same as Strike: Moles in the wilds, snails in the garden, the Wood Giant (weak window only)
 // and its risen roots. Owned by CombatSystem; fails soft (no projectile GLB → simple sphere).
 import * as THREE from 'three';
-import { SPECIAL, GIANT } from '../data/combatCatalog.js';
+import { SPECIAL, GIANT, ROOT_BEAR } from '../data/combatCatalog.js?build=ROOTBEAR-R79-20261005A';
 import { loadGLTF } from '../core/AssetManager.js';
 import { WildsModel } from './WildsModels.js';
 
@@ -76,6 +76,7 @@ export class SpecialSystem {
       for (const r of B.roots) if (r.state === 'up') out.push({ kind: 'root', m: r, x: r.x, z: r.z, r: .9 });
       out.push({ kind: 'giant', m: B, x: B.gx, z: B.gz, r: GIANT.bodyRadius });
     }
+    const RB = this.c.bear; if (RB?.fighting()) out.push({ kind: 'bear', m: RB, x: RB.bx, z: RB.bz, r: 2 });   // R79
     return out;
   }
   // Apply damage (+ status) to one target. Returns true when something took damage.
@@ -88,6 +89,10 @@ export class SpecialSystem {
     }
     const B = this.c.boss;
     if (e.kind === 'root') { if (e.m.state !== 'up') return false; B.hit({ kind: 'root', m: e.m }, dmg); return true; }
+    if (e.kind === 'bear') {   // R79: same rule as the Giant's bark
+      if (e.m.weak > 0) { e.m.damage(dmg * ROOT_BEAR.weakMultiplier, from.x, from.z, true); return true; }
+      this.c.spawnFx('Hit_Dust', from.x, from.z); return false;
+    }
     if (e.kind === 'giant') {
       if (B.weak > 0) { B.damage(dmg * GIANT.weakMultiplier, from.x, from.z, true); return true; }
       this.c.spawnFx('Hit_Dust', from.x, from.z); return false;   // bark: specials do nothing outside the weak window
