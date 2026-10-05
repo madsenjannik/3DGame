@@ -10,7 +10,7 @@ export function devMenuEnabled() { try { return localStorage.getItem(DEV_MENU_KE
 function hudTestEnabled() { try { return localStorage.getItem(HUD_TEST_KEY) === '1'; } catch { return false; } }
 // R74 Test HUD B (touch only): 'light' | 'dark' | '' (off). Separate key so Jannik's Test HUD stays as it is.
 export const HUD_B_KEY = 'tgw.hudTestB';
-function hudB() { try { const v = localStorage.getItem(HUD_B_KEY); return v === 'light' || v === 'dark' || v === 'cream' ? v : ''; } catch { return ''; } }
+function hudB() { try { const v = localStorage.getItem(HUD_B_KEY); return v === 'light' || v === 'dark' || v === 'cream' || v === 'classic' ? v : ''; } catch { return ''; } }
 
 const SKIP_MS = 5 * 60 * 1000;
 
@@ -26,7 +26,7 @@ export class DevMenu {
       <header><div><small>TEST · RIGTIG SAVE</small><h2>Dev menu</h2></div><button type="button" class="wilds-close" aria-label="Close">✕</button></header>
       <div class="dev-menu-body">
         <section><small>KAMERA & STYRING (kun dev)</small><div class="dev-grid profiles">${Object.entries(PROFILES).map(([id, p]) => `<button data-a="cam:${id}">${p.name}</button>`).join('')}</div><p class="dev-note"></p></section>
-        <section><small>HUD TEST · NORMAL GAMEPLAY</small><div class="dev-grid hud-tests"><button data-a="hud:current">Current HUD</button><button data-a="hud:test">Test HUD</button><button data-a="hud:b-light">Test HUD B lys</button><button data-a="hud:b-dark">Test HUD B mørk</button><button data-a="hud:b-cream">Test HUD C creme</button></div><p class="dev-note hud-test-note">Kun visuelt layout. Ingen gameplay-logik ændres.</p></section>
+        <section><small>HUD TEST · NORMAL GAMEPLAY</small><div class="dev-grid hud-tests"><button data-a="hud:current">Current HUD</button><button data-a="hud:test">Test HUD</button><button data-a="hud:b-light">Test HUD B lys</button><button data-a="hud:b-dark">Test HUD B mørk</button><button data-a="hud:b-cream">Test HUD C creme</button><button data-a="hud:d-classic">Test HUD D klassisk</button></div><p class="dev-note hud-test-note">Kun visuelt layout. Ingen gameplay-logik ændres.</p></section>
         <section><small>MÅLING</small><div class="dev-grid"><button data-a="perf">Performance-HUD til/fra</button><button data-a="metrics">Vis startup-tider</button><button data-a="look">3D-look (R70) til/fra</button></div><div class="dev-grid four"><button data-a="q:auto">Auto</button><button data-a="q:mobile-low">Lav</button><button data-a="q:mobile-high">Høj</button><button data-a="q:desktop">Desktop</button></div></section>
         <section><small>RESSOURCER</small><div class="dev-grid">
           <button data-a="mats">+20 materialer</button><button data-a="tools">Alle redskaber</button><button data-a="pots">3 potter + vand</button><button data-a="skip">Spol 5 min frem</button>
@@ -78,7 +78,8 @@ export class DevMenu {
     document.body.classList.toggle('hud-test-v1', !!this.hudTest);
     document.body.classList.toggle('hud-test-b', this.hudB === 'light' || this.hudB === 'dark'); document.body.classList.toggle('hud-b-dark', this.hudB === 'dark');
     document.body.classList.toggle('hud-cream', this.hudB === 'cream');   // R77 Test HUD C: cream clay material from Visuel Identitet v2 (light)
-    const on = this.hudTest ? 'hud:test' : this.hudB ? `hud:b-${this.hudB}` : 'hud:current';
+    document.body.classList.toggle('hud-classic', this.hudB === 'classic'); // R78 Test HUD D: Klassisk identity candidate
+    const on = this.hudTest ? 'hud:test' : this.hudB === 'classic' ? 'hud:d-classic' : this.hudB ? `hud:b-${this.hudB}` : 'hud:current';
     this.el.querySelectorAll('[data-a^="hud:"]').forEach(b => b.classList.toggle('active', b.dataset.a === on));
   }
   toast(t) { this.g.hud?.showToast(t); }
@@ -97,10 +98,10 @@ export class DevMenu {
   run(a) {
     const g = this.g, w = g.wilds, p = w.profile;
     if (a.startsWith('hud:')) {
-      this.hudTest = a === 'hud:test'; this.hudB = a === 'hud:b-light' ? 'light' : a === 'hud:b-dark' ? 'dark' : a === 'hud:b-cream' ? 'cream' : '';
+      this.hudTest = a === 'hud:test'; this.hudB = a === 'hud:b-light' ? 'light' : a === 'hud:b-dark' ? 'dark' : a === 'hud:b-cream' ? 'cream' : a === 'hud:d-classic' ? 'classic' : '';
       try { localStorage.setItem(HUD_TEST_KEY, this.hudTest ? '1' : '0'); localStorage.setItem(HUD_B_KEY, this.hudB); } catch {}
       this.applyHudTest();
-      this.toast(this.hudTest ? 'Test HUD til' : this.hudB ? (this.hudB === 'cream' ? 'Test HUD C (creme) til' : `Test HUD B (${this.hudB === 'light' ? 'lys' : 'mørk'}) til`) : 'Current HUD gendannet');
+      this.toast(this.hudTest ? 'Test HUD til' : this.hudB ? (this.hudB === 'classic' ? 'Test HUD D (klassisk) til' : this.hudB === 'cream' ? 'Test HUD C (creme) til' : `Test HUD B (${this.hudB === 'light' ? 'lys' : 'mørk'}) til`) : 'Current HUD gendannet');
       this.hide();
       return;
     }
