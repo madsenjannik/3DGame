@@ -1,5 +1,5 @@
 // @ts-nocheck
-import { Game } from './core/Game.js?build=STABLE-R42-20261001A';
+import { Game } from './core/Game.js?build=HUDTEST-D-R78.1-20261005A';
 import { characterCatalog } from './data/assetCatalog.js';
 
 async function start() {
