@@ -35,7 +35,7 @@ import { LakeRunSystem } from '../gameplay/LakeRunSystem.js';
 import { GardenBuildSystem } from '../gameplay/GardenBuildSystem.js';
 import { GardenBuildMode } from '../ui/GardenBuildMode.js';
 import { GardenVegetationMask } from '../world/GardenVegetationMask.js';
-import { CombatSystem } from '../gameplay/CombatSystem.js?build=HUDTEST-D-R78.1-20261005A';
+import { CombatSystem } from '../gameplay/CombatSystem.js?build=HUDTEST-D-R78.3-20261005A';
 
 export class Game {
   async init({characterId='succulent',devMode=false}={}){
