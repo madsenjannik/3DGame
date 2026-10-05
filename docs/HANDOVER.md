@@ -3,7 +3,7 @@
 ## Start here
 - **Repo:** `madsenjannik/3DGame`, branch `claude/magical-lovelace-nuka97` (GitHub replaces ZIP packages).
 - **Live test build:** `https://madsenjannik.github.io/3DGame/` (version shown bottom-left on the start screen).
-- **Current build:** v0.8.78 · `HUDTEST-D-CLASSIC-R78-20261005A` (see `version.js`; v0.8.72 = R72.1 merged with Jannik's HUD test R73.1): R72.1 merged with Jannik's own HUD test R73.1 commits (DEV toggle, isolated cardless landscape HUD), both kept.
+- **Current build:** v0.8.78.1 · `HUDTEST-D-CLASSIC-R78.1-20261005A` (see `version.js`; v0.8.72 = R72.1 merged with Jannik's HUD test R73.1): R72.1 merged with Jannik's own HUD test R73.1 commits (DEV toggle, isolated cardless landscape HUD), both kept.
 - **LOCKED baseline:** **v0.8.21 (R67.1, `LANDSCAPE-R67.1-20261003A`)**, locked by Jannik 03/10/2026 ('lås (v0.8.21). Det virker!'). Everything up to and including R67.1 (boat economy, combat + Mole + snail, Wood Giant + arena, Lake Run, specials, phone HUD, landscape-only) is the baseline; changes need a GO for that exact scope. Previous lock: R50.3 (v0.5.30). R45 is historical rollback reference only.
 - **Now:** R78 DEV-only Test HUD D · Klassisk is the active visual candidate, pending Jannik runtime/visual approval. Current/B/C HUD variants remain available.
 - **Rules:** never build without Jannik's explicit **GO**; analyze, find root cause and define exact scope first.
