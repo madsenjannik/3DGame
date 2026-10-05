@@ -1944,3 +1944,206 @@ body.lantern-ready.touch #lantern-btn{display:grid;place-items:center;position:f
 @media (max-height:430px){body.lantern-ready.touch #lantern-btn{right:calc(max(18px,env(safe-area-inset-right)) + 14px);bottom:calc(14px + env(safe-area-inset-bottom) + 132px);width:46px;height:46px}}
 body.hud-classic.lantern-ready.touch #lantern-btn{right:calc(max(18px,env(safe-area-inset-right)) + 111px)!important;bottom:calc(92px + env(safe-area-inset-bottom))!important}
 body.fishing-active #lantern-btn,body.boating-active #lantern-btn,body.stable-talk-active #lantern-btn,body.stable-ride-active #lantern-btn,body.stable-race-active #lantern-btn,body.stable-setup-active #lantern-btn,body.stable-shop-scene #lantern-btn,body.stable-race-result-active #lantern-btn,body.lakerun-active #lantern-btn,body.build-mode #lantern-btn,body.choice-open #lantern-btn,body.rotate-gated #lantern-btn,body.world-map-open #lantern-btn,body.boss-active #lantern-btn{display:none!important}
+
+
+/* ===== R82 HUD D cohesive touch identity (GO 05/10) =====
+   Rules: never overlap; one visual language top+bottom; round Hop/action; icon-only contextual action.
+   Scoped to Test HUD D + touch so R81 gameplay/day-night and desktop R78.3 stay untouched. */
+body.hud-classic.touch{
+  --r82-green:#6f9d45;
+  --r82-green-hi:#82b455;
+  --r82-green-low:#537b35;
+  --r82-gold:#f3c85b;
+  --r82-gold-hi:#ffe184;
+  --r82-gold-low:#c79b38;
+  --r82-cream:#fffaf0;
+  --r82-ink:#2b2a24;
+  --r82-soft:0 8px 16px rgba(43,42,36,.20);
+}
+
+/* Top HUD is a real two-column layout. Objective owns the left column, resources own the centre/right column.
+   Nothing is allowed to float across another HUD element. */
+body.hud-classic.touch #hud{
+  left:max(18px,env(safe-area-inset-left))!important;
+  right:calc(max(112px,env(safe-area-inset-right) + 96px))!important;
+  top:max(18px,env(safe-area-inset-top))!important;
+  display:grid!important;
+  grid-template-columns:minmax(150px,28vw) minmax(0,1fr)!important;
+  grid-auto-rows:auto!important;
+  align-items:start!important;
+  column-gap:16px!important;
+  row-gap:10px!important;
+  overflow:visible!important;
+}
+
+/* Objective: moss button/card language with volume inside the shape, never an extra shadow-shape. */
+body.hud-classic.touch #hud #objective.objective-card{
+  grid-column:1!important;
+  position:relative!important;
+  left:auto!important;top:auto!important;
+  width:100%!important;max-width:100%!important;min-width:0!important;
+  height:52px!important;min-height:52px!important;
+  padding:7px 34px 7px 52px!important;
+  border:0!important;border-radius:18px!important;
+  background:linear-gradient(180deg,var(--r82-green-hi),var(--r82-green))!important;
+  color:var(--r82-cream)!important;
+  box-shadow:inset 0 3px 0 rgba(255,255,255,.18),inset 0 -8px 0 rgba(56,91,37,.32),var(--r82-soft)!important;
+  -webkit-backdrop-filter:none!important;backdrop-filter:none!important;
+  overflow:hidden!important;
+}
+body.hud-classic.touch #hud #objective.objective-card.open{
+  width:100%!important;max-width:100%!important;height:auto!important;min-height:84px!important;
+  padding-top:11px!important;padding-bottom:15px!important;overflow:visible!important;
+}
+body.hud-classic.touch #hud #objective.objective-card::before{
+  background:rgba(255,250,240,.18) var(--objective-icon,url(./brand/icons/svg/icon-leaf.svg)) center/22px no-repeat!important;
+  box-shadow:inset 0 2px 0 rgba(255,255,255,.14),inset 0 -4px 0 rgba(43,42,36,.10)!important;
+}
+body.hud-classic.touch #hud #objective b{color:var(--r82-cream)!important}
+body.hud-classic.touch #hud #objective #objective-copy{color:rgba(255,250,240,.84)!important}
+body.hud-classic.touch #hud #objective.objective-card.fresh:not(.open){
+  box-shadow:inset 0 3px 0 rgba(255,255,255,.18),inset 0 -8px 0 rgba(56,91,37,.32),0 0 0 3px rgba(243,200,91,.72),var(--r82-soft)!important;
+}
+
+/* Resources: second grid column, centred within its OWN space and allowed to wrap instead of overlapping. */
+body.hud-classic.touch #hud .inventory-stack,
+body.hud-classic.touch #hud .inventory-stack.open{
+  grid-column:2!important;
+  position:relative!important;
+  left:auto!important;right:auto!important;top:auto!important;
+  transform:none!important;
+  justify-self:center!important;
+  align-self:start!important;
+  display:flex!important;
+  flex-direction:row!important;
+  flex-wrap:wrap!important;
+  align-items:flex-start!important;
+  justify-content:center!important;
+  gap:8px!important;
+  width:min(100%,680px)!important;
+  max-width:100%!important;min-width:0!important;
+  margin:0!important;padding:0!important;
+  overflow:visible!important;
+  animation:none!important;
+}
+body.hud-classic.touch #hud .inventory-stack:not(.open){display:none!important}
+body.hud-classic.touch #hud #materials.materials-card{
+  display:flex!important;position:static!important;
+  flex:1 1 260px!important;min-width:0!important;max-width:100%!important;
+  flex-wrap:wrap!important;justify-content:center!important;align-items:center!important;
+  gap:8px!important;margin:0!important;padding:0!important;
+}
+
+/* Same tactile identity as the lower buttons. Gold = Golden Seed; moss = normal resources/tools. */
+body.hud-classic.touch #hud .seed-card.inventory-card{
+  flex:0 0 auto!important;height:48px!important;
+  padding:0 14px 0 11px!important;border:0!important;border-radius:16px!important;
+  background:linear-gradient(180deg,var(--r82-gold-hi),var(--r82-gold))!important;
+  color:var(--r82-ink)!important;
+  box-shadow:inset 0 3px 0 rgba(255,255,255,.34),inset 0 -7px 0 rgba(160,116,30,.22),var(--r82-soft)!important;
+  -webkit-backdrop-filter:none!important;backdrop-filter:none!important;
+}
+body.hud-classic.touch #hud .seed-card small,
+body.hud-classic.touch #hud .seed-card b{color:var(--r82-ink)!important;opacity:1!important}
+body.hud-classic.touch #hud .seed-card .inventory-icon{color:#8d681f!important}
+
+body.hud-classic.touch #hud #materials .material-chip,
+body.hud-classic.touch #hud #tools-row.tools-row{
+  height:40px!important;min-width:48px!important;
+  padding:0 11px!important;border:0!important;border-radius:999px!important;
+  background:linear-gradient(180deg,var(--r82-green-hi),var(--r82-green))!important;
+  color:var(--r82-cream)!important;
+  box-shadow:inset 0 2px 0 rgba(255,255,255,.16),inset 0 -6px 0 rgba(56,91,37,.28),0 6px 12px rgba(43,42,36,.16)!important;
+  -webkit-backdrop-filter:none!important;backdrop-filter:none!important;
+}
+body.hud-classic.touch #hud #materials .material-chip b{color:var(--r82-cream)!important}
+body.hud-classic.touch #hud #tools-row.tools-row i{filter:none!important}
+
+/* Folded bag + map keep exactly the same moss/volume language. */
+body.hud-classic.touch #hud .hud-fold-btn{
+  width:52px!important;height:52px!important;border:0!important;border-radius:50%!important;
+  background:linear-gradient(180deg,var(--r82-green-hi),var(--r82-green))!important;
+  box-shadow:inset 0 3px 0 rgba(255,255,255,.16),inset 0 -7px 0 rgba(56,91,37,.30),var(--r82-soft)!important;
+  -webkit-backdrop-filter:none!important;backdrop-filter:none!important;
+}
+body.hud-classic.touch .tgw-minimap{
+  width:52px!important;height:52px!important;border:0!important;border-radius:50%!important;
+  background:linear-gradient(180deg,var(--r82-green-hi),var(--r82-green))!important;
+  box-shadow:inset 0 3px 0 rgba(255,255,255,.16),inset 0 -7px 0 rgba(56,91,37,.30),var(--r82-soft)!important;
+  -webkit-backdrop-filter:none!important;backdrop-filter:none!important;
+  position:fixed!important;
+}
+body.hud-classic.touch .tgw-minimap::after{
+  content:'';position:absolute;inset:11px;
+  background:url(./brand/icons/64/icon-map.png) center/contain no-repeat;
+  pointer-events:none;
+}
+body.hud-classic.touch .tgw-minimap canvas{display:none!important}
+
+/* Bottom controls: both are true circles. Volume is INSIDE the button; no opaque duplicate circle underneath. */
+body.hud-classic.touch #action,
+body.hud-classic.touch #action.show{
+  width:78px!important;height:78px!important;min-width:78px!important;
+  padding:0!important;border:0!important;border-radius:50%!important;
+  right:calc(max(20px,env(safe-area-inset-right)))!important;
+  bottom:calc(20px + env(safe-area-inset-bottom))!important;
+  display:grid!important;place-items:center!important;
+  transform:none!important;opacity:1!important;
+  background:linear-gradient(180deg,var(--r82-green-hi),var(--r82-green))!important;
+  box-shadow:inset 0 3px 0 rgba(255,255,255,.18),inset 0 -10px 0 rgba(56,91,37,.34),0 8px 16px rgba(43,42,36,.22)!important;
+  -webkit-backdrop-filter:none!important;backdrop-filter:none!important;
+}
+body.hud-classic.touch #action:active{
+  transform:translateY(2px)!important;
+  box-shadow:inset 0 2px 0 rgba(255,255,255,.14),inset 0 -6px 0 rgba(56,91,37,.30),0 4px 9px rgba(43,42,36,.18)!important;
+}
+body.hud-classic.touch #action #action-label{display:none!important}
+body.hud-classic.touch #action-ico{width:42px!important;height:42px!important}
+body.hud-classic.touch #action-ico .ico-mask{
+  background:var(--r82-cream)!important;
+  filter:drop-shadow(0 2px 1px rgba(43,42,36,.18))!important;
+}
+body.hud-classic.touch #action.locked{
+  background:linear-gradient(180deg,#c8c8bc,#a9aa9f)!important;
+  box-shadow:inset 0 3px 0 rgba(255,255,255,.22),inset 0 -9px 0 rgba(75,77,70,.20),0 7px 14px rgba(43,42,36,.16)!important;
+}
+body.hud-classic.touch #action.locked #action-ico .ico-mask{background:#5e6058!important}
+
+body.hud-classic.touch #hop-btn{
+  width:78px!important;height:78px!important;
+  right:calc(max(20px,env(safe-area-inset-right)) + 92px)!important;
+  bottom:calc(20px + env(safe-area-inset-bottom))!important;
+  padding:0!important;border:0!important;border-radius:50%!important;
+  background:linear-gradient(180deg,var(--r82-gold-hi),var(--r82-gold))!important;
+  color:var(--r82-ink)!important;
+  box-shadow:inset 0 3px 0 rgba(255,255,255,.34),inset 0 -10px 0 rgba(160,116,30,.24),0 8px 16px rgba(43,42,36,.22)!important;
+  font:800 15px/1 Manrope,system-ui,sans-serif!important;
+  letter-spacing:0!important;text-transform:none!important;
+}
+body.hud-classic.touch #hop-btn:active{
+  transform:translateY(2px)!important;
+  box-shadow:inset 0 2px 0 rgba(255,255,255,.28),inset 0 -6px 0 rgba(160,116,30,.20),0 4px 9px rgba(43,42,36,.18)!important;
+}
+
+/* Existing combat-only special stays above the controls, but shares the same tactile family. */
+body.hud-classic.touch .special-btn{
+  right:calc(max(20px,env(safe-area-inset-right)) + 46px)!important;
+  bottom:calc(116px + env(safe-area-inset-bottom))!important;
+  box-shadow:inset 0 3px 0 rgba(255,255,255,.18),inset 0 -8px 0 rgba(56,91,37,.28),0 8px 16px rgba(43,42,36,.20)!important;
+}
+
+/* Narrow landscape: reduce only sizes/gaps. Layout still wraps; it never overlaps. */
+@media(max-width:1050px){
+  body.hud-classic.touch #hud{
+    right:calc(max(88px,env(safe-area-inset-right) + 74px))!important;
+    grid-template-columns:minmax(145px,27vw) minmax(0,1fr)!important;
+    column-gap:10px!important;
+  }
+  body.hud-classic.touch #hud #objective.objective-card{height:48px!important;min-height:48px!important;padding-left:48px!important}
+  body.hud-classic.touch #hud .seed-card.inventory-card{height:42px!important;padding:0 10px!important}
+  body.hud-classic.touch #hud #materials .material-chip,
+  body.hud-classic.touch #hud #tools-row.tools-row{height:34px!important;min-width:42px!important;padding:0 9px!important;gap:5px!important}
+  body.hud-classic.touch #hud .inventory-stack,
+  body.hud-classic.touch #hud .inventory-stack.open,
+  body.hud-classic.touch #hud #materials.materials-card{gap:6px!important}
+}
