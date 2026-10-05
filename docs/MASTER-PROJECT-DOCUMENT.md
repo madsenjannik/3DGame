@@ -1577,6 +1577,7 @@ are only touched where a measured hotspot requires it, minimally.
    failure. Must pass before every push (CLAUDE.md rule 5).
 
 **B status 02/10/2026: complete (R51–R57).** On-device check (iPhone, Jannik 02/10): 60 fps steady (frame max 20–24 ms), 217 draw calls / 370k tris in the garden, 363 / 433k at the lake, mobile-high, 1 WebGL context → no perf work needed before C.
+**R78 (v0.8.78, GO 05/10):** DEV-only Test HUD D · Klassisk. Visual source: Jannik's `Klassisk · LÅST` component direction. Objective = compact moss card with no `Quest x of y`, contextual SVG icon, click/tap expansion with real next-step description/known requirements. Touch = gold Hop pill + round moss main action (`Swing` idle). Special attack = combat-only and above those two touch controls. Horizontal special meter and visible resource row centred. Existing Current/Test/B/C variants and R75/R76 gameplay/input rules remain untouched. Runtime/visual approval still pending.
 **R77 (v0.8.77, GO 05/10):** DEV-only Test HUD C = cream clay material from Visuel Identitet v2 (light) on the current layout. The dark identity variant was rejected (no black/grey in the UI).
 **R76 (v0.8.76, GO 05/10):** desktop: left click = Strike only, E = interact, the prompt is a key hint next to the character; camera stays right-mouse drag + wheel.
 **R75 (v0.8.75, GO 05/10):** the HUD rule below is now the phone HUD.
