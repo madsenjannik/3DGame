@@ -726,7 +726,8 @@ clips Idle/Walk/Sweep/Roots/Sleep/WakeUp/Hit + Roots_FX/Sweep_FX/WakeUp_FX/Hit_F
 - Built after the Root Bear (Jannik: 'bjørnen implementeret først').
 - **Decided (Jannik 05/10):** 30 min per in-game day (≈21 day / 9 night). Light = Jannik's `lantern_round.glb` (696 tris, pivot
   at the handle top) in the **left hand**, switched on **by the player**, one point light without shadow, only at night.
-  **R81:** `js/visual/DayNight.js` (clock-based: minute 0–21 of each real half hour = day with a 1.5 min dawn, 21–30 =
+  **R83 (v0.8.83, GO 05/10):** Mobile/iPhone-only Test HUD D pass. Hard rule: no HUD overlap. Objective/bag/resources/map use the same moss/gold tactile language; opened resources sit on a separate wrapped row. Hop and action are round with internal depth; action is icon-only, fist at idle and contextual tool/action otherwise. Hearts and special appear only during actual danger/combat; lantern is offset to avoid combat-control overlap. Desktop HUD/input and splash/start are untouched.
+**R81:** `js/visual/DayNight.js` (clock-based: minute 0–21 of each real half hour = day with a 1.5 min dawn, 21–30 =
   night with a 1.5 min dusk through a warm sunset tint; blends exposure, sky, fog, hemisphere, sun → moonlight, env from
   the R70 look values). **Shared world only, like the R70 look pass**: the private garden and the three greenhouse levels
   keep their exact look (my call from the R70 precedent; tell me if the garden should get night too). `js/gameplay/Lantern.js`:
