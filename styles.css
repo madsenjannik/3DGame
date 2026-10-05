@@ -1833,3 +1833,102 @@ body.hud-classic .special-bar i{border-color:rgba(43,42,36,.14)!important;backgr
 
 body.hud-classic.fishing-active #hud,body.hud-classic.stable-race-active #hud,body.hud-classic.lakerun-active #hud{opacity:0!important;pointer-events:none!important}
 @media(max-height:430px){body.hud-classic #hud #objective.objective-card{height:46px!important;min-height:46px!important;min-width:176px!important;max-width:min(260px,36vw)!important}body.hud-classic #hud #objective.objective-card.open{max-width:min(330px,48vw)!important}body.hud-classic.touch #action{width:70px!important;height:70px!important;min-width:70px!important;bottom:calc(12px + env(safe-area-inset-bottom))!important}body.hud-classic.touch #hop-btn{right:calc(max(14px,env(safe-area-inset-right)) + 80px)!important;bottom:calc(21px + env(safe-area-inset-bottom))!important;width:86px!important;height:48px!important}body.hud-classic.touch .special-btn{right:calc(max(14px,env(safe-area-inset-right)) + 47px)!important;bottom:calc(96px + env(safe-area-inset-bottom))!important}body.hud-classic .special-bar{top:calc(max(8px,env(safe-area-inset-top)) + 50px)!important}}
+
+
+/* ===== R78.3 Test HUD D desktop pass (DEV, desktop only) =====
+   Desktop focus: more breathing room, contextual combat HUD, and Klassisk cream/moss/gold resource language.
+   Touch/mobile rules remain untouched. */
+body.hud-classic:not(.touch) #hud{
+  left:max(28px,env(safe-area-inset-left))!important;
+  top:max(24px,env(safe-area-inset-top))!important;
+}
+body.hud-classic:not(.touch) #hud .inventory-stack{
+  left:50vw!important;
+  top:max(22px,env(safe-area-inset-top))!important;
+  transform:translateX(-50%)!important;
+}
+
+/* Golden Seed = meaningful gold; normal resources = cream clay. */
+body.hud-classic:not(.touch) #hud .seed-card.inventory-card{
+  background:linear-gradient(180deg,#f8d775,#e2b552)!important;
+  border:0!important;
+  color:var(--d-ink)!important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.65),0 4px 0 #bd9135,0 8px 14px rgba(43,42,36,.18)!important;
+  -webkit-backdrop-filter:none!important;
+  backdrop-filter:none!important;
+}
+body.hud-classic:not(.touch) #hud .seed-card small,
+body.hud-classic:not(.touch) #hud .seed-card b{color:var(--d-ink)!important;opacity:1!important}
+body.hud-classic:not(.touch) #hud .seed-card .inventory-icon{color:#8d681f!important}
+
+body.hud-classic:not(.touch) #hud #materials .material-chip,
+body.hud-classic:not(.touch) #hud #tools-row.tools-row{
+  background:linear-gradient(180deg,#fffaf0,#ece5d6)!important;
+  border:0!important;
+  color:var(--d-ink)!important;
+  box-shadow:inset 0 1px 0 #fff,0 3px 0 #c4bca8,0 7px 12px rgba(43,42,36,.16)!important;
+  -webkit-backdrop-filter:none!important;
+  backdrop-filter:none!important;
+}
+body.hud-classic:not(.touch) #hud #materials .material-chip b{color:var(--d-ink)!important}
+body.hud-classic:not(.touch) #hud #materials .material-chip.stone i{color:#697078!important}
+body.hud-classic:not(.touch) #hud #materials .material-chip.shell i{color:#8f7a50!important}
+
+/* Health belongs to combat, not under the objective. */
+body.hud-classic:not(.touch) .hearts{
+  left:50%!important;
+  right:auto!important;
+  top:auto!important;
+  bottom:62px!important;
+  transform:translateX(-50%)!important;
+  padding:7px 11px!important;
+  background:linear-gradient(180deg,#fffaf0,#ece5d6)!important;
+  border:0!important;
+  box-shadow:inset 0 1px 0 #fff,0 4px 0 #c4bca8,0 8px 14px rgba(43,42,36,.18)!important;
+  -webkit-backdrop-filter:none!important;
+  backdrop-filter:none!important;
+}
+
+/* Desktop special progress is already visible in the button ring. */
+body.hud-classic:not(.touch) .special-bar{display:none!important}
+
+/* Desktop special: cream clay + moss core + gold charge ring. */
+body.hud-classic:not(.touch) .special-btn{
+  right:max(30px,env(safe-area-inset-right))!important;
+  bottom:104px!important;
+  width:68px!important;
+  height:68px!important;
+  background:conic-gradient(var(--d-gold) var(--k),#d8d0bd var(--k))!important;
+  border:0!important;
+  box-shadow:0 5px 0 #aaa18b,0 10px 18px rgba(43,42,36,.22)!important;
+}
+body.hud-classic:not(.touch) .special-btn i{
+  inset:6px!important;
+  border:4px solid #fffaf0!important;
+  background-color:var(--d-moss)!important;
+  box-shadow:inset 0 2px 4px rgba(43,42,36,.15)!important;
+}
+body.hud-classic:not(.touch) .special-btn .key{
+  right:-5px!important;
+  top:-5px!important;
+  width:24px!important;
+  height:24px!important;
+  border-radius:8px!important;
+  background:linear-gradient(180deg,#fffaf0,#ece5d6)!important;
+  color:var(--d-ink)!important;
+  box-shadow:0 3px 0 #c4bca8!important;
+  font:800 11px/1 'JetBrains Mono',ui-monospace,monospace!important;
+}
+body.hud-classic:not(.touch) .special-btn b{
+  bottom:-25px!important;
+  padding:4px 8px!important;
+  border-radius:999px!important;
+  background:linear-gradient(180deg,#fffaf0,#ece5d6)!important;
+  color:var(--d-ink)!important;
+  box-shadow:0 3px 0 #c4bca8,0 6px 10px rgba(43,42,36,.14)!important;
+  text-shadow:none!important;
+  letter-spacing:.08em!important;
+}
+body.hud-classic:not(.touch) .special-btn.full i{
+  box-shadow:inset 0 0 0 2px rgba(226,181,82,.55),0 0 12px rgba(226,181,82,.45)!important;
+}
