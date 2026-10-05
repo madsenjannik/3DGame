@@ -11,7 +11,7 @@ import { WildsModel } from './WildsModels.js';
 import { WoodGiantBoss } from './WoodGiantBoss.js';
 import { SpecialSystem } from './SpecialSystem.js';
 import { MATERIALS } from '../data/wildsCatalog.js';
-import { PLAYER, WEAPONS, WEAPON_ORDER, ATTACK_COOLDOWN, MOLE, WILT, LOOT_FILES, SPECIAL } from '../data/combatCatalog.js';
+import { PLAYER, WEAPONS, WEAPON_ORDER, ATTACK_COOLDOWN, MOLE, WILT, LOOT_FILES, SPECIAL, SNAIL } from '../data/combatCatalog.js';
 
 const DIR = './assets/combat/';
 const MAX_HP = PLAYER.hearts * 2;
@@ -277,9 +277,13 @@ export class CombatSystem {
       ch.position.x += k.x * step; ch.position.z += k.z * step; this.g.world.resolveCollisions?.(ch.position, ch.radius || .3); ch.velocity?.set(0, 0, 0);
       if (k.t >= k.dur || this.wilting) this.kb = null;
     }
-    if (this.special) { this.special.update(dt); /* R78 Test D: stored charge alone must not show the special outside combat */ const combatNow = !!this.boss?.fighting() || time - this.lastCombat < 6, classic = document.body.classList.contains('hud-classic'); const on = classic ? combatNow : this.special.charge >= SPECIAL.chargeHits || combatNow; this.special.btn?.classList.toggle('show', on); this.special.bar?.classList.toggle('show', on && this.hudEl.classList.contains('show')); }  // R65
+    const classic = document.body.classList.contains('hud-classic'), classicDesktop = classic && !document.body.classList.contains('touch');
+    const moleDanger = this.g.world.space === 'world' && this.moles.some(m => ['warning','emerge','up','attack','hit'].includes(m.state));
+    const snailDanger = this.g.world.space === 'garden' && (this.w.threat?.snails || []).some(s => s.state !== 'dying' && s.state !== 'gone' && Math.hypot(ch.position.x - s.x, ch.position.z - s.z) <= SNAIL.biteRange + .4);
+    const desktopDanger = classicDesktop && (!!this.boss?.fighting() || moleDanger || snailDanger);
+    if (this.special) { this.special.update(dt); const combatNow = !!this.boss?.fighting() || time - this.lastCombat < 6; const on = classicDesktop ? desktopDanger : classic ? combatNow : this.special.charge >= SPECIAL.chargeHits || combatNow; this.special.btn?.classList.toggle('show', on); this.special.bar?.classList.toggle('show', !classicDesktop && on && this.hudEl.classList.contains('show')); }  // R78.3 desktop Test D: no combat UI outside actual danger
     if (!this.wilting && this.hp < MAX_HP && !this.boss?.fighting() && time - this.lastHit > PLAYER.regenDelay && (time - (this.lastRegen || 0)) > PLAYER.regenEvery) { this.lastRegen = time; this.heal(false); }
-    const vitals = this.hp < MAX_HP || time - this.lastCombat < 4; this.hudEl.classList.toggle('show', vitals); document.body.classList.toggle('vitals-on', vitals);   // R68: desktop objective steps aside
+    const vitals = classicDesktop ? desktopDanger : this.hp < MAX_HP || time - this.lastCombat < 4; this.hudEl.classList.toggle('show', vitals); document.body.classList.toggle('vitals-on', vitals);
     if (this.g.world.space === 'garden') {
       if (!active || this.wilting) return { interaction: null };
       const wpn = this.weapon(), t = this.target(wpn.reach + .6);
