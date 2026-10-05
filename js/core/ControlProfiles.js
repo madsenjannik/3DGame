@@ -86,7 +86,7 @@ export function applyControlProfile(game, id) {
     cam.profileId = 'free'; installMouse(game, cam);
     game.cameraOcclusion?.setFreeRules?.(true);   // R58.2: ride over low props, pass trunks, lift instead of collapsing
     cam.inBoat = () => game.fishing?.boat?.on && game.fishing.mode === 'boat';
-    if (hint) hint.textContent = 'WASD to move · Shift to run · Space to hop · hold right mouse to look · wheel to zoom';
+    if (hint) hint.textContent = 'WASD to move · Shift to run · Space to hop · left click to strike · hold right mouse to look · wheel to zoom';
     cam.freeYaw = cam.yaw; cam.freePitch = 0; cam.idleLook = 99; cam.freeZoom = cam.freeZoom || 1;
     cam.distance = function () { return (this.camera.aspect < .8 ? 7.0 : 5.8) * (this.freeZoom || 1); };
     cam.wantedYaw = function () { return this.freeYaw; };

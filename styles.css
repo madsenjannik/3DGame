@@ -1728,3 +1728,11 @@ body.hud-test-b.hud-b-dark.touch #joy-rest{background:rgba(58,59,51,.4);border-c
 .touch #action #action-label:empty{display:none}
 /* Hop hides wherever the normal controls hide */
 body.fishing-active #hop-btn,body.boating-active #hop-btn,body.stable-talk-active #hop-btn,body.stable-ride-active #hop-btn,body.stable-race-active #hop-btn,body.stable-setup-active #hop-btn,body.stable-shop-scene #hop-btn,body.stable-race-result-active #hop-btn,body.lakerun-active #hop-btn,body.build-mode #hop-btn,body.choice-open #hop-btn,body.rotate-gated #hop-btn,body.world-map-open #hop-btn{display:none!important}
+
+/* R76 desktop: left click strikes, E interacts. The interaction is a key hint (not a button) just right of the
+   character, where you are looking; mouse icons show which button does what. Phones unchanged. */
+body:not(.touch) #action{left:calc(50% + 56px)!important;right:auto!important;top:calc(50% - 18px)!important;bottom:auto!important;transform:translateY(6px)!important;pointer-events:none!important;cursor:default}
+body:not(.touch) #action.show{transform:none!important}
+#key-hints .kh-mouse.right::after{display:none}#key-hints .kh-mouse.left::after{display:none}
+#key-hints .kh-mouse.right::before,#key-hints .kh-mouse.left::before{content:'';position:absolute;top:0;width:50%;height:45%;background:rgba(246,240,220,.8);border-radius:6px 0 0 0}
+#key-hints .kh-mouse.right::before{right:0;left:auto;border-radius:0 6px 0 0}#key-hints .kh-mouse.left::before{left:0}

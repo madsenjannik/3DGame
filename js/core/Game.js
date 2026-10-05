@@ -248,7 +248,9 @@ export class Game {
     if(this.wilds&&nowMs-(this._objAt||0)>1000){this._objAt=nowMs;if(!(gardenSpace&&!this.state.choice.resolved))this.hud.setObjective?.('NEXT STEP',this.wilds.goal());}
     const mainIdle=this.input.isTouch&&!this.state.choice.open&&!specialBusy&&!portalBusy&&!building&&!wildsPanel&&!this.lakeRun?.busy?.()&&!this.mapBlocking; // R75: persistent main button on phones
     this.hud.setActionVisible(!!interaction,interaction?.label||'Collect',interaction,mainIdle);this.hud.action.classList.toggle('locked',!!interaction?.locked);this.hud.action.classList.toggle('wilds-locked',!!(interaction?.disabled&&!interaction?.locked)); // R72: requirement missing = grey 'Locked'; other disabled states (growing) keep their text
-    const action=this.input.consumeAction();
+    const action=this.input.consumeAction(),click=this.input.consumeStrike?.();
+    // R76 desktop: left click on the game view always strikes (never interacts); E interacts.
+    if(click&&!this.input.isTouch&&!this.state.choice.open&&!specialBusy&&!portalBusy&&!building&&!wildsPanel&&!this.mapBlocking&&!this.lakeRun?.busy?.())this.combat?.attack?.();
     if(!this.state.choice.open&&action&&interaction&&!interaction.disabled){
       if(interaction.type==='home-enter'||interaction.type==='home-exit')this.homePortal?.interact(interaction.type,this.character,this.followCamera,this.hud);
       else if(interaction.type==='first-seed')this.collectible?.collect(this.character);

@@ -1577,6 +1577,7 @@ are only touched where a measured hotspot requires it, minimally.
    failure. Must pass before every push (CLAUDE.md rule 5).
 
 **B status 02/10/2026: complete (R51–R57).** On-device check (iPhone, Jannik 02/10): 60 fps steady (frame max 20–24 ms), 217 draw calls / 370k tris in the garden, 363 / 433k at the lake, mobile-high, 1 WebGL context → no perf work needed before C.
+**R76 (v0.8.76, GO 05/10):** desktop: left click = Strike only, E = interact, the prompt is a key hint next to the character; camera stays right-mouse drag + wheel.
 **R75 (v0.8.75, GO 05/10):** the HUD rule below is now the phone HUD.
 **HUD RULE (Jannik 05/10, phones):**
 1. Always visible while exploring: joystick (left), main button (right: the action in reach, otherwise Strike, icon only), Hop button (above the main button), quest as one title line (tap = text), bag (resources, tools and the Golden Seed live in the bag), map button.

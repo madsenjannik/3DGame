@@ -3,6 +3,7 @@ export class InputManager {
   move = { x:0, y:0 };
   actionPressed = false;
   hopPressed = false;
+  strikePressed = false;   // R76: desktop left click on the game view
   moved = false;
   runIntent = false;
   moveMagnitude = 0;
@@ -49,6 +50,7 @@ export class InputManager {
   }
   onPointerDown(e){
     if(e.target===this.actionButton||this.actionButton.contains(e.target))return;
+    if(!this.isTouch&&e.pointerType==='mouse'&&e.button===0&&e.target?.tagName==='CANVAS'&&!this.isUiTarget(e.target))this.strikePressed=true;   // R76: left click = Strike (never interact)
     if(this.joyPointer===null&&this.movementZone(e)){
       this.joyPointer=e.pointerId;this.placeFloatingJoy(e);this.move.x=this.move.y=0;return;
     }
@@ -116,5 +118,6 @@ export class InputManager {
   }
 
   consumeAction(){const v=this.actionPressed;this.actionPressed=false;return v;}
+  consumeStrike(){const v=this.strikePressed;this.strikePressed=false;return v;}
   consumeHop(){const v=this.hopPressed;this.hopPressed=false;return v;}
 }
