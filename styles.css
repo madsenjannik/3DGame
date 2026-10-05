@@ -1669,3 +1669,48 @@ body.hud-test-v1.touch #action{
 @media (max-height:430px){
   body.hud-test-v1 #hud .inventory-stack{top:max(10px,env(safe-area-inset-top))!important}
 }
+
+/* ===== R74 Test HUD B (DEV: 'Test HUD B lys / mørk', touch only). Visual layout only, no gameplay logic.
+   Brand colours from brand/README: Salvie #DFE5D3 surfaces, Kontur #2B2A24 outline + 3 px extrusion like the logo,
+   Guldfrø #E2B552 primary action, Oliven #3A3B33 for the dark variant. Lilita One for titles and numbers. ===== */
+.obj-x{display:none}
+body.hud-test-b{--b-surf:rgba(223,229,211,.95);--b-ink:#2B2A24;--b-sub:rgba(43,42,36,.72);--b-line:#2B2A24;--b-ext:0 3px 0 #2B2A24,0 8px 18px rgba(10,14,8,.28);--b-gold:#E2B552;--b-icon:#2B2A24}
+body.hud-test-b.hud-b-dark{--b-surf:rgba(58,59,51,.9);--b-ink:#F6F0DC;--b-sub:rgba(246,240,220,.74);--b-line:#E2B552;--b-ext:0 3px 0 rgba(20,20,16,.9),0 8px 18px rgba(10,14,8,.32);--b-icon:#F6F0DC}
+/* top row: quest chip, bag, resources (open) */
+body.hud-test-b.touch #hud{top:max(10px,env(safe-area-inset-top));gap:10px;align-items:flex-start}
+body.hud-test-b.touch #hud #objective.objective-card,body.hud-test-b.touch #hud #objective.objective-card:not(.open){display:flex!important;flex-direction:column;justify-content:center;width:auto!important;max-width:min(300px,40vw)!important;min-width:0!important;flex:0 1 auto!important;height:auto!important;min-height:46px;padding:7px 34px 7px 52px!important;border-radius:16px;background:var(--b-surf)!important;border:2.5px solid var(--b-line)!important;box-shadow:var(--b-ext)!important;color:var(--b-ink)!important;-webkit-backdrop-filter:none;backdrop-filter:none;animation:none}
+body.hud-test-b.touch #hud #objective.objective-card::before,body.hud-test-b.touch #hud #objective.objective-card:not(.open)::before{left:8px!important;margin-left:0!important;width:34px;height:34px;margin-top:-17px;background-color:rgba(143,209,79,.25);border:2px solid var(--b-line);background-size:22px}
+body.hud-test-b.touch #hud #objective b,body.hud-test-b.touch #hud #objective:not(.open) b{display:block!important;font:400 15px/1.15 'Lilita One',Manrope,system-ui,sans-serif!important;letter-spacing:.01em;color:var(--b-ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+body.hud-test-b.touch #hud #objective #objective-copy{display:none!important}
+body.hud-test-b.touch #hud #objective.open #objective-copy{display:-webkit-box!important;-webkit-line-clamp:3;-webkit-box-orient:vertical;white-space:normal!important;margin-top:3px;font:600 11.5px/1.3 Manrope,system-ui,sans-serif!important;color:var(--b-sub)!important;opacity:1}
+body.hud-test-b.touch #hud #objective.objective-card::after,body.hud-test-b.touch #hud #objective.objective-card.fresh:not(.open)::after{content:none!important}
+body.hud-test-b.touch #hud #objective .obj-x{display:grid;place-items:center;position:absolute;right:6px;top:50%;width:24px;height:24px;margin-top:-12px;border-radius:50%;font:700 16px/1 Manrope,system-ui,sans-serif;font-style:normal;color:var(--b-ink);background:rgba(43,42,36,.1);cursor:pointer}
+body.hud-test-b.hud-b-dark.touch #hud #objective .obj-x{background:rgba(246,240,220,.14)}
+/* quest hidden: a round button with a gold dot when a new step arrives */
+body.hud-test-b.touch #hud #objective.objective-card.b-hidden{width:46px!important;max-width:46px!important;height:46px!important;min-height:46px;padding:0!important;border-radius:50%}
+body.hud-test-b.touch #hud #objective.b-hidden b,body.hud-test-b.touch #hud #objective.b-hidden #objective-copy,body.hud-test-b.touch #hud #objective.b-hidden .obj-x{display:none!important}
+body.hud-test-b.touch #hud #objective.objective-card.b-hidden::before{left:50%!important;margin-left:-17px!important}
+body.hud-test-b.touch #hud #objective.objective-card.b-hidden.fresh::after{content:''!important;position:absolute;right:-2px;top:-2px;width:12px;height:12px;border-radius:50%;background:var(--b-gold);border:2px solid var(--b-line);transform:none}
+body.hud-test-b.touch #hud .hud-fold-btn{width:46px;height:46px;background:var(--b-surf) url(./brand/icons/64/icon-bag.png) center/28px no-repeat;border:2.5px solid var(--b-line);box-shadow:var(--b-ext);-webkit-backdrop-filter:none;backdrop-filter:none}
+body.hud-test-b.touch #hud .hud-fold-btn.active{background-color:var(--b-gold)}
+body.hud-test-b.touch #hud .seed-card.inventory-card,body.hud-test-b.touch #hud #materials .material-chip,body.hud-test-b.touch #hud #tools-row.tools-row{background:var(--b-surf)!important;border:2px solid var(--b-line)!important;box-shadow:var(--b-ext)!important;color:var(--b-ink)!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important}
+body.hud-test-b.touch #hud .seed-card b,body.hud-test-b.touch #hud #materials .material-chip b{font:400 17px/1 'Lilita One',Manrope,system-ui,sans-serif!important;color:var(--b-ink)}
+body.hud-test-b.touch #hud .seed-card small{color:var(--b-sub);opacity:1}
+body.hud-test-b.touch #hud .seed-card .inventory-icon{color:#c98f1d}
+/* map: same round button language */
+body.hud-test-b.touch .tgw-minimap{width:50px!important;height:50px!important;background:var(--b-surf) url(./brand/icons/64/icon-map.png) center/30px no-repeat!important;border:2.5px solid var(--b-line)!important;box-shadow:var(--b-ext)!important;-webkit-backdrop-filter:none;backdrop-filter:none}
+/* action: big icon only (65 %), Guldfrø; the label moves to a chip above the character */
+body.hud-test-b.touch #action,body.hud-test-b.touch #action.show{transform:none!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important;filter:none!important}
+body.hud-test-b.touch #action{width:76px;height:76px;background:var(--b-gold)!important;border:3px solid #2B2A24!important;box-shadow:0 4px 0 #2B2A24,0 10px 20px rgba(10,14,8,.3)!important}
+body.hud-test-b.touch #action-ico{width:49px;height:49px}
+body.hud-test-b.touch #action-ico .ico-mask{background:#2B2A24;filter:none}
+body.hud-test-b.touch #action #action-label{position:fixed;left:50%;right:auto;top:26%;bottom:auto;transform:translateX(-50%);padding:7px 14px;border-radius:999px;background:var(--b-surf);border:2px solid var(--b-line);box-shadow:var(--b-ext);color:var(--b-ink);font:400 15px/1.1 'Lilita One',Manrope,system-ui,sans-serif;letter-spacing:.01em;pointer-events:none}
+body.hud-test-b.touch #action.locked{background:#b9bcb5!important}
+body.hud-test-b.touch #action.locked .ico-mask{background:#4d4f4a}
+body.hud-test-b.touch #action.locked #action-label{color:var(--b-sub)}
+/* combat: hearts + special bar bottom centre, only while vitals are on */
+body.hud-test-b.touch .hearts{left:50%!important;right:auto!important;top:auto!important;bottom:calc(14px + env(safe-area-inset-bottom))!important;transform:translateX(-50%)!important;background:var(--b-surf)!important;border:2px solid var(--b-line)!important;box-shadow:var(--b-ext)!important}
+body.hud-test-b.touch .special-bar{left:50%!important;right:auto!important;top:auto!important;bottom:calc(58px + env(safe-area-inset-bottom))!important;transform:translateX(-50%)!important;background:var(--b-surf)!important;border:2px solid var(--b-line)!important;box-shadow:var(--b-ext)!important}
+/* resting joystick in the same language */
+body.hud-test-b.touch #joy-rest{background:rgba(223,229,211,.35);border:2px solid rgba(43,42,36,.55)}
+body.hud-test-b.hud-b-dark.touch #joy-rest{background:rgba(58,59,51,.4);border-color:rgba(226,181,82,.55)}

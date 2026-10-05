@@ -1577,6 +1577,7 @@ are only touched where a measured hotspot requires it, minimally.
    failure. Must pass before every push (CLAUDE.md rule 5).
 
 **B status 02/10/2026: complete (R51–R57).** On-device check (iPhone, Jannik 02/10): 60 fps steady (frame max 20–24 ms), 217 draw calls / 370k tris in the garden, 363 / 433k at the lake, mobile-high, 1 WebGL context → no perf work needed before C.
+**R74 (v0.8.74, GO 05/10):** DEV-only 'Test HUD B' (light/dark, touch) to compare a brand-styled HUD against the current one; no gameplay change.
 **R72.2 (v0.8.73, GO 04/10):** the sleeping Wood Giant's whole sitting body is solid (56 circles from the Sleep-pose mesh); fight colliders unchanged (feet only).
 **v0.8.72:** R72.1 merged with Jannik's HUD test R73.1 (DEV toggle), both kept.
 **R72.1 (v0.8.71, GO 04/10):** sleeping Wood Giant gets a torso collider (sleep only); phone Cast button bottom right; locked Lake Race circle truly grey (normal blending).

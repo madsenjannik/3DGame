@@ -56,7 +56,11 @@ export class Hud {
     hud.insertBefore(bag,inv);this.bag=bag;this._peekT=new Map();
     const pin=(el,btn)=>{const on=!el.classList.contains('pinned');el.classList.toggle('pinned',on);el.classList.toggle('open',on);btn?.classList.toggle('active',on);el.classList.remove('fresh');clearTimeout(this._peekT.get(el));};
     bag.addEventListener('click',e=>{e.stopPropagation();pin(inv,bag);});
-    this.objective.addEventListener('click',e=>{if(!this.touch())return;e.stopPropagation();pin(this.objective);});
+    // R74 Test HUD B: the quest is a one-line chip; tap shows the text, the cross hides it to a round button, tap brings it back.
+    const x=document.createElement('i');x.className='obj-x';x.setAttribute('role','button');x.setAttribute('aria-label','Hide quest');x.textContent='×';this.objective.appendChild(x);
+    const hudB=()=>document.body.classList.contains('hud-test-b');
+    x.addEventListener('click',e=>{if(!hudB())return;e.stopPropagation();const o=this.objective;o.classList.add('b-hidden');o.classList.remove('open','pinned');clearTimeout(this._peekT.get(o));});
+    this.objective.addEventListener('click',e=>{if(!this.touch())return;e.stopPropagation();if(hudB()&&this.objective.classList.contains('b-hidden')){this.objective.classList.remove('b-hidden','fresh');return;}pin(this.objective);});
     const title=document.getElementById('objective-title');
     if(title)new MutationObserver(()=>{if(this.touch()){this.objective.classList.add('fresh');this.peek(this.objective,5000);}}).observe(title,{childList:true,characterData:true,subtree:true});
   }
