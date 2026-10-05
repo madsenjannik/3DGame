@@ -2,12 +2,20 @@
 // R71 contextual action icons, R72: Jannik's SVG set (brand/icons/svg, currentColor glyphs). They are drawn as a
 // CSS mask so the HUD decides the colour (cream; grey when locked). Locked = a requirement is missing (tool,
 // resource, quest, purchase, access): the button stays visible, grey, says 'Locked' and shows the lock.
-const NAMES = ['hammer', 'axe', 'pickaxe', 'sickle', 'rod', 'boat', 'flag', 'lock', 'sword', 'bag', 'chest', 'drop', 'seed', 'leaf', 'door', 'horseshoe', 'talk', 'info'];
+const NAMES = ['fist', 'hammer', 'axe', 'pickaxe', 'sickle', 'rod', 'boat', 'flag', 'lock', 'sword', 'bag', 'chest', 'drop', 'seed', 'leaf', 'door', 'horseshoe', 'talk', 'info'];
 const TOOL_FOR = { wood: 'axe', stone: 'pickaxe', clay: 'pickaxe', fiber: 'sickle' };
 
 export function actionIconName(it) {
   const t = it?.type || '';
   if (it?.locked) return 'lock';
+  if (t === 'mobile-default-strike') return 'fist';
+  if (t === 'mobile-combat-strike') {
+    const l = String(it?.label || '').toLowerCase();
+    if (l.includes('pickaxe')) return 'pickaxe';
+    if (l.includes('sickle')) return 'sickle';
+    if (l.includes('axe')) return 'axe';
+    return 'fist';
+  }
   if (t === 'wilds-workbench' || t === 'greenhouse') return 'hammer';
   if (t === 'wilds-gather') return TOOL_FOR[it.node?.kind] || 'leaf';
   if (t === 'wilds-cut' || t === 'wilds-weed') return 'sickle';
