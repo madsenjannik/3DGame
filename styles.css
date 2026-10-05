@@ -1944,3 +1944,186 @@ body.lantern-ready.touch #lantern-btn{display:grid;place-items:center;position:f
 @media (max-height:430px){body.lantern-ready.touch #lantern-btn{right:calc(max(18px,env(safe-area-inset-right)) + 14px);bottom:calc(14px + env(safe-area-inset-bottom) + 132px);width:46px;height:46px}}
 body.hud-classic.lantern-ready.touch #lantern-btn{right:calc(max(18px,env(safe-area-inset-right)) + 111px)!important;bottom:calc(92px + env(safe-area-inset-bottom))!important}
 body.fishing-active #lantern-btn,body.boating-active #lantern-btn,body.stable-talk-active #lantern-btn,body.stable-ride-active #lantern-btn,body.stable-race-active #lantern-btn,body.stable-setup-active #lantern-btn,body.stable-shop-scene #lantern-btn,body.stable-race-result-active #lantern-btn,body.lakerun-active #lantern-btn,body.build-mode #lantern-btn,body.choice-open #lantern-btn,body.rotate-gated #lantern-btn,body.world-map-open #lantern-btn,body.boss-active #lantern-btn{display:none!important}
+
+
+/* ===== R83 MOBILE-ONLY HUD D identity pass (GO 05/10) =====
+   Scope: body.hud-classic.touch only. Desktop is intentionally untouched.
+   Rules: no overlap; tactile moss/gold family; round Hop/action; action icon only; combat HUD contextual. */
+body.hud-classic.touch{
+  --m83-moss:#6f9d45;--m83-moss-hi:#82b455;--m83-moss-low:#547c36;
+  --m83-gold:#f3c85b;--m83-gold-hi:#ffe184;--m83-gold-low:#c79b38;
+  --m83-cream:#fffaf0;--m83-ink:#2b2a24;--m83-drop:0 8px 16px rgba(43,42,36,.20);
+}
+
+/* Top row: objective + bag top-left; map stays top-right. */
+body.hud-classic.touch #hud{
+  left:max(18px,env(safe-area-inset-left))!important;
+  right:calc(86px + env(safe-area-inset-right))!important;
+  top:max(18px,env(safe-area-inset-top))!important;
+  gap:12px!important;align-items:flex-start!important;overflow:visible!important;
+}
+body.hud-classic.touch #hud #objective.objective-card{
+  flex:0 1 auto!important;max-width:min(300px,42vw)!important;border:0!important;
+  background:linear-gradient(180deg,var(--m83-moss-hi),var(--m83-moss))!important;color:var(--m83-cream)!important;
+  box-shadow:inset 0 3px 0 rgba(255,255,255,.18),inset 0 -8px 0 rgba(55,87,36,.28),var(--m83-drop)!important;
+  -webkit-backdrop-filter:none!important;backdrop-filter:none!important;
+}
+body.hud-classic.touch #hud #objective.objective-card:not(.open){
+  height:52px!important;min-height:52px!important;padding:0 32px 0 54px!important;border-radius:18px!important;
+}
+body.hud-classic.touch #hud #objective.objective-card.open{
+  max-width:min(330px,48vw)!important;min-height:86px!important;padding:11px 34px 14px 54px!important;border-radius:18px!important;
+}
+body.hud-classic.touch #hud #objective.objective-card::before{
+  left:10px!important;width:34px!important;height:34px!important;margin-top:-17px!important;border:0!important;border-radius:12px!important;
+  background:rgba(255,250,240,.18) var(--objective-icon,url(./brand/icons/svg/icon-leaf.svg)) center/22px no-repeat!important;
+  box-shadow:inset 0 2px 0 rgba(255,255,255,.12),inset 0 -4px 0 rgba(43,42,36,.10)!important;
+}
+body.hud-classic.touch #hud #objective b{color:var(--m83-cream)!important;font-weight:800!important}
+body.hud-classic.touch #hud #objective #objective-copy{color:rgba(255,250,240,.86)!important}
+body.hud-classic.touch #hud #objective.objective-card.fresh:not(.open){
+  box-shadow:inset 0 3px 0 rgba(255,255,255,.18),inset 0 -8px 0 rgba(55,87,36,.28),0 0 0 3px rgba(243,200,91,.72),var(--m83-drop)!important;
+}
+
+/* Bag = same moss circle, depth inside the shape. */
+body.hud-classic.touch #hud .hud-fold-btn{
+  flex:0 0 52px!important;width:52px!important;height:52px!important;border:0!important;border-radius:50%!important;
+  background:url(./brand/icons/64/icon-bag.png) center/27px no-repeat,linear-gradient(180deg,var(--m83-moss-hi),var(--m83-moss))!important;
+  box-shadow:inset 0 3px 0 rgba(255,255,255,.16),inset 0 -8px 0 rgba(55,87,36,.28),var(--m83-drop)!important;
+  -webkit-backdrop-filter:none!important;backdrop-filter:none!important;
+}
+body.hud-classic.touch #hud .hud-fold-btn.active{
+  box-shadow:inset 0 3px 0 rgba(255,255,255,.16),inset 0 -8px 0 rgba(55,87,36,.28),0 0 0 3px rgba(243,200,91,.75),var(--m83-drop)!important;
+}
+
+/* Open resources get a dedicated second row below the objective; they wrap, so overlap is impossible. */
+body.hud-classic.touch #hud .inventory-stack.open{
+  position:fixed!important;left:50%!important;right:auto!important;
+  top:calc(max(18px,env(safe-area-inset-top)) + 104px)!important;
+  transform:translateX(-50%)!important;
+  display:flex!important;flex-flow:row wrap!important;justify-content:center!important;align-items:center!important;
+  gap:8px!important;width:min(650px,calc(100vw - 120px))!important;max-width:calc(100vw - 120px)!important;
+  margin:0!important;padding:0!important;animation:hud83-res-in .18s ease-out!important;pointer-events:none!important;
+}
+@keyframes hud83-res-in{from{opacity:0;transform:translate(-50%,-5px)}to{opacity:1;transform:translate(-50%,0)}}
+body.hud-classic.touch #hud .inventory-stack.open>*{pointer-events:auto}
+body.hud-classic.touch #hud #materials.materials-card{
+  display:flex!important;flex:1 1 360px!important;flex-wrap:wrap!important;justify-content:center!important;align-items:center!important;
+  gap:8px!important;min-width:0!important;max-width:100%!important;
+}
+body.hud-classic.touch #hud .seed-card.inventory-card{
+  height:46px!important;padding:0 14px 0 11px!important;border:0!important;border-radius:16px!important;
+  background:linear-gradient(180deg,var(--m83-gold-hi),var(--m83-gold))!important;color:var(--m83-ink)!important;
+  box-shadow:inset 0 3px 0 rgba(255,255,255,.34),inset 0 -7px 0 rgba(160,116,30,.22),var(--m83-drop)!important;
+  -webkit-backdrop-filter:none!important;backdrop-filter:none!important;
+}
+body.hud-classic.touch #hud .seed-card small,body.hud-classic.touch #hud .seed-card b{color:var(--m83-ink)!important;opacity:1!important}
+body.hud-classic.touch #hud .seed-card .inventory-icon{color:#8d681f!important}
+body.hud-classic.touch #hud #materials .material-chip,
+body.hud-classic.touch #hud #tools-row.tools-row{
+  height:38px!important;min-width:46px!important;padding:0 11px!important;border:0!important;border-radius:999px!important;
+  background:linear-gradient(180deg,var(--m83-moss-hi),var(--m83-moss))!important;color:var(--m83-cream)!important;
+  box-shadow:inset 0 2px 0 rgba(255,255,255,.15),inset 0 -6px 0 rgba(55,87,36,.25),0 6px 12px rgba(43,42,36,.16)!important;
+  -webkit-backdrop-filter:none!important;backdrop-filter:none!important;
+}
+body.hud-classic.touch #hud #materials .material-chip b{color:var(--m83-cream)!important}
+
+/* Map = same moss circle. */
+body.hud-classic.touch .tgw-minimap{
+  width:52px!important;height:52px!important;border:0!important;border-radius:50%!important;
+  background:linear-gradient(180deg,var(--m83-moss-hi),var(--m83-moss))!important;
+  box-shadow:inset 0 3px 0 rgba(255,255,255,.16),inset 0 -8px 0 rgba(55,87,36,.28),var(--m83-drop)!important;
+  -webkit-backdrop-filter:none!important;backdrop-filter:none!important;
+}
+body.hud-classic.touch .tgw-minimap::after{
+  content:'';position:absolute;inset:11px;background:url(./brand/icons/64/icon-map.png) center/contain no-repeat;pointer-events:none;
+}
+body.hud-classic.touch .tgw-minimap canvas{display:none!important}
+
+/* Bottom controls: true circles. No duplicate lower circle; volume sits inside the button. */
+body.hud-classic.touch #action,body.hud-classic.touch #action.show{
+  width:78px!important;height:78px!important;min-width:78px!important;
+  right:calc(max(18px,env(safe-area-inset-right)))!important;bottom:calc(18px + env(safe-area-inset-bottom))!important;
+  padding:0!important;border:0!important;border-radius:50%!important;display:grid!important;place-items:center!important;
+  background:linear-gradient(180deg,var(--m83-moss-hi),var(--m83-moss))!important;color:var(--m83-cream)!important;
+  box-shadow:inset 0 3px 0 rgba(255,255,255,.18),inset 0 -10px 0 rgba(55,87,36,.32),0 8px 16px rgba(43,42,36,.20)!important;
+  transform:none!important;opacity:1!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important;
+}
+body.hud-classic.touch #action:active{
+  transform:translateY(2px)!important;
+  box-shadow:inset 0 2px 0 rgba(255,255,255,.14),inset 0 -6px 0 rgba(55,87,36,.28),0 4px 9px rgba(43,42,36,.16)!important;
+}
+body.hud-classic.touch #action #action-label{display:none!important}
+body.hud-classic.touch #action #action-ico{display:grid!important;place-items:center!important;width:42px!important;height:42px!important}
+body.hud-classic.touch #action #action-ico .ico-mask{
+  width:42px!important;height:42px!important;background:var(--m83-cream)!important;filter:drop-shadow(0 2px 1px rgba(43,42,36,.18))!important;
+}
+body.hud-classic.touch #action.locked{
+  background:linear-gradient(180deg,#c5c6b9,#9fa194)!important;
+  box-shadow:inset 0 3px 0 rgba(255,255,255,.20),inset 0 -9px 0 rgba(74,76,69,.20),0 7px 14px rgba(43,42,36,.16)!important;
+}
+body.hud-classic.touch #action.locked #action-ico .ico-mask{background:#5b5e55!important}
+
+body.hud-classic.touch #hop-btn{
+  width:78px!important;height:78px!important;
+  right:calc(max(18px,env(safe-area-inset-right)) + 92px)!important;bottom:calc(18px + env(safe-area-inset-bottom))!important;
+  padding:0!important;border:0!important;border-radius:50%!important;
+  background:linear-gradient(180deg,var(--m83-gold-hi),var(--m83-gold))!important;color:var(--m83-ink)!important;
+  box-shadow:inset 0 3px 0 rgba(255,255,255,.34),inset 0 -10px 0 rgba(160,116,30,.24),0 8px 16px rgba(43,42,36,.20)!important;
+  font:800 14px/1 Manrope,system-ui,sans-serif!important;letter-spacing:0!important;text-transform:none!important;
+}
+body.hud-classic.touch #hop-btn:active{
+  transform:translateY(2px)!important;
+  box-shadow:inset 0 2px 0 rgba(255,255,255,.28),inset 0 -6px 0 rgba(160,116,30,.20),0 4px 9px rgba(43,42,36,.16)!important;
+}
+
+/* Combat-only mobile HUD: centred away from the objective; special sits above the two action controls. */
+body.hud-classic.touch .hearts{
+  left:50%!important;right:auto!important;top:auto!important;bottom:calc(18px + env(safe-area-inset-bottom))!important;transform:translateX(-50%)!important;
+  padding:7px 11px!important;border:0!important;background:linear-gradient(180deg,#fffaf0,#ece5d6)!important;
+  box-shadow:inset 0 2px 0 #fff,inset 0 -5px 0 #c4bca8,0 7px 14px rgba(43,42,36,.18)!important;
+  -webkit-backdrop-filter:none!important;backdrop-filter:none!important;
+}
+body.hud-classic.touch .special-bar{
+  left:50%!important;right:auto!important;top:auto!important;bottom:calc(58px + env(safe-area-inset-bottom))!important;transform:translateX(-50%)!important;
+  border:0!important;background:linear-gradient(180deg,#fffaf0,#ece5d6)!important;
+  box-shadow:inset 0 2px 0 #fff,inset 0 -4px 0 #c4bca8,0 7px 14px rgba(43,42,36,.16)!important;
+  -webkit-backdrop-filter:none!important;backdrop-filter:none!important;
+}
+body.hud-classic.touch .special-bar span{background:rgba(43,42,36,.14)!important;border-color:rgba(43,42,36,.12)!important}
+body.hud-classic.touch .special-btn{
+  right:calc(max(18px,env(safe-area-inset-right)) + 52px)!important;bottom:calc(112px + env(safe-area-inset-bottom))!important;
+  width:64px!important;height:64px!important;border:0!important;
+  background:conic-gradient(var(--m83-gold) var(--k),#d9d1bd var(--k))!important;box-shadow:0 8px 16px rgba(43,42,36,.20)!important;
+}
+body.hud-classic.touch .special-btn i{
+  inset:6px!important;border:4px solid var(--m83-cream)!important;background-color:var(--m83-moss)!important;
+  box-shadow:inset 0 3px 0 rgba(255,255,255,.12),inset 0 -7px 0 rgba(55,87,36,.22)!important;
+}
+body.hud-classic.touch .special-btn b{
+  bottom:-22px!important;padding:4px 8px!important;border-radius:999px!important;
+  background:linear-gradient(180deg,#fffaf0,#ece5d6)!important;color:var(--m83-ink)!important;
+  box-shadow:inset 0 -3px 0 #c4bca8,0 5px 10px rgba(43,42,36,.14)!important;text-shadow:none!important;
+}
+
+/* R81 lantern remains night-only; offset it from special/Hop/action so no controls overlap. */
+body.hud-classic.lantern-ready.touch #lantern-btn{
+  right:calc(max(18px,env(safe-area-inset-right)) + 148px)!important;bottom:calc(112px + env(safe-area-inset-bottom))!important;
+  width:48px!important;height:48px!important;
+}
+
+@media(max-height:430px){
+  body.hud-classic.touch #hud{top:max(12px,env(safe-area-inset-top))!important;left:max(14px,env(safe-area-inset-left))!important;gap:9px!important}
+  body.hud-classic.touch #hud #objective.objective-card:not(.open){height:46px!important;min-height:46px!important;max-width:min(270px,40vw)!important}
+  body.hud-classic.touch #hud #objective.objective-card.open{min-height:80px!important;max-width:min(315px,48vw)!important}
+  body.hud-classic.touch #hud .hud-fold-btn{width:46px!important;height:46px!important;flex-basis:46px!important;background-size:24px!important}
+  body.hud-classic.touch #hud .inventory-stack.open{top:calc(max(12px,env(safe-area-inset-top)) + 96px)!important;width:min(620px,calc(100vw - 90px))!important;max-width:calc(100vw - 90px)!important;gap:6px!important}
+  body.hud-classic.touch #hud .seed-card.inventory-card{height:42px!important}
+  body.hud-classic.touch #hud #materials .material-chip,body.hud-classic.touch #hud #tools-row.tools-row{height:34px!important;padding:0 9px!important}
+  body.hud-classic.touch #action,body.hud-classic.touch #action.show,body.hud-classic.touch #hop-btn{width:72px!important;height:72px!important;min-width:72px!important;bottom:calc(14px + env(safe-area-inset-bottom))!important}
+  body.hud-classic.touch #hop-btn{right:calc(max(14px,env(safe-area-inset-right)) + 86px)!important}
+  body.hud-classic.touch #action{right:max(14px,env(safe-area-inset-right))!important}
+  body.hud-classic.touch #action #action-ico,body.hud-classic.touch #action #action-ico .ico-mask{width:38px!important;height:38px!important}
+  body.hud-classic.touch .special-btn{right:calc(max(14px,env(safe-area-inset-right)) + 48px)!important;bottom:calc(100px + env(safe-area-inset-bottom))!important}
+  body.hud-classic.lantern-ready.touch #lantern-btn{right:calc(max(14px,env(safe-area-inset-right)) + 136px)!important;bottom:calc(100px + env(safe-area-inset-bottom))!important}
+}
