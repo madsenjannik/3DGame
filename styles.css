@@ -2247,3 +2247,148 @@ body.hud-desktop-e:not(.touch) .gear-panel{
 }
 body.hud-desktop-e:not(.touch) .special-btn{background:conic-gradient(var(--e-gold) var(--k),rgba(196,188,168,.72) var(--k))!important;box-shadow:0 8px 16px rgba(43,42,36,.20)!important}
 body.hud-desktop-e:not(.touch) .special-btn i{border:4px solid var(--e-cream)!important;background-color:var(--e-moss)!important}
+
+
+/* ===== R86 HUD E desktop polish (GO 06/10) =====
+   DESKTOP TEST HUD E ONLY. Mobile/touch and splash/start are untouched.
+   Player status moves to the bottom cluster; resources scale up; objective becomes a true single-layer card. */
+
+/* Bottom-center player cluster: health + special sit just above the left half of the quickbar. */
+body.hud-desktop-e:not(.touch) .hearts{
+  display:flex!important;
+  left:calc(50% - 306px)!important;
+  right:auto!important;
+  top:auto!important;
+  bottom:88px!important;
+  transform:none!important;
+  opacity:1!important;
+  min-height:34px!important;
+  padding:7px 11px!important;
+  border:0!important;
+  border-radius:999px!important;
+  background:linear-gradient(180deg,var(--e-cream),var(--e-cream-2))!important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.9),0 7px 16px rgba(43,42,36,.18)!important;
+}
+body.hud-desktop-e:not(.touch) .special-bar{
+  display:flex!important;
+  left:calc(50% - 176px)!important;
+  right:auto!important;
+  top:auto!important;
+  bottom:88px!important;
+  transform:none!important;
+  opacity:1!important;
+  min-height:34px!important;
+  padding:5px 34px 5px 6px!important;
+  border:0!important;
+  border-radius:999px!important;
+  background:linear-gradient(180deg,var(--e-cream),var(--e-cream-2))!important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.9),0 7px 16px rgba(43,42,36,.18)!important;
+}
+body.hud-desktop-e:not(.touch) .special-bar::after{
+  content:'F';
+  position:absolute;
+  right:7px;
+  top:50%;
+  width:20px;
+  height:20px;
+  margin-top:-10px;
+  display:grid;
+  place-items:center;
+  border-radius:6px;
+  background:var(--e-ink);
+  color:var(--e-cream);
+  font:700 9px/1 'JetBrains Mono',ui-monospace,monospace;
+  box-shadow:0 3px 7px rgba(43,42,36,.18);
+}
+/* HUD E uses ONE special representation: the meter above the quickbar. */
+body.hud-desktop-e:not(.touch) .special-btn{display:none!important}
+
+/* Resources: larger, easier to read at desktop distance. */
+body.hud-desktop-e:not(.touch) #hud .inventory-stack{
+  gap:9px!important;
+  max-width:min(900px,calc(100vw - 650px))!important;
+}
+body.hud-desktop-e:not(.touch) #hud .seed-card.inventory-card{
+  height:48px!important;
+  padding:0 16px 0 12px!important;
+  border-radius:16px!important;
+}
+body.hud-desktop-e:not(.touch) #hud .seed-card small{
+  font-size:10px!important;
+  letter-spacing:.11em!important;
+}
+body.hud-desktop-e:not(.touch) #hud .seed-card b{
+  font-size:17px!important;
+}
+body.hud-desktop-e:not(.touch) #hud #materials.materials-card{gap:8px!important}
+body.hud-desktop-e:not(.touch) #hud #materials .material-chip{
+  height:38px!important;
+  min-width:46px!important;
+  padding:0 12px!important;
+  gap:6px!important;
+}
+body.hud-desktop-e:not(.touch) #hud #materials .material-chip b{
+  font-size:15px!important;
+}
+
+/* Objective: one physical card only. No dark green pseudo-layer.
+   Left-side order is collapse chevron -> contextual icon -> text, all vertically aligned. */
+body.hud-desktop-e:not(.touch) #hud #objective.objective-card{
+  width:304px!important;
+  max-width:304px!important;
+  height:58px!important;
+  min-height:58px!important;
+  padding:0 18px 0 88px!important;
+  border-radius:18px!important;
+  background:linear-gradient(180deg,#7eae52 0%,var(--e-moss) 100%)!important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.22),0 9px 20px rgba(43,42,36,.21)!important;
+  display:flex!important;
+  flex-direction:column!important;
+  justify-content:center!important;
+  align-items:flex-start!important;
+}
+body.hud-desktop-e:not(.touch) #hud #objective.objective-card::after{
+  content:'›'!important;
+  left:14px!important;
+  right:auto!important;
+  top:50%!important;
+  width:24px!important;
+  height:24px!important;
+  margin-top:-12px!important;
+  transform:none!important;
+  display:grid!important;
+  place-items:center!important;
+  color:rgba(255,250,240,.92)!important;
+  font:900 22px/22px Manrope,system-ui,sans-serif!important;
+}
+body.hud-desktop-e:not(.touch) #hud #objective.objective-card.open::after{content:'‹'!important}
+body.hud-desktop-e:not(.touch) #hud #objective.objective-card::before{
+  left:44px!important;
+  right:auto!important;
+  top:50%!important;
+  width:34px!important;
+  height:34px!important;
+  margin-top:-17px!important;
+  border-radius:11px!important;
+  background:rgba(255,250,240,.16) var(--objective-icon,url(./brand/icons/svg/icon-leaf.svg)) center/22px no-repeat!important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.16)!important;
+}
+body.hud-desktop-e:not(.touch) #hud #objective b{
+  line-height:1.15!important;
+}
+body.hud-desktop-e:not(.touch) #hud #objective.objective-card.open{
+  min-height:96px!important;
+  height:auto!important;
+  padding:13px 18px 15px 88px!important;
+  justify-content:flex-start!important;
+}
+body.hud-desktop-e:not(.touch) #hud #objective.open #objective-copy{
+  margin-top:6px!important;
+}
+
+/* Keep the complete bottom cluster visually balanced on slightly narrower desktops. */
+@media(max-width:1450px){
+  body.hud-desktop-e:not(.touch) .hearts{left:calc(50% - 275px)!important;bottom:80px!important}
+  body.hud-desktop-e:not(.touch) .special-bar{left:calc(50% - 150px)!important;bottom:80px!important}
+  body.hud-desktop-e:not(.touch) #hud .inventory-stack{max-width:min(780px,calc(100vw - 570px))!important}
+}
