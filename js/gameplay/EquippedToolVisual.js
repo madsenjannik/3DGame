@@ -1,38 +1,48 @@
 // @ts-nocheck
-// R101 desktop hotbar held-item visual.
-// The exact approved hotbar renders are reused as small world-space sprites at the right hand.
-// This keeps the held item visually faithful without inventing replacement geometry; Fishing and
-// Lantern continue to own their existing dedicated in-hand presentation.
+// R102 desktop hotbar held-item visual.
+// Axe / Pickaxe / Sickle / Watering Can use the actual triangle geometry and source materials
+// extracted from Jannik's supplied GLBs. They are mounted to the authored Hand_Socket_R,
+// not billboard sprites. Fishing keeps its dedicated R80 grip/rod; Lantern keeps its R81 GLB.
 import * as THREE from 'three';
+import { buildHeldTool } from './HeldToolGeometry.js?build=HOTBAR-HAND-DRAG-R102-20261006A';
 
-const ART={
-  axe:'./brand/icons/tool3d/icon-axe.png?v=R101-20261006',
-  pickaxe:'./brand/icons/tool3d/icon-pickaxe.png?v=R101-20261006',
-  sickle:'./brand/icons/tool3d/icon-sickle.png?v=R101-20261006',
-  can:'./brand/icons/tool3d/icon-watering-can.png?v=R101-20261006',
-  rod:'./brand/icons/tool3d/icon-rod.png?v=R101-20261006'
+const ALIGN={
+  axe:{s:1.00,p:[0,0,0],r:[0,Math.PI/2,.08]},
+  pickaxe:{s:1.00,p:[0,0,0],r:[0,Math.PI/2,.06]},
+  sickle:{s:1.08,p:[0,0,0],r:[0,Math.PI/2,.08]},
+  can:{s:1.00,p:[0,0,0],r:[0,Math.PI/2,0]}
 };
-const SCALE={axe:.50,pickaxe:.54,sickle:.47,can:.42,rod:.54};
 
 export class EquippedToolVisual{
   constructor(game){
-    this.g=game;this.id=null;this.maps=new Map();this.loader=new THREE.TextureLoader();this.tmp=new THREE.Vector3();
-    this.hand=game.character?.instance?.socket?.('Hand_R')||game.character?.instance?.socket?.('Hand_Socket_R')||null;
-    const mat=this.mat=new THREE.SpriteMaterial({transparent:true,depthTest:true,depthWrite:false,alphaTest:.04,toneMapped:false});
-    const sprite=this.sprite=new THREE.Sprite(mat);sprite.name='HOTBAR_HELD_ITEM_R101';sprite.visible=false;sprite.renderOrder=3;
-    game.scene.add(sprite);
-    for(const [id,url] of Object.entries(ART))this.loader.load(url,t=>{t.colorSpace=THREE.SRGBColorSpace;t.anisotropy=Math.min(4,game.renderer?.capabilities?.getMaxAnisotropy?.()||1);this.maps.set(id,t);if(this.id===id)this.apply();},undefined,()=>{});
+    this.g=game;this.id=null;this.current=null;this.models=new Map();this.tmpScale=new THREE.Vector3();
+    this.hand=game.character?.instance?.socket?.('Hand_Socket_R')||game.character?.instance?.socket?.('Hand_R')||null;
   }
-  set(id){if(this.id===id)return;this.id=id||null;this.apply();}
-  apply(){
-    const t=this.maps.get(this.id);if(t){this.mat.map=t;this.mat.needsUpdate=true;}
-    const s=SCALE[this.id]||0;this.sprite.scale.set(s,s,1);
+  model(id){
+    if(!ALIGN[id]||!this.hand)return null;
+    let m=this.models.get(id);
+    if(!m){
+      m=buildHeldTool(id);if(!m)return null;
+      m.name=`HOTBAR_HELD_${id.toUpperCase()}_R102`;m.visible=false;
+      const a=ALIGN[id];m.position.fromArray(a.p);m.rotation.set(...a.r);
+      this.hand.add(m);this.models.set(id,m);this.fit(id,m);
+    }
+    return m;
+  }
+  fit(id,m){
+    const ws=this.hand?.getWorldScale?.(this.tmpScale)?.x||1,a=ALIGN[id];if(!a||!m)return;
+    // Source tools are authored in metres with the grip at the origin. Cancel character/socket
+    // scaling so the Axe/Pickaxe remain ~0.55-0.65 m in world space and are clearly readable.
+    m.scale.setScalar(a.s/ws);
+  }
+  set(id){
+    id=ALIGN[id]?id:null;if(this.id===id)return;
+    if(this.current)this.current.visible=false;this.id=id;this.current=id?this.model(id):null;
   }
   update(){
-    const id=this.id,world=this.g.world?.space;
+    const world=this.g.world?.space;
     const blocked=this.g.fishing?.isBusy?.()||this.g.stable?.isBusy?.()||this.g.homePortal?.busy||this.g.buildMode?.active||this.g.state?.choice?.open;
-    const show=!!(this.hand&&ART[id]&&this.maps.get(id)&&(world==='world'||world==='garden')&&!blocked);
-    this.sprite.visible=show;if(!show)return;
-    this.hand.getWorldPosition(this.tmp);this.tmp.y+=id==='can'?.10:.17;this.sprite.position.copy(this.tmp);
+    const show=!!(this.current&&(world==='world'||world==='garden')&&!blocked);
+    if(this.current){this.fit(this.id,this.current);this.current.visible=show;}
   }
 }

@@ -95,16 +95,41 @@ export class Hud {
     p.addEventListener('click',e=>e.stopPropagation());
     const q=document.createElement('div');q.id='desktop-hotbar-e';q.className='desktop-hotbar-e';q.setAttribute('aria-label','Quick slots 1 to 0. Drag items to rearrange.');
     q.innerHTML=Array.from({length:10},(_,i)=>`<span class="desktop-hotbar-slot" data-slot="${i}" role="button" tabindex="-1" aria-label="Slot ${i===9?'0':i+1}"><small>${i===9?'0':i+1}</small><i class="slot-icon"></i><em class="slot-fallback"></em></span>`).join('');
-    document.body.appendChild(q);this.desktopHotbar=q;this._hotbarDrag=-1;this._hotbarDragged=false;
-    for(const slot of q.querySelectorAll('.desktop-hotbar-slot')){
-      const index=Number(slot.dataset.slot);
-      slot.addEventListener('click',()=>{if(this._hotbarDragged){this._hotbarDragged=false;return;}this.onHotbarSelect?.(index);});
-      slot.addEventListener('dragstart',e=>{if(!slot.classList.contains('filled')){e.preventDefault();return;}this._hotbarDrag=index;this._hotbarDragged=true;slot.classList.add('dragging');try{e.dataTransfer.effectAllowed='move';e.dataTransfer.setData('text/plain',String(index));}catch{}});
-      slot.addEventListener('dragend',()=>{this._hotbarDrag=-1;setTimeout(()=>{this._hotbarDragged=false;},0);q.querySelectorAll('.dragging,.drag-over').forEach(x=>x.classList.remove('dragging','drag-over'));});
-      slot.addEventListener('dragover',e=>{if(this._hotbarDrag<0)return;e.preventDefault();try{e.dataTransfer.dropEffect='move';}catch{}slot.classList.add('drag-over');});
-      slot.addEventListener('dragleave',()=>slot.classList.remove('drag-over'));
-      slot.addEventListener('drop',e=>{e.preventDefault();slot.classList.remove('drag-over');const from=this._hotbarDrag>=0?this._hotbarDrag:Number(e.dataTransfer?.getData?.('text/plain'));this._hotbarDrag=-1;if(Number.isInteger(from)&&from>=0&&from<10&&from!==index)this.onHotbarMove?.(from,index);});
-    }
+    document.body.appendChild(q);this.desktopHotbar=q;this._hotbarPointer=null;this._hotbarGhost=null;
+    // R102: real mouse hold + pointer drag. Native HTML5 drag was unreliable because the HUD parent
+    // intentionally used pointer-events:none. A short press still equips; movement >= 5px becomes a drag.
+    const slotAt=(x,y)=>document.elementFromPoint(x,y)?.closest?.('.desktop-hotbar-slot');
+    const clearHover=()=>q.querySelectorAll('.drag-over').forEach(x=>x.classList.remove('drag-over'));
+    const finishPointer=(e,cancel=false)=>{
+      const d=this._hotbarPointer;if(!d||e.pointerId!==d.id)return;
+      this._hotbarPointer=null;
+      if(d.drag&&!cancel&&d.target&&d.target!==d.source){
+        const to=Number(d.target.dataset.slot);if(Number.isInteger(to))this.onHotbarMove?.(d.from,to);
+      }else if(!d.drag&&!cancel)this.onHotbarSelect?.(d.from);
+      d.source.classList.remove('dragging');clearHover();this._hotbarGhost?.remove();this._hotbarGhost=null;
+      try{q.releasePointerCapture?.(d.id);}catch{}
+    };
+    q.addEventListener('pointerdown',e=>{
+      if(this.touch()||e.button!==0)return;const slot=e.target.closest?.('.desktop-hotbar-slot');
+      if(!slot||!slot.classList.contains('filled')||this.hotbarEnabled?.()===false)return;
+      e.preventDefault();e.stopPropagation();const from=Number(slot.dataset.slot);
+      this._hotbarPointer={id:e.pointerId,from,source:slot,target:slot,x:e.clientX,y:e.clientY,drag:false};
+      try{q.setPointerCapture?.(e.pointerId);}catch{}
+    });
+    q.addEventListener('pointermove',e=>{
+      const d=this._hotbarPointer;if(!d||e.pointerId!==d.id)return;
+      if(!d.drag&&Math.hypot(e.clientX-d.x,e.clientY-d.y)>=5){
+        d.drag=true;d.source.classList.add('dragging');
+        const r=d.source.getBoundingClientRect(),g=d.source.cloneNode(true);g.classList.remove('dragging','selected','empty-selected');g.classList.add('hotbar-drag-ghost');
+        g.style.width=`${r.width}px`;g.style.height=`${r.height}px`;document.body.appendChild(g);this._hotbarGhost=g;
+      }
+      if(!d.drag)return;e.preventDefault();
+      if(this._hotbarGhost)this._hotbarGhost.style.transform=`translate3d(${e.clientX-25}px,${e.clientY-25}px,0) scale(1.06)`;
+      clearHover();const target=slotAt(e.clientX,e.clientY);d.target=target&&q.contains(target)?target:null;d.target?.classList.add('drag-over');
+    });
+    q.addEventListener('pointerup',e=>finishPointer(e,false));
+    q.addEventListener('pointercancel',e=>finishPointer(e,true));
+    q.addEventListener('lostpointercapture',e=>{if(this._hotbarPointer&&e.pointerId===this._hotbarPointer.id)finishPointer(e,true);});
     this._hotbarKey=e=>{
       if(e.repeat||this.touch()||!document.body.classList.contains('hud-desktop-e'))return;
       const a=document.activeElement;if(a&&(a.isContentEditable||/INPUT|TEXTAREA|SELECT/.test(a.tagName||'')))return;
@@ -139,7 +164,7 @@ export class Hud {
     slots.forEach((slot,i)=>{
       const it=items[i]||null,icon=slot.querySelector('.slot-icon'),fallback=slot.querySelector('.slot-fallback'),key=it?.hotbarIcon||(it?.name==='Watering Can'?'watering-can':(it?.icon||it?.id||''));
       slot.classList.toggle('filled',!!it);slot.classList.toggle('selected',selected===i);slot.classList.toggle('empty-selected',selected===i&&!it);
-      slot.draggable=!!it;slot.dataset.icon=key;slot.dataset.itemId=it?.id||'';slot.title=it?`${i===9?'0':i+1} · ${it.name} · drag to move`:`${i===9?'0':i+1} · Empty slot`;
+      slot.draggable=false;slot.dataset.icon=key;slot.dataset.itemId=it?.id||'';slot.title=it?`${i===9?'0':i+1} · ${it.name} · drag to move`:`${i===9?'0':i+1} · Empty slot`;
       slot.setAttribute('aria-label',it?`Slot ${i===9?'0':i+1}: ${it.name}`:`Slot ${i===9?'0':i+1}: empty`);slot.setAttribute('aria-pressed',selected===i?'true':'false');
       icon.style.setProperty('--slot-ico',it?.icon?`url(./brand/icons/svg/icon-${it.icon}.svg)`:'none');fallback.textContent=it&&!it.icon?it.name.split(/\s+/).map(x=>x[0]).join('').slice(0,2).toUpperCase():'';
     });
