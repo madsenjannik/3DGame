@@ -155,6 +155,30 @@ try {
     check('mobile HUD R104: stable Bag/quest, source tool art, tap equips same real 3D hotbar item',
       ok&&r.classic&&r.fixed&&r.vertical&&r.bagArt&&r.selected&&r.real3d&&r.closes&&!errors.length,errors[0]||JSON.stringify(r));await ctx.close(); }
 
+  // 2f. R105 mobile fullscreen Bag: fills viewport, blocks/reset gameplay input, close works, tap equip closes
+  { const ctx = await context({ viewport: { width: 844, height: 390 }, isMobile: true, hasTouch: true }); const { p, errors, ok } = await startGame(ctx, 'succulent');
+    let r={};
+    if(ok)r=await p.evaluate(async()=>{
+      const g=window.__tgw,w=ms=>new Promise(x=>setTimeout(x,ms));Object.assign(g.wilds.profile.tools,{axe:true,pickaxe:true,sickle:true,can:true});g.refreshHotbar(true);await w(80);
+      g.input.move.x=.7;g.input.move.y=.4;g.input.actionPressed=true;g.input.hopPressed=true;
+      document.getElementById('hud-bag').click();await w(100);
+      const gp=document.getElementById('gear-panel'),b=gp.getBoundingClientRect(),grid=gp.querySelector('.gear-grid');
+      g.input.update();
+      const opened={
+        body:document.body.classList.contains('mobile-bag-open'),
+        full:Math.abs(b.left)<1&&Math.abs(b.top)<1&&Math.abs(b.width-innerWidth)<2&&Math.abs(b.height-innerHeight)<2,
+        grid:getComputedStyle(grid).display==='grid'&&getComputedStyle(grid).gridTemplateColumns.split(' ').length===3,
+        reset:g.input.moveMagnitude===0&&g.input.frameMove.x===0&&g.input.frameMove.y===0&&!g.input.actionPressed&&!g.input.hopPressed,
+        close:!!gp.querySelector('.gear-close')
+      };
+      gp.querySelector('.gear-close').click();await w(80);opened.closed=!document.body.classList.contains('mobile-bag-open')&&!gp.classList.contains('open');
+      document.getElementById('hud-bag').click();await w(80);gp.querySelector('.gear-item[data-item-id="pickaxe"]').click();await w(160);
+      opened.equip=g.activeHotbarId()==='pickaxe'&&!gp.classList.contains('open')&&!document.body.classList.contains('mobile-bag-open');
+      return opened;
+    });
+    check('mobile Bag R105: fullscreen grid, gameplay input blocked/reset, close + equip work',
+      ok&&r.body&&r.full&&r.grid&&r.reset&&r.close&&r.closed&&r.equip&&!errors.length,errors[0]||JSON.stringify(r));await ctx.close(); }
+
   // 3. Missing assets must not black-screen the game
   { const ctx = await context({ viewport: { width: 844, height: 390 }, isMobile: true, hasTouch: true }, [/assets\/stable\//, /lake_cabin|cabin_fishing_runtime/, /greenhouse-l1/, /characters\/fern\.glb/]);
     const { p, errors, ok } = await startGame(ctx, 'fern'); const failed = ok ? await p.evaluate(() => window.__tgw.failed) : [];

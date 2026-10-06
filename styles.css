@@ -4014,3 +4014,226 @@ body.hud-desktop-e:not(.touch) .gear-panel .gear-item.selected::after{
   body.hud-classic.touch .gear-panel .gear-item-art{width:31px;height:31px;flex-basis:31px}
   body.hud-classic.touch .gear-panel .gear-item em{font-size:12px!important}
 }
+
+
+/* ===== R105 mobile fullscreen Bag (GO 06/10) =====
+   Mobile Bag is a dedicated inventory screen. Desktop hotbar/Bag placement stays unchanged. */
+body.hud-classic.touch.mobile-bag-open{
+  overflow:hidden!important;
+  overscroll-behavior:none!important;
+}
+body.hud-classic.touch.mobile-bag-open #hud,
+body.hud-classic.touch.mobile-bag-open #joy-rest,
+body.hud-classic.touch.mobile-bag-open #hop-btn,
+body.hud-classic.touch.mobile-bag-open #action,
+body.hud-classic.touch.mobile-bag-open .tgw-minimap,
+body.hud-classic.touch.mobile-bag-open .hearts,
+body.hud-classic.touch.mobile-bag-open #dev-pill{
+  pointer-events:none!important;
+  opacity:0!important;
+}
+
+/* Full viewport inventory surface. */
+body.hud-classic.touch .gear-panel.open{
+  z-index:10040!important;
+}
+body.hud-classic.touch.mobile-bag-open .gear-panel.open{
+  display:flex!important;
+  position:fixed!important;
+  inset:0!important;
+  width:100vw!important;
+  max-width:none!important;
+  min-width:0!important;
+  height:100dvh!important;
+  max-height:none!important;
+  box-sizing:border-box!important;
+  padding:
+    max(18px,env(safe-area-inset-top))
+    max(22px,env(safe-area-inset-right))
+    max(18px,env(safe-area-inset-bottom))
+    max(22px,env(safe-area-inset-left))!important;
+  border:0!important;
+  border-radius:0!important;
+  gap:14px!important;
+  overflow:hidden!important;
+  background:
+    radial-gradient(circle at 80% 10%,rgba(226,181,82,.22),transparent 34%),
+    radial-gradient(circle at 12% 92%,rgba(111,157,69,.16),transparent 34%),
+    linear-gradient(180deg,#fff9e9 0%,#f7ebcf 66%,#efe0bd 100%)!important;
+  box-shadow:none!important;
+  color:#34352d!important;
+  -webkit-backdrop-filter:none!important;
+  backdrop-filter:none!important;
+}
+
+/* Header behaves like a real screen, not a dropdown title. */
+.gear-panel .gear-head{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:16px;
+}
+.gear-panel .gear-head>div{display:flex;flex-direction:column;gap:4px}
+.gear-panel .gear-subtitle{display:none}
+.gear-panel .gear-close{display:none}
+
+body.hud-classic.touch.mobile-bag-open .gear-head{
+  flex:0 0 auto;
+  min-height:52px;
+  padding:0 2px 8px;
+  border-bottom:1px solid rgba(89,102,64,.18);
+}
+body.hud-classic.touch.mobile-bag-open .gear-title{
+  padding:0!important;
+  color:#34352d!important;
+  opacity:1!important;
+  font:900 25px/1 Manrope,system-ui,sans-serif!important;
+  letter-spacing:.08em!important;
+}
+body.hud-classic.touch.mobile-bag-open .gear-subtitle{
+  display:block;
+  color:#747766;
+  font:650 11px/1.15 Manrope,system-ui,sans-serif;
+}
+body.hud-classic.touch.mobile-bag-open .gear-close{
+  display:grid;
+  place-items:center;
+  flex:0 0 46px;
+  width:46px;
+  height:46px;
+  margin:0;
+  padding:0 0 4px;
+  border:1px solid rgba(153,128,67,.38);
+  border-radius:15px;
+  background:linear-gradient(180deg,#fffdf6,#ead8ad);
+  color:#596640;
+  box-shadow:inset 0 2px 0 rgba(255,255,255,.90),0 4px 10px rgba(43,42,36,.12);
+  font:500 30px/1 Manrope,system-ui,sans-serif;
+  -webkit-tap-highlight-color:transparent;
+}
+body.hud-classic.touch.mobile-bag-open .gear-close:active{transform:scale(.96)}
+
+/* Cards: same cream/gold/moss vocabulary as desktop hotbar, scaled for touch. */
+.gear-panel .gear-item-copy{
+  display:flex;
+  align-items:center;
+  gap:6px;
+  flex:1;
+  min-width:0;
+}
+.gear-panel .gear-grid{
+  display:flex;
+  flex-direction:column;
+  gap:6px;
+}
+body.hud-classic.touch.mobile-bag-open .gear-grid{
+  flex:1 1 auto;
+  min-height:0;
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  grid-auto-rows:minmax(92px,1fr);
+  gap:12px;
+  overflow-y:auto;
+  overscroll-behavior:contain;
+  padding:2px 2px 4px;
+}
+body.hud-classic.touch.mobile-bag-open .gear-item{
+  display:flex!important;
+  flex-direction:column;
+  align-items:center!important;
+  justify-content:center;
+  gap:7px!important;
+  min-width:0;
+  min-height:92px!important;
+  padding:10px 8px 9px!important;
+  border:1px solid rgba(153,128,67,.30);
+  border-radius:17px!important;
+  background:linear-gradient(180deg,rgba(255,253,246,.96),rgba(239,224,189,.92));
+  box-shadow:inset 0 2px 0 rgba(255,255,255,.92),0 5px 12px rgba(43,42,36,.10);
+  text-align:center;
+  cursor:default;
+}
+body.hud-classic.touch.mobile-bag-open .gear-item.equippable{cursor:pointer}
+body.hud-classic.touch.mobile-bag-open .gear-item-art{
+  flex:0 0 52px!important;
+  width:52px!important;
+  height:52px!important;
+  filter:drop-shadow(0 3px 3px rgba(43,42,36,.17))!important;
+}
+body.hud-classic.touch.mobile-bag-open .gear-item .ico-mask,
+body.hud-classic.touch.mobile-bag-open .gear-item-fallback{
+  flex:0 0 46px!important;
+  width:46px!important;
+  height:46px!important;
+}
+body.hud-classic.touch.mobile-bag-open .gear-item-copy{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:3px;
+  min-width:0;
+}
+body.hud-classic.touch.mobile-bag-open .gear-item em{
+  flex:none!important;
+  width:100%;
+  color:#34352d!important;
+  font:800 12px/1.12 Manrope,system-ui,sans-serif!important;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+body.hud-classic.touch.mobile-bag-open .gear-item small{
+  color:#747766!important;
+  font:650 9.5px/1 Manrope,system-ui,sans-serif!important;
+}
+body.hud-classic.touch.mobile-bag-open .gear-item.selected{
+  border-color:rgba(202,151,47,.62)!important;
+  background:linear-gradient(180deg,#fff5cf 0%,#efd28a 100%)!important;
+  box-shadow:inset 0 0 0 2px rgba(202,151,47,.38),inset 0 2px 0 rgba(255,255,255,.68),0 6px 14px rgba(43,42,36,.12)!important;
+}
+body.hud-classic.touch.mobile-bag-open .gear-item.selected::after{
+  content:'✓'!important;
+  position:absolute;
+  top:8px;
+  right:8px;
+  width:21px!important;
+  height:21px!important;
+  margin:0!important;
+  border-radius:7px!important;
+  background:#596640!important;
+  color:#fff9e9!important;
+  font:800 11px/21px Manrope,system-ui,sans-serif!important;
+}
+body.hud-classic.touch.mobile-bag-open .gear-empty{
+  grid-column:1/-1;
+  display:grid;
+  place-items:center;
+  color:#747766!important;
+  font:650 13px/1.4 Manrope,system-ui,sans-serif;
+}
+
+/* Landscape phones with limited height: keep all six standard gear cards visible without scrolling. */
+@media(max-height:430px) and (orientation:landscape){
+  body.hud-classic.touch.mobile-bag-open .gear-panel.open{
+    padding:
+      max(12px,env(safe-area-inset-top))
+      max(18px,env(safe-area-inset-right))
+      max(12px,env(safe-area-inset-bottom))
+      max(18px,env(safe-area-inset-left))!important;
+    gap:9px!important;
+  }
+  body.hud-classic.touch.mobile-bag-open .gear-head{min-height:44px;padding-bottom:5px}
+  body.hud-classic.touch.mobile-bag-open .gear-title{font-size:21px!important}
+  body.hud-classic.touch.mobile-bag-open .gear-close{width:40px;height:40px;flex-basis:40px;border-radius:13px;font-size:27px}
+  body.hud-classic.touch.mobile-bag-open .gear-grid{
+    grid-template-columns:repeat(3,minmax(0,1fr));
+    grid-template-rows:repeat(2,minmax(0,1fr));
+    grid-auto-rows:minmax(82px,1fr);
+    gap:9px;
+    overflow:hidden;
+  }
+  body.hud-classic.touch.mobile-bag-open .gear-item{min-height:0!important;padding:5px 7px!important;gap:4px!important}
+  body.hud-classic.touch.mobile-bag-open .gear-item-art{width:44px!important;height:44px!important;flex-basis:44px!important}
+  body.hud-classic.touch.mobile-bag-open .gear-item em{font-size:11px!important}
+  body.hud-classic.touch.mobile-bag-open .gear-item small{font-size:8.5px!important}
+}

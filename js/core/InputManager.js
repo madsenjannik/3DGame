@@ -35,7 +35,7 @@ export class InputManager {
   }
 
   isUiTarget(target){
-    return !!target?.closest?.('button,[role="button"],input,select,textarea,a,.fishing-ui,.stable-talk,.stable-race-ui,.choice-panel');
+    return !!target?.closest?.('button,[role="button"],input,select,textarea,a,.gear-panel,.fishing-ui,.stable-talk,.stable-race-ui,.choice-panel');
   }
   movementZone(e){return this.isTouch&&e.clientX<innerWidth*.48&&!this.isUiTarget(e.target);}
   lookZone(e){return this.isTouch&&e.clientX>=innerWidth*.42&&!this.isUiTarget(e.target);}
@@ -49,6 +49,7 @@ export class InputManager {
     this.knob.style.transition='none';this.knob.style.transform='translate(0,0)';
   }
   onPointerDown(e){
+    if(document.body.classList.contains('mobile-bag-open'))return;
     if(e.target===this.actionButton||this.actionButton.contains(e.target))return;
     if(!this.isTouch&&e.pointerType==='mouse'&&e.button===0&&e.target?.tagName==='CANVAS'&&!this.isUiTarget(e.target))this.strikePressed=true;   // R76: left click = Strike (never interact)
     if(this.joyPointer===null&&this.movementZone(e)){
@@ -107,6 +108,10 @@ export class InputManager {
   consumeLook(){const v={x:this.lookAccum.x,y:this.lookAccum.y};this.lookAccum.x=0;this.lookAccum.y=0;return v;}
 
   update() {
+    if(document.body.classList.contains('mobile-bag-open')){
+      this.frameMove={x:0,y:0};this.moveMagnitude=0;this.runIntent=false;this.move.x=this.move.y=0;
+      this.actionPressed=false;this.hopPressed=false;this.strikePressed=false;return;
+    }
     let x=(this.keys.KeyD||this.keys.ArrowRight?1:0)-(this.keys.KeyA||this.keys.ArrowLeft?1:0);
     let y=(this.keys.KeyW||this.keys.ArrowUp?1:0)-(this.keys.KeyS||this.keys.ArrowDown?1:0);
     const l=Math.hypot(x,y);if(l>1){x/=l;y/=l;}

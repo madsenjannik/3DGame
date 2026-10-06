@@ -3,7 +3,7 @@ import * as THREE from 'three';
 import { AssetRegistry } from './AssetRegistry.js';
 import { CharacterController } from './CharacterController.js?build=MOBILE-GESTURE-R34B-20260930A';
 import { GameState } from './GameState.js';
-import { InputManager } from './InputManager.js?build=TECH-STARTUP-R36-20260930A';
+import { InputManager } from './InputManager.js?build=MOBILE-BAG-FULLSCREEN-R105-20261006A';
 import { ThirdPersonCamera } from './ThirdPersonCamera.js?build=MOBILE-GESTURE-R34B-20260930A';
 import { CameraOcclusionSystem } from './CameraOcclusionSystem.js?build=NORTH-STABLE-R23O-20260929A';
 import { StructureVisibilitySystem } from '../visual/StructureVisibilitySystem.js?build=NORTH-STABLE-R23O-20260929A';
@@ -14,7 +14,7 @@ import { GreenhouseProgressionSystem } from '../gameplay/GreenhouseProgressionSy
 import { OrangeryHubSystem } from '../gameplay/OrangeryHubSystem.js?build=CAMERA-CUTAWAY-CONTEXT-R21D-20260928E';
 import { FishingV1System } from '../gameplay/FishingV1System.js?build=BAG-NIGHT-R84-20261006A';
 import { ChoicePanel } from '../ui/ChoicePanel.js';
-import { Hud } from '../ui/Hud.js?build=MOBILE-HUD-CONSISTENCY-R104-20261006A';
+import { Hud } from '../ui/Hud.js?build=MOBILE-BAG-FULLSCREEN-R105-20261006A';
 import { WorldMap } from '../ui/WorldMap.js?build=WORLD-MAP-R35B-20260930B';
 import { GardenEnvironment } from '../world/GardenEnvironment.js?build=WATER-VEG-R103-20261006A';
 import { WildlifeSystem } from '../world/WildlifeSystem.js?build=CAMERA-CUTAWAY-CONTEXT-R21D-20260928E';
@@ -126,6 +126,14 @@ export class Game {
       return out;};
     this.hud.hotbarItems=()=>this.hotbarItems();this.hud.hotbarSelected=()=>this.save.profile.hotbar?.selected??-1;this.hud.selectedGearId=()=>this.activeHotbarId();
     this.hud.onHotbarSelect=i=>this.equipHotbarSlot(i);this.hud.onHotbarMove=(a,b)=>this.moveHotbarSlot(a,b);this.hud.hotbarEnabled=()=>this.canUseHotbar();this.hud.onGearEquip=id=>this.equipGearItem(id);
+    this.hud.onGearOpenChange=open=>{
+      if(!this.input?.isTouch)return;
+      if(open){
+        this.input.resetTouchPointers?.();
+        this.input.actionPressed=false;this.input.hopPressed=false;this.input.strikePressed=false;
+        this.input.frameMove={x:0,y:0};this.input.moveMagnitude=0;this.input.runIntent=false;
+      }
+    };
     this.equippedToolVisual=new EquippedToolVisual(this);this.refreshHotbar(true);
     if(devMode||devMenuEnabled()){this.perfHud=new PerfHud(this);this.devMenu=new DevMenu(this);window.__tgw=this;}
     else applyControlProfile(this,defaultProfile()); // R50.3: free camera everywhere (mouse-look on desktop)

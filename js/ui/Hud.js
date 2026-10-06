@@ -108,9 +108,10 @@ export class Hud {
     const p=document.createElement('div');p.id='gear-panel';p.className='gear-panel';p.setAttribute('aria-label','Bag');document.body.appendChild(p);this.gear=p;
     p.addEventListener('click',e=>{
       e.stopPropagation();
+      if(e.target.closest?.('.gear-close')){this.toggleGear(false);return;}
       const row=e.target.closest?.('.gear-item[data-equip="1"]');if(!row)return;
       const ok=this.onGearEquip?.(row.dataset.itemId);if(ok===false)return;
-      this.renderGear();if(this.touch())setTimeout(()=>this.toggleGear(false),90);
+      this.renderGear();if(this.touch())setTimeout(()=>this.toggleGear(false),110);
     });
     const q=document.createElement('div');q.id='desktop-hotbar-e';q.className='desktop-hotbar-e';q.setAttribute('aria-label','Quick slots 1 to 0. Drag items to rearrange.');
     q.innerHTML=Array.from({length:10},(_,i)=>`<span class="desktop-hotbar-slot" data-slot="${i}" role="button" tabindex="-1" aria-label="Slot ${i===9?'0':i+1}"><small>${i===9?'0':i+1}</small><i class="slot-icon"></i><em class="slot-fallback"></em></span>`).join('');
@@ -164,23 +165,32 @@ export class Hud {
   }
   toggleGear(on=!this.gear?.classList.contains('open')){
     if(!this.gear)return;
+    const mobile=this.touch()&&document.body.classList.contains('hud-classic');
     if(on){
       this.renderGear();
-      if(this.touch()&&!this.objective.classList.contains('open'))this.anchorMobileTop(true);const desktopE=document.body.classList.contains('hud-desktop-e')&&!this.touch(),r=this.bag?.getBoundingClientRect();
-      if(desktopE){this.gear.style.left='50%';this.gear.style.top='auto';this.gear.style.bottom='92px';this.gear.style.transform='translateX(-50%)';}
-      else if(r){this.gear.style.bottom='';this.gear.style.transform='';this.gear.style.left=`${Math.round(r.left)}px`;this.gear.style.top=`${Math.round(r.bottom+10)}px`;}
+      if(mobile){
+        // R105: Bag is a dedicated phone inventory screen, not a dropdown.
+        Object.assign(this.gear.style,{left:'0',right:'0',top:'0',bottom:'0',transform:'none'});
+      }else{
+        const desktopE=document.body.classList.contains('hud-desktop-e')&&!this.touch(),r=this.bag?.getBoundingClientRect();
+        if(desktopE){this.gear.style.left='50%';this.gear.style.right='auto';this.gear.style.top='auto';this.gear.style.bottom='92px';this.gear.style.transform='translateX(-50%)';}
+        else if(r){this.gear.style.right='auto';this.gear.style.bottom='';this.gear.style.transform='';this.gear.style.left=`${Math.round(r.left)}px`;this.gear.style.top=`${Math.round(r.bottom+10)}px`;}
+      }
     }
     this.gear.classList.toggle('open',on);this.bag?.classList.toggle('active',on);
+    document.body.classList.toggle('mobile-bag-open',!!on&&mobile);
+    this.onGearOpenChange?.(!!on&&mobile);
   }
   renderGear(){
     if(!this.gear)return;const items=this.gearItems?.()||[],selected=this.selectedGearId?.()||null,toolArt=new Set(['axe','pickaxe','sickle','watering-can','rod','lantern']);
-    this.gear.innerHTML='<b class="gear-title">Bag</b>'+(items.length?items.map(it=>{
+    const rows=items.length?items.map(it=>{
       const key=it.hotbarIcon||(it.name==='Watering Can'?'watering-can':(it.icon||it.id||'')),art=toolArt.has(key)
-        ?`<i class="gear-item-art" style="--gear-art:url(./brand/icons/tool3d/icon-${key}.png?v=R104-20261006)"></i>`
+        ?`<i class="gear-item-art" style="--gear-art:url(./brand/icons/tool3d/icon-${key}.png?v=R105-20261006)"></i>`
         :(it.icon?`<i class="ico-mask" style="--ico:url(./brand/icons/svg/icon-${it.icon}.svg)"></i>`:`<i class="gear-item-fallback">${it.name.split(/\s+/).map(x=>x[0]).join('').slice(0,2).toUpperCase()}</i>`);
       const equip=it.id&&it.id!=='vest',on=selected===it.id;
-      return `<span class="gear-item${on?' selected':''}${equip?' equippable':''}" data-item-id="${it.id||''}" data-equip="${equip?'1':'0'}" role="${equip?'button':'listitem'}" aria-pressed="${equip?(on?'true':'false'):'false'}">${art}<em>${it.name}</em>${it.n!=null?`<small>${it.n}</small>`:''}</span>`;
-    }).join(''):'<span class="gear-empty">Nothing yet. Craft tools at your workbench.</span>');
+      return `<span class="gear-item${on?' selected':''}${equip?' equippable':''}" data-item-id="${it.id||''}" data-equip="${equip?'1':'0'}" role="${equip?'button':'listitem'}" aria-pressed="${equip?(on?'true':'false'):'false'}">${art}<span class="gear-item-copy"><em>${it.name}</em>${it.n!=null?`<small>${it.n}</small>`:''}</span></span>`;
+    }).join(''):'<span class="gear-empty">Nothing yet. Craft tools at your workbench.</span>';
+    this.gear.innerHTML=`<div class="gear-head"><div><b class="gear-title">Bag</b><small class="gear-subtitle">Tap an item to equip</small></div><button class="gear-close" type="button" aria-label="Close Bag">×</button></div><div class="gear-grid">${rows}</div>`;
     this.renderDesktopHotbar();
   }
   renderDesktopHotbar(){
