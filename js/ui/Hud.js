@@ -84,7 +84,7 @@ export class Hud {
     const x=document.createElement('i');x.className='obj-x';x.setAttribute('role','button');x.setAttribute('aria-label','Hide quest');x.textContent='×';this.objective.appendChild(x);
     const hudB=()=>document.body.classList.contains('hud-test-b');
     x.addEventListener('click',e=>{if(!hudB())return;e.stopPropagation();const o=this.objective;o.classList.add('b-hidden');o.classList.remove('open','pinned');clearTimeout(this._peekT.get(o));});
-    const classic=()=>document.body.classList.contains('hud-classic');
+    const classic=()=>document.body.classList.contains('hud-classic')||(document.body.classList.contains('hud-desktop-e')&&!this.touch());
     this.objective.addEventListener('click',e=>{if(!this.touch()&&!classic())return;e.stopPropagation();if(hudB()&&this.objective.classList.contains('b-hidden')){this.objective.classList.remove('b-hidden','fresh');return;}pin(this.objective);});
     const title=document.getElementById('objective-title');
     if(title)new MutationObserver(()=>{this.setObjectiveIcon(title.textContent);if(this.touch()){this.objective.classList.add('fresh');this.peek(this.objective,5000);}}).observe(title,{childList:true,characterData:true,subtree:true});
