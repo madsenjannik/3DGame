@@ -14,7 +14,7 @@ import { GreenhouseProgressionSystem } from '../gameplay/GreenhouseProgressionSy
 import { OrangeryHubSystem } from '../gameplay/OrangeryHubSystem.js?build=CAMERA-CUTAWAY-CONTEXT-R21D-20260928E';
 import { FishingV1System } from '../gameplay/FishingV1System.js?build=BAG-NIGHT-R84-20261006A';
 import { ChoicePanel } from '../ui/ChoicePanel.js';
-import { Hud } from '../ui/Hud.js?build=BAG-NIGHT-R84-20261006A';
+import { Hud } from '../ui/Hud.js?build=HUD-E-DESKTOP-R85-20261006A';
 import { WorldMap } from '../ui/WorldMap.js?build=WORLD-MAP-R35B-20260930B';
 import { GardenEnvironment } from '../world/GardenEnvironment.js?build=BAG-NIGHT-R84-20261006A';
 import { WildlifeSystem } from '../world/WildlifeSystem.js?build=CAMERA-CUTAWAY-CONTEXT-R21D-20260928E';
@@ -23,7 +23,7 @@ import { NorthStableSystem } from '../world/NorthStableSystem.js?build=STABLE-R4
 import { SaveGame } from './SaveGame.js?build=BAG-NIGHT-R84-20261006A';
 import { WildsLoopSystem } from '../gameplay/WildsLoopSystem.js?build=HUDTEST-D-R78.1-20261005A';
 import { WorkbenchPanel } from '../ui/WorkbenchPanel.js';
-import { DevMenu, devMenuEnabled } from '../ui/DevMenu.js?build=BAG-NIGHT-R84-20261006A';
+import { DevMenu, devMenuEnabled } from '../ui/DevMenu.js?build=HUD-E-DESKTOP-R85-20261006A';
 import { applyControlProfile, defaultProfile } from './ControlProfiles.js';
 import { PerfHud } from '../dev/PerfHud.js';
 import { QualityManager, QUALITY } from './Quality.js';
