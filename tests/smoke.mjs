@@ -238,6 +238,31 @@ try {
     check('mobile R107 QA: full viewport, wide quest, horizontal inventory, compact controls',
       ok&&r.full&&r.questWide&&r.row&&r.bagSmall&&r.actionSmall&&r.hopSmall&&!errors.length,errors[0]||JSON.stringify(r));await ctx.close(); }
 
+  // 2i. R108 desktop-reference mobile proportions: compact collapsed HUD + desktop-sized inventory/hotbar slots
+  { const ctx = await context({ viewport: { width: 844, height: 390 }, isMobile: true, hasTouch: true }); const { p, errors, ok } = await startGame(ctx, 'succulent');
+    let r={};
+    if(ok)r=await p.evaluate(async()=>{
+      const g=window.__tgw,w=ms=>new Promise(x=>setTimeout(x,ms));await w(100);
+      const obj=document.getElementById('objective'),bag=document.getElementById('hud-bag'),map=document.querySelector('.tgw-minimap'),world=document.getElementById('desktop-world-status'),joy=document.getElementById('joy-rest'),hop=document.getElementById('hop-btn'),action=document.getElementById('action');
+      obj.classList.remove('open','pinned');g.hud.anchorMobileTop?.();await w(40);
+      const box=e=>e?.getBoundingClientRect?.();
+      const collapsed={quest:box(obj),bag:box(bag),map:box(map),world:box(world),joy:box(joy),hop:box(hop),action:box(action)};
+      bag.click();await w(100);
+      const inv=document.querySelector('.gear-item'),slot=document.querySelector('#desktop-hotbar-e .desktop-hotbar-slot');
+      return{
+        worldVisible:collapsed.world?.width>=120&&collapsed.world?.height<=44,
+        questCompact:collapsed.quest?.width<=220&&collapsed.quest?.height<=52,
+        bag50:collapsed.bag?.width<=52&&collapsed.bag?.height<=52,
+        mapCompact:collapsed.map?.width<=60,
+        joyCompact:collapsed.joy?.width<=94,
+        buttonsCompact:collapsed.hop?.width<=56&&collapsed.action?.width<=56,
+        inventorySlot:box(inv)?.width<=54,
+        hotbarSlot:box(slot)?.width<=52
+      };
+    });
+    check('mobile R108: desktop-reference compact HUD and slot proportions',
+      ok&&r.worldVisible&&r.questCompact&&r.bag50&&r.mapCompact&&r.joyCompact&&r.buttonsCompact&&r.inventorySlot&&r.hotbarSlot&&!errors.length,errors[0]||JSON.stringify(r));await ctx.close(); }
+
   // 3. Missing assets must not black-screen the game
   { const ctx = await context({ viewport: { width: 844, height: 390 }, isMobile: true, hasTouch: true }, [/assets\/stable\//, /lake_cabin|cabin_fishing_runtime/, /greenhouse-l1/, /characters\/fern\.glb/]);
     const { p, errors, ok } = await startGame(ctx, 'fern'); const failed = ok ? await p.evaluate(() => window.__tgw.failed) : [];
