@@ -3736,30 +3736,27 @@ body.hud-desktop-e:not(.touch) .desktop-hotbar-slot[data-icon="lantern"].filled 
    directly from Jannik's supplied source GLBs; Bamboo Rod remains unchanged.
    Sun size is corrected above while preserving the R97 ray-only rotation. */
 
+/* ===== R100 HUD E corrective pass after R99 visual regression (GO 06/10) =====
+   DESKTOP HUD E ONLY.
+   R99's gradient sun and transform-rotated thumbnails are removed completely.
+   No gameplay, hotbar order, ownership, mobile/touch or layout geometry changes. */
 
-/* ===== R99 HUD E sun + quickbar readability polish (GO 06/10) =====
-   DESKTOP HUD E ONLY. No gameplay/mobile/touch changes.
-   - Sun outer footprint matches the moon; source rays only, no synthetic duplicate ring.
-   - Tool art cache-busted so R98 source-faithful renders actually replace stale R97 assets.
-   - Tool icons share one subtle floating/rocking motion with the Bag icon.
-   - Pickaxe gets extra scale + tilt so the head reads clearly in the slot. */
-
-@keyframes r99-hotbar-icon-idle{
-  0%,100%{transform:translateY(0) rotate(var(--r99-rot,0deg))}
-  50%{transform:translateY(-2px) rotate(calc(var(--r99-rot,0deg) + 2deg))}
+@keyframes r100-icon-float{
+  0%,100%{transform:translateY(0)}
+  50%{transform:translateY(-2px)}
 }
 
-/* DAY sun: same 34px footprint as moon.
-   The center is fixed; only the ORIGINAL sun PNG's outer rays are shown on ::before and rotated. */
+/* DAY icon: exactly the same 34px outer footprint as NIGHT.
+   The original 3D sun art supplies the orb; ONE eight-ray ring rotates around it.
+   No full source sun underneath = no doubled/extra rays. */
 body.hud-desktop-e:not(.touch) .desktop-world-status:not(.night) i{
-  width:34px!important;
-  height:34px!important;
-  flex:0 0 34px!important;
-  background-image:radial-gradient(circle at 39% 35%,#ffe98b 0 8%,#f8c33e 27%,#e1a11e 47%,#ba7410 57%,transparent 60%)!important;
-  background-size:100% 100%!important;
-  background-position:center!important;
-  background-repeat:no-repeat!important;
-  filter:drop-shadow(0 1px 1px rgba(121,79,18,.16))!important;
+  position:relative!important;
+  overflow:visible!important;
+  width:34px!important;height:34px!important;flex:0 0 34px!important;
+  background:none!important;
+  animation:none!important;
+  transform:none!important;
+  filter:none!important;
 }
 body.hud-desktop-e:not(.touch) .desktop-world-status:not(.night) i::before{
   content:""!important;
@@ -3767,82 +3764,70 @@ body.hud-desktop-e:not(.touch) .desktop-world-status:not(.night) i::before{
   position:absolute!important;
   inset:0!important;
   border-radius:50%!important;
-  background:url(./brand/icons/128/icon-sun.png?v=R99-20261006) center/contain no-repeat!important;
-  -webkit-mask:radial-gradient(circle,transparent 0 38%,#000 43% 100%)!important;
-  mask:radial-gradient(circle,transparent 0 38%,#000 43% 100%)!important;
-  transform-origin:50% 50%!important;
+  background:repeating-conic-gradient(from 0deg,#d79c20 0deg 7deg,transparent 7deg 45deg)!important;
+  -webkit-mask:radial-gradient(circle at 50% 44%,transparent 0 34%,#000 37% 51%,transparent 54%)!important;
+  mask:radial-gradient(circle at 50% 44%,transparent 0 34%,#000 37% 51%,transparent 54%)!important;
+  transform-origin:50% 44%!important;
   animation:r97-sun-rays 8s linear infinite!important;
-  filter:none!important;
+  filter:drop-shadow(0 1px 1px rgba(121,79,18,.14))!important;
+  pointer-events:none!important;
+}
+body.hud-desktop-e:not(.touch) .desktop-world-status:not(.night) i::after{
+  content:""!important;
+  display:block!important;
+  position:absolute!important;
+  inset:0!important;
+  background:url(./brand/icons/128/icon-sun.png?v=R100-20261006) 50% 44%/contain no-repeat!important;
+  -webkit-mask:radial-gradient(circle at 50% 44%,#000 0 33%,transparent 36%)!important;
+  mask:radial-gradient(circle at 50% 44%,#000 0 33%,transparent 36%)!important;
+  filter:drop-shadow(0 1px 1px rgba(121,79,18,.16))!important;
   pointer-events:none!important;
 }
 
-/* Moon remains the size reference. Cache-bust it with this HUD pass as well. */
+/* NIGHT is the exact size reference and keeps the approved gentle rock. */
 body.hud-desktop-e:not(.touch) .desktop-world-status.night i{
-  width:34px!important;
-  height:34px!important;
-  flex:0 0 34px!important;
-  background-image:url(./brand/icons/128/icon-moon.png?v=R99-20261006)!important;
+  width:34px!important;height:34px!important;flex:0 0 34px!important;
+  background-image:url(./brand/icons/128/icon-moon.png?v=R100-20261006)!important;
   background-size:contain!important;
   background-position:center!important;
+  background-repeat:no-repeat!important;
 }
 
-/* Bag icon gets its own layer so it can use the exact same idle motion as the tools,
-   without moving the Bag slot/keycap itself. */
+/* Bag and carried tools: same quiet vertical idle motion.
+   Static readability angles are baked into the Axe/Pickaxe/Sickle PNGs,
+   so the browser never continuously rotates/resamples them. */
 body.hud-desktop-e:not(.touch) #hud #hud-bag.hud-fold-btn{
   background:linear-gradient(180deg,#fff9e9 0%,#f7ebcf 58%,#ead7ad 100%)!important;
 }
 body.hud-desktop-e:not(.touch) #hud #hud-bag.hud-fold-btn::before{
   content:""!important;
   display:block!important;
-  width:36px!important;
-  height:36px!important;
-  background:url(./brand/icons/64/icon-bag.png?v=R99-20261006) center/contain no-repeat!important;
-  --r99-rot:-2deg;
-  animation:r99-hotbar-icon-idle 2.6s ease-in-out infinite!important;
-  transform-origin:50% 58%!important;
+  width:36px!important;height:36px!important;
+  background:url(./brand/icons/64/icon-bag.png?v=R100-20261006) center/contain no-repeat!important;
+  animation:r100-icon-float 2.8s ease-in-out infinite!important;
   pointer-events:none!important;
 }
 
-/* Source-faithful R98 renders, now cache-busted and angled for slot readability. */
 body.hud-desktop-e:not(.touch) .desktop-hotbar-slot[data-icon].filled .slot-icon{
-  animation:r99-hotbar-icon-idle 2.6s ease-in-out infinite!important;
-  transform-origin:50% 58%!important;
-  will-change:transform!important;
+  width:48px!important;height:48px!important;
+  background-color:transparent!important;
+  background-size:contain!important;
+  background-position:center!important;
+  background-repeat:no-repeat!important;
+  -webkit-mask:none!important;mask:none!important;
+  transform:none;
+  animation:r100-icon-float 2.8s ease-in-out infinite!important;
+  filter:drop-shadow(0 2px 2px rgba(43,42,36,.16))!important;
+  will-change:transform;
 }
-body.hud-desktop-e:not(.touch) .desktop-hotbar-slot[data-icon="axe"] .slot-icon{
-  --r99-rot:-12deg;
-  background-image:url(./brand/icons/tool3d/icon-axe.png?v=R99-20261006)!important;
-  background-size:112% 112%!important;
-}
-body.hud-desktop-e:not(.touch) .desktop-hotbar-slot[data-icon="pickaxe"] .slot-icon{
-  --r99-rot:18deg;
-  background-image:url(./brand/icons/tool3d/icon-pickaxe.png?v=R99-20261006)!important;
-  background-size:120% 120%!important;
-  background-position:50% 45%!important;
-  filter:drop-shadow(0 2px 2px rgba(43,42,36,.14))!important;
-}
-body.hud-desktop-e:not(.touch) .desktop-hotbar-slot[data-icon="sickle"] .slot-icon{
-  --r99-rot:-8deg;
-  background-image:url(./brand/icons/tool3d/icon-sickle.png?v=R99-20261006)!important;
-  background-size:108% 108%!important;
-}
-body.hud-desktop-e:not(.touch) .desktop-hotbar-slot[data-icon="watering-can"] .slot-icon{
-  --r99-rot:-4deg;
-  background-image:url(./brand/icons/tool3d/icon-watering-can.png?v=R99-20261006)!important;
-  background-size:104% 104%!important;
-}
-body.hud-desktop-e:not(.touch) .desktop-hotbar-slot[data-icon="rod"] .slot-icon{
-  --r99-rot:3deg;
-  background-image:url(./brand/icons/tool3d/icon-rod.png?v=R99-20261006)!important;
-  background-size:106% 106%!important;
-}
-body.hud-desktop-e:not(.touch) .desktop-hotbar-slot[data-icon="lantern"] .slot-icon{
-  --r99-rot:-3deg;
-  background-image:url(./brand/icons/tool3d/icon-lantern.png?v=R99-20261006)!important;
-  background-size:104% 104%!important;
-}
+body.hud-desktop-e:not(.touch) .desktop-hotbar-slot[data-icon="axe"] .slot-icon{background-image:url(./brand/icons/tool3d/icon-axe.png?v=R100-20261006)!important}
+body.hud-desktop-e:not(.touch) .desktop-hotbar-slot[data-icon="pickaxe"] .slot-icon{background-image:url(./brand/icons/tool3d/icon-pickaxe.png?v=R100-20261006)!important}
+body.hud-desktop-e:not(.touch) .desktop-hotbar-slot[data-icon="sickle"] .slot-icon{background-image:url(./brand/icons/tool3d/icon-sickle.png?v=R100-20261006)!important}
+body.hud-desktop-e:not(.touch) .desktop-hotbar-slot[data-icon="watering-can"] .slot-icon{background-image:url(./brand/icons/tool3d/icon-watering-can.png?v=R100-20261006)!important}
+body.hud-desktop-e:not(.touch) .desktop-hotbar-slot[data-icon="rod"] .slot-icon{background-image:url(./brand/icons/tool3d/icon-rod.png?v=R100-20261006)!important}
+body.hud-desktop-e:not(.touch) .desktop-hotbar-slot[data-icon="lantern"] .slot-icon{background-image:url(./brand/icons/tool3d/icon-lantern.png?v=R100-20261006)!important}
 
-/* A small phase offset stops the bar from moving like one rigid strip. */
+/* Stagger the identical motion very slightly; no rotation is animated. */
 body.hud-desktop-e:not(.touch) .desktop-hotbar-slot:nth-child(2) .slot-icon{animation-delay:-.35s!important}
 body.hud-desktop-e:not(.touch) .desktop-hotbar-slot:nth-child(3) .slot-icon{animation-delay:-.70s!important}
 body.hud-desktop-e:not(.touch) .desktop-hotbar-slot:nth-child(4) .slot-icon{animation-delay:-1.05s!important}
@@ -3855,14 +3840,19 @@ body.hud-desktop-e:not(.touch) .desktop-hotbar-slot:nth-child(7) .slot-icon{anim
   body.hud-desktop-e:not(.touch) .desktop-world-status.night i{
     width:29px!important;height:29px!important;flex-basis:29px!important;
   }
+  body.hud-desktop-e:not(.touch) .desktop-hotbar-slot[data-icon].filled .slot-icon{
+    width:42px!important;height:42px!important;
+  }
   body.hud-desktop-e:not(.touch) #hud #hud-bag.hud-fold-btn::before{
     width:32px!important;height:32px!important;
   }
 }
 @media(prefers-reduced-motion:reduce){
+  body.hud-desktop-e:not(.touch) .desktop-world-status:not(.night) i::before,
+  body.hud-desktop-e:not(.touch) .desktop-world-status.night i,
   body.hud-desktop-e:not(.touch) .desktop-hotbar-slot[data-icon].filled .slot-icon,
   body.hud-desktop-e:not(.touch) #hud #hud-bag.hud-fold-btn::before{
     animation:none!important;
-    transform:rotate(var(--r99-rot,0deg))!important;
+    transform:none!important;
   }
 }
