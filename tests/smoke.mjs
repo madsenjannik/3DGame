@@ -179,6 +179,43 @@ try {
     check('mobile Bag R105: fullscreen grid, gameplay input blocked/reset, close + equip work',
       ok&&r.body&&r.full&&r.grid&&r.reset&&r.close&&r.closed&&r.equip&&!errors.length,errors[0]||JSON.stringify(r));await ctx.close(); }
 
+  // 2g. R106 cross-platform UI: mobile surfaces the SAME 10-slot hotbar, touch tap + hold/drag share persisted desktop state
+  { const ctx = await context({ viewport: { width: 844, height: 390 }, isMobile: true, hasTouch: true }); const { p, errors, ok } = await startGame(ctx, 'succulent');
+    let r={};
+    if(ok){
+      r=await p.evaluate(async()=>{
+        const g=window.__tgw,w=ms=>new Promise(x=>setTimeout(x,ms));Object.assign(g.wilds.profile.tools,{axe:true,pickaxe:true,sickle:true,can:true});g.refreshHotbar(true);await w(100);
+        const bag=document.getElementById('hud-bag'),map=document.querySelector('.tgw-minimap'),mapCanvas=map?.querySelector('canvas');
+        bag.click();await w(100);
+        const q=document.getElementById('desktop-hotbar-e'),slots=[...q.querySelectorAll('.desktop-hotbar-slot')],gp=document.getElementById('gear-panel');
+        const cs=e=>getComputedStyle(e);
+        return {
+          open:document.body.classList.contains('mobile-bag-open')&&gp.classList.contains('open'),
+          sameHotbar:slots.length===10&&cs(q).display==='flex',
+          noNumbers:slots.every(x=>cs(x.querySelector('small')).display==='none'),
+          bagShape:parseFloat(cs(bag).borderRadius)<25,
+          mapReal:!!mapCanvas&&cs(mapCanvas).display==='block'&&parseFloat(cs(map).width)>=60,
+          first:g.save.profile.hotbar.slots.slice()
+        };
+      });
+      const from=await p.locator('#desktop-hotbar-e .desktop-hotbar-slot[data-slot="1"]').boundingBox(),to=await p.locator('#desktop-hotbar-e .desktop-hotbar-slot[data-slot="6"]').boundingBox();
+      if(from&&to){
+        await p.mouse.move(from.x+from.width/2,from.y+from.height/2);await p.mouse.down();
+        await p.mouse.move(from.x+from.width/2+9,from.y+from.height/2,{steps:2});
+        await p.mouse.move(to.x+to.width/2,to.y+to.height/2,{steps:8});await p.mouse.up();await p.waitForTimeout(120);
+      }
+      Object.assign(r,await p.evaluate(()=>{
+        const g=window.__tgw;return{dragged:g.save.profile.hotbar.slots[6]==='pickaxe',stillOpen:document.body.classList.contains('mobile-bag-open')};
+      }));
+      if(r.stillOpen){
+        const slot7=await p.locator('#desktop-hotbar-e .desktop-hotbar-slot[data-slot="6"]').boundingBox();
+        if(slot7){await p.mouse.click(slot7.x+slot7.width/2,slot7.y+slot7.height/2);await p.waitForTimeout(160);}
+      }
+      Object.assign(r,await p.evaluate(()=>{const g=window.__tgw;return{equipped:g.activeHotbarId()==='pickaxe',closed:!document.body.classList.contains('mobile-bag-open'),selected:g.save.profile.hotbar.selected===6};}));
+    }
+    check('R106 mobile/desktop UI: same 10-slot hotbar, real minimap, rounded family, touch drag + tap equip',
+      ok&&r.open&&r.sameHotbar&&r.noNumbers&&r.bagShape&&r.mapReal&&r.dragged&&r.stillOpen&&r.equipped&&r.closed&&r.selected&&!errors.length,errors[0]||JSON.stringify(r));await ctx.close(); }
+
   // 3. Missing assets must not black-screen the game
   { const ctx = await context({ viewport: { width: 844, height: 390 }, isMobile: true, hasTouch: true }, [/assets\/stable\//, /lake_cabin|cabin_fishing_runtime/, /greenhouse-l1/, /characters\/fern\.glb/]);
     const { p, errors, ok } = await startGame(ctx, 'fern'); const failed = ok ? await p.evaluate(() => window.__tgw.failed) : [];

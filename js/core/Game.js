@@ -14,7 +14,7 @@ import { GreenhouseProgressionSystem } from '../gameplay/GreenhouseProgressionSy
 import { OrangeryHubSystem } from '../gameplay/OrangeryHubSystem.js?build=CAMERA-CUTAWAY-CONTEXT-R21D-20260928E';
 import { FishingV1System } from '../gameplay/FishingV1System.js?build=BAG-NIGHT-R84-20261006A';
 import { ChoicePanel } from '../ui/ChoicePanel.js';
-import { Hud } from '../ui/Hud.js?build=MOBILE-BAG-FULLSCREEN-R105-20261006A';
+import { Hud } from '../ui/Hud.js?build=CROSSPLATFORM-UI-R106-20261006A';
 import { WorldMap } from '../ui/WorldMap.js?build=WORLD-MAP-R35B-20260930B';
 import { GardenEnvironment } from '../world/GardenEnvironment.js?build=WATER-VEG-R103-20261006A';
 import { WildlifeSystem } from '../world/WildlifeSystem.js?build=CAMERA-CUTAWAY-CONTEXT-R21D-20260928E';
@@ -125,7 +125,7 @@ export class Game {
       if(this.lantern?.ready)out.push({id:'lantern',icon:'lantern',hotbarIcon:'lantern',name:'Lantern',n:'night'});
       return out;};
     this.hud.hotbarItems=()=>this.hotbarItems();this.hud.hotbarSelected=()=>this.save.profile.hotbar?.selected??-1;this.hud.selectedGearId=()=>this.activeHotbarId();
-    this.hud.onHotbarSelect=i=>this.equipHotbarSlot(i);this.hud.onHotbarMove=(a,b)=>this.moveHotbarSlot(a,b);this.hud.hotbarEnabled=()=>this.canUseHotbar();this.hud.onGearEquip=id=>this.equipGearItem(id);
+    this.hud.onHotbarSelect=i=>this.equipHotbarSlot(i);this.hud.onHotbarMove=(a,b)=>this.moveHotbarSlot(a,b);this.hud.hotbarEnabled=()=>this.canUseHotbar();this.hud.hotbarEditable=()=>this.canEditHotbar();this.hud.onGearEquip=id=>this.equipGearItem(id);
     this.hud.onGearOpenChange=open=>{
       if(!this.input?.isTouch)return;
       if(open){
@@ -204,8 +204,13 @@ export class Game {
   canUseHotbar(){
     return !this.input?.isTouch&&document.body.classList.contains('hud-desktop-e')&&this.canChangeEquippedGear();
   }
+  canEditHotbar(){
+    const desktop=!this.input?.isTouch&&document.body.classList.contains('hud-desktop-e');
+    const mobileBag=!!this.input?.isTouch&&document.body.classList.contains('mobile-bag-open');
+    return (desktop||mobileBag)&&this.canChangeEquippedGear();
+  }
   equipHotbarSlot(i){
-    if(!this.canUseHotbar()||!Number.isInteger(i)||i<0||i>9)return false;
+    if(!this.canEditHotbar()||!Number.isInteger(i)||i<0||i>9)return false;
     const hb=this.syncHotbarLayout();hb.selected=i;this.save.persist();this.syncHotbarEquipment();this.hud.renderDesktopHotbar?.();return true;
   }
   equipGearItem(id){
@@ -217,7 +222,7 @@ export class Game {
     if(this.hud.gear?.classList.contains('open'))this.hud.renderGear?.();return true;
   }
   moveHotbarSlot(from,to){
-    if(!this.canUseHotbar()||![from,to].every(i=>Number.isInteger(i)&&i>=0&&i<10)||from===to)return false;
+    if(!this.canEditHotbar()||![from,to].every(i=>Number.isInteger(i)&&i>=0&&i<10)||from===to)return false;
     const hb=this.syncHotbarLayout(),tmp=hb.slots[from];hb.slots[from]=hb.slots[to];hb.slots[to]=tmp;
     if(hb.selected===from)hb.selected=to;else if(hb.selected===to)hb.selected=from;
     this.save.persist();this.refreshHotbar(true);return true;

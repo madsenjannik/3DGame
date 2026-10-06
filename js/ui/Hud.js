@@ -125,13 +125,17 @@ export class Hud {
       this._hotbarPointer=null;
       if(d.drag&&!cancel&&d.target&&d.target!==d.source){
         const to=Number(d.target.dataset.slot);if(Number.isInteger(to))this.onHotbarMove?.(d.from,to);
-      }else if(!d.drag&&!cancel)this.onHotbarSelect?.(d.from);
+      }else if(!d.drag&&!cancel){
+        const ok=this.onHotbarSelect?.(d.from);
+        if(ok!==false&&this.touch()&&document.body.classList.contains('mobile-bag-open'))setTimeout(()=>this.toggleGear(false),110);
+      }
       d.source.classList.remove('dragging');clearHover();this._hotbarGhost?.remove();this._hotbarGhost=null;
       try{q.releasePointerCapture?.(d.id);}catch{}
     };
     q.addEventListener('pointerdown',e=>{
-      if(this.touch()||e.button!==0)return;const slot=e.target.closest?.('.desktop-hotbar-slot');
-      if(!slot||!slot.classList.contains('filled')||this.hotbarEnabled?.()===false)return;
+      const mobileBag=this.touch()&&document.body.classList.contains('mobile-bag-open');
+      if((this.touch()&&!mobileBag)||(e.pointerType==='mouse'&&e.button!==0))return;const slot=e.target.closest?.('.desktop-hotbar-slot');
+      if(!slot||!slot.classList.contains('filled')||(this.hotbarEditable?.()===false))return;
       e.preventDefault();e.stopPropagation();const from=Number(slot.dataset.slot);
       this._hotbarPointer={id:e.pointerId,from,source:slot,target:slot,x:e.clientX,y:e.clientY,drag:false};
       try{q.setPointerCapture?.(e.pointerId);}catch{}
@@ -190,7 +194,7 @@ export class Hud {
       const equip=it.id&&it.id!=='vest',on=selected===it.id;
       return `<span class="gear-item${on?' selected':''}${equip?' equippable':''}" data-item-id="${it.id||''}" data-equip="${equip?'1':'0'}" role="${equip?'button':'listitem'}" aria-pressed="${equip?(on?'true':'false'):'false'}">${art}<span class="gear-item-copy"><em>${it.name}</em>${it.n!=null?`<small>${it.n}</small>`:''}</span></span>`;
     }).join(''):'<span class="gear-empty">Nothing yet. Craft tools at your workbench.</span>';
-    this.gear.innerHTML=`<div class="gear-head"><div><b class="gear-title">Bag</b><small class="gear-subtitle">Tap an item to equip</small></div><button class="gear-close" type="button" aria-label="Close Bag">×</button></div><div class="gear-grid">${rows}</div>`;
+    this.gear.innerHTML=`<div class="gear-head"><div><b class="gear-title">Bag</b><small class="gear-subtitle">Carried gear</small></div><button class="gear-close" type="button" aria-label="Close Bag">×</button></div><div class="gear-section-title">Inventory</div><div class="gear-grid">${rows}</div><div class="gear-hotbar-label"><b>Quick slots</b><span>Tap to equip · hold + drag to move</span></div>`;
     this.renderDesktopHotbar();
   }
   renderDesktopHotbar(){
