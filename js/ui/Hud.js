@@ -111,6 +111,11 @@ export class Hud {
   renderGear(){
     if(!this.gear)return;const items=this.gearItems?.()||[];
     this.gear.innerHTML='<b class="gear-title">Bag</b>'+(items.length?items.map(it=>`<span class="gear-item">${it.icon?`<i class="ico-mask" style="--ico:url(./brand/icons/svg/icon-${it.icon}.svg)"></i>`:''}<em>${it.name}</em>${it.n!=null?`<small>${it.n}</small>`:''}</span>`).join(''):'<span class="gear-empty">Nothing yet. Craft tools at your workbench.</span>');
+    this.renderDesktopHotbar();
+  }
+  renderDesktopHotbar(){
+    if(!this.desktopHotbar)return;const items=this.gearItems?.()||[],slots=[...this.desktopHotbar.querySelectorAll('.desktop-hotbar-slot')];
+    slots.forEach((slot,i)=>{const it=items[i],icon=slot.querySelector('.slot-icon'),fallback=slot.querySelector('.slot-fallback');slot.classList.toggle('filled',!!it);slot.title=it?.name||`Empty slot ${i+1}`;icon.style.setProperty('--slot-ico',it?.icon?`url(./brand/icons/svg/icon-${it.icon}.svg)`:'none');fallback.textContent=it&&!it.icon?it.name.split(/\s+/).map(x=>x[0]).join('').slice(0,2).toUpperCase():'';});
   }
   peek(el,ms){if(!el||el.classList.contains('pinned'))return;el.classList.add('open');clearTimeout(this._peekT?.get(el));this._peekT?.set(el,setTimeout(()=>el.classList.remove('open'),ms));}
   setMaterial(id,value){const el=document.getElementById(`${id}-count`);if(el){el.textContent=String(value);el.closest('.material-chip')?.classList.toggle('zero',!value);}}
@@ -120,7 +125,7 @@ export class Hud {
     this.kicker.textContent=kicker;this.title.textContent=goal.title;this.copy.textContent=goal.copy;this.setObjectiveIcon(goal.title);
   }
   setTools(tools,water){
-    if(this.gear?.classList.contains('open'))this.renderGear();
+    if(this.gear?.classList.contains('open'))this.renderGear();this.renderDesktopHotbar?.();
     const row=document.getElementById('tools-row');if(!row)return;
     for(const el of row.querySelectorAll('[data-tool]'))el.classList.toggle('owned',!!tools[el.dataset.tool]);
     const w=document.getElementById('tool-water');if(w)w.textContent=tools.can?String(water):'';
@@ -140,5 +145,5 @@ export class Hud {
   }
   showToast(text){this.toast.textContent=text;this.toast.classList.add('show');clearTimeout(this.toastTimer);this.toastTimer=setTimeout(()=>this.toast.classList.remove('show'),2200);}
   markMoved(){this.hint.style.opacity='0';}
-  ready(){requestAnimationFrame(()=>{this.loading.classList.add('hide');setTimeout(()=>this.loading.remove(),1000);});}
+  ready(){this.renderDesktopHotbar?.();requestAnimationFrame(()=>{this.loading.classList.add('hide');setTimeout(()=>this.loading.remove(),1000);});}
 }
