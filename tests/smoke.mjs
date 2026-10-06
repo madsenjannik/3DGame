@@ -127,6 +127,34 @@ try {
     check('water vegetation R103: no brown triangular reed clones; replacement vegetation present',
       ok&&r.ready&&r.reed===0&&r.bulrush>0&&r.total>0&&!errors.length,errors[0]||JSON.stringify(r));await ctx.close(); }
 
+  // 2e. R104 mobile consistency: Bag stays put, quest expands down, Bag tool art + tap-to-equip share desktop state
+  { const ctx = await context({ viewport: { width: 844, height: 390 }, isMobile: true, hasTouch: true }); const { p, errors, ok } = await startGame(ctx, 'succulent');
+    let r = {};
+    if (ok) r = await p.evaluate(async () => {
+      const g=window.__tgw,w=ms=>new Promise(x=>setTimeout(x,ms));Object.assign(g.wilds.profile.tools,{axe:true,pickaxe:true,sickle:true,can:true});g.refreshHotbar(true);await w(120);
+      const obj=document.getElementById('objective'),bag=document.getElementById('hud-bag'),box=e=>e.getBoundingClientRect();
+      obj.classList.remove('open','pinned');g.hud.anchorMobileTop(true);await w(40);
+      const closed={bag:box(bag).left,w:box(obj).width};
+      obj.click();await w(120);
+      const opened={bag:box(bag).left,w:box(obj).width,h:box(obj).height};
+      bag.click();await w(100);
+      const row=document.querySelector('.gear-item[data-item-id="pickaxe"]'),art=row?.querySelector('.gear-item-art');
+      const bagArt=!!art&&getComputedStyle(art).backgroundImage.includes('tool3d/icon-pickaxe.png');
+      row?.click();await w(150);
+      const held=g.equippedToolVisual?.current;
+      return {
+        classic:document.body.classList.contains('hud-classic'),
+        fixed:Math.abs(opened.bag-closed.bag)<1.5,
+        vertical:Math.abs(opened.w-closed.w)<2&&opened.h>52,
+        bagArt,
+        selected:g.activeHotbarId()==='pickaxe'&&g.save.profile.hotbar.selected===g.save.profile.hotbar.slots.indexOf('pickaxe'),
+        real3d:!!held&&!held.isSprite&&held.parent?.name==='Hand_Socket_R'&&held.children?.some?.(x=>x.isMesh),
+        closes:!document.getElementById('gear-panel').classList.contains('open')
+      };
+    });
+    check('mobile HUD R104: stable Bag/quest, source tool art, tap equips same real 3D hotbar item',
+      ok&&r.classic&&r.fixed&&r.vertical&&r.bagArt&&r.selected&&r.real3d&&r.closes&&!errors.length,errors[0]||JSON.stringify(r));await ctx.close(); }
+
   // 3. Missing assets must not black-screen the game
   { const ctx = await context({ viewport: { width: 844, height: 390 }, isMobile: true, hasTouch: true }, [/assets\/stable\//, /lake_cabin|cabin_fishing_runtime/, /greenhouse-l1/, /characters\/fern\.glb/]);
     const { p, errors, ok } = await startGame(ctx, 'fern'); const failed = ok ? await p.evaluate(() => window.__tgw.failed) : [];

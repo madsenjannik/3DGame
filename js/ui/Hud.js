@@ -79,20 +79,39 @@ export class Hud {
     const always=()=>{if(this.touch()&&!inv.classList.contains('always'))inv.classList.add('open','pinned','always');};always();
     new MutationObserver(always).observe(document.body,{attributes:true,attributeFilter:['class']});   // 'touch' is set on body after the HUD is built
     this.buildGear();
-    bag.addEventListener('click',e=>{e.stopPropagation();this.toggleGear();});
+    bag.addEventListener('click',e=>{e.stopPropagation();if(this.touch()&&!this.objective.classList.contains('open'))this.anchorMobileTop(true);this.toggleGear();});
     // R74 Test HUD B: the quest is a one-line chip; tap shows the text, the cross hides it to a round button, tap brings it back.
     const x=document.createElement('i');x.className='obj-x';x.setAttribute('role','button');x.setAttribute('aria-label','Hide quest');x.textContent='×';this.objective.appendChild(x);
     const hudB=()=>document.body.classList.contains('hud-test-b');
     x.addEventListener('click',e=>{if(!hudB())return;e.stopPropagation();const o=this.objective;o.classList.add('b-hidden');o.classList.remove('open','pinned');clearTimeout(this._peekT.get(o));});
     const classic=()=>document.body.classList.contains('hud-classic')||(document.body.classList.contains('hud-desktop-e')&&!this.touch());
-    this.objective.addEventListener('click',e=>{if(!this.touch()&&!classic())return;e.stopPropagation();if(hudB()&&this.objective.classList.contains('b-hidden')){this.objective.classList.remove('b-hidden','fresh');return;}pin(this.objective);});
+    this.objective.addEventListener('click',e=>{if(!this.touch()&&!classic())return;e.stopPropagation();if(hudB()&&this.objective.classList.contains('b-hidden')){this.objective.classList.remove('b-hidden','fresh');return;}const wasOpen=this.objective.classList.contains('open');if(this.touch()&&!wasOpen)this.anchorMobileTop(true);pin(this.objective);if(this.touch()&&wasOpen)requestAnimationFrame(()=>this.anchorMobileTop(true));});
     const title=document.getElementById('objective-title');
-    if(title)new MutationObserver(()=>{this.setObjectiveIcon(title.textContent);if(this.touch()){this.objective.classList.add('fresh');this.peek(this.objective,5000);}}).observe(title,{childList:true,characterData:true,subtree:true});
+    if(title)new MutationObserver(()=>{this.setObjectiveIcon(title.textContent);if(this.touch()){if(!this.objective.classList.contains('open'))this.anchorMobileTop(true);this.objective.classList.add('fresh');this.peek(this.objective,5000);}}).observe(title,{childList:true,characterData:true,subtree:true});
+  }
+  // R104: on phones the Bag button must not move when the quest expands.
+  // Capture the quest's COLLAPSED natural width, pin Bag beside that footprint, then let the quest grow downward.
+  anchorMobileTop(force=false){
+    if(!this.touch()||!this.bag||!this.objective||!document.body.classList.contains('hud-classic'))return;
+    if(this.objective.classList.contains('open')&&!force)return;
+    const o=this.objective.getBoundingClientRect(),b=this.bag.getBoundingClientRect();
+    if(!o.width||!o.height)return;
+    const w=Math.round(o.width),gap=12,bagW=b.width||52,bagH=b.height||52,pad=14;
+    this._mobileQuestStableWidth=w;
+    this.objective.style.setProperty('--mobile-quest-stable-width',w+'px');
+    const left=Math.min(innerWidth-bagW-pad,Math.round(o.left+w+gap));
+    const top=Math.round(o.top+(o.height-bagH)/2);
+    Object.assign(this.bag.style,{position:'fixed',left:left+'px',right:'auto',top:top+'px',bottom:'auto',zIndex:'31'});
   }
   // R101: Bag stays the carried-item list; desktop hotbar has its own persistent slot order.
   buildGear(){
     const p=document.createElement('div');p.id='gear-panel';p.className='gear-panel';p.setAttribute('aria-label','Bag');document.body.appendChild(p);this.gear=p;
-    p.addEventListener('click',e=>e.stopPropagation());
+    p.addEventListener('click',e=>{
+      e.stopPropagation();
+      const row=e.target.closest?.('.gear-item[data-equip="1"]');if(!row)return;
+      const ok=this.onGearEquip?.(row.dataset.itemId);if(ok===false)return;
+      this.renderGear();if(this.touch())setTimeout(()=>this.toggleGear(false),90);
+    });
     const q=document.createElement('div');q.id='desktop-hotbar-e';q.className='desktop-hotbar-e';q.setAttribute('aria-label','Quick slots 1 to 0. Drag items to rearrange.');
     q.innerHTML=Array.from({length:10},(_,i)=>`<span class="desktop-hotbar-slot" data-slot="${i}" role="button" tabindex="-1" aria-label="Slot ${i===9?'0':i+1}"><small>${i===9?'0':i+1}</small><i class="slot-icon"></i><em class="slot-fallback"></em></span>`).join('');
     document.body.appendChild(q);this.desktopHotbar=q;this._hotbarPointer=null;this._hotbarGhost=null;
@@ -147,15 +166,21 @@ export class Hud {
     if(!this.gear)return;
     if(on){
       this.renderGear();
-      const desktopE=document.body.classList.contains('hud-desktop-e')&&!this.touch(),r=this.bag?.getBoundingClientRect();
+      if(this.touch()&&!this.objective.classList.contains('open'))this.anchorMobileTop(true);const desktopE=document.body.classList.contains('hud-desktop-e')&&!this.touch(),r=this.bag?.getBoundingClientRect();
       if(desktopE){this.gear.style.left='50%';this.gear.style.top='auto';this.gear.style.bottom='92px';this.gear.style.transform='translateX(-50%)';}
       else if(r){this.gear.style.bottom='';this.gear.style.transform='';this.gear.style.left=`${Math.round(r.left)}px`;this.gear.style.top=`${Math.round(r.bottom+10)}px`;}
     }
     this.gear.classList.toggle('open',on);this.bag?.classList.toggle('active',on);
   }
   renderGear(){
-    if(!this.gear)return;const items=this.gearItems?.()||[];
-    this.gear.innerHTML='<b class="gear-title">Bag</b>'+(items.length?items.map(it=>`<span class="gear-item">${it.icon?`<i class="ico-mask" style="--ico:url(./brand/icons/svg/icon-${it.icon}.svg)"></i>`:''}<em>${it.name}</em>${it.n!=null?`<small>${it.n}</small>`:''}</span>`).join(''):'<span class="gear-empty">Nothing yet. Craft tools at your workbench.</span>');
+    if(!this.gear)return;const items=this.gearItems?.()||[],selected=this.selectedGearId?.()||null,toolArt=new Set(['axe','pickaxe','sickle','watering-can','rod','lantern']);
+    this.gear.innerHTML='<b class="gear-title">Bag</b>'+(items.length?items.map(it=>{
+      const key=it.hotbarIcon||(it.name==='Watering Can'?'watering-can':(it.icon||it.id||'')),art=toolArt.has(key)
+        ?`<i class="gear-item-art" style="--gear-art:url(./brand/icons/tool3d/icon-${key}.png?v=R104-20261006)"></i>`
+        :(it.icon?`<i class="ico-mask" style="--ico:url(./brand/icons/svg/icon-${it.icon}.svg)"></i>`:`<i class="gear-item-fallback">${it.name.split(/\s+/).map(x=>x[0]).join('').slice(0,2).toUpperCase()}</i>`);
+      const equip=it.id&&it.id!=='vest',on=selected===it.id;
+      return `<span class="gear-item${on?' selected':''}${equip?' equippable':''}" data-item-id="${it.id||''}" data-equip="${equip?'1':'0'}" role="${equip?'button':'listitem'}" aria-pressed="${equip?(on?'true':'false'):'false'}">${art}<em>${it.name}</em>${it.n!=null?`<small>${it.n}</small>`:''}</span>`;
+    }).join(''):'<span class="gear-empty">Nothing yet. Craft tools at your workbench.</span>');
     this.renderDesktopHotbar();
   }
   renderDesktopHotbar(){
@@ -204,5 +229,5 @@ export class Hud {
   }
   showToast(text){this.toast.textContent=text;this.toast.classList.add('show');clearTimeout(this.toastTimer);this.toastTimer=setTimeout(()=>this.toast.classList.remove('show'),2200);}
   markMoved(){this.hint.style.opacity='0';}
-  ready(){this.renderDesktopHotbar?.();requestAnimationFrame(()=>{this.loading.classList.add('hide');setTimeout(()=>this.loading.remove(),1000);});}
+  ready(){this.renderDesktopHotbar?.();requestAnimationFrame(()=>{this.anchorMobileTop?.(true);this.loading.classList.add('hide');setTimeout(()=>this.loading.remove(),1000);});}
 }

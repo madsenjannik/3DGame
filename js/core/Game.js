@@ -14,7 +14,7 @@ import { GreenhouseProgressionSystem } from '../gameplay/GreenhouseProgressionSy
 import { OrangeryHubSystem } from '../gameplay/OrangeryHubSystem.js?build=CAMERA-CUTAWAY-CONTEXT-R21D-20260928E';
 import { FishingV1System } from '../gameplay/FishingV1System.js?build=BAG-NIGHT-R84-20261006A';
 import { ChoicePanel } from '../ui/ChoicePanel.js';
-import { Hud } from '../ui/Hud.js?build=HOTBAR-HAND-DRAG-R102-20261006A';
+import { Hud } from '../ui/Hud.js?build=MOBILE-HUD-CONSISTENCY-R104-20261006A';
 import { WorldMap } from '../ui/WorldMap.js?build=WORLD-MAP-R35B-20260930B';
 import { GardenEnvironment } from '../world/GardenEnvironment.js?build=WATER-VEG-R103-20261006A';
 import { WildlifeSystem } from '../world/WildlifeSystem.js?build=CAMERA-CUTAWAY-CONTEXT-R21D-20260928E';
@@ -124,8 +124,8 @@ export class Game {
       if(own.vest)out.push({id:'vest',name:'Life Vest'});
       if(this.lantern?.ready)out.push({id:'lantern',icon:'lantern',hotbarIcon:'lantern',name:'Lantern',n:'night'});
       return out;};
-    this.hud.hotbarItems=()=>this.hotbarItems();this.hud.hotbarSelected=()=>this.save.profile.hotbar?.selected??-1;
-    this.hud.onHotbarSelect=i=>this.equipHotbarSlot(i);this.hud.onHotbarMove=(a,b)=>this.moveHotbarSlot(a,b);this.hud.hotbarEnabled=()=>this.canUseHotbar();
+    this.hud.hotbarItems=()=>this.hotbarItems();this.hud.hotbarSelected=()=>this.save.profile.hotbar?.selected??-1;this.hud.selectedGearId=()=>this.activeHotbarId();
+    this.hud.onHotbarSelect=i=>this.equipHotbarSlot(i);this.hud.onHotbarMove=(a,b)=>this.moveHotbarSlot(a,b);this.hud.hotbarEnabled=()=>this.canUseHotbar();this.hud.onGearEquip=id=>this.equipGearItem(id);
     this.equippedToolVisual=new EquippedToolVisual(this);this.refreshHotbar(true);
     if(devMode||devMenuEnabled()){this.perfHud=new PerfHud(this);this.devMenu=new DevMenu(this);window.__tgw=this;}
     else applyControlProfile(this,defaultProfile()); // R50.3: free camera everywhere (mouse-look on desktop)
@@ -189,13 +189,24 @@ export class Game {
     return this.hotbarItems()[i]||null;
   }
   activeHotbarId(){return this.activeHotbarItem()?.id||null;}
+  canChangeEquippedGear(){
+    return !this.state.choice.open&&!this.homePortal?.busy&&!this.fishing?.isBusy?.()&&!this.stable?.isBusy?.()
+      &&!this.workbenchPanel?.open&&!this.buildMode?.active&&!this.worldMap?.isOpen;
+  }
   canUseHotbar(){
-    return !this.input?.isTouch&&document.body.classList.contains('hud-desktop-e')&&!this.state.choice.open&&!this.homePortal?.busy
-      &&!this.fishing?.isBusy?.()&&!this.stable?.isBusy?.()&&!this.workbenchPanel?.open&&!this.buildMode?.active&&!this.worldMap?.isOpen;
+    return !this.input?.isTouch&&document.body.classList.contains('hud-desktop-e')&&this.canChangeEquippedGear();
   }
   equipHotbarSlot(i){
     if(!this.canUseHotbar()||!Number.isInteger(i)||i<0||i>9)return false;
     const hb=this.syncHotbarLayout();hb.selected=i;this.save.persist();this.syncHotbarEquipment();this.hud.renderDesktopHotbar?.();return true;
+  }
+  equipGearItem(id){
+    // R104: Bag selection is the touch equivalent of pressing a desktop quick-slot key.
+    // It selects the same saved slot and therefore uses the exact same held-tool/combat state.
+    if(!this.canChangeEquippedGear()||!id||id==='vest')return false;
+    const hb=this.syncHotbarLayout(),i=hb.slots.indexOf(id);if(i<0)return false;
+    hb.selected=i;this.save.persist();this.syncHotbarEquipment();this.hud.renderDesktopHotbar?.();
+    if(this.hud.gear?.classList.contains('open'))this.hud.renderGear?.();return true;
   }
   moveHotbarSlot(from,to){
     if(!this.canUseHotbar()||![from,to].every(i=>Number.isInteger(i)&&i>=0&&i<10)||from===to)return false;
