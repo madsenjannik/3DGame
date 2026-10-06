@@ -141,7 +141,9 @@ export class Hud {
   }
   // R75 HUD rule (phones): the main button is always there; with nothing in reach it is Strike (icon only).
   setActionVisible(v,label='Collect',it=null,persistent=false){
-    const hudTest=document.body.classList.contains('hud-test-v1'),classic=document.body.classList.contains('hud-classic'),classicTouch=classic&&this.touch(),keep=hudTest||persistent,fallback=keep&&!v;
+    const hudTest=document.body.classList.contains('hud-test-v1'),classic=document.body.classList.contains('hud-classic'),classicTouch=classic&&this.touch(),desktopE=document.body.classList.contains('hud-desktop-e')&&!this.touch();
+    if(desktopE&&it?.type==='combat-strike')v=false; // R89: desktop strike is mouse-driven; E remains interaction-only
+    const keep=hudTest||persistent,fallback=keep&&!v;
     const actionLabel=document.getElementById('action-label');
     actionLabel.textContent=classicTouch?'':fallback?(classic?'Swing':hudTest?'Strike':''):(classic&&it?.type==='combat-strike'?'Swing':label);
     this.action.setAttribute('aria-label',fallback?'Strike':label);

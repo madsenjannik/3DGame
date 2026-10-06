@@ -2555,3 +2555,138 @@ body.hud-desktop-e:not(.touch) .special-btn{right:max(34px,env(safe-area-inset-r
   body.hud-desktop-e:not(.touch) #hud #hud-bag.hud-fold-btn{left:calc(50% - 350px)!important;width:52px!important;height:52px!important}
   body.hud-desktop-e:not(.touch) .hearts{bottom:94px!important}
 }
+
+
+/* ===== R89 HUD E professional desktop spec (GO 06/10) =====
+   DESKTOP TEST HUD E ONLY. Mobile/touch and splash/start remain untouched. */
+
+/* TOP-LEFT — world state becomes typography, not another card. */
+body.hud-desktop-e:not(.touch) .desktop-world-status{
+  left:max(34px,env(safe-area-inset-left))!important;
+  top:max(30px,env(safe-area-inset-top))!important;
+  min-width:0!important;height:auto!important;padding:0!important;gap:9px!important;
+  border-radius:0!important;background:none!important;box-shadow:none!important;color:#2b2a24!important;
+  filter:drop-shadow(0 2px 3px rgba(255,255,255,.34));
+}
+body.hud-desktop-e:not(.touch) .desktop-world-status i{
+  width:22px!important;height:22px!important;border-radius:0!important;background:none!important;box-shadow:none!important;
+}
+body.hud-desktop-e:not(.touch) .desktop-world-status i::before{
+  content:'☀'!important;font:800 21px/1 Manrope,system-ui,sans-serif!important;color:#9c7426!important;
+  text-shadow:0 1px 2px rgba(255,255,255,.55)!important;
+}
+body.hud-desktop-e:not(.touch) .desktop-world-status span{gap:4px!important}
+body.hud-desktop-e:not(.touch) .desktop-world-status small{
+  font:800 11px/1 Manrope,system-ui,sans-serif!important;letter-spacing:.16em!important;color:rgba(43,42,36,.70)!important;
+  text-shadow:0 1px 2px rgba(255,255,255,.6)!important;
+}
+body.hud-desktop-e:not(.touch) .desktop-world-status b{
+  font:800 16px/1 Manrope,system-ui,sans-serif!important;letter-spacing:.045em!important;color:#2b2a24!important;
+  text-shadow:0 1px 2px rgba(255,255,255,.68)!important;
+}
+body.hud-desktop-e:not(.touch) .desktop-world-status.night{filter:drop-shadow(0 2px 4px rgba(0,0,0,.72))}
+body.hud-desktop-e:not(.touch) .desktop-world-status.night i::before{
+  content:'☾'!important;color:#f5e7b0!important;text-shadow:0 2px 4px rgba(0,0,0,.78)!important;
+}
+body.hud-desktop-e:not(.touch) .desktop-world-status.night small{
+  color:rgba(255,250,240,.72)!important;text-shadow:0 2px 4px rgba(0,0,0,.82)!important;
+}
+body.hud-desktop-e:not(.touch) .desktop-world-status.night b{
+  color:#fffaf0!important;text-shadow:0 2px 5px rgba(0,0,0,.88)!important;
+}
+
+/* TOP-CENTER — one resource family, clean and readable. */
+body.hud-desktop-e:not(.touch) #hud .inventory-stack{
+  top:max(28px,env(safe-area-inset-top))!important;gap:9px!important;
+  max-width:min(960px,calc(100vw - 690px))!important;
+}
+body.hud-desktop-e:not(.touch) #hud .seed-card.inventory-card{
+  height:48px!important;min-width:92px!important;padding:0 16px 0 13px!important;border-radius:15px!important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.50),0 5px 12px rgba(43,42,36,.15)!important;
+}
+body.hud-desktop-e:not(.touch) #hud .seed-card small{font-size:10px!important;letter-spacing:.12em!important}
+body.hud-desktop-e:not(.touch) #hud .seed-card b{font-size:17px!important}
+body.hud-desktop-e:not(.touch) #hud #materials.materials-card{gap:8px!important}
+body.hud-desktop-e:not(.touch) #hud #materials .material-chip{
+  height:40px!important;min-width:48px!important;padding:0 12px!important;gap:6px!important;border-radius:999px!important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.72),0 4px 10px rgba(43,42,36,.13)!important;
+}
+body.hud-desktop-e:not(.touch) #hud #materials .material-chip i{width:15px!important;height:15px!important}
+body.hud-desktop-e:not(.touch) #hud #materials .material-chip b{font-size:15px!important}
+
+/* TOP-RIGHT — map + objective read as one navigation/quest column. */
+body.hud-desktop-e:not(.touch) .tgw-minimap{transform:scale(1.06)!important;transform-origin:top right!important}
+body.hud-desktop-e:not(.touch) #hud #objective.objective-card{
+  top:calc(max(24px,env(safe-area-inset-top)) + 202px)!important;
+  width:332px!important;max-width:332px!important;height:60px!important;min-height:60px!important;
+  padding:0 18px 0 91px!important;border-radius:18px!important;
+  background:linear-gradient(180deg,#7dac51 0%,#6f9d45 100%)!important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.18),0 7px 16px rgba(43,42,36,.18)!important;
+}
+body.hud-desktop-e:not(.touch) #hud #objective.objective-card::after{
+  left:15px!important;width:24px!important;height:24px!important;margin-top:-12px!important;font-size:22px!important
+}
+body.hud-desktop-e:not(.touch) #hud #objective.objective-card::before{
+  left:45px!important;width:36px!important;height:36px!important;margin-top:-18px!important;border-radius:11px!important;
+  background-size:22px!important;box-shadow:none!important;
+}
+body.hud-desktop-e:not(.touch) #hud #objective b{font-size:15px!important;line-height:1.15!important}
+body.hud-desktop-e:not(.touch) #hud #objective.objective-card.open{
+  min-height:102px!important;height:auto!important;padding:14px 20px 16px 91px!important
+}
+body.hud-desktop-e:not(.touch) #hud #objective.open #objective-copy{
+  margin-top:7px!important;font-size:12px!important;line-height:1.45!important
+}
+
+/* BOTTOM-CENTER — player state + ARK-like quick slots form one anchor. */
+body.hud-desktop-e:not(.touch) .desktop-hotbar-e{bottom:26px!important;gap:7px!important}
+body.hud-desktop-e:not(.touch) .desktop-hotbar-slot{
+  width:60px!important;height:60px!important;border-radius:14px!important;
+  background:linear-gradient(180deg,rgba(255,250,240,.92),rgba(236,229,214,.88))!important;
+  border:1px solid rgba(196,188,168,.60)!important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.88),0 5px 12px rgba(43,42,36,.14)!important;
+}
+body.hud-desktop-e:not(.touch) .desktop-hotbar-slot small{
+  left:6px!important;top:5px!important;font-size:10px!important;color:rgba(43,42,36,.48)!important
+}
+body.hud-desktop-e:not(.touch) .desktop-hotbar-slot .slot-icon{width:37px!important;height:37px!important}
+body.hud-desktop-e:not(.touch) #hud #hud-bag.hud-fold-btn{
+  left:calc(50% - 401px)!important;bottom:26px!important;width:60px!important;height:60px!important;border-radius:14px!important;
+  background-size:30px!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.9),0 5px 12px rgba(43,42,36,.15)!important;
+}
+body.hud-desktop-e:not(.touch) #hud #hud-bag.hud-fold-btn::after{right:-4px!important;top:-5px!important}
+body.hud-desktop-e:not(.touch) .gear-panel{bottom:106px!important}
+body.hud-desktop-e:not(.touch) .hearts{
+  bottom:96px!important;padding:8px 14px!important;gap:6px!important;border-radius:999px!important;
+  background:linear-gradient(180deg,var(--e-cream),var(--e-cream-2))!important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.92),0 5px 12px rgba(43,42,36,.15)!important;
+}
+body.hud-desktop-e:not(.touch) .hearts i{width:22px!important;height:20px!important}
+
+/* BOTTOM-RIGHT — one compact active special, only when the game marks it relevant/show. */
+body.hud-desktop-e:not(.touch) .special-btn{
+  width:68px!important;height:68px!important;right:max(34px,env(safe-area-inset-right))!important;
+  bottom:max(34px,env(safe-area-inset-bottom))!important;box-shadow:0 6px 15px rgba(43,42,36,.18)!important;
+}
+body.hud-desktop-e:not(.touch) .special-btn i{inset:6px!important;border-width:3px!important}
+body.hud-desktop-e:not(.touch) .special-btn b{display:none!important}
+
+/* CONTEXT — no permanent legend. E appears only for an actual interaction near the character. */
+body.hud-desktop-e:not(.touch) #action{
+  padding:7px 12px!important;border:0!important;border-radius:999px!important;
+  background:linear-gradient(180deg,#7dac51,#6f9d45)!important;color:#fffaf0!important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.15),0 5px 12px rgba(43,42,36,.18)!important;
+  -webkit-backdrop-filter:none!important;backdrop-filter:none!important;
+}
+body.hud-desktop-e:not(.touch) #action .key{background:#fffaf0!important;color:#2b2a24!important;border:0!important;box-shadow:none!important}
+body.hud-desktop-e:not(.touch) #action #action-label{color:#fffaf0!important;font-weight:700!important}
+body.hud-desktop-e:not(.touch) #action-ico .ico-mask{background:#fffaf0!important;filter:none!important}
+
+/* Desktop fallback only. */
+@media(max-width:1450px){
+  body.hud-desktop-e:not(.touch) .desktop-world-status{left:26px!important;top:24px!important}
+  body.hud-desktop-e:not(.touch) #hud .inventory-stack{max-width:min(820px,calc(100vw - 580px))!important}
+  body.hud-desktop-e:not(.touch) .desktop-hotbar-slot{width:54px!important;height:54px!important}
+  body.hud-desktop-e:not(.touch) #hud #hud-bag.hud-fold-btn{left:calc(50% - 361px)!important;width:54px!important;height:54px!important}
+  body.hud-desktop-e:not(.touch) .hearts{bottom:90px!important}
+}
