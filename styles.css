@@ -2392,3 +2392,73 @@ body.hud-desktop-e:not(.touch) #hud #objective.open #objective-copy{
   body.hud-desktop-e:not(.touch) .special-bar{left:calc(50% - 150px)!important;bottom:80px!important}
   body.hud-desktop-e:not(.touch) #hud .inventory-stack{max-width:min(780px,calc(100vw - 570px))!important}
 }
+
+
+/* ===== R87 HUD E special-zone cleanup (GO 06/10) =====
+   DESKTOP TEST HUD E ONLY. Mobile/touch and splash/start are untouched.
+   Health = bottom-center with quickbar. Special = its own bottom-right area. Permanent control strip removed. */
+
+/* No permanent desktop control legend in HUD E. M already lives at the map; E stays contextual via #action. */
+body.hud-desktop-e:not(.touch) #key-hints{display:none!important}
+
+/* Health belongs to the player/quickbar cluster and is centred above it. */
+body.hud-desktop-e:not(.touch) .hearts{
+  left:50%!important;
+  right:auto!important;
+  top:auto!important;
+  bottom:88px!important;
+  transform:translateX(-50%)!important;
+  opacity:1!important;
+}
+
+/* Special gets its own area. Use the actual circular special action/charge control; hide the duplicate bar. */
+body.hud-desktop-e:not(.touch) .special-bar{display:none!important}
+body.hud-desktop-e:not(.touch) .special-btn{
+  display:block!important;
+  right:max(30px,env(safe-area-inset-right))!important;
+  left:auto!important;
+  top:auto!important;
+  bottom:max(34px,env(safe-area-inset-bottom))!important;
+  width:72px!important;
+  height:72px!important;
+  border:0!important;
+  border-radius:50%!important;
+  background:conic-gradient(var(--e-gold) var(--k),rgba(196,188,168,.78) var(--k))!important;
+  box-shadow:0 9px 20px rgba(43,42,36,.22)!important;
+}
+body.hud-desktop-e:not(.touch) .special-btn i{
+  inset:6px!important;
+  border:4px solid var(--e-cream)!important;
+  background-color:var(--e-moss)!important;
+  box-shadow:inset 0 2px 0 rgba(255,255,255,.16)!important;
+}
+body.hud-desktop-e:not(.touch) .special-btn .key{
+  right:-4px!important;
+  top:-4px!important;
+  width:23px!important;
+  height:23px!important;
+  border-radius:7px!important;
+  background:var(--e-ink)!important;
+  color:var(--e-cream)!important;
+  box-shadow:0 3px 8px rgba(43,42,36,.24)!important;
+}
+body.hud-desktop-e:not(.touch) .special-btn b{
+  left:50%!important;
+  bottom:-22px!important;
+  transform:translateX(-50%)!important;
+  padding:4px 8px!important;
+  border-radius:999px!important;
+  background:linear-gradient(180deg,var(--e-cream),var(--e-cream-2))!important;
+  color:var(--e-ink)!important;
+  box-shadow:0 5px 10px rgba(43,42,36,.14)!important;
+  text-shadow:none!important;
+  letter-spacing:.08em!important;
+}
+body.hud-desktop-e:not(.touch) .special-btn.full i{
+  box-shadow:inset 0 2px 0 rgba(255,255,255,.16),0 0 0 2px rgba(226,181,82,.45),0 0 16px rgba(226,181,82,.5)!important;
+}
+
+/* Keep bottom-right special clear of edge on narrower desktop windows. */
+@media(max-width:1200px){
+  body.hud-desktop-e:not(.touch) .special-btn{right:22px!important;bottom:30px!important;width:66px!important;height:66px!important}
+}
