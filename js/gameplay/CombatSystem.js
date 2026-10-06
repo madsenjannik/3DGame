@@ -173,7 +173,15 @@ export class CombatSystem {
   }
 
   // ---------- player ----------
-  weapon() { const id = WEAPON_ORDER.find(t => this.w.has(t)); return id ? WEAPONS[id] : WEAPONS.hands; }
+  weapon() {
+    // R101: once the player explicitly chooses a hotbar slot, combat respects that slot.
+    // Empty/non-weapon slots mean hands. Before the first choice we preserve the pre-R101 best-owned-tool behaviour.
+    const hb=this.g.save?.profile?.hotbar,selected=hb?.selected;
+    if(Number.isInteger(selected)&&selected>=0&&selected<10){
+      const id=this.g.activeHotbarId?.();return id&&WEAPONS[id]?WEAPONS[id]:WEAPONS.hands;
+    }
+    const id=WEAPON_ORDER.find(t=>this.w.has(t));return id?WEAPONS[id]:WEAPONS.hands;
+  }
   // Nearest hittable enemy: Moles in the wilds, snails in the private garden (R62).
   target(reach) {
     const ch = this.g.character, garden = this.g.world.space === 'garden'; let best = null;

@@ -88,6 +88,20 @@ try {
       g.devMenu.teleport('garden', 0, 6, Math.PI); await w(600); o.lookGarden = g.look?.applied === false && Math.abs(g.renderer.toneMappingExposure - 1.02) < 1e-6; return o; }) : {};
     check('landscape HUD (desktop): key hints, no joystick, resources visible; R70 look on in the world, off in the garden', ok && r.keys && r.joy && r.mats && r.lookWorld && r.lookGarden && !errors.length, errors[0] || JSON.stringify(r));
     await ctx.close(); }
+  // 2c. R101 desktop hotbar: 1..0 select, B toggles Bag, move/swap persists across reload
+  { const ctx = await context({ viewport: { width: 1280, height: 720 } }); const { p, errors, ok } = await startGame(ctx, 'tulip');
+    let r = {};
+    if (ok) r = await p.evaluate(async () => {
+      const g=window.__tgw,w=ms=>new Promise(x=>setTimeout(x,ms));Object.assign(g.wilds.profile.tools,{axe:true,pickaxe:true,sickle:true,can:true});g.refreshHotbar(true);await w(100);
+      const key=code=>window.dispatchEvent(new KeyboardEvent('keydown',{code,bubbles:true}));
+      key('Digit2');await w(80);const selected2=g.save.profile.hotbar.selected===1&&g.activeHotbarId()==='pickaxe'&&document.querySelector('.desktop-hotbar-slot[data-slot="1"]').classList.contains('selected');
+      key('KeyB');await w(80);const bag=document.getElementById('gear-panel').classList.contains('open');
+      const moved=g.moveHotbarSlot(1,6)&&g.save.profile.hotbar.slots[6]==='pickaxe';key('Digit7');await w(80);const selected7=g.save.profile.hotbar.selected===6&&g.activeHotbarId()==='pickaxe';
+      g.save.flush();return{selected2,bag,moved,selected7};
+    });
+    if(ok){await p.reload({waitUntil:'load'});await p.waitForFunction(()=>window.__tgw?.save?.profile?.hotbar,null,{timeout:240000}).catch(()=>{});r.persisted=await p.evaluate(()=>window.__tgw.save.profile.hotbar.slots[6]==='pickaxe'&&window.__tgw.save.profile.hotbar.selected===6);}
+    check('desktop hotbar R101: 1–0 select, B Bag, move/swap + reload persistence',ok&&r.selected2&&r.bag&&r.moved&&r.selected7&&r.persisted&&!errors.length,errors[0]||JSON.stringify(r));await ctx.close(); }
+
   // 3. Missing assets must not black-screen the game
   { const ctx = await context({ viewport: { width: 844, height: 390 }, isMobile: true, hasTouch: true }, [/assets\/stable\//, /lake_cabin|cabin_fishing_runtime/, /greenhouse-l1/, /characters\/fern\.glb/]);
     const { p, errors, ok } = await startGame(ctx, 'fern'); const failed = ok ? await p.evaluate(() => window.__tgw.failed) : [];

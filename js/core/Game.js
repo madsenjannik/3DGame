@@ -14,13 +14,13 @@ import { GreenhouseProgressionSystem } from '../gameplay/GreenhouseProgressionSy
 import { OrangeryHubSystem } from '../gameplay/OrangeryHubSystem.js?build=CAMERA-CUTAWAY-CONTEXT-R21D-20260928E';
 import { FishingV1System } from '../gameplay/FishingV1System.js?build=BAG-NIGHT-R84-20261006A';
 import { ChoicePanel } from '../ui/ChoicePanel.js';
-import { Hud } from '../ui/Hud.js?build=HUD-E-DESKTOP-R100-20261006A';
+import { Hud } from '../ui/Hud.js?build=HOTBAR-SHORTCUTS-R101-20261006A';
 import { WorldMap } from '../ui/WorldMap.js?build=WORLD-MAP-R35B-20260930B';
 import { GardenEnvironment } from '../world/GardenEnvironment.js?build=BAG-NIGHT-R84-20261006A';
 import { WildlifeSystem } from '../world/WildlifeSystem.js?build=CAMERA-CUTAWAY-CONTEXT-R21D-20260928E';
 import { PlayerHomePortalSystem } from '../world/PlayerHomePortalSystem.js?build=ENTRY-R29-20260929A';
 import { NorthStableSystem } from '../world/NorthStableSystem.js?build=STABLE-R42-20261001A';
-import { SaveGame } from './SaveGame.js?build=BAG-NIGHT-R84-20261006A';
+import { SaveGame } from './SaveGame.js?build=HOTBAR-SHORTCUTS-R101-20261006A';
 import { WildsLoopSystem } from '../gameplay/WildsLoopSystem.js?build=HUDTEST-D-R78.1-20261005A';
 import { WorkbenchPanel } from '../ui/WorkbenchPanel.js';
 import { DevMenu, devMenuEnabled } from '../ui/DevMenu.js?build=HUD-E-DESKTOP-R85-20261006A';
@@ -31,13 +31,14 @@ import { InteractionResolver } from './InteractionResolver.js';
 import { log, warn } from '../dev/Log.js';
 import { LookPass } from '../visual/LookPass.js?build=BAG-NIGHT-R84-20261006A';
 import { DayNight } from '../visual/DayNight.js?build=BAG-NIGHT-R84-20261006A';   // R81
-import { Lantern } from '../gameplay/Lantern.js?build=BAG-NIGHT-R84-20261006A';     // R81
+import { Lantern } from '../gameplay/Lantern.js?build=HOTBAR-SHORTCUTS-R101-20261006A';     // R81/R101
 import { BoatEconomySystem } from '../gameplay/BoatEconomySystem.js';
 import { LakeRunSystem } from '../gameplay/LakeRunSystem.js';
 import { GardenBuildSystem } from '../gameplay/GardenBuildSystem.js';
 import { GardenBuildMode } from '../ui/GardenBuildMode.js';
 import { GardenVegetationMask } from '../world/GardenVegetationMask.js';
-import { CombatSystem } from '../gameplay/CombatSystem.js?build=BAG-NIGHT-R84-20261006A';
+import { CombatSystem } from '../gameplay/CombatSystem.js?build=HOTBAR-SHORTCUTS-R101-20261006A';
+import { EquippedToolVisual } from '../gameplay/EquippedToolVisual.js?build=HOTBAR-SHORTCUTS-R101-20261006A';
 
 export class Game {
   async init({characterId='succulent',devMode=false}={}){
@@ -113,12 +114,19 @@ export class Game {
     });
     this.wilds.onOpenWorkbench=()=>{this.workbenchPanel.show();this.input.resetTouchPointers?.();};
     const syncTools=()=>this.hud.setTools?.(this.wilds.profile.tools,this.wilds.profile.water);this.wilds.onChange(syncTools);syncTools();
-    // R84: what the bag shows (Jannik 06/10: the bag is what you carry; resources stay visible in the HUD).
+    // R101: stable item IDs let the Bag and persistent 1..0 hotbar refer to the same carried gear.
     this.hud.gearItems=()=>{const t=this.wilds?.profile?.tools||{},own=this.fishing?.own||{},out=[];
-      if(t.axe)out.push({icon:'axe',name:'Stone Axe'});if(t.pickaxe)out.push({icon:'pickaxe',name:'Stone Pickaxe'});if(t.sickle)out.push({icon:'sickle',name:'Sickle'});
-      if(t.can)out.push({icon:'drop',name:'Watering Can',n:`${this.wilds.profile.water||0} water`});
-      if(own.rodBamboo||this.fishing?.starter)out.push({icon:'rod',name:'Bamboo Rod'});if(own.vest)out.push({name:'Life Vest'});
-      if(this.lantern?.ready)out.push({icon:'lantern',name:'Lantern',n:'night'});return out;};
+      if(t.axe)out.push({id:'axe',icon:'axe',hotbarIcon:'axe',name:'Stone Axe'});
+      if(t.pickaxe)out.push({id:'pickaxe',icon:'pickaxe',hotbarIcon:'pickaxe',name:'Stone Pickaxe'});
+      if(t.sickle)out.push({id:'sickle',icon:'sickle',hotbarIcon:'sickle',name:'Sickle'});
+      if(t.can)out.push({id:'can',icon:'drop',hotbarIcon:'watering-can',name:'Watering Can',n:`${this.wilds.profile.water||0} water`});
+      if(own.rodBamboo||this.fishing?.starter)out.push({id:'rod',icon:'rod',hotbarIcon:'rod',name:'Bamboo Rod'});
+      if(own.vest)out.push({id:'vest',name:'Life Vest'});
+      if(this.lantern?.ready)out.push({id:'lantern',icon:'lantern',hotbarIcon:'lantern',name:'Lantern',n:'night'});
+      return out;};
+    this.hud.hotbarItems=()=>this.hotbarItems();this.hud.hotbarSelected=()=>this.save.profile.hotbar?.selected??-1;
+    this.hud.onHotbarSelect=i=>this.equipHotbarSlot(i);this.hud.onHotbarMove=(a,b)=>this.moveHotbarSlot(a,b);this.hud.hotbarEnabled=()=>this.canUseHotbar();
+    this.equippedToolVisual=new EquippedToolVisual(this);this.refreshHotbar(true);
     if(devMode||devMenuEnabled()){this.perfHud=new PerfHud(this);this.devMenu=new DevMenu(this);window.__tgw=this;}
     else applyControlProfile(this,defaultProfile()); // R50.3: free camera everywhere (mouse-look on desktop)
     mark('wildsReadyMs');
@@ -147,7 +155,7 @@ export class Game {
       attach(choicePromise,c=>{this.choiceWorld=c;}),
       attach(greenhousePromise,g=>{const gt=this.garden.transformOf('greenhouse');g.setPlacement(gt.x,gt.z,gt.rot);this.greenhouse=g;this.wilds.setGreenhouse(g);this.cameraOcclusion.greenhouse=g;this.structureVisibility.greenhouse=g;}),
       attach(orangeryPromise,o=>{this.orangery=o;this.cameraOcclusion.orangery=o;this.structureVisibility.orangery=o;}),
-      attach(fishingPromise,f=>{this.fishing=f;try{this.boatEco=new BoatEconomySystem({fishing:f,wilds:this.wilds,hud:this.hud}).init();}catch(e){warn('BOAT','economy disabled',e);this.failed.push('boat');}try{this.lakeRun=new LakeRunSystem(this,f);}catch(e){warn('LAKERUN','lake run disabled',e);this.failed.push('lakerun');}})
+      attach(fishingPromise,f=>{this.fishing=f;this.refreshHotbar?.(true);try{this.boatEco=new BoatEconomySystem({fishing:f,wilds:this.wilds,hud:this.hud}).init();}catch(e){warn('BOAT','economy disabled',e);this.failed.push('boat');}try{this.lakeRun=new LakeRunSystem(this,f);}catch(e){warn('LAKERUN','lake run disabled',e);this.failed.push('lakerun');}})
     ]).then(()=>{mark('allSystemsReadyMs');this.vegetationMask?.apply();log('LOAD','background systems ready',this.startupMetrics);if(this.failed.length)this.hud.showToast?.(`Some parts could not load: ${this.failed.join(', ')}`);});
     // DEV routes spawn straight into the Stable/Orangery/Fishing, so they wait for everything as before.
     if(devMode)await background;
@@ -158,6 +166,51 @@ export class Game {
     window.__TGW_STARTUP_METRICS__=this.startupMetrics;log('LOAD','game ready',this.startupMetrics);
     if(new URLSearchParams(location.search).get('perf')==='1')console.table(this.startupMetrics.resources),console.info('[TGW startup]',this.startupMetrics);
     setTimeout(()=>{if(!this.input.moved&&!this.homePortal?.usesMoveInCamera?.())this.hud.hint.style.opacity='0';},9000);
+  }
+
+  // R101 desktop hotbar: saved slot order is independent of Bag order.
+  hotbarProfile(){
+    const p=this.save.profile;return p.hotbar||(p.hotbar={slots:Array(10).fill(null),selected:-1});
+  }
+  syncHotbarLayout(items=this.hud.gearItems?.()||[]){
+    const hb=this.hotbarProfile(),slots=Array.isArray(hb.slots)?hb.slots.slice(0,10):[];while(slots.length<10)slots.push(null);
+    const known=new Set(['axe','pickaxe','sickle','can','rod','vest','lantern']),seen=new Set();
+    for(let i=0;i<10;i++){const id=slots[i];if(!known.has(id)||seen.has(id))slots[i]=null;else if(id)seen.add(id);}
+    // Preserve known saved IDs even while an optional system is still loading. Only truly new carried items fill empty slots.
+    for(const it of items){if(!it?.id||seen.has(it.id))continue;const n=slots.indexOf(null);if(n<0)break;slots[n]=it.id;seen.add(it.id);}
+    hb.slots=slots;if(!Number.isInteger(hb.selected)||hb.selected<0||hb.selected>9)hb.selected=-1;return hb;
+  }
+  hotbarItems(){
+    const items=this.hud.gearItems?.()||[],byId=new Map(items.map(it=>[it.id,it])),hb=this.syncHotbarLayout(items);
+    return hb.slots.map(id=>id?byId.get(id)||null:null);
+  }
+  activeHotbarItem(){
+    const hb=this.hotbarProfile(),i=hb.selected;if(!Number.isInteger(i)||i<0||i>9)return null;
+    return this.hotbarItems()[i]||null;
+  }
+  activeHotbarId(){return this.activeHotbarItem()?.id||null;}
+  canUseHotbar(){
+    return !this.input?.isTouch&&document.body.classList.contains('hud-desktop-e')&&!this.state.choice.open&&!this.homePortal?.busy
+      &&!this.fishing?.isBusy?.()&&!this.stable?.isBusy?.()&&!this.workbenchPanel?.open&&!this.buildMode?.active&&!this.worldMap?.isOpen;
+  }
+  equipHotbarSlot(i){
+    if(!this.canUseHotbar()||!Number.isInteger(i)||i<0||i>9)return false;
+    const hb=this.syncHotbarLayout();hb.selected=i;this.save.persist();this.syncHotbarEquipment();this.hud.renderDesktopHotbar?.();return true;
+  }
+  moveHotbarSlot(from,to){
+    if(!this.canUseHotbar()||![from,to].every(i=>Number.isInteger(i)&&i>=0&&i<10)||from===to)return false;
+    const hb=this.syncHotbarLayout(),tmp=hb.slots[from];hb.slots[from]=hb.slots[to];hb.slots[to]=tmp;
+    if(hb.selected===from)hb.selected=to;else if(hb.selected===to)hb.selected=from;
+    this.save.persist();this.refreshHotbar(true);return true;
+  }
+  syncHotbarEquipment(){
+    const id=this.activeHotbarId();this.equippedToolVisual?.set(id==='lantern'||id==='vest'?null:id);
+    this.lantern?.setEquipped?.(id==='lantern');
+  }
+  refreshHotbar(force=false){
+    const items=this.hud.gearItems?.()||[],sig=items.map(x=>x.id).join('|');this.syncHotbarLayout(items);
+    if(force||sig!==this._hotbarGearSig){this._hotbarGearSig=sig;this.hud.renderDesktopHotbar?.();if(this.hud.gear?.classList.contains('open'))this.hud.renderGear?.();}
+    this.syncHotbarEquipment();
   }
 
   isPhone(){return !!this.input?.isTouch&&Math.min(screen.width||innerWidth,screen.height||innerHeight)<600;}
@@ -194,7 +247,7 @@ export class Game {
     this.dayNight.update(gardenSpace);   // R81: 30 min day/night on the shared world only (after the look pass)
     this.hud.setWorldStatus?.(gardenSpace,this.dayNight.isNight?.());   // R88 desktop HUD E status; hidden outside E
     if(!this.lantern&&this.character?.instance)try{this.lantern=new Lantern(this);}catch(e){this.lantern={update(){}};warn('LANTERN','lantern disabled',e);}
-    this.lantern?.update(dt);
+    this.refreshHotbar?.();this.lantern?.update(dt);this.equippedToolVisual?.update(dt);
     const portalBusy=this.homePortal?.busy||false;
     const fishingBusy=!gardenSpace&&(this.fishing?.isBusy?.()||false);
     const stableBusy=!gardenSpace&&(this.stable?.isBusy?.()||false);

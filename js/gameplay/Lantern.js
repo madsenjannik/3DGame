@@ -12,7 +12,7 @@ const read = () => { try { return localStorage.getItem(KEY) === 'on'; } catch { 
 
 export class Lantern {
   constructor(game) {
-    this.g = game; this.on = read(); this.shown = false; this.t = 0;
+    this.g = game; this.on = read(); this.shown = false; this.t = 0; this.equipped = false;
     this.socket = game.character?.instance?.socket?.('Hand_Socket_L');
     if (!this.socket) return;
     this.buildButton();
@@ -32,6 +32,7 @@ export class Lantern {
     document.body.appendChild(b); this.btn = b;
   }
   available() { const s = this.g.world.space; return !!this.ready && (s === 'world' || s === 'garden') && !!this.g.dayNight?.isNight(); }   // R84: garden too
+  setEquipped(v){this.equipped=!!v;}
   toggle() {
     if (!this.available()) return false;
     this.on = !this.on; try { localStorage.setItem(KEY, this.on ? 'on' : 'off'); } catch {}
@@ -41,14 +42,14 @@ export class Lantern {
   }
   update(dt) {
     if (!this.socket) return;
-    const avail = this.available(), show = avail && this.on;
+    const avail = this.available(), carry = !!this.ready && (this.g.world.space === 'world' || this.g.world.space === 'garden'), show = carry && (this.equipped || (avail && this.on));
     document.body.classList.toggle('lantern-ready', avail); this.btn?.classList.toggle('on', this.on && avail);
     if (this.model) this.model.visible = show;
     this.t += dt; const f = .86 + .1 * Math.sin(this.t * 13.1) + .06 * Math.sin(this.t * 31.7);
     if (this.light) {
-      this.light.intensity = show ? 6 * f : 0;
-      if (show) { this.socket.getWorldPosition(this.light.position); this.light.position.y -= .1; }
+      const lit=avail&&this.on;this.light.intensity = lit ? 6 * f : 0;
+      if (lit) { this.socket.getWorldPosition(this.light.position); this.light.position.y -= .1; }
     }
-    if (show) { for (const m of this.glow || []) m.emissiveIntensity = 1.4 * f; if (this.flame) this.flame.scale.setScalar(.9 + .14 * f); }
+    if (show) { const lit=avail&&this.on;for (const m of this.glow || []) m.emissiveIntensity = lit?1.4*f:0; if (this.flame) { this.flame.visible=lit; if(lit)this.flame.scale.setScalar(.9 + .14 * f); } }
   }
 }

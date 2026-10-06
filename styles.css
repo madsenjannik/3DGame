@@ -3856,3 +3856,29 @@ body.hud-desktop-e:not(.touch) .desktop-hotbar-slot:nth-child(7) .slot-icon{anim
     transform:none!important;
   }
 }
+
+
+/* ===== R101 desktop hotbar shortcuts + drag order (GO 06/10) =====
+   Behaviour only; R100 tool artwork/animation stays untouched. */
+body.hud-desktop-e:not(.touch) .desktop-hotbar-slot{
+  cursor:pointer;
+  transition:transform .14s ease,box-shadow .14s ease,border-color .14s ease,opacity .14s ease!important;
+}
+body.hud-desktop-e:not(.touch) .desktop-hotbar-slot.filled{cursor:grab}
+body.hud-desktop-e:not(.touch) .desktop-hotbar-slot.selected{
+  transform:translateY(-4px);
+  border-color:#d99c25!important;
+  box-shadow:0 0 0 2px rgba(255,232,166,.90),0 5px 0 rgba(58,77,48,.62),0 8px 14px rgba(20,39,27,.28)!important;
+}
+body.hud-desktop-e:not(.touch) .desktop-hotbar-slot.empty-selected{
+  border-color:#b49b68!important;
+  box-shadow:0 0 0 2px rgba(255,247,221,.70),0 4px 0 rgba(58,77,48,.45)!important;
+}
+body.hud-desktop-e:not(.touch) .desktop-hotbar-slot.dragging{
+  opacity:.42!important;cursor:grabbing;transform:translateY(-2px) scale(.97);
+}
+body.hud-desktop-e:not(.touch) .desktop-hotbar-slot.drag-over{
+  border-color:#a9b657!important;
+  box-shadow:0 0 0 3px rgba(183,198,103,.45),0 4px 0 rgba(58,77,48,.50)!important;
+  transform:translateY(-3px) scale(1.025);
+}

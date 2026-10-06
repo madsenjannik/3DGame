@@ -89,13 +89,30 @@ export class Hud {
     const title=document.getElementById('objective-title');
     if(title)new MutationObserver(()=>{this.setObjectiveIcon(title.textContent);if(this.touch()){this.objective.classList.add('fresh');this.peek(this.objective,5000);}}).observe(title,{childList:true,characterData:true,subtree:true});
   }
-  // R84 bag: a small panel under the bag button listing what you carry. gearItems() is set by Game.
+  // R101: Bag stays the carried-item list; desktop hotbar has its own persistent slot order.
   buildGear(){
     const p=document.createElement('div');p.id='gear-panel';p.className='gear-panel';p.setAttribute('aria-label','Bag');document.body.appendChild(p);this.gear=p;
     p.addEventListener('click',e=>e.stopPropagation());
-    const q=document.createElement('div');q.id='desktop-hotbar-e';q.className='desktop-hotbar-e';q.setAttribute('aria-label','Quick slots');
-    q.innerHTML=Array.from({length:10},(_,i)=>`<span class="desktop-hotbar-slot" data-slot="${i}"><small>${i===9?'0':i+1}</small><i class="slot-icon"></i><em class="slot-fallback"></em></span>`).join('');
-    document.body.appendChild(q);this.desktopHotbar=q;
+    const q=document.createElement('div');q.id='desktop-hotbar-e';q.className='desktop-hotbar-e';q.setAttribute('aria-label','Quick slots 1 to 0. Drag items to rearrange.');
+    q.innerHTML=Array.from({length:10},(_,i)=>`<span class="desktop-hotbar-slot" data-slot="${i}" role="button" tabindex="-1" aria-label="Slot ${i===9?'0':i+1}"><small>${i===9?'0':i+1}</small><i class="slot-icon"></i><em class="slot-fallback"></em></span>`).join('');
+    document.body.appendChild(q);this.desktopHotbar=q;this._hotbarDrag=-1;this._hotbarDragged=false;
+    for(const slot of q.querySelectorAll('.desktop-hotbar-slot')){
+      const index=Number(slot.dataset.slot);
+      slot.addEventListener('click',()=>{if(this._hotbarDragged){this._hotbarDragged=false;return;}this.onHotbarSelect?.(index);});
+      slot.addEventListener('dragstart',e=>{if(!slot.classList.contains('filled')){e.preventDefault();return;}this._hotbarDrag=index;this._hotbarDragged=true;slot.classList.add('dragging');try{e.dataTransfer.effectAllowed='move';e.dataTransfer.setData('text/plain',String(index));}catch{}});
+      slot.addEventListener('dragend',()=>{this._hotbarDrag=-1;setTimeout(()=>{this._hotbarDragged=false;},0);q.querySelectorAll('.dragging,.drag-over').forEach(x=>x.classList.remove('dragging','drag-over'));});
+      slot.addEventListener('dragover',e=>{if(this._hotbarDrag<0)return;e.preventDefault();try{e.dataTransfer.dropEffect='move';}catch{}slot.classList.add('drag-over');});
+      slot.addEventListener('dragleave',()=>slot.classList.remove('drag-over'));
+      slot.addEventListener('drop',e=>{e.preventDefault();slot.classList.remove('drag-over');const from=this._hotbarDrag>=0?this._hotbarDrag:Number(e.dataTransfer?.getData?.('text/plain'));this._hotbarDrag=-1;if(Number.isInteger(from)&&from>=0&&from<10&&from!==index)this.onHotbarMove?.(from,index);});
+    }
+    this._hotbarKey=e=>{
+      if(e.repeat||this.touch()||!document.body.classList.contains('hud-desktop-e'))return;
+      const a=document.activeElement;if(a&&(a.isContentEditable||/INPUT|TEXTAREA|SELECT/.test(a.tagName||'')))return;
+      if(e.code==='KeyB'){if(this.hotbarEnabled?.()===false)return;e.preventDefault();this.toggleGear();return;}
+      let i=-1;if(/^Digit[1-9]$/.test(e.code))i=Number(e.code.slice(5))-1;else if(e.code==='Digit0')i=9;else if(/^Numpad[1-9]$/.test(e.code))i=Number(e.code.slice(6))-1;else if(e.code==='Numpad0')i=9;
+      if(i<0||this.hotbarEnabled?.()===false)return;e.preventDefault();this.onHotbarSelect?.(i);
+    };
+    addEventListener('keydown',this._hotbarKey);
     const w=document.createElement('div');w.id='desktop-world-status';w.className='desktop-world-status';
     w.innerHTML='<i aria-hidden="true"></i><span><small>DAY</small><b>THE WILDS</b></span>';
     document.body.appendChild(w);this.worldStatus=w;
@@ -117,8 +134,15 @@ export class Hud {
     this.renderDesktopHotbar();
   }
   renderDesktopHotbar(){
-    if(!this.desktopHotbar)return;const items=this.gearItems?.()||[],slots=[...this.desktopHotbar.querySelectorAll('.desktop-hotbar-slot')];
-    slots.forEach((slot,i)=>{const it=items[i],icon=slot.querySelector('.slot-icon'),fallback=slot.querySelector('.slot-fallback');const key=it?.name==='Watering Can'?'watering-can':(it?.icon||'');slot.classList.toggle('filled',!!it);slot.dataset.icon=key;slot.title=it?.name||`Empty slot ${i+1}`;icon.style.setProperty('--slot-ico',it?.icon?`url(./brand/icons/svg/icon-${it.icon}.svg)`:'none');fallback.textContent=it&&!it.icon?it.name.split(/\s+/).map(x=>x[0]).join('').slice(0,2).toUpperCase():'';});
+    if(!this.desktopHotbar)return;
+    const items=this.hotbarItems?.()||this.gearItems?.()||[],selected=Number.isInteger(this.hotbarSelected?.())?this.hotbarSelected():-1,slots=[...this.desktopHotbar.querySelectorAll('.desktop-hotbar-slot')];
+    slots.forEach((slot,i)=>{
+      const it=items[i]||null,icon=slot.querySelector('.slot-icon'),fallback=slot.querySelector('.slot-fallback'),key=it?.hotbarIcon||(it?.name==='Watering Can'?'watering-can':(it?.icon||it?.id||''));
+      slot.classList.toggle('filled',!!it);slot.classList.toggle('selected',selected===i);slot.classList.toggle('empty-selected',selected===i&&!it);
+      slot.draggable=!!it;slot.dataset.icon=key;slot.dataset.itemId=it?.id||'';slot.title=it?`${i===9?'0':i+1} · ${it.name} · drag to move`:`${i===9?'0':i+1} · Empty slot`;
+      slot.setAttribute('aria-label',it?`Slot ${i===9?'0':i+1}: ${it.name}`:`Slot ${i===9?'0':i+1}: empty`);slot.setAttribute('aria-pressed',selected===i?'true':'false');
+      icon.style.setProperty('--slot-ico',it?.icon?`url(./brand/icons/svg/icon-${it.icon}.svg)`:'none');fallback.textContent=it&&!it.icon?it.name.split(/\s+/).map(x=>x[0]).join('').slice(0,2).toUpperCase():'';
+    });
   }
   setWorldStatus(garden=false,night=false){
     if(!this.worldStatus)return;const key=`${garden?'garden':'world'}:${night?'night':'day'}`;if(this._worldStatusKey===key)return;this._worldStatusKey=key;

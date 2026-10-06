@@ -20,6 +20,7 @@ function blankProfile() {
     perks: {},            // golden-seed perk id -> true
     daily: { date: '', done: {}, progress: {}, streak: 0, lastDate: '' },
     fishing: { starter: false, own: {}, log: {} },   // R58: Sigurd's gear + catch log (was memory-only)
+    hotbar: { slots: Array(10).fill(null), selected: -1 }, // R101: persistent desktop quick-slot order + active slot
     boat: { owned: false, trips: 0, waterfall: 0, lastReward: '' }, // R58 boat economy
     combat: { moles: {}, firstMole: false, pouches: [], mercyUntil: 0, giant: { defeatedAt: 0, wins: 0 }, bear: { defeatedAt: 0, wins: 0 } }, // R61/R63/R79 combat
     lakeRun: { best: 0, splits: [], ghost: [], runs: [], day: '', attempts: 0, golds: 0, weekGold: '' }, // R64 Lake Run
@@ -72,6 +73,13 @@ function validProfile(p) {
   out.daily.streak = Math.max(0, d.streak | 0);
   for (const [k, v] of Object.entries(d.done || {})) if (v === true) out.daily.done[k] = true;
   for (const [k, v] of Object.entries(d.progress || {})) if (Number.isFinite(v)) out.daily.progress[k] = Math.max(0, Math.floor(v));
+  // R101 desktop hotbar is additive to save v3. Keep known IDs only and never allow duplicates.
+  const hb = p.hotbar || {}, hotbarIds = new Set(['axe','pickaxe','sickle','can','rod','vest','lantern']), seenHotbar = new Set();
+  if (Array.isArray(hb.slots)) out.hotbar.slots = Array.from({ length: 10 }, (_, i) => {
+    const id = hb.slots[i]; if (typeof id !== 'string' || !hotbarIds.has(id) || seenHotbar.has(id)) return null;
+    seenHotbar.add(id); return id;
+  });
+  out.hotbar.selected = Number.isInteger(hb.selected) && hb.selected >= 0 && hb.selected < 10 ? hb.selected : -1;
   const f = p.fishing || {};
   out.fishing.starter = f.starter === true;
   for (const [k, v] of Object.entries(f.own || {})) if (Number.isFinite(v) && v > 0) out.fishing.own[k] = 1;
