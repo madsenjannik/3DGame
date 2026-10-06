@@ -1,12 +1,12 @@
 // @ts-nocheck
-import { Game } from './core/Game.js?build=HUD-E-DESKTOP-R95-20261006A';
+import { Game } from './core/Game.js?build=HUD-E-DESKTOP-R96-20261006A';
 import { characterCatalog } from './data/assetCatalog.js';
 
 async function start() {
   // R78.2: the HTML shell can be browser-cached while main.js is already fresh (it carries a per-run query).
   // Refresh the stylesheet URL from JS so Test HUD D never runs with an older cached styles.css.
   const css=document.querySelector('link[rel="stylesheet"][href*="styles.css"]');
-  if(css){const u=new URL(css.getAttribute('href'),location.href);u.searchParams.set('v','HUD-E-DESKTOP-R95-20261006A');css.href=u.pathname.split('/').pop()+u.search;}
+  if(css){const u=new URL(css.getAttribute('href'),location.href);u.searchParams.set('v','HUD-E-DESKTOP-R96-20261006A');css.href=u.pathname.split('/').pop()+u.search;}
   const params=new URLSearchParams(location.search);
   const selectedCharacter=params.get('char');
   if(!selectedCharacter||!characterCatalog[selectedCharacter]){ location.replace('./'); return; }

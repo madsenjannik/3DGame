@@ -3554,3 +3554,61 @@ body.hud-desktop-e:not(.touch) .desktop-world-status.night{
     width:29px!important;height:29px!important;flex-basis:29px!important;
   }
 }
+
+
+/* ===== R96 HUD E animated 3D identity + coloured hotbar (GO 06/10) =====
+   DESKTOP HUD E ONLY. Visual Identity v2 motion family. */
+@keyframes r96-vi-bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}}
+@keyframes r96-vi-twinkle{0%,100%{transform:rotate(45deg) scale(0);opacity:0}50%{transform:rotate(45deg) scale(1);opacity:1}}
+
+/* DAY/NIGHT stays top-left but shares the exact row line and outer height with resources. */
+body.hud-desktop-e:not(.touch) .desktop-world-status{
+  top:max(22px,env(safe-area-inset-top))!important;
+  height:54px!important;min-height:54px!important;
+  box-sizing:border-box!important;
+  padding-top:0!important;padding-bottom:0!important;
+}
+body.hud-desktop-e:not(.touch) #hud .inventory-stack{
+  top:max(22px,env(safe-area-inset-top))!important;
+  height:54px!important;min-height:54px!important;
+  box-sizing:border-box!important;
+}
+
+/* Existing rendered 3D sun/moon: Visual Identity v2 bob. */
+body.hud-desktop-e:not(.touch) .desktop-world-status i{
+  animation:r96-vi-bob 1.4s ease-in-out infinite!important;
+  will-change:transform;
+}
+
+/* Existing rendered 3D Golden Seed: same bob plus the VI v2 twinkle language. */
+body.hud-desktop-e:not(.touch) #hud .seed-card .inventory-icon{
+  position:relative!important;
+  animation:r96-vi-bob 1.4s ease-in-out infinite!important;
+  will-change:transform;overflow:visible!important;
+}
+body.hud-desktop-e:not(.touch) #hud .seed-card .inventory-icon::before,
+body.hud-desktop-e:not(.touch) #hud .seed-card .inventory-icon::after{
+  content:"";position:absolute;width:6px;height:6px;
+  background:#fff8dc;box-shadow:0 0 6px rgba(255,240,180,.78);
+  pointer-events:none;animation:r96-vi-twinkle 1.6s ease-in-out infinite;
+}
+body.hud-desktop-e:not(.touch) #hud .seed-card .inventory-icon::before{left:-3px;top:1px;animation-delay:.15s}
+body.hud-desktop-e:not(.touch) #hud .seed-card .inventory-icon::after{right:-4px;bottom:2px;animation-delay:.85s}
+
+/* Bottom selection/quickbar icons: brand/game colour instead of black. */
+body.hud-desktop-e:not(.touch) .desktop-hotbar-slot.filled .slot-icon{
+  background-color:#667342!important;
+}
+
+/* Keep the existing 3D-style icon art unmodified where it is image based. */
+body.hud-desktop-e:not(.touch) #hud #materials .material-chip i,
+body.hud-desktop-e:not(.touch) #hud .seed-card .inventory-icon{
+  opacity:1!important;
+}
+
+@media (prefers-reduced-motion:reduce){
+  body.hud-desktop-e:not(.touch) .desktop-world-status i,
+  body.hud-desktop-e:not(.touch) #hud .seed-card .inventory-icon,
+  body.hud-desktop-e:not(.touch) #hud .seed-card .inventory-icon::before,
+  body.hud-desktop-e:not(.touch) #hud .seed-card .inventory-icon::after{animation:none!important}
+}
