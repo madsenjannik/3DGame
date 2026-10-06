@@ -98,7 +98,16 @@ export class Hud {
     document.body.appendChild(q);this.desktopHotbar=q;
     addEventListener('pointerdown',e=>{if(this.gear?.classList.contains('open')&&!this.gear.contains(e.target)&&e.target!==this.bag)this.toggleGear(false);});
   }
-  toggleGear(on=!this.gear?.classList.contains('open')){if(!this.gear)return;if(on){this.renderGear();const r=this.bag?.getBoundingClientRect();if(r){this.gear.style.left=`${Math.round(r.left)}px`;this.gear.style.top=`${Math.round(r.bottom+10)}px`;}}this.gear.classList.toggle('open',on);this.bag?.classList.toggle('active',on);}
+  toggleGear(on=!this.gear?.classList.contains('open')){
+    if(!this.gear)return;
+    if(on){
+      this.renderGear();
+      const desktopE=document.body.classList.contains('hud-desktop-e')&&!this.touch(),r=this.bag?.getBoundingClientRect();
+      if(desktopE){this.gear.style.left='50%';this.gear.style.top='auto';this.gear.style.bottom='92px';this.gear.style.transform='translateX(-50%)';}
+      else if(r){this.gear.style.bottom='';this.gear.style.transform='';this.gear.style.left=`${Math.round(r.left)}px`;this.gear.style.top=`${Math.round(r.bottom+10)}px`;}
+    }
+    this.gear.classList.toggle('open',on);this.bag?.classList.toggle('active',on);
+  }
   renderGear(){
     if(!this.gear)return;const items=this.gearItems?.()||[];
     this.gear.innerHTML='<b class="gear-title">Bag</b>'+(items.length?items.map(it=>`<span class="gear-item">${it.icon?`<i class="ico-mask" style="--ico:url(./brand/icons/svg/icon-${it.icon}.svg)"></i>`:''}<em>${it.name}</em>${it.n!=null?`<small>${it.n}</small>`:''}</span>`).join(''):'<span class="gear-empty">Nothing yet. Craft tools at your workbench.</span>');
