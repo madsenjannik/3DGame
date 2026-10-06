@@ -93,6 +93,9 @@ export class Hud {
   buildGear(){
     const p=document.createElement('div');p.id='gear-panel';p.className='gear-panel';p.setAttribute('aria-label','Bag');document.body.appendChild(p);this.gear=p;
     p.addEventListener('click',e=>e.stopPropagation());
+    const q=document.createElement('div');q.id='desktop-hotbar-e';q.className='desktop-hotbar-e';q.setAttribute('aria-label','Quick slots');
+    q.innerHTML=Array.from({length:10},(_,i)=>`<span class="desktop-hotbar-slot" data-slot="${i}"><small>${i===9?'0':i+1}</small><i class="slot-icon"></i><em class="slot-fallback"></em></span>`).join('');
+    document.body.appendChild(q);this.desktopHotbar=q;
     addEventListener('pointerdown',e=>{if(this.gear?.classList.contains('open')&&!this.gear.contains(e.target)&&e.target!==this.bag)this.toggleGear(false);});
   }
   toggleGear(on=!this.gear?.classList.contains('open')){if(!this.gear)return;if(on){this.renderGear();const r=this.bag?.getBoundingClientRect();if(r){this.gear.style.left=`${Math.round(r.left)}px`;this.gear.style.top=`${Math.round(r.bottom+10)}px`;}}this.gear.classList.toggle('open',on);this.bag?.classList.toggle('active',on);}
