@@ -3478,3 +3478,79 @@ body.hud-desktop-e:not(.touch) #hud .inventory-stack .bump{
   body.hud-desktop-e:not(.touch) #hud #materials .material-chip b,
   body.hud-desktop-e:not(.touch) #hud .seed-card b{font-size:15px!important}
 }
+
+
+/* ===== R95 HUD E matte segmented bar + 3D day/night icons (GO 06/10) =====
+   DESKTOP HUD E ONLY. Keep R94 placement + separators, remove glass treatment.
+   Use existing rendered 3D sun/moon brand icons. */
+
+/* Resource bar: same centered segmented structure, now matte warm cream. */
+body.hud-desktop-e:not(.touch) #hud .inventory-stack{
+  border:1px solid rgba(155,132,79,.34)!important;
+  background:#f5ecd5!important;
+  box-shadow:0 3px 7px rgba(43,42,36,.11)!important;
+  -webkit-backdrop-filter:none!important;
+  backdrop-filter:none!important;
+}
+
+/* Remove the glossy highlight layers from every segment. */
+body.hud-desktop-e:not(.touch) #hud #materials .material-chip::after,
+body.hud-desktop-e:not(.touch) #hud .seed-card.inventory-card::after{
+  display:none!important;
+}
+
+/* Keep the separator line — cleaner and slightly warmer. */
+body.hud-desktop-e:not(.touch) #hud #materials .material-chip:not(:first-child)::before,
+body.hud-desktop-e:not(.touch) #hud .seed-card.inventory-card::before{
+  top:8px!important;
+  bottom:8px!important;
+  width:1px!important;
+  background:rgba(121,103,63,.22)!important;
+}
+
+/* Icons stay in their real in-game/resource colours: no greyscale/tinting. */
+body.hud-desktop-e:not(.touch) #hud #materials .material-chip i,
+body.hud-desktop-e:not(.touch) #hud .seed-card .inventory-icon{
+  filter:drop-shadow(0 1px 1px rgba(61,50,27,.10))!important;
+  opacity:1!important;
+}
+
+/* DAY/NIGHT: replace CSS sun/moon glyphs with the existing rendered 3D brand icons. */
+body.hud-desktop-e:not(.touch) .desktop-world-status i{
+  width:34px!important;
+  height:34px!important;
+  flex:0 0 34px!important;
+  background-image:url(./brand/icons/128/icon-sun.png)!important;
+  background-position:center!important;
+  background-repeat:no-repeat!important;
+  background-size:contain!important;
+}
+body.hud-desktop-e:not(.touch) .desktop-world-status.night i{
+  background-image:url(./brand/icons/128/icon-moon.png)!important;
+}
+body.hud-desktop-e:not(.touch) .desktop-world-status i::before,
+body.hud-desktop-e:not(.touch) .desktop-world-status.night i::before{
+  content:""!important;
+  display:none!important;
+}
+
+/* Keep the day/location capsule matte too, so it belongs to the same visual family. */
+body.hud-desktop-e:not(.touch) .desktop-world-status{
+  background:#f7efdc!important;
+  border:1px solid rgba(155,132,79,.30)!important;
+  box-shadow:0 3px 8px rgba(43,42,36,.11)!important;
+  -webkit-backdrop-filter:none!important;
+  backdrop-filter:none!important;
+}
+body.hud-desktop-e:not(.touch) .desktop-world-status.night{
+  background:#31372d!important;
+  border-color:rgba(247,239,220,.16)!important;
+  box-shadow:0 3px 9px rgba(0,0,0,.20)!important;
+}
+
+/* Smaller desktop fallback keeps the 3D day/night icon proportions. */
+@media(max-width:1450px){
+  body.hud-desktop-e:not(.touch) .desktop-world-status i{
+    width:29px!important;height:29px!important;flex-basis:29px!important;
+  }
+}
