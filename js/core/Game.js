@@ -12,32 +12,32 @@ import { CollectibleSystem } from '../gameplay/CollectibleSystem.js';
 import { MeaningfulChoiceSystem } from '../gameplay/MeaningfulChoiceSystem.js';
 import { GreenhouseProgressionSystem } from '../gameplay/GreenhouseProgressionSystem.js?build=CAMERA-CUTAWAY-CONTEXT-R21D-20260928E';
 import { OrangeryHubSystem } from '../gameplay/OrangeryHubSystem.js?build=CAMERA-CUTAWAY-CONTEXT-R21D-20260928E';
-import { FishingV1System } from '../gameplay/FishingV1System.js?build=DAYNIGHT-R81-20261005A';
+import { FishingV1System } from '../gameplay/FishingV1System.js?build=BAG-NIGHT-R84-20261006A';
 import { ChoicePanel } from '../ui/ChoicePanel.js';
-import { Hud } from '../ui/Hud.js?build=MOBILE-HUD-R83-20261005A';
+import { Hud } from '../ui/Hud.js?build=BAG-NIGHT-R84-20261006A';
 import { WorldMap } from '../ui/WorldMap.js?build=WORLD-MAP-R35B-20260930B';
-import { GardenEnvironment } from '../world/GardenEnvironment.js?build=DAYNIGHT-R81-20261005A';
+import { GardenEnvironment } from '../world/GardenEnvironment.js?build=BAG-NIGHT-R84-20261006A';
 import { WildlifeSystem } from '../world/WildlifeSystem.js?build=CAMERA-CUTAWAY-CONTEXT-R21D-20260928E';
 import { PlayerHomePortalSystem } from '../world/PlayerHomePortalSystem.js?build=ENTRY-R29-20260929A';
 import { NorthStableSystem } from '../world/NorthStableSystem.js?build=STABLE-R42-20261001A';
-import { SaveGame } from './SaveGame.js?build=DAYNIGHT-R81-20261005A';
+import { SaveGame } from './SaveGame.js?build=BAG-NIGHT-R84-20261006A';
 import { WildsLoopSystem } from '../gameplay/WildsLoopSystem.js?build=HUDTEST-D-R78.1-20261005A';
 import { WorkbenchPanel } from '../ui/WorkbenchPanel.js';
-import { DevMenu, devMenuEnabled } from '../ui/DevMenu.js?build=DAYNIGHT-R81-20261005A';
+import { DevMenu, devMenuEnabled } from '../ui/DevMenu.js?build=BAG-NIGHT-R84-20261006A';
 import { applyControlProfile, defaultProfile } from './ControlProfiles.js';
 import { PerfHud } from '../dev/PerfHud.js';
 import { QualityManager, QUALITY } from './Quality.js';
 import { InteractionResolver } from './InteractionResolver.js';
 import { log, warn } from '../dev/Log.js';
-import { LookPass } from '../visual/LookPass.js?build=DAYNIGHT-R81-20261005A';
-import { DayNight } from '../visual/DayNight.js?build=DAYNIGHT-R81-20261005A';   // R81
-import { Lantern } from '../gameplay/Lantern.js?build=DAYNIGHT-R81-20261005A';     // R81
+import { LookPass } from '../visual/LookPass.js?build=BAG-NIGHT-R84-20261006A';
+import { DayNight } from '../visual/DayNight.js?build=BAG-NIGHT-R84-20261006A';   // R81
+import { Lantern } from '../gameplay/Lantern.js?build=BAG-NIGHT-R84-20261006A';     // R81
 import { BoatEconomySystem } from '../gameplay/BoatEconomySystem.js';
 import { LakeRunSystem } from '../gameplay/LakeRunSystem.js';
 import { GardenBuildSystem } from '../gameplay/GardenBuildSystem.js';
 import { GardenBuildMode } from '../ui/GardenBuildMode.js';
 import { GardenVegetationMask } from '../world/GardenVegetationMask.js';
-import { CombatSystem } from '../gameplay/CombatSystem.js?build=MOBILE-HUD-R83-20261005A';
+import { CombatSystem } from '../gameplay/CombatSystem.js?build=BAG-NIGHT-R84-20261006A';
 
 export class Game {
   async init({characterId='succulent',devMode=false}={}){
@@ -113,6 +113,12 @@ export class Game {
     });
     this.wilds.onOpenWorkbench=()=>{this.workbenchPanel.show();this.input.resetTouchPointers?.();};
     const syncTools=()=>this.hud.setTools?.(this.wilds.profile.tools,this.wilds.profile.water);this.wilds.onChange(syncTools);syncTools();
+    // R84: what the bag shows (Jannik 06/10: the bag is what you carry; resources stay visible in the HUD).
+    this.hud.gearItems=()=>{const t=this.wilds?.profile?.tools||{},own=this.fishing?.own||{},out=[];
+      if(t.axe)out.push({icon:'axe',name:'Stone Axe'});if(t.pickaxe)out.push({icon:'pickaxe',name:'Stone Pickaxe'});if(t.sickle)out.push({icon:'sickle',name:'Sickle'});
+      if(t.can)out.push({icon:'drop',name:'Watering Can',n:`${this.wilds.profile.water||0} water`});
+      if(own.rodBamboo||this.fishing?.starter)out.push({icon:'rod',name:'Bamboo Rod'});if(own.vest)out.push({name:'Life Vest'});
+      if(this.lantern?.ready)out.push({icon:'lantern',name:'Lantern',n:'night'});return out;};
     if(devMode||devMenuEnabled()){this.perfHud=new PerfHud(this);this.devMenu=new DevMenu(this);window.__tgw=this;}
     else applyControlProfile(this,defaultProfile()); // R50.3: free camera everywhere (mouse-look on desktop)
     mark('wildsReadyMs');

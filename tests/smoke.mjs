@@ -69,11 +69,12 @@ try {
       // R71: quest + resources fold to two round buttons top left; tapping the bag opens the resource row
       const bag = document.getElementById('hud-bag'), inv = document.getElementById('inventory');
       obj.classList.remove('open', 'fresh'); await w(50);
-      o.row = obj.parentElement.id === 'hud' && op(obj) > .9 && b(obj).width > 100 && b(obj).height <= 46 && getComputedStyle(document.getElementById('objective-title')).display !== 'none' && b(obj).top < 60 && !!bag && b(bag).left > b(obj).left && getComputedStyle(inv).display === 'none';   // R75: quest = one title line, Golden Seed in the bag
+      o.row = obj.parentElement.id === 'hud' && op(obj) > .9 && b(obj).width > 100 && b(obj).height <= 46 && getComputedStyle(document.getElementById('objective-title')).display !== 'none' && b(obj).top < 60 && !!bag && b(bag).left > b(obj).left && getComputedStyle(inv).display !== 'none' && inv.classList.contains('open');   // R75: quest = one title line; R84: resources always visible
       { const act = document.getElementById('action'), hop = document.getElementById('hop-btn'); o.row = o.row && act.classList.contains('show') && act.dataset.icon === 'sword' && !!hop && b(hop).width >= 44 && getComputedStyle(hop).display !== 'none'; }   // R75: main button always (Strike), Hop button
-      bag.click(); await w(300); o.row = o.row && inv.classList.contains('open') && Math.abs(b(wood).top - b(stone).top) < 2 && b(stone).left > b(wood).left && b(wood).left > b(seed).left && b(seed).left > b(bag).left;
+      o.row = o.row && Math.abs(b(wood).top - b(stone).top) < 2 && b(stone).left > b(wood).left && b(wood).left > b(seed).left;
+      { const gp = document.getElementById('gear-panel'); bag.click(); await w(200); o.row = o.row && gp.classList.contains('open') && inv.classList.contains('open') && gp.querySelector('.gear-title'); bag.click(); await w(100); o.row = o.row && !gp.classList.contains('open'); }   // R84: the bag is what you carry
       const mini = document.querySelector('.tgw-minimap'); o.minimap = !!mini && b(mini).width <= 50 && !mini.querySelector('canvas').getBoundingClientRect().width && b(wood).right < b(mini).left;
-      obj.click(); await w(100); o.row = o.row && obj.classList.contains('open') && b(obj).width > 120; bag.click(); obj.click();
+      obj.click(); await w(100); o.row = o.row && obj.classList.contains('open') && b(obj).width > 120; obj.click();
       o.joy = getComputedStyle(document.getElementById('joy-rest')).display === 'block';
       g.state.addItem('wood', 2); await w(100); o.bump = wood.classList.contains('bump') && document.getElementById('wood-count').textContent !== '0' && document.getElementById('inventory').classList.contains('open');   // R71: a gain peeks the row open
       const c = document.querySelector('#app canvas'); o.fill = c.getBoundingClientRect().height === innerHeight && !c.style.height;
@@ -454,12 +455,12 @@ try {
       L.update(.016); o.dayLocked = !L.toggle() && !document.body.classList.contains('lantern-ready');
       dn.force = 1; dn.update(false); L.update(.016); o.night = document.body.classList.contains('is-night') && g.scene.fog.color.getHex() !== dayFog && g.world.hemi.intensity < 1 && document.body.classList.contains('lantern-ready');
       const lit = L.toggle(); L.update(.016); const sock = g.character.instance.socket('Hand_Socket_L'); let up = L.model.parent; o.lantern = lit && L.on && L.model.visible && L.model.parent === sock && L.light?.intensity > 0 && !L.light.castShadow;
-      g.world.setSpace('garden'); g.look.update(true); dn.update(true); L.update(.016); o.garden = !document.body.classList.contains('is-night') && Math.abs(g.renderer.toneMappingExposure - 1.02) < .01 && !L.model.visible && L.light.intensity === 0;
+      g.world.setSpace('garden'); g.look.update(true); dn.update(true); L.update(.016); o.garden = document.body.classList.contains('is-night') && g.renderer.toneMappingExposure < 1.01 && L.model.visible && L.light.intensity > 0 && L.light.distance === 16;   // R84: night in the garden too, lantern there too
       g.world.setSpace('world'); g.look.update(false); dn.force = 0; dn.update(false); L.update(.016); o.dayAgain = !L.model.visible && Math.abs(g.renderer.toneMappingExposure - dayExp) < .01; L.on = false; dn.force = null;
       const S = g.combat.special, d = S.def; S.land({ land: { x: 30, z: 42 } }); const z = S.zones[S.zones.length - 1]; o.mud = d.stun > 0 && z?.mesh?.name === 'SPECIAL_MUD_SPLAT' && z.life === d.stun + .5; for (let i = 0; i < 50; i++) S.update(.05); o.mudGone = !S.zones.includes(z);
       const B = g.combat.bear; if (B?.bear) { B.p.defeatedAt = Date.now() - 29 * 60000; const a = B.available(); B.p.defeatedAt = Date.now() - 31 * 60000; o.rematch = !a && B.available(); B.p.defeatedAt = 0; } else o.rematch = false;
       return o; }) : {};
-    check('day/night + lantern (R81): 21/9 min clock, night darkens the world only, lantern only at night in the left hand with its own light, mud splat, bear rematch = 1 in-game day', ready && ['clock', 'dayLocked', 'night', 'lantern', 'garden', 'dayAgain', 'mud', 'mudGone', 'rematch'].every(k => r[k]) && !errors.length, errors[0] || JSON.stringify(r));
+    check('day/night + lantern (R81/R84): 21/9 min clock, night in the world and the garden, lantern only at night in the left hand with its own light, mud splat, bear rematch = 1 in-game day', ready && ['clock', 'dayLocked', 'night', 'lantern', 'garden', 'dayAgain', 'mud', 'mudGone', 'rematch'].every(k => r[k]) && !errors.length, errors[0] || JSON.stringify(r));
     await ctx.close(); }
   // 5. DEV disabled: no dev UI or handles leak into normal play
   { const ctx = await context({ viewport: { width: 844, height: 390 }, isMobile: true, hasTouch: true }); const { p, errors, ok } = await startGame(ctx, 'daisy', { dev: false });

@@ -2127,3 +2127,17 @@ body.hud-classic.lantern-ready.touch #lantern-btn{
   body.hud-classic.touch .special-btn{right:calc(max(14px,env(safe-area-inset-right)) + 48px)!important;bottom:calc(100px + env(safe-area-inset-bottom))!important}
   body.hud-classic.lantern-ready.touch #lantern-btn{right:calc(max(14px,env(safe-area-inset-right)) + 136px)!important;bottom:calc(100px + env(safe-area-inset-bottom))!important}
 }
+
+/* R84 (Jannik 06/10): phones keep the resources visible at all times; the bag is what you carry (tools, rod, vest,
+   lantern) in a small panel under the bag button. Tools leave the resource row on phones. */
+.touch #hud #tools-row.tools-row{display:none!important}
+.gear-panel{display:none;position:fixed;z-index:30;min-width:190px;max-width:min(300px,calc(100vw - 36px));padding:10px 12px 12px;border-radius:16px;background:var(--tgw-glass);border:1px solid var(--tgw-line);box-shadow:var(--tgw-shadow);-webkit-backdrop-filter:var(--tgw-blur);backdrop-filter:var(--tgw-blur);color:var(--tgw-cream);font:600 12px/1.2 Manrope,system-ui,sans-serif;flex-direction:column;gap:7px;pointer-events:auto}
+.gear-panel.open{display:flex}
+.gear-panel .gear-title{font:800 11px/1 Manrope,system-ui,sans-serif;letter-spacing:.12em;text-transform:uppercase;opacity:.8}
+.gear-panel .gear-item{display:flex;align-items:center;gap:9px;min-height:30px}
+.gear-panel .gear-item .ico-mask{display:block;flex:0 0 22px;width:22px;height:22px;background:currentColor;-webkit-mask:var(--ico) center/contain no-repeat;mask:var(--ico) center/contain no-repeat}
+.gear-panel .gear-item em{font-style:normal;flex:1}
+.gear-panel .gear-item small{opacity:.7;font-size:11px}
+.gear-panel .gear-empty{opacity:.8;font-weight:500}
+body.hud-classic.touch .gear-panel{border:0;background:linear-gradient(180deg,var(--m83-moss-hi,#82b455),var(--m83-moss,#6f9d45));color:var(--m83-cream,#fffaf0);box-shadow:inset 0 3px 0 rgba(255,255,255,.16),inset 0 -8px 0 rgba(55,87,36,.28),0 8px 16px rgba(43,42,36,.20);-webkit-backdrop-filter:none;backdrop-filter:none}
+body.fishing-active .gear-panel,body.boating-active .gear-panel,body.stable-talk-active .gear-panel,body.stable-race-active .gear-panel,body.lakerun-active .gear-panel,body.build-mode .gear-panel,body.choice-open .gear-panel,body.world-map-open .gear-panel,body.boss-active .gear-panel{display:none!important}

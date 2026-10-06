@@ -72,10 +72,14 @@ export class Hud {
   }
   buildCollapse(hud,inv){
     if(!hud||!inv||!this.objective)return;
-    const bag=document.createElement('button');bag.type='button';bag.id='hud-bag';bag.className='hud-fold-btn';bag.setAttribute('aria-label','Resources');
+    const bag=document.createElement('button');bag.type='button';bag.id='hud-bag';bag.className='hud-fold-btn';bag.setAttribute('aria-label','Bag');
     hud.insertBefore(bag,inv);this.bag=bag;this._peekT=new Map();
     const pin=(el,btn)=>{const on=!el.classList.contains('pinned');el.classList.toggle('pinned',on);el.classList.toggle('open',on);btn?.classList.toggle('active',on);el.classList.remove('fresh');clearTimeout(this._peekT.get(el));};
-    bag.addEventListener('click',e=>{e.stopPropagation();pin(inv,bag);});
+    // R84 (Jannik 06/10): resources are always visible on phones too; the bag holds what you carry (tools, rod, vest, lantern).
+    const always=()=>{if(this.touch()&&!inv.classList.contains('always'))inv.classList.add('open','pinned','always');};always();
+    new MutationObserver(always).observe(document.body,{attributes:true,attributeFilter:['class']});   // 'touch' is set on body after the HUD is built
+    this.buildGear();
+    bag.addEventListener('click',e=>{e.stopPropagation();this.toggleGear();});
     // R74 Test HUD B: the quest is a one-line chip; tap shows the text, the cross hides it to a round button, tap brings it back.
     const x=document.createElement('i');x.className='obj-x';x.setAttribute('role','button');x.setAttribute('aria-label','Hide quest');x.textContent='×';this.objective.appendChild(x);
     const hudB=()=>document.body.classList.contains('hud-test-b');
@@ -85,6 +89,17 @@ export class Hud {
     const title=document.getElementById('objective-title');
     if(title)new MutationObserver(()=>{this.setObjectiveIcon(title.textContent);if(this.touch()){this.objective.classList.add('fresh');this.peek(this.objective,5000);}}).observe(title,{childList:true,characterData:true,subtree:true});
   }
+  // R84 bag: a small panel under the bag button listing what you carry. gearItems() is set by Game.
+  buildGear(){
+    const p=document.createElement('div');p.id='gear-panel';p.className='gear-panel';p.setAttribute('aria-label','Bag');document.body.appendChild(p);this.gear=p;
+    p.addEventListener('click',e=>e.stopPropagation());
+    addEventListener('pointerdown',e=>{if(this.gear?.classList.contains('open')&&!this.gear.contains(e.target)&&e.target!==this.bag)this.toggleGear(false);});
+  }
+  toggleGear(on=!this.gear?.classList.contains('open')){if(!this.gear)return;if(on){this.renderGear();const r=this.bag?.getBoundingClientRect();if(r){this.gear.style.left=`${Math.round(r.left)}px`;this.gear.style.top=`${Math.round(r.bottom+10)}px`;}}this.gear.classList.toggle('open',on);this.bag?.classList.toggle('active',on);}
+  renderGear(){
+    if(!this.gear)return;const items=this.gearItems?.()||[];
+    this.gear.innerHTML='<b class="gear-title">Bag</b>'+(items.length?items.map(it=>`<span class="gear-item">${it.icon?`<i class="ico-mask" style="--ico:url(./brand/icons/svg/icon-${it.icon}.svg)"></i>`:''}<em>${it.name}</em>${it.n!=null?`<small>${it.n}</small>`:''}</span>`).join(''):'<span class="gear-empty">Nothing yet. Craft tools at your workbench.</span>');
+  }
   peek(el,ms){if(!el||el.classList.contains('pinned'))return;el.classList.add('open');clearTimeout(this._peekT?.get(el));this._peekT?.set(el,setTimeout(()=>el.classList.remove('open'),ms));}
   setMaterial(id,value){const el=document.getElementById(`${id}-count`);if(el){el.textContent=String(value);el.closest('.material-chip')?.classList.toggle('zero',!value);}}
   setObjective(kicker,goal){
@@ -93,6 +108,7 @@ export class Hud {
     this.kicker.textContent=kicker;this.title.textContent=goal.title;this.copy.textContent=goal.copy;this.setObjectiveIcon(goal.title);
   }
   setTools(tools,water){
+    if(this.gear?.classList.contains('open'))this.renderGear();
     const row=document.getElementById('tools-row');if(!row)return;
     for(const el of row.querySelectorAll('[data-tool]'))el.classList.toggle('owned',!!tools[el.dataset.tool]);
     const w=document.getElementById('tool-water');if(w)w.textContent=tools.can?String(water):'';

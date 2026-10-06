@@ -2,8 +2,8 @@
 // R81 day/night cycle (Jannik 05/10: 30 min per in-game day, time keeps running while the game is closed, night dark
 // but readable). The clock is the real clock, so every session agrees on the time of day and nothing is saved:
 // minute 0–21 of each real half hour is day (dawn in its first 1.5 min), 21–30 night (dusk 21–22.5). Like the R70 look
-// pass it is a parameter-only blend of the shared world's light (sky, fog, hemisphere, sun → moon, exposure); the
-// private garden and the three greenhouse levels keep their exact look. Daily systems stay on real calendar days.
+// pass it is a parameter-only blend of the light (sky, fog, hemisphere, sun → moon, exposure). R84: the shared world and
+// the private garden both get night (greenhouse models untouched). Daily systems stay on real calendar days.
 // DEV → TID: night now / day now / follow the clock.
 import * as THREE from 'three';
 
@@ -39,10 +39,11 @@ export class DayNight {
     this.col(D.sunC, 'sunC', n, w.sun.color); w.sun.intensity = L(D.sunI, N.sunI); s.environmentIntensity = L(D.env, N.env);
   }
   // Called every frame after the look pass.
+  // R84 (Jannik 06/10): the private garden gets night too (it blends from the garden's own day look; the greenhouse
+  // models are untouched, they are only lit darker at night).
   update(gardenSpace) {
-    const n = gardenSpace ? 0 : this.night(), look = this.g.look?.applied ?? null;
-    this.n = n; document.body.classList.toggle('is-night', n > .5 && !gardenSpace);
-    if (gardenSpace) { if (this.lastN > 0) { this.apply(0); } this.lastN = 0; this.lastLook = look; return; }
+    const n = this.night(), look = this.g.look?.applied ?? null;
+    this.n = n; document.body.classList.toggle('is-night', n > .5);
     if (n <= 0 && this.lastN === 0 && look === this.lastLook) return;
     this.apply(n); this.lastN = n; this.lastLook = look;
   }
