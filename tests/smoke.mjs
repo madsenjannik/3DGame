@@ -216,6 +216,28 @@ try {
     check('R106 mobile/desktop UI: same 10-slot hotbar, real minimap, rounded family, touch drag + tap equip',
       ok&&r.open&&r.sameHotbar&&r.noNumbers&&r.bagShape&&r.mapReal&&r.dragged&&r.stillOpen&&r.equipped&&r.closed&&r.selected&&!errors.length,errors[0]||JSON.stringify(r));await ctx.close(); }
 
+  // 2h. R107 iPhone screenshot QA: no lower strip, quest wide, inventory horizontal, controls compact
+  { const ctx = await context({ viewport: { width: 844, height: 390 }, isMobile: true, hasTouch: true }); const { p, errors, ok } = await startGame(ctx, 'succulent');
+    let r={};
+    if(ok)r=await p.evaluate(async()=>{
+      const g=window.__tgw,w=ms=>new Promise(x=>setTimeout(x,ms));await w(100);
+      const app=document.getElementById('app'),obj=document.getElementById('objective'),bag=document.getElementById('hud-bag'),action=document.getElementById('action'),hop=document.getElementById('hop-btn');
+      obj.classList.remove('open','pinned');g.hud.anchorMobileTop();obj.click();await w(100);
+      const quest=obj.getBoundingClientRect();
+      bag.click();await w(100);
+      const gp=document.getElementById('gear-panel'),grid=gp.querySelector('.gear-grid'),gb=gp.getBoundingClientRect(),ab=app.getBoundingClientRect();
+      return{
+        full:ab.height>=innerHeight-1&&gb.height>=innerHeight-1,
+        questWide:quest.width>=280&&quest.height<180,
+        row:getComputedStyle(grid).flexDirection==='row',
+        bagSmall:bag.getBoundingClientRect().width<=54,
+        actionSmall:action.getBoundingClientRect().width<=66,
+        hopSmall:hop.getBoundingClientRect().width<=66
+      };
+    });
+    check('mobile R107 QA: full viewport, wide quest, horizontal inventory, compact controls',
+      ok&&r.full&&r.questWide&&r.row&&r.bagSmall&&r.actionSmall&&r.hopSmall&&!errors.length,errors[0]||JSON.stringify(r));await ctx.close(); }
+
   // 3. Missing assets must not black-screen the game
   { const ctx = await context({ viewport: { width: 844, height: 390 }, isMobile: true, hasTouch: true }, [/assets\/stable\//, /lake_cabin|cabin_fishing_runtime/, /greenhouse-l1/, /characters\/fern\.glb/]);
     const { p, errors, ok } = await startGame(ctx, 'fern'); const failed = ok ? await p.evaluate(() => window.__tgw.failed) : [];

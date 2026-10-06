@@ -4483,3 +4483,171 @@ body.hud-classic.touch.mobile-bag-open .hotbar-drag-ghost{
     width:min(540px,calc(100vw - 34px));
   }
 }
+
+
+/* ===== R107 mobile corrective pass after R106 visual QA (GO 06/10) =====
+   Fixes the exact iPhone regressions visible in the screenshots:
+   1) no pale strip under game/inventory,
+   2) expanded quest uses the wide desktop-like card again,
+   3) inventory items form one horizontal slot row,
+   4) touch controls are scaled back toward desktop proportions. */
+
+/* iOS landscape: fill the LARGE viewport, not the shorter dynamic viewport. */
+body.touch,
+body.touch #app,
+body.touch #app canvas,
+body.touch #vignette{
+  min-height:100vh!important;
+  height:100vh!important;
+}
+@supports(height:100lvh){
+  body.touch,
+  body.touch #app,
+  body.touch #app canvas,
+  body.touch #vignette{
+    min-height:100lvh!important;
+    height:100lvh!important;
+  }
+}
+body.hud-classic.touch.mobile-bag-open .gear-panel.open{
+  height:100vh!important;
+  min-height:100vh!important;
+}
+@supports(height:100lvh){
+  body.hud-classic.touch.mobile-bag-open .gear-panel.open{
+    height:100lvh!important;
+    min-height:100lvh!important;
+  }
+}
+
+/* Quest: restore the useful horizontal reading width. Bag is repositioned beside the current card by Hud.js. */
+body.hud-classic.touch #hud #objective.objective-card.open{
+  width:min(330px,48vw)!important;
+  max-width:min(330px,48vw)!important;
+  min-height:86px!important;
+  height:auto!important;
+  padding:11px 34px 14px 54px!important;
+}
+body.hud-classic.touch #hud #objective.open #objective-copy{
+  display:-webkit-box!important;
+  -webkit-box-orient:vertical!important;
+  -webkit-line-clamp:4!important;
+  overflow:hidden!important;
+  white-space:normal!important;
+}
+
+/* Utility scale: visually much closer to desktop E; touch targets remain comfortably >44 px. */
+body.hud-classic.touch #hud #hud-bag.hud-fold-btn{
+  flex-basis:52px!important;
+  width:52px!important;height:52px!important;
+  border-radius:14px!important;
+  background-size:28px auto,auto!important;
+}
+body.hud-classic.touch .tgw-minimap{
+  width:64px!important;height:64px!important;
+}
+body.hud-classic.touch #action,
+body.hud-classic.touch #action.show,
+body.hud-classic.touch #hop-btn{
+  width:64px!important;height:64px!important;min-width:64px!important;
+  border-radius:15px!important;
+  bottom:calc(18px + env(safe-area-inset-bottom))!important;
+}
+body.hud-classic.touch #action{
+  right:max(18px,env(safe-area-inset-right))!important;
+}
+body.hud-classic.touch #hop-btn{
+  right:calc(max(18px,env(safe-area-inset-right)) + 76px)!important;
+  background:linear-gradient(180deg,#fffaf0,#ece5d6)!important;
+  color:#2b2a24!important;
+  box-shadow:inset 0 2px 0 #fff,inset 0 -4px 0 rgba(196,188,168,.38),0 6px 12px rgba(43,42,36,.16)!important;
+}
+body.hud-classic.touch #hop-btn b,
+body.hud-classic.touch #hop-btn span{
+  color:#2b2a24!important;
+}
+body.hud-classic.touch #action #action-ico,
+body.hud-classic.touch #action #action-ico .ico-mask{
+  width:34px!important;height:34px!important;
+}
+
+/* Fullscreen Bag: Inventory is ONE horizontal desktop-style slot row, never the accidental vertical column. */
+body.hud-classic.touch.mobile-bag-open .gear-grid{
+  flex:0 0 auto!important;
+  width:100%!important;
+  display:flex!important;
+  flex-direction:row!important;
+  flex-wrap:nowrap!important;
+  align-items:flex-start!important;
+  justify-content:center!important;
+  gap:8px!important;
+  overflow-x:auto!important;
+  overflow-y:hidden!important;
+  padding:4px 4px 9px!important;
+}
+body.hud-classic.touch.mobile-bag-open .gear-item{
+  flex:0 0 66px!important;
+  width:66px!important;height:72px!important;
+  min-width:66px!important;min-height:72px!important;
+  padding:5px 4px 4px!important;
+  border-radius:14px!important;
+}
+body.hud-classic.touch.mobile-bag-open .gear-item-art{
+  width:43px!important;height:43px!important;flex-basis:43px!important;
+}
+body.hud-classic.touch.mobile-bag-open .gear-item-copy{
+  width:100%!important;
+  min-width:0!important;
+  display:flex!important;
+  flex-direction:column!important;
+  align-items:center!important;
+  gap:1px!important;
+}
+body.hud-classic.touch.mobile-bag-open .gear-item em{
+  width:100%!important;
+  font-size:8.5px!important;
+  white-space:nowrap!important;
+  overflow:hidden!important;
+  text-overflow:ellipsis!important;
+}
+body.hud-classic.touch.mobile-bag-open .gear-item small{
+  font-size:7px!important;
+}
+
+/* Hotbar remains the same real 10-slot component but comes up slightly for better balance. */
+body.hud-classic.touch.mobile-bag-open .desktop-hotbar-e{
+  bottom:calc(max(18px,env(safe-area-inset-bottom)) + 4px)!important;
+}
+body.hud-classic.touch.mobile-bag-open .gear-hotbar-label{
+  bottom:calc(max(18px,env(safe-area-inset-bottom)) + 62px)!important;
+}
+
+/* Short iPhone landscape: keep quest readable and all inventory slots on one line. */
+@media(max-height:430px) and (orientation:landscape){
+  body.hud-classic.touch #hud #objective.objective-card.open{
+    width:min(315px,48vw)!important;
+    max-width:min(315px,48vw)!important;
+    min-height:80px!important;
+  }
+  body.hud-classic.touch #hud #hud-bag.hud-fold-btn{
+    width:48px!important;height:48px!important;flex-basis:48px!important;
+  }
+  body.hud-classic.touch .tgw-minimap{width:60px!important;height:60px!important}
+  body.hud-classic.touch #action,
+  body.hud-classic.touch #action.show,
+  body.hud-classic.touch #hop-btn{
+    width:60px!important;height:60px!important;min-width:60px!important;
+  }
+  body.hud-classic.touch #hop-btn{
+    right:calc(max(14px,env(safe-area-inset-right)) + 72px)!important;
+  }
+  body.hud-classic.touch #action{
+    right:max(14px,env(safe-area-inset-right))!important;
+  }
+  body.hud-classic.touch.mobile-bag-open .gear-item{
+    flex-basis:60px!important;width:60px!important;min-width:60px!important;height:65px!important;min-height:65px!important;
+  }
+  body.hud-classic.touch.mobile-bag-open .gear-item-art{
+    width:38px!important;height:38px!important;flex-basis:38px!important;
+  }
+}

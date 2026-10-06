@@ -79,28 +79,28 @@ export class Hud {
     const always=()=>{if(this.touch()&&!inv.classList.contains('always'))inv.classList.add('open','pinned','always');};always();
     new MutationObserver(always).observe(document.body,{attributes:true,attributeFilter:['class']});   // 'touch' is set on body after the HUD is built
     this.buildGear();
-    bag.addEventListener('click',e=>{e.stopPropagation();if(this.touch()&&!this.objective.classList.contains('open'))this.anchorMobileTop(true);this.toggleGear();});
+    bag.addEventListener('click',e=>{e.stopPropagation();if(this.touch()&&!this.objective.classList.contains('open'))this.anchorMobileTop();this.toggleGear();});
     // R74 Test HUD B: the quest is a one-line chip; tap shows the text, the cross hides it to a round button, tap brings it back.
     const x=document.createElement('i');x.className='obj-x';x.setAttribute('role','button');x.setAttribute('aria-label','Hide quest');x.textContent='×';this.objective.appendChild(x);
     const hudB=()=>document.body.classList.contains('hud-test-b');
     x.addEventListener('click',e=>{if(!hudB())return;e.stopPropagation();const o=this.objective;o.classList.add('b-hidden');o.classList.remove('open','pinned');clearTimeout(this._peekT.get(o));});
     const classic=()=>document.body.classList.contains('hud-classic')||(document.body.classList.contains('hud-desktop-e')&&!this.touch());
-    this.objective.addEventListener('click',e=>{if(!this.touch()&&!classic())return;e.stopPropagation();if(hudB()&&this.objective.classList.contains('b-hidden')){this.objective.classList.remove('b-hidden','fresh');return;}const wasOpen=this.objective.classList.contains('open');if(this.touch()&&!wasOpen)this.anchorMobileTop(true);pin(this.objective);if(this.touch()&&wasOpen)requestAnimationFrame(()=>this.anchorMobileTop(true));});
+    this.objective.addEventListener('click',e=>{if(!this.touch()&&!classic())return;e.stopPropagation();if(hudB()&&this.objective.classList.contains('b-hidden')){this.objective.classList.remove('b-hidden','fresh');return;}pin(this.objective);if(this.touch())requestAnimationFrame(()=>this.anchorMobileTop());});
     const title=document.getElementById('objective-title');
-    if(title)new MutationObserver(()=>{this.setObjectiveIcon(title.textContent);if(this.touch()){if(!this.objective.classList.contains('open'))this.anchorMobileTop(true);this.objective.classList.add('fresh');this.peek(this.objective,5000);}}).observe(title,{childList:true,characterData:true,subtree:true});
+    if(title)new MutationObserver(()=>{this.setObjectiveIcon(title.textContent);if(this.touch()){if(!this.objective.classList.contains('open'))this.anchorMobileTop();this.objective.classList.add('fresh');this.peek(this.objective,5000);}}).observe(title,{childList:true,characterData:true,subtree:true});
   }
   // R104: on phones the Bag button must not move when the quest expands.
   // Capture the quest's COLLAPSED natural width, pin Bag beside that footprint, then let the quest grow downward.
-  anchorMobileTop(force=false){
+  anchorMobileTop(){
     if(!this.touch()||!this.bag||!this.objective||!document.body.classList.contains('hud-classic'))return;
-    if(this.objective.classList.contains('open')&&!force)return;
     const o=this.objective.getBoundingClientRect(),b=this.bag.getBoundingClientRect();
     if(!o.width||!o.height)return;
-    const w=Math.round(o.width),gap=12,bagW=b.width||52,bagH=b.height||52,pad=14;
-    this._mobileQuestStableWidth=w;
-    this.objective.style.setProperty('--mobile-quest-stable-width',w+'px');
-    const left=Math.min(innerWidth-bagW-pad,Math.round(o.left+w+gap));
-    const top=Math.round(o.top+(o.height-bagH)/2);
+    // R107: Bag follows the CURRENT quest footprint. R104 froze the expanded quest to its
+    // collapsed width, which made long quest copy turn into a tall green column on phones.
+    // Keep the desktop-like wide quest card and simply keep Bag adjacent to it.
+    const gap=10,bagW=b.width||52,bagH=b.height||52,pad=14;
+    const left=Math.min(innerWidth-bagW-pad,Math.round(o.right+gap));
+    const top=Math.round(o.top+(Math.min(o.height,52)-bagH)/2);
     Object.assign(this.bag.style,{position:'fixed',left:left+'px',right:'auto',top:top+'px',bottom:'auto',zIndex:'31'});
   }
   // R101: Bag stays the carried-item list; desktop hotbar has its own persistent slot order.
