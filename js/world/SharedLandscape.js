@@ -234,7 +234,14 @@ export class SharedLandscape {
       const seed=(()=>{let a=0x32a7f19d;return()=>{a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};})();
       const bridgeClear=(x,z)=>{const q=this.bridgeLocal(x,z),b=this.bridge;return Math.abs(q.u)<=b.half+1.8&&Math.abs(q.v)<=b.w+2.1;};
       const surfaceKinds=new Set(['lily','duckweed']);
+      // R103: Plant_05_reed is the source of the large brown triangular "spikes" seen around
+      // lake/stream/waterfall. Its authored catalog entry contains 11 broad triangular blades
+      // with a brown-heavy vertex-colour range. Do not place that asset in the live world.
+      // Keep this defensive remap here as well as in the placement mix so future callers cannot
+      // accidentally reintroduce the visual regression.
+      const safeWaterPlantKind=kind=>kind==='reed'?'bulrush':kind;
       const add=(kind,x,z,targetY,scale=1,ry=0)=>{
+        kind=safeWaterPlantKind(kind);
         const base=src[kind];if(!base)return;if(Math.hypot(x-this.cabin.x,z-this.cabin.z)<12||bridgeClear(x,z))return;
         const o=base.clone(true);o.name='SummerWater_'+kind;o.position.set(x,0,z);o.rotation.y=ry;o.scale.setScalar(scale);
         o.traverse(q=>{if(q.isMesh){q.castShadow=true;q.receiveShadow=true;}});
@@ -250,14 +257,14 @@ export class SharedLandscape {
         // Lily/duckweed are surface plants. Pondweed/hornwort are rooted aquatic plants
         // and must use the actual bed height rather than being placed at the water surface.
         const y=water&&surfaceKinds.has(kind)?this.WL:this.worldHeight(x,z);add(kind,x,z,y,.78+seed()*.42,seed()*6.283);}};
-      const tallCluster=(cx,cz,count=4,spread=1.25)=>{for(let j=0;j<count;j++){const a=seed()*Math.PI*2,r=Math.sqrt(seed())*spread,x=cx+Math.cos(a)*r,z=cz+Math.sin(a)*r,roll=seed(),kind=roll<.48?'reed':roll<.78?'bulrush':roll<.9?'meadowsweet':'marigold';add(kind,x,z,this.worldHeight(x,z),.78+seed()*.34,seed()*6.283);}};
+      const tallCluster=(cx,cz,count=4,spread=1.25)=>{for(let j=0;j<count;j++){const a=seed()*Math.PI*2,r=Math.sqrt(seed())*spread,x=cx+Math.cos(a)*r,z=cz+Math.sin(a)*r,roll=seed(),kind=roll<.58?'bulrush':roll<.86?'meadowsweet':'marigold';add(kind,x,z,this.worldHeight(x,z),.78+seed()*.34,seed()*6.283);}};
       const shoreClusters=(c,r,count)=>{for(let i=0;i<count;i++){const a=(i/count)*Math.PI*2+(seed()-.5)*.65,rr=r+(seed()-.5)*1.6,cx=c.x+Math.cos(a)*rr,cz=c.z+Math.sin(a)*rr;tallCluster(cx,cz,3+Math.floor(seed()*3),1.05+seed()*.55);}};
       ring(this.lake,this.lake.r-5.0,['lily','duckweed'],12,true);
       shoreClusters(this.lake,this.lake.r-.9,7);
       ring(this.pond,this.pond.r-2.0,['lily','duckweed','pondweed'],8,true);
       shoreClusters(this.pond,this.pond.r-.35,4);
       for(let i=1;i<this.stream.length-1;i++){const [x,z]=this.stream[i],p=this.stream[i-1],n=this.stream[i+1],dx=n[0]-p[0],dz=n[1]-p[1],L=Math.max(.001,Math.hypot(dx,dz)),nx=-dz/L,nz=dx/L;for(const side of[-1,1]){if(seed()<.3)continue;const off=3.05+seed()*.9,cx=x+nx*off*side,cz=z+nz*off*side;if(bridgeClear(cx,cz))continue;tallCluster(cx,cz,2+Math.floor(seed()*3),.72+seed()*.5);}}
-      const W=this.waterfall,ax=W.dx,az=W.dz,lx=az,lz=-ax;for(let i=0;i<12;i++){const al=1.2+seed()*7.2,side=i%2?-1:1,la=side*(3.1+seed()*1.6),x=W.x+ax*al+lx*la,z=W.z+az*al+lz*la;add(i%4===0?'mossrock':i%3===0?'fern':i%2?'meadowsweet':'reed',x,z,this.worldHeight(x,z),.72+seed()*.38,seed()*6.283);}
+      const W=this.waterfall,ax=W.dx,az=W.dz,lx=az,lz=-ax;for(let i=0;i<12;i++){const al=1.2+seed()*7.2,side=i%2?-1:1,la=side*(3.1+seed()*1.6),x=W.x+ax*al+lx*la,z=W.z+az*al+lz*la;add(i%4===0?'mossrock':i%3===0?'fern':i%2?'meadowsweet':'bulrush',x,z,this.worldHeight(x,z),.72+seed()*.38,seed()*6.283);}
       return this.waterVegetationRoot;
     }).catch(err=>{console.warn('Summer water vegetation failed to load',err);return null;});
   }

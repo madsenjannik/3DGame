@@ -110,6 +110,23 @@ try {
     }
     check('desktop hotbar R102: 1–0/B, source 3D in hand, mouse hold+drag, reload persistence',ok&&r.selected2&&r.real3d&&r.bag&&r.pointer&&r.moved&&r.selected7&&r.persisted&&!errors.length,errors[0]||JSON.stringify(r));await ctx.close(); }
 
+  // 2d. R103 water vegetation: brown triangular Plant_05_reed is retired everywhere in the shared root
+  { const ctx = await context({ viewport: { width: 1280, height: 720 } }); const { p, errors, ok } = await startGame(ctx, 'succulent');
+    let r = {};
+    if (ok) r = await p.evaluate(async () => {
+      const land=window.__tgw?.world?.sharedLandscape;
+      await land?.waterVegetationReady;
+      const names=(land?.waterVegetationRoot?.children||[]).map(o=>o.name||'');
+      return {
+        reed:names.filter(n=>n==='SummerWater_reed').length,
+        bulrush:names.filter(n=>n==='SummerWater_bulrush').length,
+        total:names.length,
+        ready:!!land?.waterVegetationRoot
+      };
+    });
+    check('water vegetation R103: no brown triangular reed clones; replacement vegetation present',
+      ok&&r.ready&&r.reed===0&&r.bulrush>0&&r.total>0&&!errors.length,errors[0]||JSON.stringify(r));await ctx.close(); }
+
   // 3. Missing assets must not black-screen the game
   { const ctx = await context({ viewport: { width: 844, height: 390 }, isMobile: true, hasTouch: true }, [/assets\/stable\//, /lake_cabin|cabin_fishing_runtime/, /greenhouse-l1/, /characters\/fern\.glb/]);
     const { p, errors, ok } = await startGame(ctx, 'fern'); const failed = ok ? await p.evaluate(() => window.__tgw.failed) : [];

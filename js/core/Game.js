@@ -16,7 +16,7 @@ import { FishingV1System } from '../gameplay/FishingV1System.js?build=BAG-NIGHT-
 import { ChoicePanel } from '../ui/ChoicePanel.js';
 import { Hud } from '../ui/Hud.js?build=HOTBAR-HAND-DRAG-R102-20261006A';
 import { WorldMap } from '../ui/WorldMap.js?build=WORLD-MAP-R35B-20260930B';
-import { GardenEnvironment } from '../world/GardenEnvironment.js?build=BAG-NIGHT-R84-20261006A';
+import { GardenEnvironment } from '../world/GardenEnvironment.js?build=WATER-VEG-R103-20261006A';
 import { WildlifeSystem } from '../world/WildlifeSystem.js?build=CAMERA-CUTAWAY-CONTEXT-R21D-20260928E';
 import { PlayerHomePortalSystem } from '../world/PlayerHomePortalSystem.js?build=ENTRY-R29-20260929A';
 import { NorthStableSystem } from '../world/NorthStableSystem.js?build=STABLE-R42-20261001A';

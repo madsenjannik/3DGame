@@ -1,3 +1,3 @@
 // Single source of truth for the public version/build label.
 // Classic script (not a module) so both inline entry scripts and ES modules can read it.
-window.TGW_VERSION = Object.freeze({ version: '0.8.102', build: 'HOTBAR-HAND-DRAG-R102-20261006A' });
+window.TGW_VERSION = Object.freeze({ version: '0.8.103', build: 'WATER-VEG-R103-20261006A' });
