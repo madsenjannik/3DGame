@@ -118,7 +118,7 @@ export class Hud {
   }
   renderDesktopHotbar(){
     if(!this.desktopHotbar)return;const items=this.gearItems?.()||[],slots=[...this.desktopHotbar.querySelectorAll('.desktop-hotbar-slot')];
-    slots.forEach((slot,i)=>{const it=items[i],icon=slot.querySelector('.slot-icon'),fallback=slot.querySelector('.slot-fallback');slot.classList.toggle('filled',!!it);slot.title=it?.name||`Empty slot ${i+1}`;icon.style.setProperty('--slot-ico',it?.icon?`url(./brand/icons/svg/icon-${it.icon}.svg)`:'none');fallback.textContent=it&&!it.icon?it.name.split(/\s+/).map(x=>x[0]).join('').slice(0,2).toUpperCase():'';});
+    slots.forEach((slot,i)=>{const it=items[i],icon=slot.querySelector('.slot-icon'),fallback=slot.querySelector('.slot-fallback');const key=it?.name==='Watering Can'?'watering-can':(it?.icon||'');slot.classList.toggle('filled',!!it);slot.dataset.icon=key;slot.title=it?.name||`Empty slot ${i+1}`;icon.style.setProperty('--slot-ico',it?.icon?`url(./brand/icons/svg/icon-${it.icon}.svg)`:'none');fallback.textContent=it&&!it.icon?it.name.split(/\s+/).map(x=>x[0]).join('').slice(0,2).toUpperCase():'';});
   }
   setWorldStatus(garden=false,night=false){
     if(!this.worldStatus)return;const key=`${garden?'garden':'world'}:${night?'night':'day'}`;if(this._worldStatusKey===key)return;this._worldStatusKey=key;
