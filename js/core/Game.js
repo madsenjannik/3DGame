@@ -14,7 +14,7 @@ import { GreenhouseProgressionSystem } from '../gameplay/GreenhouseProgressionSy
 import { OrangeryHubSystem } from '../gameplay/OrangeryHubSystem.js?build=CAMERA-CUTAWAY-CONTEXT-R21D-20260928E';
 import { FishingV1System } from '../gameplay/FishingV1System.js?build=BAG-NIGHT-R84-20261006A';
 import { ChoicePanel } from '../ui/ChoicePanel.js';
-import { Hud } from '../ui/Hud.js?build=HUD-E-DESKTOP-R85-20261006A';
+import { Hud } from '../ui/Hud.js?build=HUD-E-DESKTOP-R88-20261006A';
 import { WorldMap } from '../ui/WorldMap.js?build=WORLD-MAP-R35B-20260930B';
 import { GardenEnvironment } from '../world/GardenEnvironment.js?build=BAG-NIGHT-R84-20261006A';
 import { WildlifeSystem } from '../world/WildlifeSystem.js?build=CAMERA-CUTAWAY-CONTEXT-R21D-20260928E';
@@ -192,6 +192,7 @@ export class Game {
     this.look.update(gardenSpace);   // R70: shared-world grade on, private garden (greenhouse) untouched
     if(!this.dayNight)try{this.dayNight=new DayNight(this);}catch(e){this.dayNight={update(){},isNight:()=>false};warn('DAYNIGHT','day/night disabled',e);}
     this.dayNight.update(gardenSpace);   // R81: 30 min day/night on the shared world only (after the look pass)
+    this.hud.setWorldStatus?.(gardenSpace,this.dayNight.isNight?.());   // R88 desktop HUD E status; hidden outside E
     if(!this.lantern&&this.character?.instance)try{this.lantern=new Lantern(this);}catch(e){this.lantern={update(){}};warn('LANTERN','lantern disabled',e);}
     this.lantern?.update(dt);
     const portalBusy=this.homePortal?.busy||false;

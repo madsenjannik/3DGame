@@ -96,6 +96,9 @@ export class Hud {
     const q=document.createElement('div');q.id='desktop-hotbar-e';q.className='desktop-hotbar-e';q.setAttribute('aria-label','Quick slots');
     q.innerHTML=Array.from({length:10},(_,i)=>`<span class="desktop-hotbar-slot" data-slot="${i}"><small>${i===9?'0':i+1}</small><i class="slot-icon"></i><em class="slot-fallback"></em></span>`).join('');
     document.body.appendChild(q);this.desktopHotbar=q;
+    const w=document.createElement('div');w.id='desktop-world-status';w.className='desktop-world-status';
+    w.innerHTML='<i aria-hidden="true"></i><span><small>DAY</small><b>THE WILDS</b></span>';
+    document.body.appendChild(w);this.worldStatus=w;
     addEventListener('pointerdown',e=>{if(this.gear?.classList.contains('open')&&!this.gear.contains(e.target)&&e.target!==this.bag)this.toggleGear(false);});
   }
   toggleGear(on=!this.gear?.classList.contains('open')){
@@ -116,6 +119,11 @@ export class Hud {
   renderDesktopHotbar(){
     if(!this.desktopHotbar)return;const items=this.gearItems?.()||[],slots=[...this.desktopHotbar.querySelectorAll('.desktop-hotbar-slot')];
     slots.forEach((slot,i)=>{const it=items[i],icon=slot.querySelector('.slot-icon'),fallback=slot.querySelector('.slot-fallback');slot.classList.toggle('filled',!!it);slot.title=it?.name||`Empty slot ${i+1}`;icon.style.setProperty('--slot-ico',it?.icon?`url(./brand/icons/svg/icon-${it.icon}.svg)`:'none');fallback.textContent=it&&!it.icon?it.name.split(/\s+/).map(x=>x[0]).join('').slice(0,2).toUpperCase():'';});
+  }
+  setWorldStatus(garden=false,night=false){
+    if(!this.worldStatus)return;const key=`${garden?'garden':'world'}:${night?'night':'day'}`;if(this._worldStatusKey===key)return;this._worldStatusKey=key;
+    this.worldStatus.classList.toggle('night',!!night);this.worldStatus.querySelector('small').textContent=night?'NIGHT':'DAY';
+    this.worldStatus.querySelector('b').textContent=garden?'HOME GARDEN':'THE WILDS';
   }
   peek(el,ms){if(!el||el.classList.contains('pinned'))return;el.classList.add('open');clearTimeout(this._peekT?.get(el));this._peekT?.set(el,setTimeout(()=>el.classList.remove('open'),ms));}
   setMaterial(id,value){const el=document.getElementById(`${id}-count`);if(el){el.textContent=String(value);el.closest('.material-chip')?.classList.toggle('zero',!value);}}

@@ -2462,3 +2462,96 @@ body.hud-desktop-e:not(.touch) .special-btn.full i{
 @media(max-width:1200px){
   body.hud-desktop-e:not(.touch) .special-btn{right:22px!important;bottom:30px!important;width:66px!important;height:66px!important}
 }
+
+
+/* ===== R88 HUD E desktop scale + world status (GO 06/10) =====
+   DESKTOP TEST HUD E ONLY. Mobile/touch and splash/start are untouched. */
+.desktop-world-status{display:none}
+
+/* Fill the deliberately empty top-left with meaningful existing state, not decoration. */
+body.hud-desktop-e:not(.touch) .desktop-world-status{
+  position:fixed;z-index:22;left:max(30px,env(safe-area-inset-left));top:max(26px,env(safe-area-inset-top));
+  display:flex;align-items:center;gap:11px;min-width:184px;height:54px;padding:0 16px 0 10px;
+  border-radius:17px;background:linear-gradient(180deg,var(--e-cream),var(--e-cream-2));color:var(--e-ink);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.95),0 9px 20px rgba(43,42,36,.18);pointer-events:none
+}
+body.hud-desktop-e:not(.touch) .desktop-world-status i{
+  width:34px;height:34px;display:grid;place-items:center;border-radius:11px;background:rgba(226,181,82,.22);box-shadow:inset 0 1px 0 rgba(255,255,255,.65)
+}
+body.hud-desktop-e:not(.touch) .desktop-world-status i::before{content:'☀';font:800 22px/1 Manrope,system-ui,sans-serif;color:#a87920}
+body.hud-desktop-e:not(.touch) .desktop-world-status.night i{background:rgba(111,157,69,.20)}
+body.hud-desktop-e:not(.touch) .desktop-world-status.night i::before{content:'☾';color:var(--e-moss)}
+body.hud-desktop-e:not(.touch) .desktop-world-status span{display:flex;flex-direction:column;gap:3px}
+body.hud-desktop-e:not(.touch) .desktop-world-status small{font:800 9px/1 Manrope,system-ui,sans-serif;letter-spacing:.16em;color:rgba(43,42,36,.52)}
+body.hud-desktop-e:not(.touch) .desktop-world-status b{font:800 14px/1.05 Manrope,system-ui,sans-serif;letter-spacing:.03em;color:var(--e-ink)}
+
+/* Resources need desktop-scale presence. */
+body.hud-desktop-e:not(.touch) #hud .inventory-stack{
+  top:max(26px,env(safe-area-inset-top))!important;
+  gap:10px!important;
+  max-width:min(1020px,calc(100vw - 700px))!important;
+}
+body.hud-desktop-e:not(.touch) #hud .seed-card.inventory-card{
+  height:58px!important;padding:0 18px 0 14px!important;border-radius:18px!important
+}
+body.hud-desktop-e:not(.touch) #hud .seed-card small{font-size:11px!important}
+body.hud-desktop-e:not(.touch) #hud .seed-card b{font-size:19px!important}
+body.hud-desktop-e:not(.touch) #hud #materials.materials-card{gap:9px!important}
+body.hud-desktop-e:not(.touch) #hud #materials .material-chip{
+  height:46px!important;min-width:54px!important;padding:0 14px!important;gap:7px!important
+}
+body.hud-desktop-e:not(.touch) #hud #materials .material-chip i{width:16px!important;height:16px!important}
+body.hud-desktop-e:not(.touch) #hud #materials .material-chip b{font-size:17px!important}
+
+/* Map/objective scale up as a single navigation/quest column. */
+body.hud-desktop-e:not(.touch) .tgw-minimap{
+  transform:scale(1.11)!important;transform-origin:top right!important;
+}
+body.hud-desktop-e:not(.touch) #hud #objective.objective-card{
+  top:calc(max(24px,env(safe-area-inset-top)) + 216px)!important;
+  width:340px!important;max-width:340px!important;height:64px!important;min-height:64px!important;
+  padding-left:96px!important;border-radius:20px!important
+}
+body.hud-desktop-e:not(.touch) #hud #objective.objective-card::after{
+  left:16px!important;width:26px!important;height:26px!important;margin-top:-13px!important;font-size:24px!important
+}
+body.hud-desktop-e:not(.touch) #hud #objective.objective-card::before{
+  left:49px!important;width:38px!important;height:38px!important;margin-top:-19px!important;border-radius:12px!important;background-size:24px!important
+}
+body.hud-desktop-e:not(.touch) #hud #objective b{font-size:16px!important}
+body.hud-desktop-e:not(.touch) #hud #objective.objective-card.open{
+  min-height:106px!important;padding:15px 20px 17px 96px!important
+}
+body.hud-desktop-e:not(.touch) #hud #objective.open #objective-copy{font-size:12px!important;line-height:1.45!important}
+
+/* ARK-like quickbar remains centred but now has desktop weight. */
+body.hud-desktop-e:not(.touch) .desktop-hotbar-e{bottom:26px!important;gap:7px!important}
+body.hud-desktop-e:not(.touch) .desktop-hotbar-slot{
+  width:58px!important;height:58px!important;border-radius:15px!important
+}
+body.hud-desktop-e:not(.touch) .desktop-hotbar-slot small{left:6px!important;top:5px!important;font-size:10px!important}
+body.hud-desktop-e:not(.touch) .desktop-hotbar-slot .slot-icon{width:36px!important;height:36px!important}
+body.hud-desktop-e:not(.touch) #hud #hud-bag.hud-fold-btn{
+  left:calc(50% - 390px)!important;bottom:26px!important;width:58px!important;height:58px!important;border-radius:15px!important;background-size:30px!important
+}
+body.hud-desktop-e:not(.touch) .gear-panel{bottom:104px!important}
+
+/* Health is part of the bottom player cluster and scales with the quickbar. */
+body.hud-desktop-e:not(.touch) .hearts{
+  bottom:101px!important;padding:9px 14px!important;gap:6px!important
+}
+body.hud-desktop-e:not(.touch) .hearts i{width:23px!important;height:21px!important}
+
+/* Special keeps its independent bottom-right area from R87. */
+body.hud-desktop-e:not(.touch) .special-btn{right:max(34px,env(safe-area-inset-right))!important;bottom:max(38px,env(safe-area-inset-bottom))!important}
+
+/* Modest fallback for smaller desktop windows; still desktop-only. */
+@media(max-width:1450px){
+  body.hud-desktop-e:not(.touch) .desktop-world-status{left:22px;top:20px;min-width:166px;height:50px}
+  body.hud-desktop-e:not(.touch) #hud .inventory-stack{max-width:min(860px,calc(100vw - 590px))!important}
+  body.hud-desktop-e:not(.touch) #hud .seed-card.inventory-card{height:52px!important}
+  body.hud-desktop-e:not(.touch) #hud #materials .material-chip{height:40px!important;min-width:48px!important;padding:0 11px!important}
+  body.hud-desktop-e:not(.touch) .desktop-hotbar-slot{width:52px!important;height:52px!important}
+  body.hud-desktop-e:not(.touch) #hud #hud-bag.hud-fold-btn{left:calc(50% - 350px)!important;width:52px!important;height:52px!important}
+  body.hud-desktop-e:not(.touch) .hearts{bottom:94px!important}
+}
