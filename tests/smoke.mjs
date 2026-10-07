@@ -654,7 +654,12 @@ try {
   // 5. DEV disabled: no dev UI or handles leak into normal play
   { const ctx = await context({ viewport: { width: 844, height: 390 }, isMobile: true, hasTouch: true }); const { p, errors, ok } = await startGame(ctx, 'daisy', { dev: false });
     const leak = ok && await p.evaluate(() => !!document.querySelector('.dev-menu-btn') || !!window.__tgw || !document.getElementById('dev-badge').hidden);
-    check('dev disabled: no dev button, handle or badge', ok && !leak && !errors.length, errors[0]); await ctx.close(); }
+    const phoneHud = ok && await p.evaluate(() => ({ d: document.body.classList.contains('hud-classic') && !document.body.classList.contains('hud-desktop-e'), slots: [...document.querySelectorAll('.desktop-hotbar-slot')].filter(e => e.getBoundingClientRect().width > 0).length }));
+    check('dev disabled: no dev button, handle or badge', ok && !leak && !errors.length, errors[0]); await ctx.close();
+    // R112: players without DEV get the current HUD by device (phone = HUD D with 5 slots, desktop = HUD E with 10)
+    const c2 = await context({ viewport: { width: 1280, height: 720 } }); const d = await startGame(c2, 'daisy', { dev: false });
+    const deskHud = d.ok && await d.p.evaluate(() => ({ e: document.body.classList.contains('hud-desktop-e') && !document.body.classList.contains('hud-classic'), slots: [...document.querySelectorAll('.desktop-hotbar-slot')].filter(e => e.getBoundingClientRect().width > 0).length }));
+    check('player HUD default (R112): phone gets HUD D (5 slots), desktop gets HUD E (10 slots) without DEV', phoneHud?.d && phoneHud.slots === 5 && deskHud?.e && deskHud.slots === 10 && !d.errors.length, d.errors[0] || JSON.stringify({ phoneHud, deskHud })); await c2.close(); }
 } finally {
   await browser.close(); server.close();
   const failed = results.filter(r => !r.ok).length;

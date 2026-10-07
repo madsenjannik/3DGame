@@ -14,7 +14,7 @@ import { GreenhouseProgressionSystem } from '../gameplay/GreenhouseProgressionSy
 import { OrangeryHubSystem } from '../gameplay/OrangeryHubSystem.js?build=CAMERA-CUTAWAY-CONTEXT-R21D-20260928E';
 import { FishingV1System } from '../gameplay/FishingV1System.js?build=BAG-NIGHT-R84-20261006A';
 import { ChoicePanel } from '../ui/ChoicePanel.js';
-import { Hud } from '../ui/Hud.js?build=ICONSET-R111-20261007A';
+import { Hud } from '../ui/Hud.js?build=HUD-DEFAULT-R112-20261007A';
 import { WorldMap } from '../ui/WorldMap.js?build=WORLD-MAP-R35B-20260930B';
 import { GardenEnvironment } from '../world/GardenEnvironment.js?build=WATER-VEG-R103-20261006A';
 import { WildlifeSystem } from '../world/WildlifeSystem.js?build=CAMERA-CUTAWAY-CONTEXT-R21D-20260928E';
@@ -31,7 +31,7 @@ import { InteractionResolver } from './InteractionResolver.js';
 import { log, warn } from '../dev/Log.js';
 import { LookPass } from '../visual/LookPass.js?build=BAG-NIGHT-R84-20261006A';
 import { DayNight } from '../visual/DayNight.js?build=BAG-NIGHT-R84-20261006A';   // R81
-import { Lantern } from '../gameplay/Lantern.js?build=ICONSET-R111-20261007A';     // R81/R101
+import { Lantern } from '../gameplay/Lantern.js?build=HUD-DEFAULT-R112-20261007A';     // R81/R101
 import { BoatEconomySystem } from '../gameplay/BoatEconomySystem.js';
 import { LakeRunSystem } from '../gameplay/LakeRunSystem.js';
 import { GardenBuildSystem } from '../gameplay/GardenBuildSystem.js';
@@ -84,6 +84,8 @@ export class Game {
     const orangeryPromise=optional('orangery',()=>new OrangeryHubSystem(this.scene,{state:this.state,world:this.world,uTime:this.uTime}).init());
     this.hud=new Hud(this.state);this.choicePanel=new ChoicePanel(this.state);
     this.input=new InputManager({joy:document.getElementById('joy'),knob:document.getElementById('joy-knob'),actionButton:document.getElementById('action')});
+    // R112: players (no DEV menu) get the current HUD by device: touch = HUD D classic, desktop = HUD E. DEV keeps its own switch.
+    if(!(devMode||devMenuEnabled())){document.body.classList.toggle('hud-classic',!!this.input.isTouch);document.body.classList.toggle('hud-desktop-e',!this.input.isTouch);}
     this.mapBlocking=false;this._mapViewDir=new THREE.Vector3();this.interactions=new InteractionResolver();
     this.worldMap=new WorldMap({
       container:document.body,landscape:this.world.sharedLandscape,rotate:true,metresAcross:90,size:'auto',overlay:'auto',edgeSoftness:60,
