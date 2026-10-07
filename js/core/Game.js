@@ -3,36 +3,37 @@ import * as THREE from 'three';
 import { AssetRegistry } from './AssetRegistry.js';
 import { CharacterController } from './CharacterController.js?build=MOBILE-GESTURE-R34B-20260930A';
 import { GameState } from './GameState.js';
-import { InputManager } from './InputManager.js?build=TIPS-R120-20261007A';
+import { InputManager } from './InputManager.js?build=MENU-R121-20261007A';
 import { ThirdPersonCamera } from './ThirdPersonCamera.js?build=MOBILE-GESTURE-R34B-20260930A';
 import { CameraOcclusionSystem } from './CameraOcclusionSystem.js?build=NORTH-STABLE-R23O-20260929A';
 import { StructureVisibilitySystem } from '../visual/StructureVisibilitySystem.js?build=NORTH-STABLE-R23O-20260929A';
 import { characterCatalog, resourceCatalog, buildingCatalog } from '../data/assetCatalog.js';
-import { CollectibleSystem } from '../gameplay/CollectibleSystem.js?build=TIPS-R120-20261007A';
-import { MeaningfulChoiceSystem } from '../gameplay/MeaningfulChoiceSystem.js?build=TIPS-R120-20261007A';
+import { CollectibleSystem } from '../gameplay/CollectibleSystem.js?build=MENU-R121-20261007A';
+import { MeaningfulChoiceSystem } from '../gameplay/MeaningfulChoiceSystem.js?build=MENU-R121-20261007A';
 import { GreenhouseProgressionSystem } from '../gameplay/GreenhouseProgressionSystem.js?build=CAMERA-CUTAWAY-CONTEXT-R21D-20260928E';
 import { OrangeryHubSystem } from '../gameplay/OrangeryHubSystem.js?build=CAMERA-CUTAWAY-CONTEXT-R21D-20260928E';
 import { FishingV1System } from '../gameplay/FishingV1System.js?build=BAG-NIGHT-R84-20261006A';
 import { ChoicePanel } from '../ui/ChoicePanel.js';
-import { Hud } from '../ui/Hud.js?build=TIPS-R120-20261007A';
+import { Hud } from '../ui/Hud.js?build=MENU-R121-20261007A';
 import { WorldMap } from '../ui/WorldMap.js?build=WORLD-MAP-R35B-20260930B';
 import { GardenEnvironment } from '../world/GardenEnvironment.js?build=WATER-VEG-R103-20261006A';
 import { WildlifeSystem } from '../world/WildlifeSystem.js?build=CAMERA-CUTAWAY-CONTEXT-R21D-20260928E';
 import { PlayerHomePortalSystem } from '../world/PlayerHomePortalSystem.js?build=ENTRY-R29-20260929A';
 import { NorthStableSystem } from '../world/NorthStableSystem.js?build=STABLE-R42-20261001A';
-import { SaveGame } from './SaveGame.js?build=TIPS-R120-20261007A';
-import { WildsLoopSystem } from '../gameplay/WildsLoopSystem.js?build=TIPS-R120-20261007A';
+import { SaveGame } from './SaveGame.js?build=MENU-R121-20261007A';
+import { WildsLoopSystem } from '../gameplay/WildsLoopSystem.js?build=MENU-R121-20261007A';
 import { WorkbenchPanel } from '../ui/WorkbenchPanel.js';
 import { DevMenu, devMenuEnabled } from '../ui/DevMenu.js?build=HUD-E-DESKTOP-R85-20261006A';
 import { applyControlProfile, defaultProfile } from './ControlProfiles.js';
 import { PerfHud } from '../dev/PerfHud.js';
-import { QualityManager, QUALITY } from './Quality.js?build=TIPS-R120-20261007A';
+import { QualityManager, QUALITY } from './Quality.js?build=MENU-R121-20261007A';
 import { InteractionResolver } from './InteractionResolver.js';
 import { log, warn } from '../dev/Log.js';
 import { LookPass } from '../visual/LookPass.js?build=BAG-NIGHT-R84-20261006A';
 import { DayNight } from '../visual/DayNight.js?build=BAG-NIGHT-R84-20261006A';   // R81
-import { ControlTips } from '../ui/ControlTips.js?build=TIPS-R120-20261007A';   // R120
-import { Lantern } from '../gameplay/Lantern.js?build=TIPS-R120-20261007A';     // R81/R101
+import { GameMenu } from '../ui/GameMenu.js?build=MENU-R121-20261007A';   // R121
+import { ControlTips } from '../ui/ControlTips.js?build=MENU-R121-20261007A';   // R120
+import { Lantern } from '../gameplay/Lantern.js?build=MENU-R121-20261007A';     // R81/R101
 import { BoatEconomySystem } from '../gameplay/BoatEconomySystem.js';
 import { LakeRunSystem } from '../gameplay/LakeRunSystem.js';
 import { GardenBuildSystem } from '../gameplay/GardenBuildSystem.js';
@@ -168,7 +169,9 @@ export class Game {
     // portrait a 'turn your phone' screen covers the game and the loop pauses (same contract as a hidden page).
     this.setupRotateGate();
     this.hud.ready();mark('firstPlayableMs');
-    try{this.tips=new ControlTips(this);}catch(e){warn('TIPS','control tips disabled',e);}   // R120 first-time control tips (fail soft)
+    try{this.tips=new ControlTips(this);}catch(e){warn('TIPS','control tips disabled',e);}
+    try{this.menu=new GameMenu(this);}catch(e){warn('MENU','game menu disabled',e);}   // R121 in-game menu (fail soft)
+    if(!devMode)try{const id=this.state.player.characterId;localStorage.setItem('tgw.lastChar',JSON.stringify({id,name:characterCatalog[id]?.displayName||id}));}catch{}   // R121 Continue   // R120 first-time control tips (fail soft)
     // Attach background systems as they arrive (each is optional; null when it failed).
     const attach=(promise,fn)=>promise.then(v=>{if(v)fn(v);return v;});
     const background=Promise.all([
@@ -312,7 +315,7 @@ export class Game {
     const fishingBusy=!gardenSpace&&(this.fishing?.isBusy?.()||false);
     const stableBusy=!gardenSpace&&(this.stable?.isBusy?.()||false);
     const specialBusy=fishingBusy||stableBusy;
-    const wildsPanel=(this.workbenchPanel?.open||this.devMenu?.open)||false;
+    const wildsPanel=(this.workbenchPanel?.open||this.devMenu?.open||this.menu?.open)||false;   // R121: the menu blocks movement and actions too
     const building=!!this.buildMode?.active;
     const mapOpen=this.worldMap?.isOpen||false,mapOverlay=mapOpen&&(this.worldMap?.overlayMode||false);
     const touchLook=this.input.isTouch?this.input.consumeLook?.():null;

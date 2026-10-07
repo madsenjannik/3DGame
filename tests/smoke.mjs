@@ -693,16 +693,32 @@ try {
       r.clearOfHotbar = box.clear; await p.touchscreen.tap(box.x, box.y);
       r.second = await p.waitForFunction(f => { const t = document.querySelector('#control-tips.show .ct-text'); return t && t.textContent !== f; }, r.first, { timeout: 30000 }).then(() => true, () => false);
       await p.evaluate(() => document.querySelector('#control-tips .ct-skip').click()); await p.waitForTimeout(1500);
-      r.gone = await p.evaluate(() => !document.querySelector('#control-tips.show') && localStorage.getItem('tgw.controlTips.v1') === '1'); }
-    check('control tips (R120): touch tips appear clear of the hotbar, tap advances, Skip ends and remembers', ok && r.shown && /left side to walk/.test(r.first) && r.clearOfHotbar && r.second && r.gone && !errors.length, errors[0] || JSON.stringify(r)); await ctx.close(); }
+      r.gone = await p.evaluate(() => !document.querySelector('#control-tips.show') && localStorage.getItem('tgw.controlTips.v1') === '1');
+      // R121: quest card flush with the minimap and never faded; menu button opens the menu by touch, Resume closes it
+      r.card = await p.evaluate(() => { const o = document.getElementById('objective'); o.classList.add('complete'); const c = o.getBoundingClientRect(), m = document.querySelector('.tgw-minimap')?.getBoundingClientRect(); return !!m && Math.abs(c.right - m.right) <= 1 && getComputedStyle(o).opacity === '1'; });
+      const mb = await p.evaluate(() => { document.getElementById('objective').classList.remove('open'); const b = document.getElementById('game-menu-btn').getBoundingClientRect(); return { x: b.x + b.width / 2, y: b.y + b.height / 2 }; });
+      await p.touchscreen.tap(mb.x, mb.y); r.menuOpen = await p.waitForFunction(() => document.body.classList.contains('game-menu-open'), null, { timeout: 8000 }).then(() => true, () => false);
+      const rb = await p.evaluate(() => { const b = document.querySelector('#game-menu [data-a=resume]').getBoundingClientRect(); return { x: b.x + b.width / 2, y: b.y + b.height / 2 }; });
+      await p.touchscreen.tap(rb.x, rb.y); r.menuClosed = await p.waitForFunction(() => !document.body.classList.contains('game-menu-open'), null, { timeout: 8000 }).then(() => true, () => false);
+      r.lastChar = await p.evaluate(() => JSON.parse(localStorage.getItem('tgw.lastChar') || '{}').id === 'daisy'); }
+    check('control tips (R120): touch tips appear clear of the hotbar, tap advances, Skip ends and remembers', ok && r.shown && /left side to walk/.test(r.first) && r.clearOfHotbar && r.second && r.gone && !errors.length, errors[0] || JSON.stringify(r));
+    check('phone quest card + menu (R121): card flush with the minimap and not faded, menu opens by tap, Resume closes, last character remembered', ok && r.card && r.menuOpen && r.menuClosed && r.lastChar && !errors.length, errors[0] || JSON.stringify(r)); await ctx.close();
+    // R121 Continue: the start screen offers the last played character and goes straight into the game
+    const c3 = await context({ viewport: { width: 844, height: 390 }, isMobile: true, hasTouch: true }); const q = await c3.newPage(); const qe = []; q.on('pageerror', e => qe.push(e.message));
+    await q.addInitScript(() => localStorage.setItem('tgw.lastChar', JSON.stringify({ id: 'fern', name: 'Fern' }))); await q.goto(B + 'index.html', { waitUntil: 'load' }); await q.waitForTimeout(2500);
+    const lbl = await q.evaluate(() => ({ label: document.getElementById('start-label').textContent, choose: !document.getElementById('choose-char').hidden }));
+    await q.click('#start', { force: true }); const went = await q.waitForURL(/game\.html\?char=fern/, { timeout: 8000 }).then(() => true, () => false);
+    check('continue (R121): start screen says CONTINUE AS FERN, offers Choose character, and starts the game as Fern', lbl.label === 'CONTINUE AS FERN' && lbl.choose && went && !qe.length, qe[0] || JSON.stringify({ lbl, went })); await c3.close(); }
   // 17h. R117 desktop: the click that closes the Bag does not swing; the next click on the view does
   { const ctx = await context({ viewport: { width: 1280, height: 720 } }); const { p, errors, ok } = await startGame(ctx, 'fern', { hud: 'desktop-e' });
     let r = {};
     if (ok) { await p.evaluate(() => { const g = window.__tgw; g.__hits = 0; const a = g.combat.attack.bind(g.combat); g.combat.attack = (...x) => { g.__hits++; return a(...x); }; document.getElementById('hud-bag')?.click(); });
       await p.waitForTimeout(1500); r.opened = await p.evaluate(() => !!document.querySelector('.gear-panel.open'));
       await p.mouse.click(640, 420); await p.waitForTimeout(2500); r.closeNoSwing = await p.evaluate(() => window.__tgw.__hits === 0 && !document.querySelector('.gear-panel.open'));
-      await p.mouse.click(640, 420); await p.waitForTimeout(2500); r.nextSwings = await p.evaluate(() => window.__tgw.__hits === 1); }
-    check('desktop input (R117): closing the Bag by clicking the view does not swing, the next click does', ok && r.opened && r.closeNoSwing && r.nextSwings && !errors.length, errors[0] || JSON.stringify(r)); await ctx.close(); }
+      await p.mouse.click(640, 420); await p.waitForTimeout(2500); r.nextSwings = await p.evaluate(() => window.__tgw.__hits === 1);
+      await p.keyboard.press('Escape'); await p.waitForTimeout(800); r.escOpens = await p.evaluate(() => document.body.classList.contains('game-menu-open'));
+      await p.keyboard.press('Escape'); await p.waitForTimeout(800); r.escCloses = await p.evaluate(() => !document.body.classList.contains('game-menu-open')); }
+    check('desktop input (R117/R121): closing the Bag by clicking the view does not swing, the next click does, Esc opens and closes the menu', ok && r.opened && r.closeNoSwing && r.nextSwings && r.escOpens && r.escCloses && !errors.length, errors[0] || JSON.stringify(r)); await ctx.close(); }
   // 5. DEV disabled: no dev UI or handles leak into normal play
   { const ctx = await context({ viewport: { width: 844, height: 390 }, isMobile: true, hasTouch: true }); const { p, errors, ok } = await startGame(ctx, 'daisy', { dev: false });
     const leak = ok && await p.evaluate(() => !!document.querySelector('.dev-menu-btn') || !!window.__tgw || !document.getElementById('dev-badge').hidden);

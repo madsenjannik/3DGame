@@ -50,7 +50,7 @@ export class InputManager {
     this.knob.style.transition='none';this.knob.style.transform='translate(0,0)';
   }
   onPointerDown(e){
-    if(document.body.classList.contains('mobile-bag-open'))return;
+    if(document.body.classList.contains('mobile-bag-open')||document.body.classList.contains('game-menu-open'))return;   // R121 menu
     if(e.target===this.actionButton||this.actionButton.contains(e.target))return;
     if(!this.isTouch&&e.pointerType==='mouse'&&e.button===0&&e.target?.tagName==='CANVAS'&&!this.isUiTarget(e.target)&&!e.tgwClosedGear)this.strikePressed=true;   // R117: the click that closes the Bag does not swing   // R76: left click = Strike (never interact)
     if(this.joyPointer===null&&this.movementZone(e)){

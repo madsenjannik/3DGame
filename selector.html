@@ -223,7 +223,8 @@ class Component extends DCLogic {
     { label:'Stil', left:'Planlagt', right:'Spontan', levels:['Planlagt','Struktureret','Fleksibel','Fri','Spontan'] }
   ];
   componentDidMount() {
-    const wanted = new URLSearchParams(location.search).get('char');
+    let wanted = new URLSearchParams(location.search).get('char');
+    if (!wanted) try { wanted = JSON.parse(localStorage.getItem('tgw.lastChar') || 'null')?.id || null; } catch {}   // R121: open on the last played character
     const found = wanted ? this.chars.findIndex(c => c.id === wanted) : -1;
     if (found >= 0) this.setState({ idx: found });
     this.onKey = e => { if (e.key === 'Escape') return this.setState({ gridOpen: false }); if (this.state.gridOpen) return; if (e.key === 'ArrowRight') this.go(1); if (e.key === 'ArrowLeft') this.go(-1); if (e.key === 'Enter' && this.chars[this.state.idx]?.playable) this.commitAndGo(); };

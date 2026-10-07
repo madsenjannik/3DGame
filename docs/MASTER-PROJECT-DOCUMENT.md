@@ -1618,6 +1618,7 @@ are only touched where a measured hotspot requires it, minimally.
    failure. Must pass before every push (CLAUDE.md rule 5).
 
 **B status 02/10/2026: complete (R51–R57).** On-device check (iPhone, Jannik 02/10): 60 fps steady (frame max 20–24 ms), 217 draw calls / 370k tris in the garden, 363 / 433k at the lake, mobile-high, 1 WebGL context → no perf work needed before C.
+**R121 (v0.8.121, GO 07/10):** in-game menu (`GameMenu.js`: Resume, Controls, Choose character, Start screen; Esc on desktop), Continue as last character on the start screen, phone quest card fixes (not faded when complete, fixed width, flush with the minimap, capped open height).
 **R120 (v0.8.120, GO 07/10):** first-time control tips per device (`ControlTips.js`), done by doing or tapping, Skip, shown once.
 **R119 (v0.8.119, GO 07/10, locked §6 scope):** the first Golden Seed choice is saved per character (`profile.story.seed`) and restored on load: seed hidden, lotus grown at rest or Community Bloom count, quest moves on. The story flow itself is unchanged.
 **R118 (v0.8.118, GO 07/10):** phone quest card uses desktop E cream (colour layer only); desktop E toast moved below its resource bar as a cream pill (the only desktop change).

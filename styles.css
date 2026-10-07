@@ -5509,3 +5509,36 @@ html body.hud-desktop-e:not(.touch) #toast{top:calc(84px + env(safe-area-inset-t
 body.hud-classic.touch #control-tips{bottom:calc(max(10px,env(safe-area-inset-bottom)) + 62px);font-size:12px}
 body.hud-classic.touch #control-tips .ct-skip{min-height:44px;padding:0 14px}
 body.mobile-bag-open #control-tips,body.choice-open #control-tips{opacity:0!important;pointer-events:none!important}
+
+/* ===== R121 · phone quest card polish + in-game menu (GO 07/10). ===== */
+/* Quest card (phones): never faded when complete, same width open and closed, right edge flush with the minimap,
+   open card capped (title 2 lines, copy 3 lines) so it never grows into the scene */
+html body.hud-classic.touch #hud #objective.objective-card,html body.hud-classic.touch #hud #objective.objective-card:not(.open),html body.hud-classic.touch #hud #objective.objective-card.open{
+  width:230px!important;max-width:230px!important;right:max(10px,env(safe-area-inset-right))!important;left:auto!important}
+@media (max-width:720px){html body.hud-classic.touch #hud #objective.objective-card,html body.hud-classic.touch #hud #objective.objective-card:not(.open),html body.hud-classic.touch #hud #objective.objective-card.open{width:212px!important;max-width:212px!important}}
+html body.hud-classic.touch #hud #objective.objective-card.complete{opacity:1!important;transform:none!important}
+html body.hud-classic.touch #hud #objective.objective-card.complete::before{background-color:rgba(226,181,82,.22)!important}
+html body.hud-classic.touch #hud #objective.open #objective-title{display:-webkit-box!important;-webkit-box-orient:vertical!important;-webkit-line-clamp:2!important;overflow:hidden!important;white-space:normal!important}
+html body.hud-classic.touch #hud #objective.open #objective-copy{display:-webkit-box!important;-webkit-box-orient:vertical!important;-webkit-line-clamp:3!important;overflow:hidden!important}
+
+/* Menu button: round cream button under the quest card, right side (phone + desktop E); hidden while the card is open */
+#game-menu-btn{position:fixed;z-index:24;pointer-events:auto;right:max(14px,env(safe-area-inset-right));top:calc(env(safe-area-inset-top) + 124px);width:44px;height:44px;padding:0;border:0;border-radius:50%;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;cursor:pointer;
+  background:linear-gradient(180deg,#fff9e9,#f3e6c8);box-shadow:0 5px 13px rgba(43,42,36,.16),inset 0 0 0 1px rgba(153,128,67,.3),inset 0 2px 0 rgba(255,255,255,.7);transition:opacity .25s ease}
+#game-menu-btn i{display:block;width:16px;height:2px;border-radius:2px;background:#34352d}
+#objective.open ~ #game-menu-btn{opacity:0;pointer-events:none!important}
+html body.hud-classic.touch #game-menu-btn{right:max(10px,env(safe-area-inset-right));top:calc(max(9px,env(safe-area-inset-top)) + 116px)}
+html body.hud-desktop-e:not(.touch) #game-menu-btn{right:28px;top:316px;width:46px;height:46px}
+body.game-menu-open #game-menu-btn{opacity:0;pointer-events:none!important}
+
+/* Menu panel: cream card in the HUD E material */
+#game-menu{position:fixed;inset:0;z-index:60;display:grid;place-items:center;background:rgba(31,36,27,.38);opacity:0;pointer-events:none;transition:opacity .25s ease;padding:16px}
+#game-menu.open{opacity:1;pointer-events:auto}
+#game-menu .gm-card{width:min(300px,100%);max-height:100%;overflow:auto;display:flex;flex-direction:column;gap:8px;padding:18px 18px 12px;border-radius:22px;
+  background:rgba(255,249,235,.98);color:#34352d;box-shadow:0 14px 34px rgba(43,42,36,.28),inset 0 0 0 1px rgba(173,148,89,.3);font-family:Manrope,system-ui,sans-serif}
+#game-menu small{font:800 9px/1 Manrope,system-ui,sans-serif;letter-spacing:.18em;text-transform:uppercase;color:#6f9d45}
+#game-menu h2{margin:0 0 4px;font:800 20px/1.1 Manrope,system-ui,sans-serif;color:#2b2a24}
+#game-menu button{min-height:44px;border:0;border-radius:14px;background:#f3e8cf;color:#34352d;font:800 14px/1 Manrope,system-ui,sans-serif;cursor:pointer;box-shadow:inset 0 0 0 1px rgba(153,128,67,.24)}
+#game-menu button.gm-primary{background:linear-gradient(180deg,#82b455,#6f9d45);color:#fffaf0;box-shadow:inset 0 2px 0 rgba(255,255,255,.2),0 4px 10px rgba(55,87,36,.25)}
+#game-menu .gm-ver{align-self:center;margin-top:2px;font:700 10px/1 Manrope,system-ui,sans-serif;color:#9a9b88}
+@media (max-height:430px){#game-menu .gm-card{gap:6px;padding:12px 14px 8px}#game-menu h2{font-size:17px}}
