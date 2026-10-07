@@ -3,7 +3,7 @@
 // R57: last-known-good backup ('tgw.save.bak'), build/version stamp, corrupt-save fallback, DEV export/import.
 // Older systems (Stable, Greenhouse, MoveIn, Fishing) keep their own locked storage keys;
 // they move in here only under a separately approved scope.
-const SAVE_KEY = 'tgw.save', BACKUP_KEY = 'tgw.save.bak';
+const SAVE_KEY = 'tgw.save', BACKUP_KEY = 'tgw.save.bak', CORRUPT_KEY = 'tgw.save.corrupt'; // R113: unreadable text is kept, never overwritten
 export const SAVE_VERSION = 3;
 
 function blankProfile() {
@@ -134,20 +134,23 @@ export class SaveGame {
       try { const r = readStore(SAVE_KEY); if (r.data) { this.data = r.data; this.loadedRaw = r.raw; } }
       catch (e) {
         console.warn('[TGW] Save is unreadable; trying the last-known-good backup', e);
+        try { const bad = localStorage.getItem(SAVE_KEY); if (bad != null) localStorage.setItem(CORRUPT_KEY, bad); } catch {}
         try { const b = readStore(BACKUP_KEY); if (b.data) { this.data = b.data; this.recovered = true; } }
         catch (e2) { console.warn('[TGW] Backup unreadable too; starting fresh', e2); }
       }
     }
     this.profile = validProfile(this.data.profiles[characterId]);
     this.data.profiles[characterId] = this.profile;
-    this.timer = null;
+    this.timer = null; this.deleted = false;
+    // R113: ask the browser to keep this site's storage (installed iOS web apps get it without a prompt). Fails soft.
+    if (!ephemeral) try { navigator.storage?.persist?.()?.catch?.(() => {}); } catch {}
     addEventListener('pagehide', () => this.flush());
     document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') this.flush(); });
   }
 
   // DEV: drop this character's wilds profile; nothing is written afterwards (caller reloads).
   resetProfile() {
-    delete this.data.profiles[this.characterId]; this.flush(); this.ephemeral = true;
+    delete this.data.profiles[this.characterId]; this.deleted = true; this.flush(); this.ephemeral = true;
   }
 
   // Coalesce bursts of changes (gathering several nodes) into one write.
@@ -167,6 +170,9 @@ export class SaveGame {
     try {
       // First write of the session: keep the save we loaded as the last-known-good backup.
       if (!this.backedUp && this.loadedRaw) { localStorage.setItem(BACKUP_KEY, this.loadedRaw); this.backedUp = true; }
+      // R113: another tab may have saved other characters since we loaded. Re-read and replace only our own profile,
+      // so two open tabs never wipe each other's characters (same character: last write still wins).
+      try { const cur = readStore(SAVE_KEY).data; if (cur) { const own = this.data.profiles[this.characterId]; this.data.profiles = cur.profiles; if (this.deleted) delete this.data.profiles[this.characterId]; else this.data.profiles[this.characterId] = own; } } catch {}
       const out = this.serialize(); JSON.parse(out); // never write something we cannot read back
       localStorage.setItem(SAVE_KEY, out);
     } catch (e) { if (!this.warned) { this.warned = true; console.warn('[TGW] Progress could not be saved', e); } }

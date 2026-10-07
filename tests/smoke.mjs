@@ -287,7 +287,15 @@ try {
       localStorage.setItem('tgw.save', JSON.stringify({ version: 1, profiles: { fern: { homeLevel: 3, inventory: { wood: 5 } } } }));
       const a = new SaveGame({ characterId: 'fern' }); const migrated = a.profile.homeLevel === 2 && a.profile.pots.count === 1; a.profile.inventory.stone = 4; a.flush();
       const b = new SaveGame({ characterId: 'fern' }); return { migrated, persisted: b.profile.inventory.stone === 4 && b.profile.inventory.wood === 5, version: JSON.parse(localStorage.getItem('tgw.save')).version }; });
-    check('save: v1 -> v3 migration + reload persistence', r.migrated && r.persisted && r.version === 3, JSON.stringify(r)); await ctx.close(); }
+    check('save: v1 -> v3 migration + reload persistence', r.migrated && r.persisted && r.version === 3, JSON.stringify(r));
+    // R113: two open tabs (two characters) never wipe each other; an unreadable save + backup is kept aside, not overwritten
+    const t = await p.evaluate(async () => { const { SaveGame } = await import('./js/core/SaveGame.js?r113'); localStorage.clear();
+      const a = new SaveGame({ characterId: 'fern' }), b = new SaveGame({ characterId: 'tulip' });
+      a.profile.inventory.wood = 5; a.flush(); b.profile.inventory.stone = 3; b.flush(); a.profile.inventory.wood = 6; a.flush();
+      const d = JSON.parse(localStorage.getItem('tgw.save')); const tabs = d.profiles.fern?.inventory.wood === 6 && d.profiles.tulip?.inventory.stone === 3;
+      localStorage.setItem('tgw.save', '{broken'); localStorage.setItem('tgw.save.bak', '{broken too'); new SaveGame({ characterId: 'fern' }).flush();
+      return { tabs, corruptKept: localStorage.getItem('tgw.save.corrupt') === '{broken' }; });
+    check('save (R113): two tabs keep both characters, corrupt save text is kept aside', t.tabs && t.corruptKept, JSON.stringify(t)); await ctx.close(); }
   // 6. R58 boat economy: vest -> rent -> waterfall reward -> fishing + boat persist across reload
   { const ctx = await context({ viewport: { width: 844, height: 390 }, isMobile: true, hasTouch: true }); const { p, errors, ok } = await startGame(ctx, 'fern');
     const ready = ok && await p.waitForFunction(() => window.__tgw?.boatEco, null, { timeout: 240000 }).then(() => true, () => false);
