@@ -5480,3 +5480,19 @@ html body.hud-classic.touch.mobile-bag-open .gear-item em{font-size:9px!importan
   display:-webkit-box!important;-webkit-box-orient:vertical!important;-webkit-line-clamp:2!important;max-height:2.3em!important;text-align:center!important;word-break:normal!important}
 /* L4 the special-ring label was 7.5 px */
 html body.hud-classic.touch .special-btn b{font-size:10px!important;padding:2px 7px!important;bottom:-11px!important}
+
+/* ===== R118 · phone quest card in desktop E cream + desktop E toast (GO 07/10). ===== */
+/* Phone (body.hud-classic.touch): colour layer only, phone size and line clamp stay as R109/R110/R115 */
+html body.hud-classic.touch #hud #objective.objective-card,html body.hud-classic.touch #hud #objective.objective-card.open,html body.hud-classic.touch #hud #objective.objective-card.complete,
+html body.hud-classic.touch #hud #objective.objective-card:not(.open),html body.hud-classic.touch #hud #objective.objective-card.complete:not(.open),html body.hud-classic.touch #hud #objective.objective-card:not(.open):not(.complete){
+  background:rgba(255,249,235,.96)!important;background-image:none!important;color:#34352d!important;border:1px solid rgba(173,148,89,.3)!important;
+  box-shadow:0 5px 13px rgba(43,42,36,.16)!important}
+html body.hud-classic.touch #hud #objective.objective-card::before{background-color:rgba(111,157,69,.15)!important;border-radius:50%!important;box-shadow:none!important}
+html body.hud-classic.touch #hud #objective.objective-card::after{color:#6e755f!important}
+html body.hud-classic.touch #hud #objective #objective-title{color:#34352d!important}
+html body.hud-classic.touch #hud #objective #objective-copy{color:#747766!important;opacity:1!important}
+html body.hud-classic.touch #hud #objective #objective-kicker{color:#6f9d45!important}
+/* Desktop E: only the toast moves (it sat under the opaque resource bar); same cream pill as the phone */
+html body.hud-desktop-e:not(.touch) #toast{top:calc(84px + env(safe-area-inset-top))!important;z-index:40!important;padding:8px 16px!important;border-radius:999px!important;
+  background:rgba(255,250,240,.95)!important;color:#2b2a24!important;text-shadow:none!important;letter-spacing:.08em!important;font-size:12px!important;
+  box-shadow:0 6px 14px rgba(43,42,36,.15),inset 0 0 0 1px rgba(153,128,67,.28)!important;white-space:nowrap!important}

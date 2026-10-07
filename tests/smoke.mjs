@@ -691,13 +691,14 @@ try {
     const phoneFix = ok && await p.evaluate(async () => { const w = ms => new Promise(r => setTimeout(r, ms)), t = document.getElementById('toast'); t.textContent = 'Test'; t.classList.add('show'); await w(500);
       const bar = document.querySelector('#hud .inventory-stack')?.getBoundingClientRect(), toast = t.getBoundingClientRect(); t.classList.remove('show');
       const j = document.getElementById('joy-rest'); j.style.transition = 'none'; document.body.classList.add('fishing-active'); await w(400); const joy = getComputedStyle(j).opacity; document.body.classList.remove('fishing-active'); j.style.transition = '';
-      return { toast: !!bar && toast.top >= bar.bottom - 1, title: parseFloat(getComputedStyle(document.getElementById('objective-title')).fontSize) >= 12, joy: joy === '0' }; });
+      return { toast: !!bar && toast.top >= bar.bottom - 1, title: parseFloat(getComputedStyle(document.getElementById('objective-title')).fontSize) >= 12, joy: joy === '0', cream: getComputedStyle(document.getElementById('objective')).backgroundColor === 'rgba(255, 249, 235, 0.96)' }; });
     check('dev disabled: no dev button, handle or badge', ok && !leak && !errors.length, errors[0]); await ctx.close();
     // R112: players without DEV get the current HUD by device (phone = HUD D with 5 slots, desktop = HUD E with 10)
     const c2 = await context({ viewport: { width: 1280, height: 720 } }); const d = await startGame(c2, 'daisy', { dev: false });
     const deskHud = d.ok && await d.p.evaluate(() => ({ e: document.body.classList.contains('hud-desktop-e') && !document.body.classList.contains('hud-classic'), slots: [...document.querySelectorAll('.desktop-hotbar-slot')].filter(e => e.getBoundingClientRect().width > 0).length }));
+    const deskToast = d.ok && await d.p.evaluate(async () => { const t = document.getElementById('toast'); t.textContent = 'Test'; t.classList.add('show'); await new Promise(r => setTimeout(r, 500)); const bar = document.querySelector('#hud #inventory, #hud .inventory-stack')?.getBoundingClientRect(); return !!bar && t.getBoundingClientRect().top >= bar.bottom - 1; });   // R118
     check('player HUD default (R112): phone gets HUD D (5 slots), desktop gets HUD E (10 slots) without DEV', phoneHud?.d && phoneHud.slots === 5 && deskHud?.e && deskHud.slots === 10 && !d.errors.length, d.errors[0] || JSON.stringify({ phoneHud, deskHud })); await c2.close();
-    check('phone HUD fixes (R115): toast below the resource bar, quest title >= 12 px, joystick hidden while fishing', phoneFix && phoneFix.toast && phoneFix.title && phoneFix.joy, JSON.stringify(phoneFix)); }
+    check('phone HUD fixes (R115/R118): toast below the resource bar (phone + desktop E), quest title >= 12 px, joystick hidden while fishing, cream quest card', phoneFix && phoneFix.toast && phoneFix.title && phoneFix.joy && phoneFix.cream && deskToast, JSON.stringify({ phoneFix, deskToast })); }
 } finally {
   await browser.close(); server.close();
   const failed = results.filter(r => !r.ok).length;
