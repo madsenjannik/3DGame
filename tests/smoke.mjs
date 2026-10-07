@@ -25,10 +25,10 @@ async function context(opts = {}, block = []) {
   await ctx.route('**/*', r => { const u = r.request().url(); return !u.startsWith(B) || block.some(re => re.test(u)) ? r.abort() : r.continue(); });
   return ctx;
 }
-async function startGame(ctx, char, { dev = true, hud = '' } = {}) {   // R110: hud = DEV HUD variant ('classic' = mobile HUD D, 'desktop-e'); R102–R109 checks assumed it was on
+async function startGame(ctx, char, { dev = true, hud = '', tips = false } = {}) {   // R120: tips = show the first-time control tips (off by default so they never cover what a check clicks)   // R110: hud = DEV HUD variant ('classic' = mobile HUD D, 'desktop-e'); R102–R109 checks assumed it was on
   const p = await ctx.newPage(); const errors = [];
   p.on('pageerror', e => errors.push(e.message));
-  await p.addInitScript(([c, d, h]) => { localStorage.setItem(`dym.homeMovedIn.v1.${c}`, '1'); if (d) localStorage.setItem('tgw.devMenu', '1'); else localStorage.removeItem('tgw.devMenu'); if (h) localStorage.setItem('tgw.hudTestB', h); }, [char, dev, hud]);
+  await p.addInitScript(([c, d, h, t]) => { if (!t) localStorage.setItem('tgw.controlTips.v1', '1'); localStorage.setItem(`dym.homeMovedIn.v1.${c}`, '1'); if (d) localStorage.setItem('tgw.devMenu', '1'); else localStorage.removeItem('tgw.devMenu'); if (h) localStorage.setItem('tgw.hudTestB', h); }, [char, dev, hud, tips]);
   await p.goto(B + `game.html?char=${char}`, { waitUntil: 'load' });
   const ok = await p.waitForFunction(() => !document.getElementById('loading'), null, { timeout: 240000 }).then(() => true, () => false);
   return { p, errors, ok };
@@ -386,7 +386,7 @@ try {
     await ctx.close(); }
   // 10. R60 GardenBuildSystem: migration leaves every private-garden transform identical to the pre-R60 reference
   { const ctx = await context({ viewport: { width: 844, height: 390 } }); const p = await ctx.newPage(); const errors = []; p.on('pageerror', e => errors.push(e.message));
-    await p.addInitScript(sv => { localStorage.setItem('dym.homeMovedIn.v1.fern', '1'); localStorage.setItem('tgw.devMenu', '1'); localStorage.setItem('dym-gh-level', '2'); if (!sessionStorage.getItem('seeded')) { localStorage.setItem('tgw.save', JSON.stringify(sv)); sessionStorage.setItem('seeded', '1'); } }, SNAPSHOT_SAVE);
+    await p.addInitScript(sv => { localStorage.setItem('tgw.controlTips.v1', '1'); localStorage.setItem('dym.homeMovedIn.v1.fern', '1'); localStorage.setItem('tgw.devMenu', '1'); localStorage.setItem('dym-gh-level', '2'); if (!sessionStorage.getItem('seeded')) { localStorage.setItem('tgw.save', JSON.stringify(sv)); sessionStorage.setItem('seeded', '1'); } }, SNAPSHOT_SAVE);
     await p.goto(B + 'game.html?char=fern', { waitUntil: 'load' });
     const ok = await p.waitForFunction(() => window.__tgw?.wilds?.gardenModels && window.__tgw.greenhouse?.entries.size === 3 && window.__tgw.wilds.threat, null, { timeout: 240000 }).then(() => true, () => false);
     let diffs = ['not loaded'];
@@ -423,7 +423,7 @@ try {
     await ctx.close(); }
   // 12. R60 step 2 build mode: ghost validity, cancel = no change, place moves group/collider/vegetation, persists, reset restores
   { const ctx = await context({ viewport: { width: 844, height: 390 }, isMobile: true, hasTouch: true }); const p = await ctx.newPage(); const errors = []; p.on('pageerror', e => errors.push(e.message));
-    await p.addInitScript(() => { localStorage.setItem('dym.homeMovedIn.v1.fern', '1'); localStorage.setItem('tgw.devMenu', '1'); localStorage.setItem('dym-gh-level', '1'); });
+    await p.addInitScript(() => { localStorage.setItem('tgw.controlTips.v1', '1'); localStorage.setItem('dym.homeMovedIn.v1.fern', '1'); localStorage.setItem('tgw.devMenu', '1'); localStorage.setItem('dym-gh-level', '1'); });
     await p.goto(B + 'game.html?char=fern', { waitUntil: 'load' });
     const ok = await p.waitForFunction(() => window.__tgw?.wilds?.gardenModels && window.__tgw.greenhouse?.entries.size === 3, null, { timeout: 240000 }).then(() => true, () => false);
     const step = (fn, arg) => p.evaluate(fn, arg), W = ms => p.waitForTimeout(ms);
@@ -677,13 +677,24 @@ try {
     await ctx.close(); }
   // 17i. R119 Golden Seed story: a saved 'plant' restores the grown lotus at rest, hides the seed and moves the quest on (no replay)
   { const ctx = await context({ viewport: { width: 844, height: 390 }, isMobile: true, hasTouch: true }); const p = await ctx.newPage(); const errors = []; p.on('pageerror', e => errors.push(e.message));
-    await p.addInitScript(() => { localStorage.setItem('dym.homeMovedIn.v1.fern', '1'); localStorage.setItem('tgw.devMenu', '1'); if (!sessionStorage.getItem('r119')) { sessionStorage.setItem('r119', '1'); localStorage.setItem('tgw.save', JSON.stringify({ version: 3, profiles: { fern: { story: { seed: 'plant' } } } })); } });
+    await p.addInitScript(() => { localStorage.setItem('tgw.controlTips.v1', '1'); localStorage.setItem('dym.homeMovedIn.v1.fern', '1'); localStorage.setItem('tgw.devMenu', '1'); if (!sessionStorage.getItem('r119')) { sessionStorage.setItem('r119', '1'); localStorage.setItem('tgw.save', JSON.stringify({ version: 3, profiles: { fern: { story: { seed: 'plant' } } } })); } });
     await p.goto(B + 'game.html?char=fern', { waitUntil: 'load' }); const ok = await p.waitForFunction(() => !document.getElementById('loading'), null, { timeout: 240000 }).then(() => true, () => false);
     const r = ok ? await p.evaluate(async () => { const g = window.__tgw; await new Promise(r => setTimeout(r, 4000));
       return { resolved: g.state.choice.resolved && g.state.choice.result === 'plant', seedHidden: g.collectible?.status === 'collected' && g.collectible?.root?.visible === false,
         lotus: g.choiceWorld?.lotusPhase === 'idle' && g.choiceWorld?.lotusRoot?.visible === true, quest: document.getElementById('objective-title').textContent !== 'Find the Golden Seed',
         kept: JSON.parse(localStorage.getItem('tgw.save')).profiles.fern.story?.seed === 'plant' }; }) : {};
     check('golden seed story (R119): saved plant restores the lotus at rest, hides the seed, quest moves on, choice stays saved', ok && Object.values(r).length === 5 && Object.values(r).every(Boolean) && !errors.length, errors[0] || JSON.stringify(r)); await ctx.close(); }
+  // 17j. R120 first-time control tips: phone shows touch tips, a tap advances, Skip ends them and they never come back
+  { const ctx = await context({ viewport: { width: 844, height: 390 }, isMobile: true, hasTouch: true }); const { p, errors, ok } = await startGame(ctx, 'daisy', { dev: false, tips: true });
+    const r = { shown: false };
+    if (ok) { r.shown = await p.waitForFunction(() => document.querySelector('#control-tips.show'), null, { timeout: 30000 }).then(() => true, () => false);
+      r.first = await p.evaluate(() => document.querySelector('#control-tips .ct-text')?.textContent || '');
+      const box = await p.evaluate(() => { const b = document.querySelector('#control-tips .ct-text').getBoundingClientRect(), h = [...document.querySelectorAll('.desktop-hotbar-slot')].map(e => e.getBoundingClientRect()).filter(x => x.width); return { x: b.x + b.width / 2, y: b.y + b.height / 2, clear: h.every(x => b.bottom <= x.top) }; });
+      r.clearOfHotbar = box.clear; await p.touchscreen.tap(box.x, box.y);
+      r.second = await p.waitForFunction(f => { const t = document.querySelector('#control-tips.show .ct-text'); return t && t.textContent !== f; }, r.first, { timeout: 30000 }).then(() => true, () => false);
+      await p.evaluate(() => document.querySelector('#control-tips .ct-skip').click()); await p.waitForTimeout(1500);
+      r.gone = await p.evaluate(() => !document.querySelector('#control-tips.show') && localStorage.getItem('tgw.controlTips.v1') === '1'); }
+    check('control tips (R120): touch tips appear clear of the hotbar, tap advances, Skip ends and remembers', ok && r.shown && /left side to walk/.test(r.first) && r.clearOfHotbar && r.second && r.gone && !errors.length, errors[0] || JSON.stringify(r)); await ctx.close(); }
   // 17h. R117 desktop: the click that closes the Bag does not swing; the next click on the view does
   { const ctx = await context({ viewport: { width: 1280, height: 720 } }); const { p, errors, ok } = await startGame(ctx, 'fern', { hud: 'desktop-e' });
     let r = {};

@@ -5496,3 +5496,16 @@ html body.hud-classic.touch #hud #objective #objective-kicker{color:#6f9d45!impo
 html body.hud-desktop-e:not(.touch) #toast{top:calc(84px + env(safe-area-inset-top))!important;z-index:40!important;padding:8px 16px!important;border-radius:999px!important;
   background:rgba(255,250,240,.95)!important;color:#2b2a24!important;text-shadow:none!important;letter-spacing:.08em!important;font-size:12px!important;
   box-shadow:0 6px 14px rgba(43,42,36,.15),inset 0 0 0 1px rgba(153,128,67,.28)!important;white-space:nowrap!important}
+
+/* ===== R120 · first-time control tips (GO 07/10). Same cream pill language as the R115/R118 toast. ===== */
+#control-tips{position:fixed;left:50%;bottom:calc(152px + env(safe-area-inset-bottom));transform:translate(-50%,8px);z-index:38;display:flex;align-items:center;gap:10px;
+  max-width:calc(100vw - 32px);padding:8px 8px 8px 14px;border-radius:999px;background:rgba(255,250,240,.96);color:#2b2a24;
+  box-shadow:0 6px 16px rgba(43,42,36,.18),inset 0 0 0 1px rgba(153,128,67,.3);font:700 13px/1.25 Manrope,system-ui,sans-serif;
+  opacity:0;pointer-events:none;transition:opacity .35s ease,transform .35s ease;cursor:pointer;-webkit-user-select:none;user-select:none}
+#control-tips.show{opacity:1;transform:translate(-50%,0);pointer-events:auto}
+#control-tips .ct-step{flex:none;font:800 10px/1 Manrope,system-ui,sans-serif;letter-spacing:.12em;color:#6f9d45}
+#control-tips .ct-text{font-weight:700;white-space:normal}
+#control-tips .ct-skip{flex:none;min-height:32px;padding:0 12px;border:0;border-radius:999px;background:rgba(111,157,69,.14);color:#4f6f33;font:800 11px/1 Manrope,system-ui,sans-serif;letter-spacing:.06em;cursor:pointer}
+body.hud-classic.touch #control-tips{bottom:calc(max(10px,env(safe-area-inset-bottom)) + 62px);font-size:12px}
+body.hud-classic.touch #control-tips .ct-skip{min-height:44px;padding:0 14px}
+body.mobile-bag-open #control-tips,body.choice-open #control-tips{opacity:0!important;pointer-events:none!important}
