@@ -5514,7 +5514,7 @@ body.mobile-bag-open #control-tips,body.choice-open #control-tips{opacity:0!impo
 /* Quest card (phones): never faded when complete, same width open and closed, right edge flush with the minimap,
    open card capped (title 2 lines, copy 3 lines) so it never grows into the scene */
 html body.hud-classic.touch #hud #objective.objective-card,html body.hud-classic.touch #hud #objective.objective-card:not(.open),html body.hud-classic.touch #hud #objective.objective-card.open{
-  width:230px!important;max-width:230px!important;right:max(10px,env(safe-area-inset-right))!important;left:auto!important}
+  width:220px!important;max-width:220px!important;right:max(10px,env(safe-area-inset-right))!important;left:auto!important}   /* R108 limit: collapsed card <= 220 px */
 @media (max-width:720px){html body.hud-classic.touch #hud #objective.objective-card,html body.hud-classic.touch #hud #objective.objective-card:not(.open),html body.hud-classic.touch #hud #objective.objective-card.open{width:212px!important;max-width:212px!important}}
 html body.hud-classic.touch #hud #objective.objective-card.complete{opacity:1!important;transform:none!important}
 html body.hud-classic.touch #hud #objective.objective-card.complete::before{background-color:rgba(226,181,82,.22)!important}
