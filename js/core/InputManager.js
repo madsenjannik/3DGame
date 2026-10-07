@@ -11,7 +11,8 @@ export class InputManager {
   constructor({ joy, knob, actionButton }) {
     this.keys = Object.create(null);
     this.joy = joy; this.knob = knob; this.actionButton = actionButton;
-    this.isTouch = matchMedia('(pointer: coarse)').matches || ('ontouchstart' in window);
+    // R117: a touchscreen laptop (touch events + a fine mouse/trackpad, fine primary pointer) is a desktop, not a phone.
+    this.isTouch = matchMedia('(pointer: coarse)').matches || (('ontouchstart' in window) && !matchMedia('(any-pointer: fine)').matches);
     if (this.isTouch) document.body.classList.add('touch');
     this.joyPointer = null; this.joyCenter = {x:0,y:0}; this.JR=54;
     this.lookPointer = null; this.lookLast = {x:0,y:0}; this.lookStart = {x:0,y:0,t:0};
@@ -37,8 +38,8 @@ export class InputManager {
   isUiTarget(target){
     return !!target?.closest?.('button,[role="button"],input,select,textarea,a,.gear-panel,.fishing-ui,.stable-talk,.stable-race-ui,.choice-panel');
   }
-  movementZone(e){return this.isTouch&&e.clientX<innerWidth*.48&&!this.isUiTarget(e.target);}
-  lookZone(e){return this.isTouch&&e.clientX>=innerWidth*.42&&!this.isUiTarget(e.target);}
+  movementZone(e){return this.isTouch&&e.pointerType!=='mouse'&&e.clientX<innerWidth*.48&&!this.isUiTarget(e.target);}   // R117: a mouse never drives the touch joystick
+  lookZone(e){return this.isTouch&&e.pointerType!=='mouse'&&e.clientX>=innerWidth*.42&&!this.isUiTarget(e.target);}
   placeFloatingJoy(e){
     const size=this.joy.offsetWidth||124;
     const x=Math.max(size*.5+12,Math.min(innerWidth*.46-size*.5-8,e.clientX));
@@ -51,7 +52,7 @@ export class InputManager {
   onPointerDown(e){
     if(document.body.classList.contains('mobile-bag-open'))return;
     if(e.target===this.actionButton||this.actionButton.contains(e.target))return;
-    if(!this.isTouch&&e.pointerType==='mouse'&&e.button===0&&e.target?.tagName==='CANVAS'&&!this.isUiTarget(e.target))this.strikePressed=true;   // R76: left click = Strike (never interact)
+    if(!this.isTouch&&e.pointerType==='mouse'&&e.button===0&&e.target?.tagName==='CANVAS'&&!this.isUiTarget(e.target)&&!e.tgwClosedGear)this.strikePressed=true;   // R117: the click that closes the Bag does not swing   // R76: left click = Strike (never interact)
     if(this.joyPointer===null&&this.movementZone(e)){
       this.joyPointer=e.pointerId;this.placeFloatingJoy(e);this.move.x=this.move.y=0;return;
     }

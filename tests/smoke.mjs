@@ -675,6 +675,14 @@ try {
       o.why = g.hud.toast.textContent === 'Needs a Stone Axe'; g.interactions.resolve = res; return o; }) : {};
     check('robustness (R114) + feedback (R116): a throwing system is switched off and rendering continues, WebGL loss recovers or offers reload, toasts queue, Locked says why', ok && ['frames', 'off', 'restored', 'overlay', 'noStartupError', 'queue', 'why'].every(k => r[k]) && !errors.length, errors[0] || JSON.stringify(r));
     await ctx.close(); }
+  // 17h. R117 desktop: the click that closes the Bag does not swing; the next click on the view does
+  { const ctx = await context({ viewport: { width: 1280, height: 720 } }); const { p, errors, ok } = await startGame(ctx, 'fern', { hud: 'desktop-e' });
+    let r = {};
+    if (ok) { await p.evaluate(() => { const g = window.__tgw; g.__hits = 0; const a = g.combat.attack.bind(g.combat); g.combat.attack = (...x) => { g.__hits++; return a(...x); }; document.getElementById('hud-bag')?.click(); });
+      await p.waitForTimeout(1500); r.opened = await p.evaluate(() => !!document.querySelector('.gear-panel.open'));
+      await p.mouse.click(640, 420); await p.waitForTimeout(2500); r.closeNoSwing = await p.evaluate(() => window.__tgw.__hits === 0 && !document.querySelector('.gear-panel.open'));
+      await p.mouse.click(640, 420); await p.waitForTimeout(2500); r.nextSwings = await p.evaluate(() => window.__tgw.__hits === 1); }
+    check('desktop input (R117): closing the Bag by clicking the view does not swing, the next click does', ok && r.opened && r.closeNoSwing && r.nextSwings && !errors.length, errors[0] || JSON.stringify(r)); await ctx.close(); }
   // 5. DEV disabled: no dev UI or handles leak into normal play
   { const ctx = await context({ viewport: { width: 844, height: 390 }, isMobile: true, hasTouch: true }); const { p, errors, ok } = await startGame(ctx, 'daisy', { dev: false });
     const leak = ok && await p.evaluate(() => !!document.querySelector('.dev-menu-btn') || !!window.__tgw || !document.getElementById('dev-badge').hidden);

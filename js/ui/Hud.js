@@ -158,7 +158,7 @@ export class Hud {
     const w=document.createElement('div');w.id='desktop-world-status';w.className='desktop-world-status';
     w.innerHTML='<i aria-hidden="true"></i><span><small>DAY</small><b>THE WILDS</b></span>';
     document.body.appendChild(w);this.worldStatus=w;
-    addEventListener('pointerdown',e=>{if(this.gear?.classList.contains('open')&&!this.gear.contains(e.target)&&e.target!==this.bag)this.toggleGear(false);});
+    addEventListener('pointerdown',e=>{if(this.gear?.classList.contains('open')&&!this.gear.contains(e.target)&&e.target!==this.bag){this.toggleGear(false);e.tgwClosedGear=true;}});   // R117: InputManager skips the strike for this click
   }
   toggleGear(on=!this.gear?.classList.contains('open')){
     if(!this.gear)return;
