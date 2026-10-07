@@ -146,6 +146,8 @@ export class CollectibleSystem {
     this.state.events.emit('golden-seed:awakened',{id:'rare_seed'});
   }
   canCollect(){return this.status==='awakened'&&this.near>.5;}
+  // R119 (GO 07/10): a saved Plant/Donate choice means the seed was already collected; hide it without replaying the story.
+  restoreCollected(){this.status='collected';if(this.root)this.root.visible=false;if(this.beaconRoot)this.beaconRoot.visible=false;}
   collect(character){
     if(!this.canCollect())return false;
     this.status='collecting';this.collectT=0;this.character=character;

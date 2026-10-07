@@ -1618,6 +1618,7 @@ are only touched where a measured hotspot requires it, minimally.
    failure. Must pass before every push (CLAUDE.md rule 5).
 
 **B status 02/10/2026: complete (R51–R57).** On-device check (iPhone, Jannik 02/10): 60 fps steady (frame max 20–24 ms), 217 draw calls / 370k tris in the garden, 363 / 433k at the lake, mobile-high, 1 WebGL context → no perf work needed before C.
+**R119 (v0.8.119, GO 07/10, locked §6 scope):** the first Golden Seed choice is saved per character (`profile.story.seed`) and restored on load: seed hidden, lotus grown at rest or Community Bloom count, quest moves on. The story flow itself is unchanged.
 **R118 (v0.8.118, GO 07/10):** phone quest card uses desktop E cream (colour layer only); desktop E toast moved below its resource bar as a cream pill (the only desktop change).
 **R117 (v0.8.117, GO 07/10):** input: touchscreen laptops count as desktop, a mouse never drives the touch joystick, closing the Bag with a click on the view no longer swings.
 **R116 (v0.8.116, GO 07/10):** Locked actions say why (reason field on wilds/pots/weeds offers, 'Not unlocked yet' fallback for locked systems), toasts queue (max 3).

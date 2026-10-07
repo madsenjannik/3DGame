@@ -24,6 +24,7 @@ function blankProfile() {
     boat: { owned: false, trips: 0, waterfall: 0, lastReward: '' }, // R58 boat economy
     combat: { moles: {}, firstMole: false, pouches: [], mercyUntil: 0, giant: { defeatedAt: 0, wins: 0 }, bear: { defeatedAt: 0, wins: 0 } }, // R61/R63/R79 combat
     lakeRun: { best: 0, splits: [], ghost: [], runs: [], day: '', attempts: 0, golds: 0, weekGold: '' }, // R64 Lake Run
+    story: { seed: '' },  // R119: first Golden Seed choice ('plant' | 'donate'), so the story does not replay
     garden: null          // R60 GardenBuildSystem: { version, plots[], buildings[{ id, type, gx, gz, rot }] }
   };
 }
@@ -106,6 +107,7 @@ function validProfile(p) {
   if (typeof lr.day === 'string') out.lakeRun.day = lr.day;
   out.lakeRun.attempts = Math.max(0, lr.attempts | 0); out.lakeRun.golds = Math.max(0, lr.golds | 0);
   if (typeof lr.weekGold === 'string') out.lakeRun.weekGold = lr.weekGold;
+  if (p.story?.seed === 'plant' || p.story?.seed === 'donate') out.story.seed = p.story.seed;   // R119
   // R60 GardenBuildSystem placements (absent = catalog defaults = the pre-R60 layout).
   const g = p.garden;
   if (g && typeof g === 'object') {

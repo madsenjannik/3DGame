@@ -675,6 +675,15 @@ try {
       o.why = g.hud.toast.textContent === 'Needs a Stone Axe'; g.interactions.resolve = res; return o; }) : {};
     check('robustness (R114) + feedback (R116): a throwing system is switched off and rendering continues, WebGL loss recovers or offers reload, toasts queue, Locked says why', ok && ['frames', 'off', 'restored', 'overlay', 'noStartupError', 'queue', 'why'].every(k => r[k]) && !errors.length, errors[0] || JSON.stringify(r));
     await ctx.close(); }
+  // 17i. R119 Golden Seed story: a saved 'plant' restores the grown lotus at rest, hides the seed and moves the quest on (no replay)
+  { const ctx = await context({ viewport: { width: 844, height: 390 }, isMobile: true, hasTouch: true }); const p = await ctx.newPage(); const errors = []; p.on('pageerror', e => errors.push(e.message));
+    await p.addInitScript(() => { localStorage.setItem('dym.homeMovedIn.v1.fern', '1'); localStorage.setItem('tgw.devMenu', '1'); if (!sessionStorage.getItem('r119')) { sessionStorage.setItem('r119', '1'); localStorage.setItem('tgw.save', JSON.stringify({ version: 3, profiles: { fern: { story: { seed: 'plant' } } } })); } });
+    await p.goto(B + 'game.html?char=fern', { waitUntil: 'load' }); const ok = await p.waitForFunction(() => !document.getElementById('loading'), null, { timeout: 240000 }).then(() => true, () => false);
+    const r = ok ? await p.evaluate(async () => { const g = window.__tgw; await new Promise(r => setTimeout(r, 4000));
+      return { resolved: g.state.choice.resolved && g.state.choice.result === 'plant', seedHidden: g.collectible?.status === 'collected' && g.collectible?.root?.visible === false,
+        lotus: g.choiceWorld?.lotusPhase === 'idle' && g.choiceWorld?.lotusRoot?.visible === true, quest: document.getElementById('objective-title').textContent !== 'Find the Golden Seed',
+        kept: JSON.parse(localStorage.getItem('tgw.save')).profiles.fern.story?.seed === 'plant' }; }) : {};
+    check('golden seed story (R119): saved plant restores the lotus at rest, hides the seed, quest moves on, choice stays saved', ok && Object.values(r).length === 5 && Object.values(r).every(Boolean) && !errors.length, errors[0] || JSON.stringify(r)); await ctx.close(); }
   // 17h. R117 desktop: the click that closes the Bag does not swing; the next click on the view does
   { const ctx = await context({ viewport: { width: 1280, height: 720 } }); const { p, errors, ok } = await startGame(ctx, 'fern', { hud: 'desktop-e' });
     let r = {};

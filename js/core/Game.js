@@ -3,35 +3,35 @@ import * as THREE from 'three';
 import { AssetRegistry } from './AssetRegistry.js';
 import { CharacterController } from './CharacterController.js?build=MOBILE-GESTURE-R34B-20260930A';
 import { GameState } from './GameState.js';
-import { InputManager } from './InputManager.js?build=CREAM-QUEST-R118-20261007A';
+import { InputManager } from './InputManager.js?build=SEED-STORY-R119-20261007A';
 import { ThirdPersonCamera } from './ThirdPersonCamera.js?build=MOBILE-GESTURE-R34B-20260930A';
 import { CameraOcclusionSystem } from './CameraOcclusionSystem.js?build=NORTH-STABLE-R23O-20260929A';
 import { StructureVisibilitySystem } from '../visual/StructureVisibilitySystem.js?build=NORTH-STABLE-R23O-20260929A';
 import { characterCatalog, resourceCatalog, buildingCatalog } from '../data/assetCatalog.js';
-import { CollectibleSystem } from '../gameplay/CollectibleSystem.js';
-import { MeaningfulChoiceSystem } from '../gameplay/MeaningfulChoiceSystem.js';
+import { CollectibleSystem } from '../gameplay/CollectibleSystem.js?build=SEED-STORY-R119-20261007A';
+import { MeaningfulChoiceSystem } from '../gameplay/MeaningfulChoiceSystem.js?build=SEED-STORY-R119-20261007A';
 import { GreenhouseProgressionSystem } from '../gameplay/GreenhouseProgressionSystem.js?build=CAMERA-CUTAWAY-CONTEXT-R21D-20260928E';
 import { OrangeryHubSystem } from '../gameplay/OrangeryHubSystem.js?build=CAMERA-CUTAWAY-CONTEXT-R21D-20260928E';
 import { FishingV1System } from '../gameplay/FishingV1System.js?build=BAG-NIGHT-R84-20261006A';
 import { ChoicePanel } from '../ui/ChoicePanel.js';
-import { Hud } from '../ui/Hud.js?build=CREAM-QUEST-R118-20261007A';
+import { Hud } from '../ui/Hud.js?build=SEED-STORY-R119-20261007A';
 import { WorldMap } from '../ui/WorldMap.js?build=WORLD-MAP-R35B-20260930B';
 import { GardenEnvironment } from '../world/GardenEnvironment.js?build=WATER-VEG-R103-20261006A';
 import { WildlifeSystem } from '../world/WildlifeSystem.js?build=CAMERA-CUTAWAY-CONTEXT-R21D-20260928E';
 import { PlayerHomePortalSystem } from '../world/PlayerHomePortalSystem.js?build=ENTRY-R29-20260929A';
 import { NorthStableSystem } from '../world/NorthStableSystem.js?build=STABLE-R42-20261001A';
-import { SaveGame } from './SaveGame.js?build=CREAM-QUEST-R118-20261007A';
-import { WildsLoopSystem } from '../gameplay/WildsLoopSystem.js?build=CREAM-QUEST-R118-20261007A';
+import { SaveGame } from './SaveGame.js?build=SEED-STORY-R119-20261007A';
+import { WildsLoopSystem } from '../gameplay/WildsLoopSystem.js?build=SEED-STORY-R119-20261007A';
 import { WorkbenchPanel } from '../ui/WorkbenchPanel.js';
 import { DevMenu, devMenuEnabled } from '../ui/DevMenu.js?build=HUD-E-DESKTOP-R85-20261006A';
 import { applyControlProfile, defaultProfile } from './ControlProfiles.js';
 import { PerfHud } from '../dev/PerfHud.js';
-import { QualityManager, QUALITY } from './Quality.js?build=CREAM-QUEST-R118-20261007A';
+import { QualityManager, QUALITY } from './Quality.js?build=SEED-STORY-R119-20261007A';
 import { InteractionResolver } from './InteractionResolver.js';
 import { log, warn } from '../dev/Log.js';
 import { LookPass } from '../visual/LookPass.js?build=BAG-NIGHT-R84-20261006A';
 import { DayNight } from '../visual/DayNight.js?build=BAG-NIGHT-R84-20261006A';   // R81
-import { Lantern } from '../gameplay/Lantern.js?build=CREAM-QUEST-R118-20261007A';     // R81/R101
+import { Lantern } from '../gameplay/Lantern.js?build=SEED-STORY-R119-20261007A';     // R81/R101
 import { BoatEconomySystem } from '../gameplay/BoatEconomySystem.js';
 import { LakeRunSystem } from '../gameplay/LakeRunSystem.js';
 import { GardenBuildSystem } from '../gameplay/GardenBuildSystem.js';
@@ -107,6 +107,9 @@ export class Game {
     if(this.worldMap)optional('map',()=>this.worldMap.ready);
     // Core loop v1 (shared world). DEV routes use a throwaway profile that is never written.
     this.save=new SaveGame({characterId:this.state.player.characterId,ephemeral:devMode});
+    // R119 (GO 07/10): the first Golden Seed choice is saved per character and restored on load (no story replay).
+    this.state.events.on('choice:resolved',e=>{if(e?.result==='plant'||e?.result==='donate'){this.save.profile.story={seed:e.result};this.save.persist();}});
+    this.restoreSeedStory();
     // R60: placed structures (greenhouse, workshop, rain, shrine) come from the GardenBuildSystem.
     this.garden=new GardenBuildSystem({profile:this.save.profile,world:this.world});
     this.wilds=new WildsLoopSystem({world:this.world,state:this.state,save:this.save,hud:this.hud,greenhouse:null,garden:this.garden}).init();
@@ -168,8 +171,8 @@ export class Game {
     const attach=(promise,fn)=>promise.then(v=>{if(v)fn(v);return v;});
     const background=Promise.all([
       attach(stablePromise,s=>{this.stable=s;this.world.stableCollisionResolver=(p,r)=>s.resolveCollisions(p,r);s.bindRuntime({character:this.character,renderer:this.renderer});s.bindRuntime({input:this.input,hud:this.hud,followCamera:this.followCamera});this.cameraOcclusion.stable=s;this.structureVisibility.stable=s;}),
-      attach(collectiblePromise,c=>{this.collectible=c;}),
-      attach(choicePromise,c=>{this.choiceWorld=c;}),
+      attach(collectiblePromise,c=>{this.collectible=c;this.restoreSeedStory();}),
+      attach(choicePromise,c=>{this.choiceWorld=c;this.restoreSeedStory();}),
       attach(greenhousePromise,g=>{const gt=this.garden.transformOf('greenhouse');g.setPlacement(gt.x,gt.z,gt.rot);this.greenhouse=g;this.wilds.setGreenhouse(g);this.cameraOcclusion.greenhouse=g;this.structureVisibility.greenhouse=g;}),
       attach(orangeryPromise,o=>{this.orangery=o;this.cameraOcclusion.orangery=o;this.structureVisibility.orangery=o;}),
       attach(fishingPromise,f=>{this.fishing=f;this.refreshHotbar?.(true);try{this.boatEco=new BoatEconomySystem({fishing:f,wilds:this.wilds,hud:this.hud}).init();}catch(e){warn('BOAT','economy disabled',e);this.failed.push('boat');}try{this.lakeRun=new LakeRunSystem(this,f);}catch(e){warn('LAKERUN','lake run disabled',e);this.failed.push('lakerun');}})
@@ -277,6 +280,13 @@ export class Game {
   // apps can report a shorter innerHeight than the screen, which left a strip under the canvas.
   viewSize(){const a=document.getElementById('app'),r=a?.getBoundingClientRect();const w=Math.round(r?.width||innerWidth),h=Math.round(Math.max(r?.height||0,innerHeight,visualViewport?.height||0));return{w,h};}
   resize(){if(this.quality)this.renderer.setPixelRatio(Math.min(devicePixelRatio||1,QUALITY[this.quality.id].dpr));const{w,h}=this.viewSize();this.renderer.setSize(w,h,false);this.camera.aspect=w/h;this.camera.fov=this.camera.aspect<.8?58:48;this.camera.updateProjectionMatrix();}
+  restoreSeedStory(){
+    const r=this.save?.profile?.story?.seed,s=this.state;if(r!=='plant'&&r!=='donate')return;
+    if(!s.choice.resolved){s.choice.open=false;s.choice.resolved=true;s.choice.result=r;s.objective={id:'first_meaningful_choice',stage:'complete',complete:true};
+      if(r==='donate')s.worldProject.contributed=Math.max(1,s.worldProject.contributed);}
+    if(this.collectible&&!this._seedRestored){this._seedRestored=1;this.collectible.restoreCollected?.();}
+    if(this.choiceWorld&&!this._choiceRestored){this._choiceRestored=1;if(r==='plant'){this.choiceWorld.restorePlanted?.();s.personal.rareSpecimenPlanted=true;}else s.events.emit('world-project:changed',{...s.worldProject});}
+  }
   // R114: optional systems fail soft per frame too. A system that throws is switched off (warned once) and the loop keeps running.
   run(id,fn){if(this._off?.[id])return undefined;try{return fn();}catch(e){(this._off||(this._off={}))[id]=1;this.failed?.push?.(id);warn('FRAME',`${id} disabled after a frame error`,e);return undefined;}}
   frame(){

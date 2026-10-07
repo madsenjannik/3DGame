@@ -126,6 +126,14 @@ export class MeaningfulChoiceSystem {
     this.state.events.emit('golden-lotus:payoff-started',{id:'golden_lotus'});
   }
 
+  // R119 (GO 07/10): a saved 'plant' shows the grown Golden Lotus in its pot at rest (no Place/Grow/Celebrate replay, no events).
+  restorePlanted(){
+    this.plantTarget=1;this.plantProgress=1;this.pendingPlant=false;if(!this.payoffReady||this.lotusPhase!=='hidden')return;
+    this.potRoot.visible=true;this.lotusRoot.visible=true;this.potMixer.stopAllAction();this.lotusMixer.stopAllAction();
+    for(const [acts,name] of [[this.potActions,'PlantSeed'],[this.lotusActions,'Grow']]){const a=playOnce(acts,name);if(a)a.time=a.getClip().duration;}
+    this.potMixer.update(0);this.lotusMixer.update(0);this.setLotusPhase('idle');
+  }
+
   setLotusPhase(next){
     this.lotusPhase=next;this.lotusPhaseT=0;
     if(next==='plant-seed'){
