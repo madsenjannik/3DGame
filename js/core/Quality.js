@@ -18,7 +18,7 @@ export class QualityManager {
     this.g = game; this.isTouch = isTouch;
     this.forced = read(FORCE);
     this.id = QUALITY[this.forced] ? this.forced : (isTouch ? (read(KEY) === 'mobile-low' ? 'mobile-low' : 'mobile-high') : 'desktop');
-    this.frames = 0; this.acc = 0; this.slow = 0; this.settle = 3; // ignore the first seconds after start
+    this.frames = 0; this.acc = 0; this.slow = 0; this.settle = 8; // ignore the first ~16 s after start (R114: lazy systems still load then)
     this.apply();
   }
   apply() {
@@ -31,15 +31,16 @@ export class QualityManager {
   }
   set(id) { // DEV: null = automatic
     this.forced = QUALITY[id] ? id : null; write(FORCE, this.forced);
-    this.id = this.forced || (this.isTouch ? 'mobile-high' : 'desktop'); this.slow = 0; this.settle = 3; this.apply();
+    this.id = this.forced || (this.isTouch ? 'mobile-high' : 'desktop'); this.slow = 0; this.settle = 8; this.apply();
   }
   // Called once per frame with the real (unclamped) frame time in seconds.
   sample(dt) {
     if (this.forced || !this.isTouch || this.id === 'mobile-low' || document.hidden) return;
+    if (dt > .25) return;   // R114: a single hitch (asset upload, shader compile) is not a slow device
     this.frames++; this.acc += dt; if (this.acc < 2) return;
     const fps = this.frames / this.acc; this.frames = 0; this.acc = 0;
     if (this.settle > 0) { this.settle--; return; }
     this.slow = fps < 42 ? this.slow + 1 : 0;
-    if (this.slow >= 2) { this.id = 'mobile-low'; write(KEY, 'mobile-low'); this.apply(); log('PERF', `dropped to mobile-low at ${fps.toFixed(0)} fps`); }
+    if (this.slow >= 3) { this.id = 'mobile-low'; write(KEY, 'mobile-low'); this.apply(); log('PERF', `dropped to mobile-low at ${fps.toFixed(0)} fps`); }
   }
 }

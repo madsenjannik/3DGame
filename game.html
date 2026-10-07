@@ -6,9 +6,9 @@
   <meta name="theme-color" content="#dfe6d6" />
   <link rel="manifest" href="./manifest.webmanifest"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="Growing Wilds"><link rel="apple-touch-icon" href="./brand/app-icon/app-icon-180.png">
 <title>The Growing Wilds</title>
-  <script src="./version.js?v=SAVE-SAFE-R113-20261007A"></script>
+  <script src="./version.js?v=ROBUST-R114-20261007A"></script>
   <link href="https://fonts.googleapis.com/css2?family=Lilita+One&family=Manrope:wght@500;600;700;800&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="./styles.css?v=SAVE-SAFE-R113-20261007A" />
+  <link rel="stylesheet" href="./styles.css?v=ROBUST-R114-20261007A" />
   <!-- Vendored three@0.165.0, MIT license in vendor/LICENSE -->
   <script type="importmap">
   {
@@ -249,17 +249,18 @@
       };
       window.addEventListener('error', event => showStartupError(event.message || 'A module failed to load.'));
       window.addEventListener('unhandledrejection', event => showStartupError(event.reason?.message || event.reason || 'Unhandled startup error.'));
+      // R114: a slow load is not an error (phones often need 15-60 s). After 45 s show a calm note; loading keeps going.
       window.setTimeout(() => {
         const loading = document.getElementById('loading');
-        if (loading && !loading.classList.contains('hide')) showStartupError('The game did not finish loading within 12 seconds.');
-      }, 12000);
+        if (loading && !loading.classList.contains('hide') && !loading.querySelector('.slow-note')) loading.insertAdjacentHTML('beforeend', '<small class="slow-note" style="position:absolute;bottom:calc(28px + env(safe-area-inset-bottom));left:0;right:0;text-align:center;opacity:.75;font-size:12px;letter-spacing:.06em">Still growing… a slow connection can take a minute.</small>');
+      }, 45000);
     })();
   </script>
   <script>window.__DYM_BUILD='ENTRY-R29-20260929A';</script>
   <script type="module">
     const __p=new URLSearchParams(location.search);
     const __run=__p.get('run')||String(Date.now());
-    import('./js/main.js?build=SAVE-SAFE-R113-20261007A&run='+encodeURIComponent(__run)).catch(error => {
+    import('./js/main.js?build=ROBUST-R114-20261007A&run='+encodeURIComponent(__run)).catch(error => {
       console.error(error);
       const loading = document.getElementById('loading');
       if (loading) {

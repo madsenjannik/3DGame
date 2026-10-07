@@ -14,24 +14,24 @@ import { GreenhouseProgressionSystem } from '../gameplay/GreenhouseProgressionSy
 import { OrangeryHubSystem } from '../gameplay/OrangeryHubSystem.js?build=CAMERA-CUTAWAY-CONTEXT-R21D-20260928E';
 import { FishingV1System } from '../gameplay/FishingV1System.js?build=BAG-NIGHT-R84-20261006A';
 import { ChoicePanel } from '../ui/ChoicePanel.js';
-import { Hud } from '../ui/Hud.js?build=SAVE-SAFE-R113-20261007A';
+import { Hud } from '../ui/Hud.js?build=ROBUST-R114-20261007A';
 import { WorldMap } from '../ui/WorldMap.js?build=WORLD-MAP-R35B-20260930B';
 import { GardenEnvironment } from '../world/GardenEnvironment.js?build=WATER-VEG-R103-20261006A';
 import { WildlifeSystem } from '../world/WildlifeSystem.js?build=CAMERA-CUTAWAY-CONTEXT-R21D-20260928E';
 import { PlayerHomePortalSystem } from '../world/PlayerHomePortalSystem.js?build=ENTRY-R29-20260929A';
 import { NorthStableSystem } from '../world/NorthStableSystem.js?build=STABLE-R42-20261001A';
-import { SaveGame } from './SaveGame.js?build=SAVE-SAFE-R113-20261007A';
+import { SaveGame } from './SaveGame.js?build=ROBUST-R114-20261007A';
 import { WildsLoopSystem } from '../gameplay/WildsLoopSystem.js?build=HUDTEST-D-R78.1-20261005A';
 import { WorkbenchPanel } from '../ui/WorkbenchPanel.js';
 import { DevMenu, devMenuEnabled } from '../ui/DevMenu.js?build=HUD-E-DESKTOP-R85-20261006A';
 import { applyControlProfile, defaultProfile } from './ControlProfiles.js';
 import { PerfHud } from '../dev/PerfHud.js';
-import { QualityManager, QUALITY } from './Quality.js';
+import { QualityManager, QUALITY } from './Quality.js?build=ROBUST-R114-20261007A';
 import { InteractionResolver } from './InteractionResolver.js';
 import { log, warn } from '../dev/Log.js';
 import { LookPass } from '../visual/LookPass.js?build=BAG-NIGHT-R84-20261006A';
 import { DayNight } from '../visual/DayNight.js?build=BAG-NIGHT-R84-20261006A';   // R81
-import { Lantern } from '../gameplay/Lantern.js?build=SAVE-SAFE-R113-20261007A';     // R81/R101
+import { Lantern } from '../gameplay/Lantern.js?build=ROBUST-R114-20261007A';     // R81/R101
 import { BoatEconomySystem } from '../gameplay/BoatEconomySystem.js';
 import { LakeRunSystem } from '../gameplay/LakeRunSystem.js';
 import { GardenBuildSystem } from '../gameplay/GardenBuildSystem.js';
@@ -48,6 +48,13 @@ export class Game {
     this.renderer.outputColorSpace=THREE.SRGBColorSpace;this.renderer.toneMapping=THREE.ACESFilmicToneMapping;this.renderer.toneMappingExposure=1.02;
     this.renderer.setClearColor(0xdde5d3,1);this.renderer.shadowMap.enabled=true;this.renderer.shadowMap.type=THREE.PCFSoftShadowMap;
     document.getElementById('app').appendChild(this.renderer.domElement);
+    // R114: iPhone can drop the WebGL context (memory pressure, long background). three.js tries to restore it; we save at once
+    // and, if it has not come back after 4 s, offer a calm tap-to-reload instead of a frozen screen.
+    this.renderer.domElement.addEventListener('webglcontextlost',()=>{try{this.save?.flush();}catch{}clearTimeout(this._glLostT);this._glLostT=setTimeout(()=>{
+      if(document.getElementById('gl-lost'))return;const el=document.createElement('button');el.id='gl-lost';el.type='button';el.textContent='The picture was paused by your device. Tap to reload, your progress is saved.';
+      el.style.cssText='position:fixed;inset:0;z-index:99999;border:0;background:#dfe6d6;color:#56644d;font:700 13px/1.6 system-ui,sans-serif;letter-spacing:.06em;padding:32px';
+      el.addEventListener('click',()=>location.reload());document.body.appendChild(el);},4000);});
+    this.renderer.domElement.addEventListener('webglcontextrestored',()=>{clearTimeout(this._glLostT);document.getElementById('gl-lost')?.remove();});
     this.scene=new THREE.Scene();this.scene.background=new THREE.Color(0xdde5d3);this.camera=new THREE.PerspectiveCamera(48,innerWidth/innerHeight,.1,400);
     const startupT0=performance.now();
     this.startupMetrics={build:'TECH-STARTUP-R36-20260930A',characterId:this.state.player.characterId};
@@ -87,17 +94,17 @@ export class Game {
     // R112: players (no DEV menu) get the current HUD by device: touch = HUD D classic, desktop = HUD E. DEV keeps its own switch.
     if(!(devMode||devMenuEnabled())){document.body.classList.toggle('hud-classic',!!this.input.isTouch);document.body.classList.toggle('hud-desktop-e',!this.input.isTouch);}
     this.mapBlocking=false;this._mapViewDir=new THREE.Vector3();this.interactions=new InteractionResolver();
-    this.worldMap=new WorldMap({
+    try{this.worldMap=new WorldMap({   // R114: the map is optional, so its constructor fails soft too
       container:document.body,landscape:this.world.sharedLandscape,rotate:true,metresAcross:90,size:'auto',overlay:'auto',edgeSoftness:60,
       getPlayer:()=>{
         this.camera.getWorldDirection(this._mapViewDir);
         return {x:this.character.position.x,z:this.character.position.z,heading:this.character.heading,view:Math.atan2(this._mapViewDir.x,this._mapViewDir.z)};
       },
       onToggle:(open,overlay)=>{this.mapBlocking=!!(open&&!overlay);if(open)this.input.resetTouchPointers?.();}
-    });this.worldMap?.mini?.classList.add('tgw-minimap');   // R69a: styling hook only (no minimap logic touched)
+    });this.worldMap?.mini?.classList.add('tgw-minimap');}catch(e){this.worldMap=null;this.failed.push('map');warn('MAP','map disabled',e);}   // R69a: styling hook only (no minimap logic touched)
 
     const fishingPromise=optional('fishing',()=>new FishingV1System(this.scene,{state:this.state,world:this.world,input:this.input,hud:this.hud,renderer:this.renderer,character:this.character}).init());
-    optional('map',()=>this.worldMap.ready);
+    if(this.worldMap)optional('map',()=>this.worldMap.ready);
     // Core loop v1 (shared world). DEV routes use a throwaway profile that is never written.
     this.save=new SaveGame({characterId:this.state.player.characterId,ephemeral:devMode});
     // R60: placed structures (greenhouse, workshop, rain, shrine) come from the GardenBuildSystem.
@@ -270,18 +277,25 @@ export class Game {
   // apps can report a shorter innerHeight than the screen, which left a strip under the canvas.
   viewSize(){const a=document.getElementById('app'),r=a?.getBoundingClientRect();const w=Math.round(r?.width||innerWidth),h=Math.round(Math.max(r?.height||0,innerHeight,visualViewport?.height||0));return{w,h};}
   resize(){if(this.quality)this.renderer.setPixelRatio(Math.min(devicePixelRatio||1,QUALITY[this.quality.id].dpr));const{w,h}=this.viewSize();this.renderer.setSize(w,h,false);this.camera.aspect=w/h;this.camera.fov=this.camera.aspect<.8?58:48;this.camera.updateProjectionMatrix();}
+  // R114: optional systems fail soft per frame too. A system that throws is switched off (warned once) and the loop keeps running.
+  run(id,fn){if(this._off?.[id])return undefined;try{return fn();}catch(e){(this._off||(this._off={}))[id]=1;this.failed?.push?.(id);warn('FRAME',`${id} disabled after a frame error`,e);return undefined;}}
   frame(){
+    try{this.frameStep();}catch(e){if(!this._frameWarned){this._frameWarned=1;warn('FRAME','frame step failed; rendering continues',e);}}
+    this.renderer.render(this.scene,this.camera);
+    this.perfHud?.tick();
+  }
+  frameStep(){
     const rawDt=this.clock.getDelta();this.quality?.sample(rawDt);const dt=Math.min(rawDt,1/20);this.time+=dt;this.uTime.value=this.time;this.input.update();
     if(this.input.moved&&!this.lastMoved){this.lastMoved=true;this.hud.markMoved();}
 
     const gardenSpace=this.world.isGardenSpace();
     if(!this.look)try{this.look=new LookPass(this);}catch(e){this.look={update(){}};warn('LOOK','look pass disabled',e);}
-    this.look.update(gardenSpace);   // R70: shared-world grade on, private garden (greenhouse) untouched
+    this.run('look',()=>this.look.update(gardenSpace));   // R70: shared-world grade on, private garden (greenhouse) untouched
     if(!this.dayNight)try{this.dayNight=new DayNight(this);}catch(e){this.dayNight={update(){},isNight:()=>false};warn('DAYNIGHT','day/night disabled',e);}
-    this.dayNight.update(gardenSpace);   // R81: 30 min day/night on the shared world only (after the look pass)
+    this.run('daynight',()=>this.dayNight.update(gardenSpace));   // R81: 30 min day/night on the shared world only (after the look pass)
     this.hud.setWorldStatus?.(gardenSpace,this.dayNight.isNight?.());   // R88 desktop HUD E status; hidden outside E
     if(!this.lantern&&this.character?.instance)try{this.lantern=new Lantern(this);}catch(e){this.lantern={update(){}};warn('LANTERN','lantern disabled',e);}
-    this.refreshHotbar?.();this.lantern?.update(dt);this.equippedToolVisual?.update(dt);
+    this.run('hotbar',()=>this.refreshHotbar?.());this.run('lantern',()=>this.lantern?.update(dt));this.run('toolvisual',()=>this.equippedToolVisual?.update(dt));
     const portalBusy=this.homePortal?.busy||false;
     const fishingBusy=!gardenSpace&&(this.fishing?.isBusy?.()||false);
     const stableBusy=!gardenSpace&&(this.stable?.isBusy?.()||false);
@@ -304,15 +318,15 @@ export class Game {
     // R23K: tunnel camera remains LOCKED from R23J; Stable still owns it completely in the tunnel and Stable-owned modes.
     // Do not run ThirdPersonCamera first and then fight its result afterwards.
     if(!stableCameraOwner&&!homeCameraOwner)this.followCamera.update(dt);
-    this.combat?.boss?.applyCamera(this.camera,this.character);
-    this.combat?.bear?.applyCamera?.(this.camera,this.character); // R79 Root Bear: same low boss camera, kept inside the grove's open core
+    this.run('giantcam',()=>this.combat?.boss?.applyCamera(this.camera,this.character));
+    this.run('bearcam',()=>this.combat?.bear?.applyCamera?.(this.camera,this.character)); // R79 Root Bear: same low boss camera, kept inside the grove's open core
     const shk=gardenSpace?0:Math.max(this.combat?.boss?.shake||0,this.combat?.bear?.shake||0);if(shk>0){const a=.22*shk;this.camera.position.x+=(Math.random()-.5)*a;this.camera.position.y+=(Math.random()-.5)*a;} // R63 boss impact
     this.homePortal?.update(dt);this.world.update?.(dt,this.time,this.character.position);
 
     if(gardenSpace){
       this.choiceWorld?.update(dt,this.time);
     }else{
-      this.wildlife?.update(dt,this.time,this.character.position);this.orangery?.update(dt,this.time,this.character.position);this.stable?.update(dt,this.time,this.character.position,this.camera,this.renderer);this.fishing?.update(dt,this.time,this.character);this.boatEco?.update();this.lakeRun?.update(dt);if(stableBusy)this.stable?.syncPlayerVisibility?.();
+      this.run('wildlife',()=>this.wildlife?.update(dt,this.time,this.character.position));this.run('orangery',()=>this.orangery?.update(dt,this.time,this.character.position));this.run('stable',()=>this.stable?.update(dt,this.time,this.character.position,this.camera,this.renderer));this.run('fishing',()=>this.fishing?.update(dt,this.time,this.character));this.run('boat',()=>this.boatEco?.update());this.run('lakerun',()=>this.lakeRun?.update(dt));if(stableBusy)this.stable?.syncPlayerVisibility?.();
     }
 
     let seed={near:false},greenhouse={interaction:null};
@@ -332,7 +346,7 @@ export class Game {
         if(!building)R.offer('greenhouse',greenhouse.interaction);
       }
       if(!gardenSpace&&!specialBusy)R.offer('wilds',this.wilds?.update(dt,this.time,this.character,'world').interaction);
-      R.offer('combat',this.combat?.update(dt,this.time,this.character,!specialBusy&&!portalBusy&&!building).interaction);
+      R.offer('combat',this.run('combat',()=>this.combat?.update(dt,this.time,this.character,!specialBusy&&!portalBusy&&!building))?.interaction);
       if(!specialBusy&&!building)R.offer('home',this.homePortal?.interaction?.(this.character.position));
       if(!gardenSpace){
         // Boat mode keeps the controller paused while still exposing FishingV1-owned E interactions.
@@ -373,12 +387,10 @@ export class Game {
     // Normal traversal gets a consistent cutaway fallback only when a roofed structure
     // leaves too little room for third-person framing. Fishing-owned special cameras
     // remain visually locked and therefore restore all structure materials.
-    this.structureVisibility?.update(dt,{enabled:!specialCameraBusy});
+    this.run('structures',()=>this.structureVisibility?.update(dt,{enabled:!specialCameraBusy}));
     const mapVisible=!gardenSpace&&!portalBusy&&!specialBusy&&!this.state.choice.open;
-    this.worldMap?.setVisible?.(mapVisible);
+    this.run('map',()=>{this.worldMap?.setVisible?.(mapVisible);
     this.worldMap?.setMarkers?.(gardenSpace?[]:(this.wilds?.mapMarkers?.()||[]));
-    this.worldMap?.update?.();
-    this.renderer.render(this.scene,this.camera);
-    this.perfHud?.tick();
+    this.worldMap?.update?.();});
   }
 }

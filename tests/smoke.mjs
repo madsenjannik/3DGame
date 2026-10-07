@@ -659,6 +659,17 @@ try {
       return o; }) : {};
     check('day/night + lantern (R81/R84): 21/9 min clock, night in the world and the garden, lantern only at night in the left hand with its own light, mud splat, bear rematch = 1 in-game day', ready && ['clock', 'dayLocked', 'night', 'lantern', 'garden', 'dayAgain', 'mud', 'mudGone', 'rematch'].every(k => r[k]) && !errors.length, errors[0] || JSON.stringify(r));
     await ctx.close(); }
+  // 17g. R114 robustness: an optional system that throws mid-game is switched off and frames keep rendering; a lost WebGL
+  // context that comes back leaves no overlay, one that stays lost offers tap-to-reload; no 12 s 'Startup error'
+  { const ctx = await context({ viewport: { width: 844, height: 390 }, isMobile: true, hasTouch: true }); const { p, errors, ok } = await startGame(ctx, 'fern');
+    const r = ok ? await p.evaluate(async () => { const g = window.__tgw, w = ms => new Promise(r => setTimeout(r, ms)); await w(2500);
+      const f0 = g.renderer.info.render.frame; g.lantern.update = () => { throw new Error('R114 test'); }; await w(4000);
+      const o = { frames: g.renderer.info.render.frame > f0 + 1, off: g.failed.includes('lantern') };
+      const ext = g.renderer.getContext().getExtension('WEBGL_lose_context'); ext.loseContext(); await w(1500); ext.restoreContext(); await w(5000);
+      o.restored = !document.getElementById('gl-lost'); ext.loseContext(); await w(5000); o.overlay = !!document.getElementById('gl-lost');
+      o.noStartupError = !document.body.innerHTML.includes('within 12 seconds'); return o; }) : {};
+    check('robustness (R114): a throwing system is switched off and rendering continues, WebGL loss recovers or offers reload', ok && ['frames', 'off', 'restored', 'overlay', 'noStartupError'].every(k => r[k]) && !errors.length, errors[0] || JSON.stringify(r));
+    await ctx.close(); }
   // 5. DEV disabled: no dev UI or handles leak into normal play
   { const ctx = await context({ viewport: { width: 844, height: 390 }, isMobile: true, hasTouch: true }); const { p, errors, ok } = await startGame(ctx, 'daisy', { dev: false });
     const leak = ok && await p.evaluate(() => !!document.querySelector('.dev-menu-btn') || !!window.__tgw || !document.getElementById('dev-badge').hidden);
