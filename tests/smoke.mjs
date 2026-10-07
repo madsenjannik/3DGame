@@ -25,10 +25,10 @@ async function context(opts = {}, block = []) {
   await ctx.route('**/*', r => { const u = r.request().url(); return !u.startsWith(B) || block.some(re => re.test(u)) ? r.abort() : r.continue(); });
   return ctx;
 }
-async function startGame(ctx, char, { dev = true } = {}) {
+async function startGame(ctx, char, { dev = true, hud = '' } = {}) {   // R110: hud = DEV HUD variant ('classic' = mobile HUD D, 'desktop-e'); R102–R109 checks assumed it was on
   const p = await ctx.newPage(); const errors = [];
   p.on('pageerror', e => errors.push(e.message));
-  await p.addInitScript(([c, d]) => { localStorage.setItem(`dym.homeMovedIn.v1.${c}`, '1'); if (d) localStorage.setItem('tgw.devMenu', '1'); else localStorage.removeItem('tgw.devMenu'); }, [char, dev]);
+  await p.addInitScript(([c, d, h]) => { localStorage.setItem(`dym.homeMovedIn.v1.${c}`, '1'); if (d) localStorage.setItem('tgw.devMenu', '1'); else localStorage.removeItem('tgw.devMenu'); if (h) localStorage.setItem('tgw.hudTestB', h); }, [char, dev, hud]);
   await p.goto(B + `game.html?char=${char}`, { waitUntil: 'load' });
   const ok = await p.waitForFunction(() => !document.getElementById('loading'), null, { timeout: 240000 }).then(() => true, () => false);
   return { p, errors, ok };
@@ -89,7 +89,7 @@ try {
     check('landscape HUD (desktop): key hints, no joystick, resources visible; R70 look on in the world, off in the garden', ok && r.keys && r.joy && r.mats && r.lookWorld && r.lookGarden && !errors.length, errors[0] || JSON.stringify(r));
     await ctx.close(); }
   // 2c. R102 desktop hotbar: keys/B, real pointer hold+drag, real held 3D source mesh, reload persistence
-  { const ctx = await context({ viewport: { width: 1280, height: 720 } }); const { p, errors, ok } = await startGame(ctx, 'tulip');
+  { const ctx = await context({ viewport: { width: 1280, height: 720 } }); const { p, errors, ok } = await startGame(ctx, 'tulip', { hud: 'desktop-e' });
     let r = {};
     if (ok) r = await p.evaluate(async () => {
       const g=window.__tgw,w=ms=>new Promise(x=>setTimeout(x,ms));Object.assign(g.wilds.profile.tools,{axe:true,pickaxe:true,sickle:true,can:true});g.refreshHotbar(true);await w(100);
@@ -128,7 +128,7 @@ try {
       ok&&r.ready&&r.reed===0&&r.bulrush>0&&r.total>0&&!errors.length,errors[0]||JSON.stringify(r));await ctx.close(); }
 
   // 2e. R104 mobile consistency: Bag stays put, quest expands down, Bag tool art + tap-to-equip share desktop state
-  { const ctx = await context({ viewport: { width: 844, height: 390 }, isMobile: true, hasTouch: true }); const { p, errors, ok } = await startGame(ctx, 'succulent');
+  { const ctx = await context({ viewport: { width: 844, height: 390 }, isMobile: true, hasTouch: true }); const { p, errors, ok } = await startGame(ctx, 'succulent', { hud: 'classic' });
     let r = {};
     if (ok) r = await p.evaluate(async () => {
       const g=window.__tgw,w=ms=>new Promise(x=>setTimeout(x,ms));Object.assign(g.wilds.profile.tools,{axe:true,pickaxe:true,sickle:true,can:true});g.refreshHotbar(true);await w(120);
@@ -145,7 +145,7 @@ try {
       return {
         classic:document.body.classList.contains('hud-classic'),
         fixed:Math.abs(opened.bag-closed.bag)<1.5,
-        vertical:Math.abs(opened.w-closed.w)<2&&opened.h>52,
+        vertical:opened.h>52,   // R107 un-froze the open quest width (wide again); it still grows downward
         bagArt,
         selected:g.activeHotbarId()==='pickaxe'&&g.save.profile.hotbar.selected===g.save.profile.hotbar.slots.indexOf('pickaxe'),
         real3d:!!held&&!held.isSprite&&held.parent?.name==='Hand_Socket_R'&&held.children?.some?.(x=>x.isMesh),
@@ -156,7 +156,7 @@ try {
       ok&&r.classic&&r.fixed&&r.vertical&&r.bagArt&&r.selected&&r.real3d&&r.closes&&!errors.length,errors[0]||JSON.stringify(r));await ctx.close(); }
 
   // 2f. R105 mobile fullscreen Bag: fills viewport, blocks/reset gameplay input, close works, tap equip closes
-  { const ctx = await context({ viewport: { width: 844, height: 390 }, isMobile: true, hasTouch: true }); const { p, errors, ok } = await startGame(ctx, 'succulent');
+  { const ctx = await context({ viewport: { width: 844, height: 390 }, isMobile: true, hasTouch: true }); const { p, errors, ok } = await startGame(ctx, 'succulent', { hud: 'classic' });
     let r={};
     if(ok)r=await p.evaluate(async()=>{
       const g=window.__tgw,w=ms=>new Promise(x=>setTimeout(x,ms));Object.assign(g.wilds.profile.tools,{axe:true,pickaxe:true,sickle:true,can:true});g.refreshHotbar(true);await w(80);
@@ -167,7 +167,7 @@ try {
       const opened={
         body:document.body.classList.contains('mobile-bag-open'),
         full:Math.abs(b.left)<1&&Math.abs(b.top)<1&&Math.abs(b.width-innerWidth)<2&&Math.abs(b.height-innerHeight)<2,
-        grid:getComputedStyle(grid).display==='grid'&&getComputedStyle(grid).gridTemplateColumns.split(' ').length===3,
+        grid:getComputedStyle(grid).display==='flex'&&getComputedStyle(grid).flexDirection==='row',   // R107 replaced the R105 3×2 grid with one horizontal slot row
         reset:g.input.moveMagnitude===0&&g.input.frameMove.x===0&&g.input.frameMove.y===0&&!g.input.actionPressed&&!g.input.hopPressed,
         close:!!gp.querySelector('.gear-close')
       };
@@ -180,7 +180,7 @@ try {
       ok&&r.body&&r.full&&r.grid&&r.reset&&r.close&&r.closed&&r.equip&&!errors.length,errors[0]||JSON.stringify(r));await ctx.close(); }
 
   // 2g. R106 cross-platform UI: mobile surfaces the SAME 10-slot hotbar, touch tap + hold/drag share persisted desktop state
-  { const ctx = await context({ viewport: { width: 844, height: 390 }, isMobile: true, hasTouch: true }); const { p, errors, ok } = await startGame(ctx, 'succulent');
+  { const ctx = await context({ viewport: { width: 844, height: 390 }, isMobile: true, hasTouch: true }); const { p, errors, ok } = await startGame(ctx, 'succulent', { hud: 'classic' });
     let r={};
     if(ok){
       r=await p.evaluate(async()=>{
@@ -194,7 +194,7 @@ try {
           sameHotbar:slots.length===10&&cs(q).display==='flex',
           noNumbers:slots.every(x=>cs(x.querySelector('small')).display==='none'),
           bagShape:parseFloat(cs(bag).borderRadius)<25,
-          mapReal:!!mapCanvas&&cs(mapCanvas).display==='block'&&parseFloat(cs(map).width)>=60,
+          mapReal:!!mapCanvas&&cs(mapCanvas).display==='block'&&parseFloat(cs(map).width)>=50,   // R108/R109 compact map 52–56 px
           first:g.save.profile.hotbar.slots.slice()
         };
       });
@@ -209,7 +209,7 @@ try {
       }));
       if(r.stillOpen){
         const slot7=await p.locator('#desktop-hotbar-e .desktop-hotbar-slot[data-slot="6"]').boundingBox();
-        if(slot7){await p.mouse.click(slot7.x+slot7.width/2,slot7.y+slot7.height/2);await p.waitForTimeout(160);}
+        if(slot7){await p.mouse.click(slot7.x+slot7.width/2,slot7.y+slot7.height/2);await p.waitForFunction(()=>!document.body.classList.contains('mobile-bag-open'),null,{timeout:4000}).catch(()=>{});}   // R110: the Bag closes on a 110 ms timer; headless frames are slow
       }
       Object.assign(r,await p.evaluate(()=>{const g=window.__tgw;return{equipped:g.activeHotbarId()==='pickaxe',closed:!document.body.classList.contains('mobile-bag-open'),selected:g.save.profile.hotbar.selected===6};}));
     }
@@ -217,7 +217,7 @@ try {
       ok&&r.open&&r.sameHotbar&&r.noNumbers&&r.bagShape&&r.mapReal&&r.dragged&&r.stillOpen&&r.equipped&&r.closed&&r.selected&&!errors.length,errors[0]||JSON.stringify(r));await ctx.close(); }
 
   // 2h. R107 iPhone screenshot QA: no lower strip, quest wide, inventory horizontal, controls compact
-  { const ctx = await context({ viewport: { width: 844, height: 390 }, isMobile: true, hasTouch: true }); const { p, errors, ok } = await startGame(ctx, 'succulent');
+  { const ctx = await context({ viewport: { width: 844, height: 390 }, isMobile: true, hasTouch: true }); const { p, errors, ok } = await startGame(ctx, 'succulent', { hud: 'classic' });
     let r={};
     if(ok)r=await p.evaluate(async()=>{
       const g=window.__tgw,w=ms=>new Promise(x=>setTimeout(x,ms));await w(100);
@@ -228,7 +228,7 @@ try {
       const gp=document.getElementById('gear-panel'),grid=gp.querySelector('.gear-grid'),gb=gp.getBoundingClientRect(),ab=app.getBoundingClientRect();
       return{
         full:ab.height>=innerHeight-1&&gb.height>=innerHeight-1,
-        questWide:quest.width>=280&&quest.height<180,
+        questWide:quest.width>=228&&quest.height<180,   // R109 set the open quest to 250 (230 on short phones)
         row:getComputedStyle(grid).flexDirection==='row',
         bagSmall:bag.getBoundingClientRect().width<=54,
         actionSmall:action.getBoundingClientRect().width<=66,
@@ -239,7 +239,7 @@ try {
       ok&&r.full&&r.questWide&&r.row&&r.bagSmall&&r.actionSmall&&r.hopSmall&&!errors.length,errors[0]||JSON.stringify(r));await ctx.close(); }
 
   // 2i. R108 desktop-reference mobile proportions: compact collapsed HUD + desktop-sized inventory/hotbar slots
-  { const ctx = await context({ viewport: { width: 844, height: 390 }, isMobile: true, hasTouch: true }); const { p, errors, ok } = await startGame(ctx, 'succulent');
+  { const ctx = await context({ viewport: { width: 844, height: 390 }, isMobile: true, hasTouch: true }); const { p, errors, ok } = await startGame(ctx, 'succulent', { hud: 'classic' });
     let r={};
     if(ok)r=await p.evaluate(async()=>{
       const g=window.__tgw,w=ms=>new Promise(x=>setTimeout(x,ms));await w(100);
@@ -264,7 +264,7 @@ try {
       ok&&r.worldVisible&&r.questCompact&&r.bag50&&r.mapCompact&&r.joyCompact&&r.buttonsCompact&&r.inventorySlot&&r.hotbarSlot&&!errors.length,errors[0]||JSON.stringify(r));await ctx.close(); }
 
   // 2j. R109 phone layout port: 5 gameplay slots, resources visible, Bag left, all 10 inside overlay
-  { const ctx = await context({ viewport: { width: 844, height: 390 }, isMobile: true, hasTouch: true }); const { p, errors, ok } = await startGame(ctx, 'succulent');
+  { const ctx = await context({ viewport: { width: 844, height: 390 }, isMobile: true, hasTouch: true }); const { p, errors, ok } = await startGame(ctx, 'succulent', { hud: 'classic' });
     let r={};
     if(ok)r=await p.evaluate(async()=>{
       const g=window.__tgw,w=ms=>new Promise(x=>setTimeout(x,ms));Object.assign(g.wilds.profile.tools,{axe:true,pickaxe:true,sickle:true,can:true});g.refreshHotbar(true);await w(120);

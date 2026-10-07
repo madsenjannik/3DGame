@@ -5311,3 +5311,129 @@ body.hud-classic.touch.mobile-bag-open .gear-hotbar-label span{display:block!imp
   body.hud-classic.touch.mobile-bag-open .desktop-hotbar-slot{width:46px!important;height:46px!important}
   body.hud-classic.touch.mobile-bag-open .desktop-hotbar-slot .slot-icon{width:33px!important;height:33px!important}
 }
+
+/* ===== R110 mobile HUD D QA pass (GO 07/10, Jannik: 'ramme desktop, men responsivt på mobil') =====
+   MOBILE ONLY (body.hud-classic.touch). Desktop untouched. Fixes from the R109 phone QA at 667/844/932 px:
+   real resource art, no clipped resource bar, readable quest, combat (special ring + hearts + boss bar),
+   fishing/boat replace the gameplay HUD, lantern lives in its quick slot, DEV badge clear of the joystick. */
+
+/* 1. Resources: the same real art as desktop (no placeholder glyphs), Golden Seed with its seed art; never clipped. */
+body.hud-classic.touch #hud .inventory-stack,
+body.hud-classic.touch #hud .inventory-stack.open{
+  overflow:visible!important;
+  max-width:min(500px,calc(100vw - 2 * (max(10px,env(safe-area-inset-left)) + 152px)))!important;
+  padding:4px 4px!important;
+}
+body.hud-classic.touch #hud .seed-card.inventory-card,
+body.hud-classic.touch #hud #materials .material-chip{min-width:0!important;padding:0 6px!important;gap:3px!important;flex:0 1 auto!important}
+body.hud-classic.touch #hud #materials .material-chip i,
+body.hud-classic.touch #hud .seed-card .inventory-icon{
+  width:18px!important;height:18px!important;flex:0 0 18px!important;
+  font-size:0!important;line-height:0!important;color:transparent!important;
+  background-color:transparent!important;background-position:center!important;background-repeat:no-repeat!important;background-size:contain!important;
+  -webkit-mask:none!important;mask:none!important;
+  filter:drop-shadow(0 1px 1px rgba(43,42,36,.14))!important;
+}
+body.hud-classic.touch #hud .seed-card .inventory-icon{width:20px!important;height:20px!important;flex-basis:20px!important;background-image:url(./brand/icons/128/icon-seed.png)!important}
+body.hud-classic.touch #hud #materials .material-chip.wood i{background-image:url(./brand/icons/resources/icon-wood.png)!important}
+body.hud-classic.touch #hud #materials .material-chip.stone i{background-image:url(./brand/icons/resources/icon-stone.png)!important}
+body.hud-classic.touch #hud #materials .material-chip.clay i{background-image:url(./brand/icons/resources/icon-clay.png)!important}
+body.hud-classic.touch #hud #materials .material-chip.fiber i{background-image:url(./brand/icons/resources/icon-fiber.png)!important}
+body.hud-classic.touch #hud #materials .material-chip.amber i{background-image:url(./brand/icons/resources/icon-amber.png)!important}
+body.hud-classic.touch #hud #materials .material-chip.shell i{background-image:url(./brand/icons/resources/icon-shell.png)!important}
+body.hud-classic.touch #hud #materials .material-chip.wild_seed i{background-image:url(./brand/icons/resources/icon-wild-seed.png)!important}
+body.hud-classic.touch #hud .seed-card b{color:#8d681f!important}
+body.hud-classic.touch #hud .seed-card > span:last-child{display:flex!important;align-items:center!important}
+
+/* Narrow phones: a slimmer world-status capsule frees room for the resource bar. */
+@media(max-width:720px){
+  body.hud-classic.touch .desktop-world-status{min-width:0!important;padding:0 10px 0 6px!important;gap:6px!important}
+  body.hud-classic.touch .desktop-world-status b{font-size:10.5px!important}
+  body.hud-classic.touch .desktop-world-status i{width:24px!important;height:24px!important;flex-basis:24px!important}
+  body.hud-classic.touch #hud .inventory-stack,
+  body.hud-classic.touch #hud .inventory-stack.open{max-width:calc(100vw - 2 * (max(10px,env(safe-area-inset-left)) + 124px))!important}
+  body.hud-classic.touch #hud .seed-card.inventory-card,
+  body.hud-classic.touch #hud #materials .material-chip{padding:0 4px!important}
+  body.hud-classic.touch #hud #materials .material-chip i{width:16px!important;height:16px!important;flex-basis:16px!important}
+}
+
+/* 2. Quest: wide enough to read the title (two lines max), like desktop's card under the map. */
+body.hud-classic.touch #hud #objective.objective-card:not(.open){width:min(220px,30vw)!important;max-width:min(220px,30vw)!important;height:auto!important;min-height:42px!important;padding:6px 26px 6px 50px!important}
+body.hud-classic.touch #hud #objective.objective-card:not(.open) b{white-space:normal!important;display:-webkit-box!important;-webkit-line-clamp:2!important;-webkit-box-orient:vertical!important;overflow:hidden!important;text-overflow:ellipsis!important;line-height:1.15!important}
+@media(max-width:720px){body.hud-classic.touch #hud #objective.objective-card:not(.open){width:196px!important;max-width:196px!important}}
+
+/* 3. Combat: one round special ring like desktop (bottom-right, above Hop/Action); no duplicate meter pill, so
+      the hearts above the quickbar are never covered. Boss bar stays between status and map. */
+body.hud-classic.touch .special-bar{display:none!important}
+body.hud-classic.touch .special-btn{display:none!important}
+body.hud-classic.touch .special-btn.show{
+  display:block!important;position:fixed!important;z-index:29!important;
+  left:auto!important;top:auto!important;
+  right:max(14px,env(safe-area-inset-right))!important;
+  bottom:calc(74px + env(safe-area-inset-bottom))!important;
+  width:58px!important;height:58px!important;min-width:0!important;min-height:0!important;max-height:none!important;
+  padding:0!important;border:0!important;border-radius:50%!important;
+  background:conic-gradient(#e2b552 var(--k),rgba(196,188,168,.80) var(--k))!important;
+  box-shadow:0 8px 16px rgba(43,42,36,.22)!important;transform:none!important;opacity:1!important;
+}
+body.hud-classic.touch .special-btn i{
+  position:absolute!important;inset:5px!important;width:auto!important;height:auto!important;
+  border:3px solid #fffaf0!important;border-radius:50%!important;
+  background-color:#6f9d45!important;background-position:center!important;background-size:74%!important;background-repeat:no-repeat!important;
+  box-shadow:inset 0 2px 0 rgba(255,255,255,.16)!important;
+}
+body.hud-classic.touch .special-btn.full i{box-shadow:inset 0 2px 0 rgba(255,255,255,.16),0 0 0 2px rgba(226,181,82,.45),0 0 14px rgba(226,181,82,.5)!important}
+body.hud-classic.touch .special-btn .key{display:none!important}
+body.hud-classic.touch .special-btn b{
+  position:absolute!important;left:50%!important;top:auto!important;bottom:-9px!important;transform:translateX(-50%)!important;
+  padding:2px 6px!important;border-radius:999px!important;white-space:nowrap!important;
+  background:linear-gradient(180deg,#fffaf0,#efe6d1)!important;color:#2b2a24!important;
+  font:800 7.5px/1 Manrope,system-ui,sans-serif!important;letter-spacing:.08em!important;text-shadow:none!important;
+  box-shadow:0 3px 7px rgba(43,42,36,.16)!important;
+}
+body.hud-classic.touch .boss-bar{
+  top:calc(max(12px,env(safe-area-inset-top)) + 6px)!important;
+  width:min(420px,calc(100vw - 2 * (max(10px,env(safe-area-inset-left)) + 160px)))!important;
+}
+@media(max-width:720px){body.hud-classic.touch .boss-bar{width:calc(100vw - 2 * (max(10px,env(safe-area-inset-left)) + 132px))!important}}
+@media(max-height:430px) and (orientation:landscape){
+  body.hud-classic.touch .special-btn.show{right:max(10px,env(safe-area-inset-right))!important;bottom:calc(66px + env(safe-area-inset-bottom))!important;width:54px!important;height:54px!important}
+}
+
+/* 4. Fishing / boat replace the gameplay HUD (HUD rule): no quickbar, Bag, hearts or world capsule underneath. */
+body.hud-classic.touch.fishing-active .desktop-hotbar-e,
+body.hud-classic.touch.fishing-active #hud #hud-bag.hud-fold-btn,
+body.hud-classic.touch.fishing-active .desktop-world-status,
+body.hud-classic.touch.fishing-active .hearts,
+body.hud-classic.touch.fishing-active #action,
+body.hud-classic.touch.fishing-active #hop-btn,
+body.hud-classic.touch.boating-active .desktop-hotbar-e,
+body.hud-classic.touch.boating-active #hud #hud-bag.hud-fold-btn,
+body.hud-classic.touch.boating-active .hearts{display:none!important}
+/* Fishing controls in the same cream/moss family; no keyboard hint on a touch screen. */
+body.hud-classic.touch #fishing-v1 .fishing-pill,
+body.hud-classic.touch #fishing-v1 .fishing-close{
+  background:rgba(255,250,240,.92)!important;color:#303129!important;border:1px solid rgba(196,188,168,.36)!important;
+  box-shadow:0 5px 13px rgba(43,42,36,.15)!important;-webkit-backdrop-filter:blur(6px)!important;backdrop-filter:blur(6px)!important;
+  font:800 11px/1 Manrope,system-ui,sans-serif!important;text-shadow:none!important;
+}
+body.hud-classic.touch #fishing-v1 .fishing-badge{background:#e2b552!important;color:#2b2a24!important}
+body.hud-classic.touch #fishing-v1 .fishing-close .k{display:none!important}
+body.hud-classic.touch #fishing-v1 .fishing-fbtn{
+  background:linear-gradient(180deg,#7dac51,#6f9d45)!important;color:#fffaf0!important;
+  box-shadow:inset 0 2px 0 rgba(255,255,255,.18),inset 0 -6px 0 rgba(55,87,36,.28),0 8px 16px rgba(43,42,36,.20)!important;
+}
+body.hud-classic.touch #fishing-v1 .fishing-fbtn-ring{border-color:rgba(255,250,240,.75)!important}
+
+/* 5. Lantern: it lives in its quick slot on phones (tap = light/put away at night); no extra floating button. */
+body.hud-classic.touch #lantern-btn{display:none!important}
+body.hud-classic.touch.lantern-lit .desktop-hotbar-slot[data-icon="lantern"]{
+  border-color:#e2b552!important;
+  box-shadow:inset 0 2px 0 rgba(255,255,255,.94),0 0 0 2px rgba(255,214,120,.75),0 0 16px rgba(255,190,90,.55),0 6px 14px rgba(43,42,36,.15)!important;
+}
+
+/* 6. DEV badge (DEV only) moves under the world capsule so it never sits on the joystick. */
+body.hud-classic.touch .dev-menu-btn{left:max(14px,env(safe-area-inset-left))!important;bottom:auto!important;top:calc(max(12px,env(safe-area-inset-top)) + 52px)!important;height:24px!important;padding:0 9px!important;font-size:9px!important}
+/* 7. Drag ghost on phones follows the finger and never blocks the drop target (it had no fixed position and caught
+      elementFromPoint, so hold+drag in Bag never moved a slot). Same rule as desktop. */
+body.hud-classic.touch .desktop-hotbar-slot.hotbar-drag-ghost,body.hud-classic.touch.mobile-bag-open .desktop-hotbar-slot.hotbar-drag-ghost,body.hud-classic.touch:not(.mobile-bag-open) .desktop-hotbar-slot.hotbar-drag-ghost{position:fixed!important;left:0!important;top:0!important;z-index:10060!important;margin:0!important;pointer-events:none!important;opacity:.94!important;transition:none!important}

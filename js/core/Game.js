@@ -14,7 +14,7 @@ import { GreenhouseProgressionSystem } from '../gameplay/GreenhouseProgressionSy
 import { OrangeryHubSystem } from '../gameplay/OrangeryHubSystem.js?build=CAMERA-CUTAWAY-CONTEXT-R21D-20260928E';
 import { FishingV1System } from '../gameplay/FishingV1System.js?build=BAG-NIGHT-R84-20261006A';
 import { ChoicePanel } from '../ui/ChoicePanel.js';
-import { Hud } from '../ui/Hud.js?build=MOBILE-LAYOUT-R109-20261007A';
+import { Hud } from '../ui/Hud.js?build=MOBILE-QA-R110-20261007A';
 import { WorldMap } from '../ui/WorldMap.js?build=WORLD-MAP-R35B-20260930B';
 import { GardenEnvironment } from '../world/GardenEnvironment.js?build=WATER-VEG-R103-20261006A';
 import { WildlifeSystem } from '../world/WildlifeSystem.js?build=CAMERA-CUTAWAY-CONTEXT-R21D-20260928E';
@@ -31,7 +31,7 @@ import { InteractionResolver } from './InteractionResolver.js';
 import { log, warn } from '../dev/Log.js';
 import { LookPass } from '../visual/LookPass.js?build=BAG-NIGHT-R84-20261006A';
 import { DayNight } from '../visual/DayNight.js?build=BAG-NIGHT-R84-20261006A';   // R81
-import { Lantern } from '../gameplay/Lantern.js?build=HOTBAR-SHORTCUTS-R101-20261006A';     // R81/R101
+import { Lantern } from '../gameplay/Lantern.js?build=MOBILE-QA-R110-20261007A';     // R81/R101
 import { BoatEconomySystem } from '../gameplay/BoatEconomySystem.js';
 import { LakeRunSystem } from '../gameplay/LakeRunSystem.js';
 import { GardenBuildSystem } from '../gameplay/GardenBuildSystem.js';
@@ -211,14 +211,22 @@ export class Game {
   }
   equipHotbarSlot(i){
     if(!this.canEditHotbar()||!Number.isInteger(i)||i<0||i>9)return false;
-    const hb=this.syncHotbarLayout();hb.selected=i;this.save.persist();this.syncHotbarEquipment();this.hud.renderDesktopHotbar?.();return true;
+    const hb=this.syncHotbarLayout(),was=hb.selected;hb.selected=i;this.save.persist();this.syncHotbarEquipment();this.hud.renderDesktopHotbar?.();
+    this.phoneLanternTap(hb.slots[i],was===i);return true;
+  }
+  // R110 (phones, HUD D): the lantern quick slot replaces the separate lantern button. Choosing it at night lights it;
+  // tapping it again puts the light away. By day it only says when it works. Desktop keeps L + its own slot logic.
+  phoneLanternTap(id,again){
+    if(id!=='lantern'||!this.input?.isTouch||!document.body.classList.contains('hud-classic')||!this.lantern?.ready)return;
+    if(!this.lantern.available()){if(again)this.hud.showToast?.('The lantern only lights at night');return;}
+    if(again||!this.lantern.on)this.lantern.toggle();
   }
   equipGearItem(id){
     // R104: Bag selection is the touch equivalent of pressing a desktop quick-slot key.
     // It selects the same saved slot and therefore uses the exact same held-tool/combat state.
     if(!this.canChangeEquippedGear()||!id||id==='vest')return false;
     const hb=this.syncHotbarLayout(),i=hb.slots.indexOf(id);if(i<0)return false;
-    hb.selected=i;this.save.persist();this.syncHotbarEquipment();this.hud.renderDesktopHotbar?.();
+    const was=hb.selected;hb.selected=i;this.save.persist();this.syncHotbarEquipment();this.hud.renderDesktopHotbar?.();this.phoneLanternTap(id,was===i);
     if(this.hud.gear?.classList.contains('open'))this.hud.renderGear?.();return true;
   }
   moveHotbarSlot(from,to){

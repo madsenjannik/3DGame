@@ -43,7 +43,7 @@ export class Lantern {
   update(dt) {
     if (!this.socket) return;
     const avail = this.available(), carry = !!this.ready && (this.g.world.space === 'world' || this.g.world.space === 'garden'), show = carry && (this.equipped || (avail && this.on));
-    document.body.classList.toggle('lantern-ready', avail); this.btn?.classList.toggle('on', this.on && avail);
+    document.body.classList.toggle('lantern-ready', avail); this.btn?.classList.toggle('on', this.on && avail); document.body.classList.toggle('lantern-lit', avail && this.on);   // R110: lit quick slot on phones
     if (this.model) this.model.visible = show;
     this.t += dt; const f = .86 + .1 * Math.sin(this.t * 13.1) + .06 * Math.sin(this.t * 31.7);
     if (this.light) {
