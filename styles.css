@@ -5437,3 +5437,18 @@ body.hud-classic.touch .dev-menu-btn{left:max(14px,env(safe-area-inset-left))!im
 /* 7. Drag ghost on phones follows the finger and never blocks the drop target (it had no fixed position and caught
       elementFromPoint, so hold+drag in Bag never moved a slot). Same rule as desktop. */
 body.hud-classic.touch .desktop-hotbar-slot.hotbar-drag-ghost,body.hud-classic.touch.mobile-bag-open .desktop-hotbar-slot.hotbar-drag-ghost,body.hud-classic.touch:not(.mobile-bag-open) .desktop-hotbar-slot.hotbar-drag-ghost{position:fixed!important;left:0!important;top:0!important;z-index:10060!important;margin:0!important;pointer-events:none!important;opacity:.94!important;transition:none!important}
+
+/* ===== R111 Jannik's icon set (07/10): Life Vest gets its own icon in the quick slots (mask, moss) instead of
+   the 'LV' letter fallback. Same rule for the desktop slot (asset only, no layout change). */
+body.hud-classic.touch .desktop-hotbar-slot[data-icon="vest"] .slot-icon,
+body.hud-classic.touch .desktop-hotbar-slot[data-icon="vest"].filled .slot-icon,
+body.hud-desktop-e:not(.touch) .desktop-hotbar-slot[data-icon="vest"].filled .slot-icon,
+body.hud-desktop-e:not(.touch) .desktop-hotbar-e .desktop-hotbar-slot[data-icon="vest"].filled .slot-icon{background-image:none!important;
+  background:#6f9d45!important;
+  -webkit-mask:url(./brand/icons/svg/icon-vest.svg) center/72% no-repeat!important;mask:url(./brand/icons/svg/icon-vest.svg) center/72% no-repeat!important;
+  filter:none!important;
+}
+body.hud-classic.touch .desktop-hotbar-slot[data-icon="vest"] .slot-fallback,
+body.hud-desktop-e:not(.touch) .desktop-hotbar-slot[data-icon="vest"] .slot-fallback{display:none!important}
+body.hud-classic.touch .gear-item .ico-mask,
+body.hud-desktop-e:not(.touch) .gear-item .ico-mask{display:block!important;width:34px!important;height:34px!important;flex:0 0 34px!important;margin:0 auto!important;background:#6f9d45!important;-webkit-mask:var(--ico) center/contain no-repeat!important;mask:var(--ico) center/contain no-repeat!important}

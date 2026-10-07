@@ -14,7 +14,7 @@ import { GreenhouseProgressionSystem } from '../gameplay/GreenhouseProgressionSy
 import { OrangeryHubSystem } from '../gameplay/OrangeryHubSystem.js?build=CAMERA-CUTAWAY-CONTEXT-R21D-20260928E';
 import { FishingV1System } from '../gameplay/FishingV1System.js?build=BAG-NIGHT-R84-20261006A';
 import { ChoicePanel } from '../ui/ChoicePanel.js';
-import { Hud } from '../ui/Hud.js?build=MOBILE-QA-R110-20261007A';
+import { Hud } from '../ui/Hud.js?build=ICONSET-R111-20261007A';
 import { WorldMap } from '../ui/WorldMap.js?build=WORLD-MAP-R35B-20260930B';
 import { GardenEnvironment } from '../world/GardenEnvironment.js?build=WATER-VEG-R103-20261006A';
 import { WildlifeSystem } from '../world/WildlifeSystem.js?build=CAMERA-CUTAWAY-CONTEXT-R21D-20260928E';
@@ -31,7 +31,7 @@ import { InteractionResolver } from './InteractionResolver.js';
 import { log, warn } from '../dev/Log.js';
 import { LookPass } from '../visual/LookPass.js?build=BAG-NIGHT-R84-20261006A';
 import { DayNight } from '../visual/DayNight.js?build=BAG-NIGHT-R84-20261006A';   // R81
-import { Lantern } from '../gameplay/Lantern.js?build=MOBILE-QA-R110-20261007A';     // R81/R101
+import { Lantern } from '../gameplay/Lantern.js?build=ICONSET-R111-20261007A';     // R81/R101
 import { BoatEconomySystem } from '../gameplay/BoatEconomySystem.js';
 import { LakeRunSystem } from '../gameplay/LakeRunSystem.js';
 import { GardenBuildSystem } from '../gameplay/GardenBuildSystem.js';
@@ -121,7 +121,7 @@ export class Game {
       if(t.sickle)out.push({id:'sickle',icon:'sickle',hotbarIcon:'sickle',name:'Sickle'});
       if(t.can)out.push({id:'can',icon:'drop',hotbarIcon:'watering-can',name:'Watering Can',n:`${this.wilds.profile.water||0} water`});
       if(own.rodBamboo||this.fishing?.starter)out.push({id:'rod',icon:'rod',hotbarIcon:'rod',name:'Bamboo Rod'});
-      if(own.vest)out.push({id:'vest',name:'Life Vest'});
+      if(own.vest)out.push({id:'vest',icon:'vest',name:'Life Vest'});   // R111: Jannik's icon-vest.svg
       if(this.lantern?.ready)out.push({id:'lantern',icon:'lantern',hotbarIcon:'lantern',name:'Lantern',n:'night'});
       return out;};
     this.hud.hotbarItems=()=>this.hotbarItems();this.hud.hotbarSelected=()=>this.save.profile.hotbar?.selected??-1;this.hud.selectedGearId=()=>this.activeHotbarId();
