@@ -14,24 +14,24 @@ import { GreenhouseProgressionSystem } from '../gameplay/GreenhouseProgressionSy
 import { OrangeryHubSystem } from '../gameplay/OrangeryHubSystem.js?build=CAMERA-CUTAWAY-CONTEXT-R21D-20260928E';
 import { FishingV1System } from '../gameplay/FishingV1System.js?build=BAG-NIGHT-R84-20261006A';
 import { ChoicePanel } from '../ui/ChoicePanel.js';
-import { Hud } from '../ui/Hud.js?build=ROBUST-R114-20261007A';
+import { Hud } from '../ui/Hud.js?build=PHONE-HUD-FIX-R115-20261007A';
 import { WorldMap } from '../ui/WorldMap.js?build=WORLD-MAP-R35B-20260930B';
 import { GardenEnvironment } from '../world/GardenEnvironment.js?build=WATER-VEG-R103-20261006A';
 import { WildlifeSystem } from '../world/WildlifeSystem.js?build=CAMERA-CUTAWAY-CONTEXT-R21D-20260928E';
 import { PlayerHomePortalSystem } from '../world/PlayerHomePortalSystem.js?build=ENTRY-R29-20260929A';
 import { NorthStableSystem } from '../world/NorthStableSystem.js?build=STABLE-R42-20261001A';
-import { SaveGame } from './SaveGame.js?build=ROBUST-R114-20261007A';
+import { SaveGame } from './SaveGame.js?build=PHONE-HUD-FIX-R115-20261007A';
 import { WildsLoopSystem } from '../gameplay/WildsLoopSystem.js?build=HUDTEST-D-R78.1-20261005A';
 import { WorkbenchPanel } from '../ui/WorkbenchPanel.js';
 import { DevMenu, devMenuEnabled } from '../ui/DevMenu.js?build=HUD-E-DESKTOP-R85-20261006A';
 import { applyControlProfile, defaultProfile } from './ControlProfiles.js';
 import { PerfHud } from '../dev/PerfHud.js';
-import { QualityManager, QUALITY } from './Quality.js?build=ROBUST-R114-20261007A';
+import { QualityManager, QUALITY } from './Quality.js?build=PHONE-HUD-FIX-R115-20261007A';
 import { InteractionResolver } from './InteractionResolver.js';
 import { log, warn } from '../dev/Log.js';
 import { LookPass } from '../visual/LookPass.js?build=BAG-NIGHT-R84-20261006A';
 import { DayNight } from '../visual/DayNight.js?build=BAG-NIGHT-R84-20261006A';   // R81
-import { Lantern } from '../gameplay/Lantern.js?build=ROBUST-R114-20261007A';     // R81/R101
+import { Lantern } from '../gameplay/Lantern.js?build=PHONE-HUD-FIX-R115-20261007A';     // R81/R101
 import { BoatEconomySystem } from '../gameplay/BoatEconomySystem.js';
 import { LakeRunSystem } from '../gameplay/LakeRunSystem.js';
 import { GardenBuildSystem } from '../gameplay/GardenBuildSystem.js';

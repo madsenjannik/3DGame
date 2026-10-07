@@ -5452,3 +5452,31 @@ body.hud-classic.touch .desktop-hotbar-slot[data-icon="vest"] .slot-fallback,
 body.hud-desktop-e:not(.touch) .desktop-hotbar-slot[data-icon="vest"] .slot-fallback{display:none!important}
 body.hud-classic.touch .gear-item .ico-mask,
 body.hud-desktop-e:not(.touch) .gear-item .ico-mask{display:block!important;width:34px!important;height:34px!important;flex:0 0 34px!important;margin:0 auto!important;background:#6f9d45!important;-webkit-mask:var(--ico) center/contain no-repeat!important;mask:var(--ico) center/contain no-repeat!important}
+
+/* ===== R115 · mobile HUD D audit fixes (GO 07/10, package D). Phones only: body.hud-classic.touch. Desktop E untouched. ===== */
+/* H1 toasts were drawn under the opaque resource bar: centre pill just below it, above the HUD */
+html body.hud-classic.touch #toast{top:calc(max(9px,env(safe-area-inset-top)) + 52px)!important;z-index:40!important;padding:7px 14px!important;border-radius:999px!important;
+  background:rgba(255,250,240,.95)!important;color:#2b2a24!important;text-shadow:none!important;letter-spacing:.08em!important;font-size:11px!important;
+  box-shadow:0 5px 13px rgba(43,42,36,.16),inset 0 0 0 1px rgba(153,128,67,.28)!important;white-space:nowrap!important;max-width:calc(100vw - 32px)!important;overflow:hidden!important;text-overflow:ellipsis!important}
+/* H2 the resting joystick showed through fishing, races, talks and the rotate gate (R108/R109 opacity beat the old hide rule) */
+html body.hud-classic.touch.fishing-active #joy-rest,html body.hud-classic.touch.boating-active #joy-rest,html body.hud-classic.touch.stable-race-active #joy-rest,
+html body.hud-classic.touch.stable-talk-active #joy-rest,html body.hud-classic.touch.rotate-gated #joy-rest{opacity:0!important}
+/* H3 the world-status capsule peeked out behind the Lake Run timer; same for boat, races and talks */
+html body.hud-classic.touch.lakerun-active .desktop-world-status,html body.hud-classic.touch.boating-active .desktop-world-status,
+html body.hud-classic.touch.stable-race-active .desktop-world-status,html body.hud-classic.touch.stable-talk-active .desktop-world-status,
+html body.hud-classic.touch.stable-race-active .desktop-hotbar-e,html body.hud-classic.touch.stable-talk-active .desktop-hotbar-e,
+html body.hud-classic.touch.stable-race-active .hearts,html body.hud-classic.touch.stable-talk-active .hearts{display:none!important}
+/* M2 quest text was 11 / 9.5 px: readable minimum on a moving scene */
+html body.hud-classic.touch #hud #objective #objective-title{font-size:13px!important;line-height:1.2!important}
+html body.hud-classic.touch #hud #objective #objective-copy{font-size:11px!important;line-height:1.3!important}
+@media (max-width:720px){html body.hud-classic.touch #hud #objective #objective-title{font-size:12px!important}}
+/* M5 touch targets of at least 44 pt */
+html body.hud-classic.touch .gear-close,html body.hud-classic.touch.mobile-bag-open .gear-close{width:44px!important;height:44px!important;min-width:44px!important;flex-basis:44px!important}
+html body.hud-classic.touch #fishing-v1 #fishing-gear-btn,html body.hud-classic.touch #fishing-v1 #fishing-log-btn{min-height:44px!important}
+/* M6 'Leave spot' kept padding for the hidden key chip: centred label, same height as its neighbours */
+html body.hud-classic.touch #fishing-v1 #fishing-close{padding:0 16px!important;min-height:44px!important;height:44px!important;display:inline-flex!important;align-items:center!important;justify-content:center!important}
+/* M10 Bag names were cut off ('Stone Pic…'): two lines instead of an ellipsis */
+html body.hud-classic.touch.mobile-bag-open .gear-item em{font-size:9px!important;line-height:1.1!important;white-space:normal!important;overflow:hidden!important;text-overflow:clip!important;
+  display:-webkit-box!important;-webkit-box-orient:vertical!important;-webkit-line-clamp:2!important;max-height:2.3em!important;text-align:center!important;word-break:normal!important}
+/* L4 the special-ring label was 7.5 px */
+html body.hud-classic.touch .special-btn b{font-size:10px!important;padding:2px 7px!important;bottom:-11px!important}
