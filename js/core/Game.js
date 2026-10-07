@@ -3,37 +3,37 @@ import * as THREE from 'three';
 import { AssetRegistry } from './AssetRegistry.js';
 import { CharacterController } from './CharacterController.js?build=MOBILE-GESTURE-R34B-20260930A';
 import { GameState } from './GameState.js';
-import { InputManager } from './InputManager.js?build=PHONE-HUD-R122-20261007A';
+import { InputManager } from './InputManager.js?build=SLOTS3-R123-20261007A';
 import { ThirdPersonCamera } from './ThirdPersonCamera.js?build=MOBILE-GESTURE-R34B-20260930A';
 import { CameraOcclusionSystem } from './CameraOcclusionSystem.js?build=NORTH-STABLE-R23O-20260929A';
 import { StructureVisibilitySystem } from '../visual/StructureVisibilitySystem.js?build=NORTH-STABLE-R23O-20260929A';
 import { characterCatalog, resourceCatalog, buildingCatalog } from '../data/assetCatalog.js';
-import { CollectibleSystem } from '../gameplay/CollectibleSystem.js?build=PHONE-HUD-R122-20261007A';
-import { MeaningfulChoiceSystem } from '../gameplay/MeaningfulChoiceSystem.js?build=PHONE-HUD-R122-20261007A';
+import { CollectibleSystem } from '../gameplay/CollectibleSystem.js?build=SLOTS3-R123-20261007A';
+import { MeaningfulChoiceSystem } from '../gameplay/MeaningfulChoiceSystem.js?build=SLOTS3-R123-20261007A';
 import { GreenhouseProgressionSystem } from '../gameplay/GreenhouseProgressionSystem.js?build=CAMERA-CUTAWAY-CONTEXT-R21D-20260928E';
 import { OrangeryHubSystem } from '../gameplay/OrangeryHubSystem.js?build=CAMERA-CUTAWAY-CONTEXT-R21D-20260928E';
 import { FishingV1System } from '../gameplay/FishingV1System.js?build=BAG-NIGHT-R84-20261006A';
 import { ChoicePanel } from '../ui/ChoicePanel.js';
-import { Hud } from '../ui/Hud.js?build=PHONE-HUD-R122-20261007A';
+import { Hud } from '../ui/Hud.js?build=SLOTS3-R123-20261007A';
 import { WorldMap } from '../ui/WorldMap.js?build=WORLD-MAP-R35B-20260930B';
 import { GardenEnvironment } from '../world/GardenEnvironment.js?build=WATER-VEG-R103-20261006A';
 import { WildlifeSystem } from '../world/WildlifeSystem.js?build=CAMERA-CUTAWAY-CONTEXT-R21D-20260928E';
 import { PlayerHomePortalSystem } from '../world/PlayerHomePortalSystem.js?build=ENTRY-R29-20260929A';
 import { NorthStableSystem } from '../world/NorthStableSystem.js?build=STABLE-R42-20261001A';
-import { SaveGame } from './SaveGame.js?build=PHONE-HUD-R122-20261007A';
-import { WildsLoopSystem } from '../gameplay/WildsLoopSystem.js?build=PHONE-HUD-R122-20261007A';
+import { SaveGame } from './SaveGame.js?build=SLOTS3-R123-20261007A';
+import { WildsLoopSystem } from '../gameplay/WildsLoopSystem.js?build=SLOTS3-R123-20261007A';
 import { WorkbenchPanel } from '../ui/WorkbenchPanel.js';
 import { DevMenu, devMenuEnabled } from '../ui/DevMenu.js?build=HUD-E-DESKTOP-R85-20261006A';
 import { applyControlProfile, defaultProfile } from './ControlProfiles.js';
 import { PerfHud } from '../dev/PerfHud.js';
-import { QualityManager, QUALITY } from './Quality.js?build=PHONE-HUD-R122-20261007A';
+import { QualityManager, QUALITY } from './Quality.js?build=SLOTS3-R123-20261007A';
 import { InteractionResolver } from './InteractionResolver.js';
 import { log, warn } from '../dev/Log.js';
 import { LookPass } from '../visual/LookPass.js?build=BAG-NIGHT-R84-20261006A';
 import { DayNight } from '../visual/DayNight.js?build=BAG-NIGHT-R84-20261006A';   // R81
-import { GameMenu } from '../ui/GameMenu.js?build=PHONE-HUD-R122-20261007A';   // R121
-import { ControlTips } from '../ui/ControlTips.js?build=PHONE-HUD-R122-20261007A';   // R120
-import { Lantern } from '../gameplay/Lantern.js?build=PHONE-HUD-R122-20261007A';     // R81/R101
+import { GameMenu } from '../ui/GameMenu.js?build=SLOTS3-R123-20261007A';   // R121
+import { ControlTips } from '../ui/ControlTips.js?build=SLOTS3-R123-20261007A';   // R120
+import { Lantern } from '../gameplay/Lantern.js?build=SLOTS3-R123-20261007A';     // R81/R101
 import { BoatEconomySystem } from '../gameplay/BoatEconomySystem.js';
 import { LakeRunSystem } from '../gameplay/LakeRunSystem.js';
 import { GardenBuildSystem } from '../gameplay/GardenBuildSystem.js';
@@ -203,6 +203,8 @@ export class Game {
     for(let i=0;i<10;i++){const id=slots[i];if(!known.has(id)||seen.has(id))slots[i]=null;else if(id)seen.add(id);}
     // Preserve known saved IDs even while an optional system is still loading. Only truly new carried items fill empty slots.
     for(const it of items){if(!it?.id||seen.has(it.id))continue;const n=slots.indexOf(null);if(n<0)break;slots[n]=it.id;seen.add(it.id);}
+    // R123 (phones): only 3 slots show; the vest is worn and the lantern has its own night button, so neither takes one of them.
+    if(this.input?.isTouch)for(let i=0;i<3;i++)if(slots[i]==='vest'||slots[i]==='lantern'){const j=slots.indexOf(null,3);if(j<0)break;slots[j]=slots[i];slots[i]=null;if(hb.selected===i)hb.selected=-1;}
     hb.slots=slots;if(!Number.isInteger(hb.selected)||hb.selected<0||hb.selected>9)hb.selected=-1;return hb;
   }
   hotbarItems(){
@@ -252,8 +254,17 @@ export class Game {
     if(hb.selected===from)hb.selected=to;else if(hb.selected===to)hb.selected=from;
     this.save.persist();this.refreshHotbar(true);return true;
   }
+  // R123 (phones): gathering puts the right owned tool in the hand for a moment, like Stardew; then the slot choice returns.
+  autoTool(it){
+    if(!this.input?.isTouch||!it?.type)return;const w=this.wilds;let id=null;
+    if(it.type==='wilds-gather'){const d=it.node?.def||{};id=d.requires||d.tool||null;}
+    else if(it.type==='wilds-cut')id='sickle';
+    else if(it.type==='wilds-weed')id='sickle';
+    if(!id||!w?.has?.(id))return;
+    this._autoToolUntil=performance.now()+1800;this.equippedToolVisual?.set(id);
+  }
   syncHotbarEquipment(){
-    const id=this.activeHotbarId();this.equippedToolVisual?.set(id==='lantern'||id==='vest'?null:id);
+    const id=this.activeHotbarId();if(!(this._autoToolUntil>performance.now()))this.equippedToolVisual?.set(id==='lantern'||id==='vest'?null:id);
     this.lantern?.setEquipped?.(id==='lantern');
   }
   refreshHotbar(force=false){
@@ -389,7 +400,7 @@ export class Game {
       else if(interaction.type==='first-seed')this.collectible?.collect(this.character);
       else if(interaction.type==='greenhouse')this.greenhouse?.interact(this.character);
       else if(interaction.type?.startsWith?.('stable-'))this.stable?.interact(interaction);
-      else if(interaction.type?.startsWith?.('wilds-'))this.wilds.interact(interaction,this.character);
+      else if(interaction.type?.startsWith?.('wilds-')){this.autoTool(interaction);this.wilds.interact(interaction,this.character);}
       else if(interaction.type?.startsWith?.('combat-'))this.combat?.interact(interaction.type);
       else if(interaction.type?.startsWith?.('lakerun-'))this.lakeRun?.interact(interaction.type);
       else if(['fish-board','fishing-shop','fishing-spot','fishing-shore','boat-board','boat-fish','boat-dock'].includes(interaction.type))this.fishing?.interact(interaction.type);

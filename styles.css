@@ -5582,3 +5582,13 @@ html body.hud-classic.touch.world-map-open :is(#joy-rest,#joy,#action,#hop-btn,#
 #game-menu .gm-confirm[hidden]{display:none}
 #game-menu .gm-confirm p{margin:0 0 2px;font:600 13px/1.45 Manrope,system-ui,sans-serif;color:#34352d}
 html body.hud-classic.touch #hud #inventory.inventory-stack b{font-size:13px!important;font-weight:800!important}
+
+/* ===== R123 · phones: 3 quick slots, lantern back as a round night button left of Hop (GO 07/10) ===== */
+html body.hud-classic.touch:not(.mobile-bag-open) .desktop-hotbar-slot:nth-child(n+4){display:none!important}
+html body.hud-classic.touch.lantern-ready #lantern-btn{display:grid!important;place-items:center!important;position:fixed!important;left:auto!important;top:auto!important;
+  right:calc(max(10px,env(safe-area-inset-right)) + 112px)!important;bottom:calc(max(10px,env(safe-area-inset-bottom)))!important;width:46px!important;height:46px!important;border:0!important;border-radius:50%!important;
+  background:linear-gradient(180deg,#fff9e9,#f3e6c8)!important;box-shadow:0 4px 10px rgba(43,42,36,.16),inset 0 0 0 1px rgba(153,128,67,.3)!important;opacity:1!important;pointer-events:auto!important;z-index:30!important}
+html body.hud-classic.touch.lantern-ready #lantern-btn .ico-mask{width:24px!important;height:24px!important;background:#7a3b1d!important}
+html body.hud-classic.touch.lantern-ready #lantern-btn.on{background:linear-gradient(180deg,#ffe08a,#e2b552)!important;box-shadow:0 0 0 3px rgba(226,181,82,.45),0 0 16px rgba(255,200,90,.55)!important}
+html body.hud-classic.touch.lantern-ready:is(.fishing-active,.boating-active,.stable-talk-active,.stable-race-active,.lakerun-active,.mobile-bag-open,.world-map-open,.game-menu-open) #lantern-btn{display:none!important}
+html body.hud-classic.touch:not(.mobile-bag-open) #hud #hud-bag.hud-fold-btn{left:calc(50% - 142px)!important;right:auto!important;transform:none!important}
