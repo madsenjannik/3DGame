@@ -263,6 +263,20 @@ try {
     check('mobile R108: desktop-reference compact HUD and slot proportions',
       ok&&r.worldVisible&&r.questCompact&&r.bag50&&r.mapCompact&&r.joyCompact&&r.buttonsCompact&&r.inventorySlot&&r.hotbarSlot&&!errors.length,errors[0]||JSON.stringify(r));await ctx.close(); }
 
+  // 2j. R109 phone layout port: 5 gameplay slots, resources visible, Bag left, all 10 inside overlay
+  { const ctx = await context({ viewport: { width: 844, height: 390 }, isMobile: true, hasTouch: true }); const { p, errors, ok } = await startGame(ctx, 'succulent');
+    let r={};
+    if(ok)r=await p.evaluate(async()=>{
+      const g=window.__tgw,w=ms=>new Promise(x=>setTimeout(x,ms));Object.assign(g.wilds.profile.tools,{axe:true,pickaxe:true,sickle:true,can:true});g.refreshHotbar(true);await w(120);
+      const q=document.getElementById('desktop-hotbar-e'),slots=[...q.querySelectorAll('.desktop-hotbar-slot')],vis=x=>getComputedStyle(x).display!=='none',bag=document.getElementById('hud-bag'),res=document.getElementById('inventory'),hearts=document.querySelector('.hearts');
+      const gameplay={visibleSlots:slots.filter(vis).length,firstFive:slots.slice(0,5).every(vis),lastFive:slots.slice(5).every(x=>!vis(x)),res:getComputedStyle(res).display!=='none',bagLeft:bag.getBoundingClientRect().right<=slots[0].getBoundingClientRect().left+2,heartsAbove:hearts.getBoundingClientRect().bottom<=slots[0].getBoundingClientRect().top+2};
+      bag.click();await w(120);
+      const gp=document.getElementById('gear-panel'),allInside=slots.every(vis),bg=getComputedStyle(gp).backgroundColor;
+      return {...gameplay,allInside,overlay:document.body.classList.contains('mobile-bag-open')&&bg!=='rgb(255, 250, 240)'};
+    });
+    check('mobile R109: desktop zones + 5 gameplay slots + all 10 in Bag overlay',
+      ok&&r.visibleSlots===5&&r.firstFive&&r.lastFive&&r.res&&r.bagLeft&&r.heartsAbove&&r.allInside&&r.overlay&&!errors.length,errors[0]||JSON.stringify(r));await ctx.close(); }
+
   // 3. Missing assets must not black-screen the game
   { const ctx = await context({ viewport: { width: 844, height: 390 }, isMobile: true, hasTouch: true }, [/assets\/stable\//, /lake_cabin|cabin_fishing_runtime/, /greenhouse-l1/, /characters\/fern\.glb/]);
     const { p, errors, ok } = await startGame(ctx, 'fern'); const failed = ok ? await p.evaluate(() => window.__tgw.failed) : [];

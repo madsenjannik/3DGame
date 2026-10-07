@@ -92,16 +92,7 @@ export class Hud {
   // R104: on phones the Bag button must not move when the quest expands.
   // Capture the quest's COLLAPSED natural width, pin Bag beside that footprint, then let the quest grow downward.
   anchorMobileTop(){
-    if(!this.touch()||!this.bag||!this.objective||!document.body.classList.contains('hud-classic'))return;
-    const o=this.objective.getBoundingClientRect(),b=this.bag.getBoundingClientRect();
-    if(!o.width||!o.height)return;
-    // R107: Bag follows the CURRENT quest footprint. R104 froze the expanded quest to its
-    // collapsed width, which made long quest copy turn into a tall green column on phones.
-    // Keep the desktop-like wide quest card and simply keep Bag adjacent to it.
-    const gap=10,bagW=b.width||52,bagH=b.height||52,pad=14;
-    const left=Math.min(innerWidth-bagW-pad,Math.round(o.right+gap));
-    const top=Math.round(o.top+(Math.min(o.height,52)-bagH)/2);
-    Object.assign(this.bag.style,{position:'fixed',left:left+'px',right:'auto',top:top+'px',bottom:'auto',zIndex:'31'});
+    // R109: mobile Bag belongs to the bottom player cluster, so no quest-relative positioning is needed.
   }
   // R101: Bag stays the carried-item list; desktop hotbar has its own persistent slot order.
   buildGear(){
@@ -133,10 +124,12 @@ export class Hud {
       try{q.releasePointerCapture?.(d.id);}catch{}
     };
     q.addEventListener('pointerdown',e=>{
-      const mobileBag=this.touch()&&document.body.classList.contains('mobile-bag-open');
-      if((this.touch()&&!mobileBag)||(e.pointerType==='mouse'&&e.button!==0))return;const slot=e.target.closest?.('.desktop-hotbar-slot');
-      if(!slot||!slot.classList.contains('filled')||(this.hotbarEditable?.()===false))return;
-      e.preventDefault();e.stopPropagation();const from=Number(slot.dataset.slot);
+      const mobileTouch=this.touch()&&document.body.classList.contains('hud-classic'),mobileBag=mobileTouch&&document.body.classList.contains('mobile-bag-open');
+      if((this.touch()&&!mobileTouch)||(e.pointerType==='mouse'&&e.button!==0))return;const slot=e.target.closest?.('.desktop-hotbar-slot');
+      const from=Number(slot?.dataset?.slot);
+      // R109: phone gameplay exposes only quick slots 1–5. Bag still exposes all 10.
+      if(!slot||!slot.classList.contains('filled')||(!mobileBag&&mobileTouch&&from>4)||(this.hotbarEditable?.()===false))return;
+      e.preventDefault();e.stopPropagation();
       this._hotbarPointer={id:e.pointerId,from,source:slot,target:slot,x:e.clientX,y:e.clientY,drag:false};
       try{q.setPointerCapture?.(e.pointerId);}catch{}
     });

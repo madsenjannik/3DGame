@@ -14,7 +14,7 @@ import { GreenhouseProgressionSystem } from '../gameplay/GreenhouseProgressionSy
 import { OrangeryHubSystem } from '../gameplay/OrangeryHubSystem.js?build=CAMERA-CUTAWAY-CONTEXT-R21D-20260928E';
 import { FishingV1System } from '../gameplay/FishingV1System.js?build=BAG-NIGHT-R84-20261006A';
 import { ChoicePanel } from '../ui/ChoicePanel.js';
-import { Hud } from '../ui/Hud.js?build=DESKTOP-MATCH-R108-20261006A';
+import { Hud } from '../ui/Hud.js?build=MOBILE-LAYOUT-R109-20261007A';
 import { WorldMap } from '../ui/WorldMap.js?build=WORLD-MAP-R35B-20260930B';
 import { GardenEnvironment } from '../world/GardenEnvironment.js?build=WATER-VEG-R103-20261006A';
 import { WildlifeSystem } from '../world/WildlifeSystem.js?build=CAMERA-CUTAWAY-CONTEXT-R21D-20260928E';
@@ -206,8 +206,8 @@ export class Game {
   }
   canEditHotbar(){
     const desktop=!this.input?.isTouch&&document.body.classList.contains('hud-desktop-e');
-    const mobileBag=!!this.input?.isTouch&&document.body.classList.contains('mobile-bag-open');
-    return (desktop||mobileBag)&&this.canChangeEquippedGear();
+    const mobileTouch=!!this.input?.isTouch&&document.body.classList.contains('hud-classic');
+    return (desktop||mobileTouch)&&this.canChangeEquippedGear();
   }
   equipHotbarSlot(i){
     if(!this.canEditHotbar()||!Number.isInteger(i)||i<0||i>9)return false;

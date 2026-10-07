@@ -4923,3 +4923,391 @@ body.hud-classic.touch.mobile-bag-open .gear-hotbar-label span{display:none!impo
   body.hud-classic.touch.mobile-bag-open .desktop-hotbar-slot{width:48px!important;height:48px!important}
   body.hud-classic.touch.mobile-bag-open .desktop-hotbar-slot .slot-icon{width:34px!important;height:34px!important}
 }
+
+
+/* ===== R109 mobile layout port from approved desktop baseline (GO 07/10) =====
+   Desktop information architecture is the source of truth:
+   world status top-left, segmented resources top-center, player quickbar bottom-center,
+   Bag immediately left of quickbar, hearts above. Phones show 5 gameplay quick slots;
+   fullscreen Bag still exposes all 10 persisted slots. */
+
+/* ---------- TOP LEFT: exact desktop identity, compact ---------- */
+body.hud-classic.touch .desktop-world-status{
+  position:fixed!important;
+  z-index:24!important;
+  left:max(14px,env(safe-area-inset-left))!important;
+  top:max(12px,env(safe-area-inset-top))!important;
+  display:flex!important;
+  align-items:center!important;
+  gap:8px!important;
+  min-width:150px!important;
+  width:auto!important;
+  height:44px!important;
+  padding:0 13px 0 8px!important;
+  border-radius:20px!important;
+  background:rgba(255,250,240,.92)!important;
+  border:1px solid rgba(196,188,168,.36)!important;
+  box-shadow:0 5px 13px rgba(43,42,36,.15)!important;
+  -webkit-backdrop-filter:blur(6px)!important;backdrop-filter:blur(6px)!important;
+}
+body.hud-classic.touch .desktop-world-status i{
+  position:relative!important;
+  width:28px!important;height:28px!important;flex:0 0 28px!important;
+  border-radius:50%!important;
+  background:url(./brand/icons/128/icon-sun.png?v=R109-20261007) center/contain no-repeat!important;
+  filter:drop-shadow(0 1px 1px rgba(121,79,18,.18))!important;
+}
+body.hud-classic.touch .desktop-world-status.night i{
+  background-image:url(./brand/icons/128/icon-moon.png?v=R109-20261007)!important;
+}
+body.hud-classic.touch .desktop-world-status span{display:flex!important;flex-direction:column!important;gap:2px!important}
+body.hud-classic.touch .desktop-world-status small{
+  font:800 8px/1 Manrope,system-ui,sans-serif!important;
+  letter-spacing:.10em!important;color:rgba(43,42,36,.58)!important;
+}
+body.hud-classic.touch .desktop-world-status b{
+  font:800 12px/1 Manrope,system-ui,sans-serif!important;
+  letter-spacing:.025em!important;color:#303129!important;
+}
+
+/* ---------- TOP CENTER: same segmented resource bar as desktop ---------- */
+body.hud-classic.touch #hud .inventory-stack,
+body.hud-classic.touch #hud .inventory-stack.open{
+  position:fixed!important;
+  z-index:23!important;
+  left:50vw!important;right:auto!important;
+  top:max(12px,env(safe-area-inset-top))!important;
+  transform:translateX(-50%)!important;
+  width:max-content!important;
+  max-width:min(430px,51vw)!important;
+  min-height:44px!important;
+  display:flex!important;
+  flex-flow:row nowrap!important;
+  align-items:center!important;
+  justify-content:center!important;
+  gap:0!important;
+  padding:4px 6px!important;
+  margin:0!important;
+  overflow:hidden!important;
+  border:1px solid rgba(255,255,255,.72)!important;
+  border-radius:16px!important;
+  background:linear-gradient(180deg,rgba(255,255,255,.64),rgba(255,250,235,.84) 48%,rgba(238,225,194,.82))!important;
+  box-shadow:inset 0 2px 1px rgba(255,255,255,.90),0 3px 8px rgba(43,42,36,.10)!important;
+  -webkit-backdrop-filter:blur(10px) saturate(1.05)!important;backdrop-filter:blur(10px) saturate(1.05)!important;
+  pointer-events:auto!important;
+  animation:none!important;
+}
+body.hud-classic.touch #hud #materials.materials-card{display:contents!important}
+body.hud-classic.touch #hud #tools-row.tools-row{display:none!important}
+body.hud-classic.touch #hud .seed-card.inventory-card,
+body.hud-classic.touch #hud #materials .material-chip{
+  position:relative!important;
+  flex:0 0 auto!important;
+  min-width:37px!important;
+  width:auto!important;
+  height:34px!important;
+  padding:0 7px!important;
+  margin:0!important;
+  border:0!important;
+  border-radius:0!important;
+  background:transparent!important;
+  box-shadow:none!important;
+  color:#34352d!important;
+  display:flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  gap:4px!important;
+}
+body.hud-classic.touch #hud .seed-card.inventory-card{min-width:48px!important}
+body.hud-classic.touch #hud .seed-card.inventory-card::after,
+body.hud-classic.touch #hud #materials .material-chip::after{
+  content:'';position:absolute;right:0;top:7px;bottom:7px;width:1px;background:rgba(113,103,78,.16);
+}
+body.hud-classic.touch #hud #materials .material-chip:last-child::after{display:none}
+body.hud-classic.touch #hud .seed-card small,
+body.hud-classic.touch #hud #materials .material-chip small{display:none!important}
+body.hud-classic.touch #hud .seed-card .inventory-icon,
+body.hud-classic.touch #hud #materials .material-chip i{
+  display:block!important;
+  width:18px!important;height:18px!important;flex:0 0 18px!important;
+  font-size:13px!important;line-height:18px!important;text-align:center!important;
+  color:#8d681f!important;
+}
+body.hud-classic.touch #hud .seed-card b,
+body.hud-classic.touch #hud #materials .material-chip b{
+  color:#34352d!important;
+  font:800 10px/1 Manrope,system-ui,sans-serif!important;
+}
+
+/* ---------- TOP RIGHT: utility only, never compete with resource/player clusters ---------- */
+body.hud-classic.touch .tgw-minimap{
+  position:fixed!important;
+  z-index:23!important;
+  top:max(12px,env(safe-area-inset-top))!important;
+  right:max(14px,env(safe-area-inset-right))!important;
+  width:56px!important;height:56px!important;
+  border-radius:50%!important;
+  box-shadow:0 0 0 2px #fffaf0,0 0 0 4px rgba(226,181,82,.30),0 5px 12px rgba(43,42,36,.17)!important;
+}
+body.hud-classic.touch #hud{position:static!important}
+body.hud-classic.touch #hud #objective.objective-card{
+  position:fixed!important;
+  z-index:22!important;
+  left:auto!important;
+  right:max(14px,env(safe-area-inset-right))!important;
+  top:calc(max(12px,env(safe-area-inset-top)) + 68px)!important;
+  width:182px!important;max-width:182px!important;min-width:0!important;
+  height:42px!important;min-height:42px!important;
+  padding:0 28px 0 52px!important;
+  border-radius:14px!important;
+  background:linear-gradient(180deg,#7dac51,#6f9d45)!important;
+  border:1px solid rgba(255,250,240,.10)!important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.16),0 5px 12px rgba(43,42,36,.16)!important;
+}
+body.hud-classic.touch #hud #objective.objective-card::before{
+  left:10px!important;top:50%!important;width:30px!important;height:30px!important;margin-top:-15px!important;
+  border-radius:9px!important;background-size:18px!important;
+}
+body.hud-classic.touch #hud #objective.objective-card::after{
+  left:auto!important;right:8px!important;top:50%!important;width:16px!important;height:16px!important;margin-top:-8px!important;
+  font-size:15px!important;line-height:16px!important;
+}
+body.hud-classic.touch #hud #objective b{font:800 11px/1.1 Manrope,system-ui,sans-serif!important}
+body.hud-classic.touch #hud #objective.objective-card.open{
+  width:250px!important;max-width:250px!important;
+  min-height:78px!important;height:auto!important;
+  padding:10px 26px 11px 52px!important;
+}
+body.hud-classic.touch #hud #objective.open #objective-copy{
+  margin-top:4px!important;
+  font:600 9.5px/1.3 Manrope,system-ui,sans-serif!important;
+  -webkit-line-clamp:3!important;
+}
+
+/* ---------- BOTTOM CENTER: phone gameplay quickbar = first 5 persisted slots ---------- */
+body.hud-classic.touch:not(.mobile-bag-open) .desktop-hotbar-e{
+  display:flex!important;
+  position:fixed!important;
+  z-index:27!important;
+  left:50%!important;right:auto!important;
+  top:auto!important;
+  bottom:calc(14px + env(safe-area-inset-bottom))!important;
+  transform:translateX(-50%)!important;
+  align-items:center!important;
+  gap:6px!important;
+  pointer-events:auto!important;
+  touch-action:none!important;
+}
+body.hud-classic.touch:not(.mobile-bag-open) .desktop-hotbar-slot:nth-child(n+6){display:none!important}
+body.hud-classic.touch:not(.mobile-bag-open) .desktop-hotbar-slot:nth-child(-n+5){display:grid!important}
+body.hud-classic.touch .desktop-hotbar-slot{
+  position:relative!important;
+  place-items:center!important;
+  width:50px!important;height:50px!important;
+  border-radius:13px!important;
+  border:1px solid rgba(153,128,67,.38)!important;
+  background:linear-gradient(180deg,#fff9e9 0%,#f7ebcf 58%,#ead7ad 100%)!important;
+  box-shadow:inset 0 2px 0 rgba(255,255,255,.94),inset 0 -4px 0 rgba(111,157,69,.08),0 6px 14px rgba(43,42,36,.15)!important;
+  pointer-events:auto!important;touch-action:none!important;
+}
+body.hud-classic.touch .desktop-hotbar-slot small{display:none!important}
+body.hud-classic.touch .desktop-hotbar-slot .slot-icon{
+  display:block!important;width:36px!important;height:36px!important;
+  background-color:transparent!important;background-position:center!important;background-repeat:no-repeat!important;background-size:contain!important;
+  -webkit-mask:none!important;mask:none!important;
+  filter:drop-shadow(0 2px 2px rgba(43,42,36,.14))!important;
+}
+body.hud-classic.touch .desktop-hotbar-slot[data-icon="axe"] .slot-icon{background-image:url(./brand/icons/tool3d/icon-axe.png?v=R109-20261007)!important}
+body.hud-classic.touch .desktop-hotbar-slot[data-icon="pickaxe"] .slot-icon{background-image:url(./brand/icons/tool3d/icon-pickaxe.png?v=R109-20261007)!important}
+body.hud-classic.touch .desktop-hotbar-slot[data-icon="sickle"] .slot-icon{background-image:url(./brand/icons/tool3d/icon-sickle.png?v=R109-20261007)!important}
+body.hud-classic.touch .desktop-hotbar-slot[data-icon="watering-can"] .slot-icon{background-image:url(./brand/icons/tool3d/icon-watering-can.png?v=R109-20261007)!important}
+body.hud-classic.touch .desktop-hotbar-slot[data-icon="rod"] .slot-icon{background-image:url(./brand/icons/tool3d/icon-rod.png?v=R109-20261007)!important}
+body.hud-classic.touch .desktop-hotbar-slot[data-icon="lantern"] .slot-icon{background-image:url(./brand/icons/tool3d/icon-lantern.png?v=R109-20261007)!important}
+body.hud-classic.touch .desktop-hotbar-slot.selected{
+  transform:translateY(-3px)!important;
+  border-color:#d99c25!important;
+  box-shadow:0 0 0 2px rgba(255,232,166,.88),0 5px 0 rgba(58,77,48,.45),0 8px 14px rgba(20,39,27,.20)!important;
+}
+
+/* Bag is the sixth visual member of the same bottom cluster, immediately left of the 5 slots. */
+body.hud-classic.touch #hud #hud-bag.hud-fold-btn{
+  position:fixed!important;
+  z-index:28!important;
+  left:calc(50% - 195px)!important;right:auto!important;
+  top:auto!important;bottom:calc(14px + env(safe-area-inset-bottom))!important;
+  width:50px!important;height:50px!important;flex-basis:50px!important;
+  padding:0!important;border-radius:13px!important;
+  background:url(./brand/icons/64/icon-bag.png?v=R109-20261007) center/27px no-repeat,
+             linear-gradient(180deg,#fff9e9 0%,#f7ebcf 58%,#ead7ad 100%)!important;
+  border:1px solid rgba(153,128,67,.38)!important;
+  box-shadow:inset 0 2px 0 rgba(255,255,255,.94),inset 0 -4px 0 rgba(111,157,69,.08),0 6px 14px rgba(43,42,36,.15)!important;
+}
+body.hud-classic.touch #hud #hud-bag.hud-fold-btn::after{display:none!important}
+
+/* Hearts float above the same cluster exactly like desktop. */
+body.hud-classic.touch .hearts{
+  display:flex!important;
+  left:50%!important;right:auto!important;top:auto!important;
+  bottom:calc(72px + env(safe-area-inset-bottom))!important;
+  transform:translateX(-50%)!important;
+  padding:0!important;gap:6px!important;
+  background:transparent!important;border:0!important;box-shadow:none!important;
+}
+body.hud-classic.touch .hearts i{
+  width:19px!important;height:18px!important;
+  filter:drop-shadow(0 2px 2px rgba(43,42,36,.34)) drop-shadow(0 0 3px rgba(255,248,231,.36))!important;
+}
+
+/* ---------- TOUCH-ONLY CONTROLS: remain secondary to the desktop-derived HUD ---------- */
+body.hud-classic.touch #joy-rest{
+  left:max(14px,env(safe-area-inset-left))!important;
+  bottom:calc(14px + env(safe-area-inset-bottom))!important;
+  width:82px!important;height:82px!important;
+  opacity:.38!important;
+  background:rgba(255,250,240,.12)!important;
+  border:1px solid rgba(255,250,240,.26)!important;
+  box-shadow:none!important;
+}
+body.hud-classic.touch #joy-rest i{
+  width:34px!important;height:34px!important;margin:-17px 0 0 -17px!important;
+  background:rgba(255,250,240,.50)!important;
+}
+body.hud-classic.touch #joy{width:94px!important;height:94px!important}
+body.hud-classic.touch #joy-knob{width:38px!important;height:38px!important;margin:-19px 0 0 -19px!important}
+body.hud-classic.touch #action,
+body.hud-classic.touch #action.show,
+body.hud-classic.touch #hop-btn{
+  width:50px!important;height:50px!important;min-width:50px!important;
+  border-radius:13px!important;
+  bottom:calc(14px + env(safe-area-inset-bottom))!important;
+}
+body.hud-classic.touch #action{
+  right:max(14px,env(safe-area-inset-right))!important;
+  background:linear-gradient(180deg,#7dac51,#6f9d45)!important;
+}
+body.hud-classic.touch #hop-btn{
+  right:calc(max(14px,env(safe-area-inset-right)) + 60px)!important;
+  background:linear-gradient(180deg,#fff9e9,#ead7ad)!important;
+  color:#34352d!important;
+  font:800 9px/1 Manrope,system-ui,sans-serif!important;
+}
+body.hud-classic.touch #action #action-ico,
+body.hud-classic.touch #action #action-ico .ico-mask{width:27px!important;height:27px!important}
+
+/* ---------- FULLSCREEN BAG: interaction state over the LIVE game, not a blank app screen ---------- */
+body.hud-classic.touch.mobile-bag-open .desktop-world-status{opacity:0!important;pointer-events:none!important}
+body.hud-classic.touch.mobile-bag-open .gear-panel.open{
+  display:flex!important;
+  position:fixed!important;inset:0!important;
+  width:100vw!important;height:100vh!important;min-height:100vh!important;max-width:none!important;
+  padding:0!important;margin:0!important;
+  align-items:center!important;justify-content:flex-start!important;
+  overflow:hidden!important;
+  border:0!important;border-radius:0!important;
+  background:rgba(24,30,21,.34)!important;
+  box-shadow:none!important;
+  -webkit-backdrop-filter:blur(5px) saturate(.88)!important;
+  backdrop-filter:blur(5px) saturate(.88)!important;
+}
+@supports(height:100lvh){
+  body.hud-classic.touch.mobile-bag-open .gear-panel.open{height:100lvh!important;min-height:100lvh!important}
+}
+body.hud-classic.touch.mobile-bag-open .gear-panel.open::before{
+  content:'';position:absolute;z-index:0;
+  left:50%;top:50%;transform:translate(-50%,-50%);
+  width:min(720px,calc(100vw - 34px));height:272px;
+  border:1px solid rgba(153,128,67,.36);
+  border-radius:22px;
+  background:linear-gradient(180deg,rgba(255,249,233,.97),rgba(239,224,189,.96));
+  box-shadow:inset 0 2px 0 rgba(255,255,255,.88),0 16px 34px rgba(18,24,16,.28);
+}
+body.hud-classic.touch.mobile-bag-open .gear-head,
+body.hud-classic.touch.mobile-bag-open .gear-section-title,
+body.hud-classic.touch.mobile-bag-open .gear-grid,
+body.hud-classic.touch.mobile-bag-open .gear-hotbar-label{z-index:1!important}
+body.hud-classic.touch.mobile-bag-open .gear-head{
+  position:absolute!important;
+  left:50%!important;top:calc(50% - 119px)!important;
+  transform:translateX(-50%)!important;
+  width:min(654px,calc(100vw - 76px))!important;
+  min-height:42px!important;margin:0!important;padding:0 0 6px!important;
+  border-bottom:1px solid rgba(113,103,78,.16)!important;
+}
+body.hud-classic.touch.mobile-bag-open .gear-title{font:900 18px/1 Manrope,system-ui,sans-serif!important}
+body.hud-classic.touch.mobile-bag-open .gear-subtitle{display:block!important;font:650 8.5px/1 Manrope,system-ui,sans-serif!important}
+body.hud-classic.touch.mobile-bag-open .gear-close{
+  width:38px!important;height:38px!important;flex-basis:38px!important;
+  border-radius:11px!important;font-size:23px!important;
+}
+body.hud-classic.touch.mobile-bag-open .gear-section-title{
+  position:absolute!important;left:50%!important;top:calc(50% - 67px)!important;transform:translateX(-50%)!important;
+  width:min(654px,calc(100vw - 76px))!important;margin:0!important;padding:0!important;
+  font-size:7.5px!important;
+}
+body.hud-classic.touch.mobile-bag-open .gear-grid{
+  position:absolute!important;left:50%!important;top:calc(50% - 48px)!important;transform:translateX(-50%)!important;
+  width:min(654px,calc(100vw - 76px))!important;margin:0!important;
+  display:flex!important;flex-direction:row!important;flex-wrap:nowrap!important;
+  align-items:center!important;justify-content:center!important;
+  gap:7px!important;padding:0!important;overflow-x:auto!important;overflow-y:hidden!important;
+}
+body.hud-classic.touch.mobile-bag-open .gear-item{
+  flex:0 0 52px!important;width:52px!important;height:58px!important;min-width:52px!important;min-height:58px!important;
+  padding:3px 2px 2px!important;gap:0!important;border-radius:13px!important;
+}
+body.hud-classic.touch.mobile-bag-open .gear-item-art{width:37px!important;height:37px!important;flex-basis:37px!important}
+body.hud-classic.touch.mobile-bag-open .gear-item em{font-size:7px!important}
+body.hud-classic.touch.mobile-bag-open .gear-item small{display:none!important}
+
+/* All ten persisted slots are visible INSIDE Bag. */
+body.hud-classic.touch.mobile-bag-open .desktop-hotbar-e{
+  display:flex!important;
+  position:fixed!important;z-index:10050!important;
+  left:50%!important;right:auto!important;
+  top:calc(50% + 62px)!important;bottom:auto!important;
+  transform:translateX(-50%)!important;
+  gap:6px!important;pointer-events:auto!important;touch-action:none!important;
+}
+body.hud-classic.touch.mobile-bag-open .desktop-hotbar-slot{
+  display:grid!important;
+  width:50px!important;height:50px!important;border-radius:13px!important;
+}
+body.hud-classic.touch.mobile-bag-open .gear-hotbar-label{
+  display:flex!important;
+  position:absolute!important;z-index:1!important;
+  left:50%!important;top:calc(50% + 42px)!important;bottom:auto!important;
+  transform:translateX(-50%)!important;
+  width:min(554px,calc(100vw - 90px))!important;
+  align-items:center!important;justify-content:space-between!important;
+}
+body.hud-classic.touch.mobile-bag-open .gear-hotbar-label b{font-size:8px!important}
+body.hud-classic.touch.mobile-bag-open .gear-hotbar-label span{display:block!important;font-size:7px!important}
+
+/* ---------- short iPhone landscape ---------- */
+@media(max-height:430px) and (orientation:landscape){
+  body.hud-classic.touch .desktop-world-status{left:max(10px,env(safe-area-inset-left))!important;top:max(9px,env(safe-area-inset-top))!important;height:40px!important;min-width:138px!important}
+  body.hud-classic.touch #hud .inventory-stack,
+  body.hud-classic.touch #hud .inventory-stack.open{top:max(9px,env(safe-area-inset-top))!important;min-height:40px!important;max-width:49vw!important}
+  body.hud-classic.touch .tgw-minimap{top:max(9px,env(safe-area-inset-top))!important;right:max(10px,env(safe-area-inset-right))!important;width:52px!important;height:52px!important}
+  body.hud-classic.touch #hud #objective.objective-card{top:calc(max(9px,env(safe-area-inset-top)) + 62px)!important;width:170px!important;max-width:170px!important;height:40px!important;min-height:40px!important}
+  body.hud-classic.touch #hud #objective.objective-card.open{width:230px!important;max-width:230px!important;min-height:72px!important}
+  body.hud-classic.touch:not(.mobile-bag-open) .desktop-hotbar-slot{width:46px!important;height:46px!important}
+  body.hud-classic.touch:not(.mobile-bag-open) .desktop-hotbar-slot .slot-icon{width:33px!important;height:33px!important}
+  body.hud-classic.touch:not(.mobile-bag-open) .desktop-hotbar-e{gap:5px!important;bottom:calc(10px + env(safe-area-inset-bottom))!important}
+  body.hud-classic.touch #hud #hud-bag.hud-fold-btn{left:calc(50% - 180px)!important;bottom:calc(10px + env(safe-area-inset-bottom))!important;width:46px!important;height:46px!important;flex-basis:46px!important}
+  body.hud-classic.touch .hearts{bottom:calc(64px + env(safe-area-inset-bottom))!important}
+  body.hud-classic.touch #joy-rest{width:76px!important;height:76px!important;left:max(10px,env(safe-area-inset-left))!important;bottom:calc(10px + env(safe-area-inset-bottom))!important}
+  body.hud-classic.touch #action,
+  body.hud-classic.touch #action.show,
+  body.hud-classic.touch #hop-btn{width:46px!important;height:46px!important;min-width:46px!important;bottom:calc(10px + env(safe-area-inset-bottom))!important}
+  body.hud-classic.touch #hop-btn{right:calc(max(10px,env(safe-area-inset-right)) + 56px)!important}
+  body.hud-classic.touch #action{right:max(10px,env(safe-area-inset-right))!important}
+  body.hud-classic.touch.mobile-bag-open .gear-panel.open::before{height:250px!important}
+  body.hud-classic.touch.mobile-bag-open .gear-head{top:calc(50% - 108px)!important}
+  body.hud-classic.touch.mobile-bag-open .gear-section-title{top:calc(50% - 58px)!important}
+  body.hud-classic.touch.mobile-bag-open .gear-grid{top:calc(50% - 41px)!important}
+  body.hud-classic.touch.mobile-bag-open .desktop-hotbar-e{top:calc(50% + 59px)!important}
+  body.hud-classic.touch.mobile-bag-open .gear-hotbar-label{top:calc(50% + 40px)!important}
+  body.hud-classic.touch.mobile-bag-open .desktop-hotbar-slot{width:46px!important;height:46px!important}
+  body.hud-classic.touch.mobile-bag-open .desktop-hotbar-slot .slot-icon{width:33px!important;height:33px!important}
+}
