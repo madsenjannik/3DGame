@@ -667,8 +667,13 @@ try {
       const o = { frames: g.renderer.info.render.frame > f0 + 1, off: g.failed.includes('lantern') };
       const ext = g.renderer.getContext().getExtension('WEBGL_lose_context'); ext.loseContext(); await w(1500); ext.restoreContext(); await w(5000);
       o.restored = !document.getElementById('gl-lost'); ext.loseContext(); await w(5000); o.overlay = !!document.getElementById('gl-lost');
-      o.noStartupError = !document.body.innerHTML.includes('within 12 seconds'); return o; }) : {};
-    check('robustness (R114): a throwing system is switched off and rendering continues, WebGL loss recovers or offers reload', ok && ['frames', 'off', 'restored', 'overlay', 'noStartupError'].every(k => r[k]) && !errors.length, errors[0] || JSON.stringify(r));
+      o.noStartupError = !document.body.innerHTML.includes('within 12 seconds');
+      // R116: toasts queue instead of overwriting; a Locked action says why
+      g.hud.toast.classList.remove('show'); g.hud._toastQ = []; g.hud.showToast('A'); g.hud.showToast('B'); o.queue = g.hud.toast.textContent === 'A' && g.hud._toastQ[0] === 'B';
+      g.hud.toast.classList.remove('show'); g.hud._toastQ = []; const res = g.interactions.resolve.bind(g.interactions);
+      g.interactions.resolve = () => ({ type: 'wilds-gather', label: 'Locked', disabled: true, locked: true, reason: 'Needs a Stone Axe' }); g._whyAt = 0; await w(1500); g.input.actionPressed = true; await w(2500);
+      o.why = g.hud.toast.textContent === 'Needs a Stone Axe'; g.interactions.resolve = res; return o; }) : {};
+    check('robustness (R114) + feedback (R116): a throwing system is switched off and rendering continues, WebGL loss recovers or offers reload, toasts queue, Locked says why', ok && ['frames', 'off', 'restored', 'overlay', 'noStartupError', 'queue', 'why'].every(k => r[k]) && !errors.length, errors[0] || JSON.stringify(r));
     await ctx.close(); }
   // 5. DEV disabled: no dev UI or handles leak into normal play
   { const ctx = await context({ viewport: { width: 844, height: 390 }, isMobile: true, hasTouch: true }); const { p, errors, ok } = await startGame(ctx, 'daisy', { dev: false });

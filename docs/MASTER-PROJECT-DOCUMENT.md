@@ -1618,6 +1618,7 @@ are only touched where a measured hotspot requires it, minimally.
    failure. Must pass before every push (CLAUDE.md rule 5).
 
 **B status 02/10/2026: complete (R51–R57).** On-device check (iPhone, Jannik 02/10): 60 fps steady (frame max 20–24 ms), 217 draw calls / 370k tris in the garden, 363 / 433k at the lake, mobile-high, 1 WebGL context → no perf work needed before C.
+**R116 (v0.8.116, GO 07/10):** Locked actions say why (reason field on wilds/pots/weeds offers, 'Not unlocked yet' fallback for locked systems), toasts queue (max 3).
 **R115 (v0.8.115, GO 07/10):** phone HUD D fixes (CSS only, `body.hud-classic.touch`): visible toasts, joystick/status capsule hidden in fishing/boat/races/Lake Run, quest text 13/11 px, 44 pt Bag close and fishing pills, Bag names on 2 lines, special label 10 px.
 **R114 (v0.8.114, GO 07/10):** robustness: no false 12 s startup error (calm 45 s note), per-frame fail-soft via `Game.run()` (render always continues), WebGL context loss = save + tap-to-reload if not restored, WorldMap fails soft, mobile quality drop ignores startup hitches.
 **R113 (v0.8.113, GO 07/10):** save safety: flush merges with the stored save and replaces only its own character (two tabs no longer wipe each other), unreadable saves are kept in `tgw.save.corrupt`, `navigator.storage.persist()` requested. Save format unchanged (v3).

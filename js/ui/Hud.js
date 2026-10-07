@@ -234,7 +234,13 @@ export class Hud {
     const ico=document.getElementById('action-ico');
     if(ico&&(v||keep)){const n=actionIconName(visualIt);if(n!==this._icoName){this._icoName=n;ico.innerHTML=actionIcon(visualIt);this.action.dataset.icon=n;}}
   }
-  showToast(text){this.toast.textContent=text;this.toast.classList.add('show');clearTimeout(this.toastTimer);this.toastTimer=setTimeout(()=>this.toast.classList.remove('show'),2200);}
+  // R116: toasts queue (max 3) instead of overwriting each other; the same text again just stays up longer.
+  showToast(text){
+    const q=this._toastQ||(this._toastQ=[]);
+    if(this.toast.classList.contains('show')&&text!==this.toast.textContent){if(q.length<3&&!q.includes(text))q.push(text);return;}
+    this.toast.textContent=text;this.toast.classList.add('show');clearTimeout(this.toastTimer);
+    this.toastTimer=setTimeout(()=>{this.toast.classList.remove('show');if(q.length)this.toastTimer=setTimeout(()=>this.showToast(q.shift()),450);},2200);
+  }
   markMoved(){this.hint.style.opacity='0';}
   ready(){this.renderDesktopHotbar?.();requestAnimationFrame(()=>{this.anchorMobileTop?.(true);this.loading.classList.add('hide');setTimeout(()=>this.loading.remove(),1000);});}
 }
