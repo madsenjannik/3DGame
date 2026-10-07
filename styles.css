@@ -5541,3 +5541,44 @@ body.game-menu-open #game-menu-btn{opacity:0;pointer-events:none!important}
 #game-menu button.gm-primary{background:linear-gradient(180deg,#82b455,#6f9d45);color:#fffaf0;box-shadow:inset 0 2px 0 rgba(255,255,255,.2),0 4px 10px rgba(55,87,36,.25)}
 #game-menu .gm-ver{align-self:center;margin-top:2px;font:700 10px/1 Manrope,system-ui,sans-serif;color:#9a9b88}
 @media (max-height:430px){#game-menu .gm-card{gap:6px;padding:12px 14px 8px}#game-menu h2{font-size:17px}}
+
+/* ===== R122 · phone HUD from the approved Bag mockup (GO 07/10). Phones only: body.hud-classic.touch. ===== */
+/* Menu: small round icon at the far left of the top row */
+html body.hud-classic.touch #game-menu-btn{left:max(10px,env(safe-area-inset-left))!important;right:auto!important;top:max(9px,env(safe-area-inset-top))!important;width:40px!important;height:40px!important;
+  background:rgba(255,250,240,.92)!important;box-shadow:0 3px 9px rgba(43,42,36,.18)!important;opacity:1!important;pointer-events:auto!important}
+html body.hud-classic.touch #objective.open ~ #game-menu-btn{opacity:1!important;pointer-events:auto!important}
+html body.hud-classic.touch.game-menu-open #game-menu-btn{opacity:0!important;pointer-events:none!important}
+/* Day/night: no card, light text with a soft shadow straight on the scene, right of the menu icon */
+html body.hud-classic.touch .desktop-world-status,html body.hud-classic.touch .desktop-world-status.night{left:calc(max(10px,env(safe-area-inset-left)) + 48px)!important;top:max(9px,env(safe-area-inset-top))!important;
+  height:40px!important;padding:0!important;background:none!important;border:0!important;box-shadow:none!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important}
+html body.hud-classic.touch .desktop-world-status small,html body.hud-classic.touch .desktop-world-status b{color:#fffaf0!important;text-shadow:0 1px 2px rgba(20,24,14,.7),0 0 8px rgba(20,24,14,.35)!important}
+html body.hud-classic.touch .desktop-world-status i{filter:drop-shadow(0 1px 2px rgba(20,24,14,.45))!important}
+/* Resources: no card; a thin light divider between each type */
+html body.hud-classic.touch #hud #inventory.inventory-stack,html body.hud-classic.touch #hud #inventory.inventory-stack.open,html body.hud-classic.touch #hud .inventory-stack .inventory-card,html body.hud-classic.touch #hud .inventory-stack .materials-card,
+html body.hud-classic.touch #hud .inventory-stack .material-chip{background:none!important;background-image:none!important;border:0!important;box-shadow:none!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important}
+html body.hud-classic.touch #hud .inventory-stack b,html body.hud-classic.touch #hud .inventory-stack small{color:#fffaf0!important;text-shadow:0 1px 2px rgba(20,24,14,.72),0 0 8px rgba(20,24,14,.35)!important}
+html body.hud-classic.touch #hud .inventory-stack .material-chip:not(.r110-hidden),html body.hud-classic.touch #hud .inventory-stack .materials-card{border-left:1px solid rgba(255,250,240,.55)!important;border-radius:0!important}
+html body.hud-classic.touch #hud .inventory-stack .materials-card .material-chip:first-child{border-left:0!important}
+html body.hud-classic.touch #hud .inventory-stack .inventory-icon,html body.hud-classic.touch #hud .inventory-stack .material-chip i{filter:drop-shadow(0 1px 2px rgba(20,24,14,.4))!important}
+/* Objective: a small round icon under the minimap; tapping (or a new step) opens the card with the text */
+html body.hud-classic.touch #hud #objective.objective-card:not(.open){width:44px!important;max-width:44px!important;min-width:44px!important;height:44px!important;min-height:44px!important;padding:0!important;
+  border-radius:22px!important;right:max(10px,env(safe-area-inset-right))!important;top:calc(max(9px,env(safe-area-inset-top)) + 60px)!important;overflow:visible!important}
+html body.hud-classic.touch #hud #objective.objective-card:not(.open) > *{display:none!important}
+html body.hud-classic.touch #hud #objective.objective-card:not(.open),html body.hud-classic.touch #hud #objective.objective-card.complete:not(.open),html body.hud-classic.touch #hud #objective.objective-card:not(.open):not(.complete){
+  background:linear-gradient(180deg,#82b455,#6f9d45)!important;border:0!important;box-shadow:0 4px 10px rgba(55,87,36,.28),inset 0 2px 0 rgba(255,255,255,.22)!important}
+html body.hud-classic.touch #hud #objective.objective-card:not(.open)::before{left:4px!important;top:4px!important;width:36px!important;height:36px!important;margin:0!important;transform:none!important;border-radius:50%!important;
+  background-color:transparent!important;background-size:22px!important;box-shadow:none!important;filter:brightness(0) invert(1)!important}
+html body.hud-classic.touch #hud #objective.objective-card:not(.open)::after{content:''!important;display:none!important}
+html body.hud-classic.touch #hud #objective.objective-card.fresh:not(.open)::after{display:block!important;position:absolute!important;left:30px!important;right:auto!important;top:2px!important;width:10px!important;height:10px!important;
+  border-radius:50%!important;background:#e2b552!important;box-shadow:0 0 0 2px #fff9e9!important;transform:none!important}
+html body.hud-classic.touch #hud #objective.objective-card.open{top:calc(max(9px,env(safe-area-inset-top)) + 60px)!important;right:max(10px,env(safe-area-inset-right))!important}
+/* Bag: a round moss button, set apart from the item slots by a light divider (round = opens something, square = an item) */
+html body.hud-classic.touch #hud #hud-bag.hud-fold-btn{border-radius:50%!important;background:url("./brand/icons/64/icon-bag.png?v=R122") center/29px no-repeat,linear-gradient(180deg,#82b455,#6f9d45)!important;box-shadow:0 5px 12px rgba(55,87,36,.28),inset 0 2px 0 rgba(255,255,255,.25)!important;
+  border:0!important;transform:translateX(-10px)!important;overflow:visible!important}
+html body.hud-classic.touch #hud #hud-bag.hud-fold-btn::after{content:''!important;position:absolute!important;right:-11px!important;top:8px!important;bottom:8px!important;width:1px!important;background:rgba(255,250,240,.7)!important;border-radius:1px!important}
+/* World map open: no joystick, buttons or slots showing through */
+html body.hud-classic.touch.world-map-open :is(#joy-rest,#joy,#action,#hop-btn,#hud-bag,.desktop-hotbar-e,#game-menu-btn,.special-btn,#lantern-btn,.hearts,#control-tips){opacity:0!important;pointer-events:none!important}
+#game-menu .gm-confirm{display:flex;flex-direction:column;gap:8px}
+#game-menu .gm-confirm[hidden]{display:none}
+#game-menu .gm-confirm p{margin:0 0 2px;font:600 13px/1.45 Manrope,system-ui,sans-serif;color:#34352d}
+html body.hud-classic.touch #hud #inventory.inventory-stack b{font-size:13px!important;font-weight:800!important}
