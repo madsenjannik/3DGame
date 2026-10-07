@@ -5511,11 +5511,10 @@ body.hud-classic.touch #control-tips .ct-skip{min-height:44px;padding:0 14px}
 body.mobile-bag-open #control-tips,body.choice-open #control-tips{opacity:0!important;pointer-events:none!important}
 
 /* ===== R121 · phone quest card polish + in-game menu (GO 07/10). ===== */
-/* Quest card (phones): never faded when complete, same width open and closed, right edge flush with the minimap,
+/* Quest card (phones): never faded when complete, right edge flush with the minimap,
    open card capped (title 2 lines, copy 3 lines) so it never grows into the scene */
 html body.hud-classic.touch #hud #objective.objective-card,html body.hud-classic.touch #hud #objective.objective-card:not(.open),html body.hud-classic.touch #hud #objective.objective-card.open{
-  width:220px!important;max-width:220px!important;right:max(10px,env(safe-area-inset-right))!important;left:auto!important}   /* R108 limit: collapsed card <= 220 px */
-@media (max-width:720px){html body.hud-classic.touch #hud #objective.objective-card,html body.hud-classic.touch #hud #objective.objective-card:not(.open),html body.hud-classic.touch #hud #objective.objective-card.open{width:212px!important;max-width:212px!important}}
+  right:max(10px,env(safe-area-inset-right))!important;left:auto!important}   /* widths stay R107 (open >= 228) / R108 (closed <= 220) */
 html body.hud-classic.touch #hud #objective.objective-card.complete{opacity:1!important;transform:none!important}
 html body.hud-classic.touch #hud #objective.objective-card.complete::before{background-color:rgba(226,181,82,.22)!important}
 html body.hud-classic.touch #hud #objective.open #objective-title{display:-webkit-box!important;-webkit-box-orient:vertical!important;-webkit-line-clamp:2!important;overflow:hidden!important;white-space:normal!important}
