@@ -1618,6 +1618,7 @@ are only touched where a measured hotspot requires it, minimally.
    failure. Must pass before every push (CLAUDE.md rule 5).
 
 **B status 02/10/2026: complete (R51–R57).** On-device check (iPhone, Jannik 02/10): 60 fps steady (frame max 20–24 ms), 217 draw calls / 370k tris in the garden, 363 / 433k at the lake, mobile-high, 1 WebGL context → no perf work needed before C.
+**R128 (v0.8.128, GO 08/10):** phone action button with power (dark socket, glossy disc, 6 gold hit segments, punch on tap, rays when full) back in the corner where it sat until R125, Hop up-left on the arc, the menu stays in boss fights (no gap at day/night), light buttons near solid at night. Desktop E and special logic untouched.
 **R127 (v0.8.127, GO 08/10):** AAA main action button on phones (glass rim, moss disc, SVG gold special arc with a spark, pulse when full, gold charge light while holding, shockwave on release, icon centred) and a new clenched-fist icon. Special logic and desktop E untouched.
 **R126 (v0.8.126, GO 08/10):** phone thumb arc: 72 pt moss action with the special as a gold ring (hold 0.8 s to use it, tap still strikes), Hop with the new runner icon, light semi-transparent Bag/menu/objective, no special or lantern buttons; the lantern lights at dusk. Backlog: lantern unlock/purchase.
 **R125 (v0.8.125, GO 07/10, locked systems: storage key only):** greenhouse level and Stable progress follow the character; the old shared progress went to the last played character.

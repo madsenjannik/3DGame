@@ -5661,70 +5661,85 @@ html body.hud-classic.touch #hud #objective.objective-card:not(.open)::before{fi
 /* Collapsed objective = the flag (approved mockup); the contextual icon shows once the card opens */
 html body.hud-classic.touch #hud #objective.objective-card:not(.open)::before{background-image:url(./brand/icons/svg/icon-flag.svg)!important;background-size:20px!important;background-repeat:no-repeat!important;background-position:center!important}
 
-/* ===== R127 · phones: AAA main action button (GO 08/10) =====
-   92 pt hit area = glass rim; inside it a moss disc with depth and the cream icon, centred. The gold arc around the
-   disc is the special meter (SVG, round caps, a glowing spark at its head). Full: the glow pulses and the spark
-   circles. Holding when full: gold light grows from the centre over 0.8 s and the disc presses in. Release: shockwave. */
-#action .act-disc,#action .sp-arc,#action .act-wave{display:none}
+/* ===== R127/R128 · phones: main action button with power (GO 08/10) =====
+   R128: back in the corner where it sat until R125 (R47/B31 on an iPhone), Hop on the arc up-left of it. A dark
+   socket so the disc reads day and night; glossy moss disc with a hard shadow under it; 44 pt fist. The special is one
+   gold segment per hit. Every tap punches the button; a new segment pops. Full: gold rim, pulsing glow, turning rays.
+   Holding when full: gold light grows from the centre over 0.8 s, the disc presses in. Release: shockwave. */
+#action .act-disc,#action .sp-arc,#action .act-wave,#action .act-rays{display:none}
 html body.hud-classic.touch #action,html body.hud-classic.touch #action.show,html body.hud-classic.touch #action.locked,html body.hud-classic.touch #action:active{
-  right:calc(max(10px,env(safe-area-inset-right)) + 36px)!important;bottom:calc(max(10px,env(safe-area-inset-bottom)) + 38px)!important;left:auto!important;top:auto!important;
+  right:max(10px,env(safe-area-inset-right))!important;bottom:calc(10px + env(safe-area-inset-bottom))!important;left:auto!important;top:auto!important;
   width:92px!important;height:92px!important;min-width:92px!important;padding:0!important;border:0!important;border-radius:50%!important;overflow:visible!important;
-  transform:none!important;isolation:isolate;
-  background:rgba(255,255,255,.2)!important;-webkit-backdrop-filter:blur(8px)!important;backdrop-filter:blur(8px)!important;
-  box-shadow:inset 0 0 0 1.5px rgba(255,255,255,.55),0 6px 16px rgba(30,40,22,.22)!important;transition:box-shadow .3s ease}
+  transform:none!important;isolation:isolate;-webkit-backdrop-filter:blur(6px)!important;backdrop-filter:blur(6px)!important;
+  background:radial-gradient(circle,rgba(14,20,10,.62) 60%,rgba(14,20,10,.42))!important;
+  box-shadow:inset 0 0 0 1.5px rgba(255,255,255,.28),0 6px 16px rgba(0,0,0,.4)!important;transition:box-shadow .3s ease}
 html body.hud-classic.touch #action::before,html body.hud-classic.touch #action::after{display:none!important;content:none!important}
-html body.hud-classic.touch #action .act-disc{display:block;position:absolute;inset:12px;border-radius:50%;z-index:0;pointer-events:none;overflow:hidden;
-  background:radial-gradient(120% 100% at 50% 18%,#8fc05c 0%,#71a145 50%,#56803a 100%);
-  box-shadow:inset 0 2px 1px rgba(255,255,255,.35),inset 0 -5px 8px rgba(40,66,26,.45),0 3px 6px rgba(30,48,20,.35);transition:transform .12s ease,filter .2s ease}
-/* top sheen */
-html body.hud-classic.touch #action .act-disc::before{content:'';position:absolute;left:14%;right:14%;top:5%;height:40%;border-radius:50%;
-  background:linear-gradient(180deg,rgba(255,255,255,.32),rgba(255,255,255,0))}
+html body.hud-classic.touch #action .act-disc{display:block;position:absolute;inset:11px;border-radius:50%;z-index:1;pointer-events:none;overflow:hidden;
+  background:radial-gradient(120% 100% at 50% 12%,#b2e173 0%,#7db545 42%,#4a7a28 100%);
+  box-shadow:inset 0 0 0 2px rgba(214,255,160,.45),inset 0 -6px 10px rgba(30,60,14,.6),0 3px 0 #2f5418,0 6px 10px rgba(0,0,0,.4);transition:transform .12s ease,filter .2s ease}
+/* gloss */
+html body.hud-classic.touch #action .act-disc::before{content:'';position:absolute;left:12%;right:12%;top:4%;height:44%;border-radius:50%;
+  background:linear-gradient(180deg,rgba(255,255,255,.55),rgba(255,255,255,0))}
 /* gold light for the charge (grows from the centre while holding) */
 html body.hud-classic.touch #action .act-disc::after{content:'';position:absolute;inset:0;border-radius:50%;opacity:0;transform:scale(.15);
   background:radial-gradient(circle,rgba(255,226,140,.95) 0%,rgba(246,184,64,.85) 42%,rgba(214,138,40,.45) 75%,rgba(214,138,40,.2) 100%)}
-html body.hud-classic.touch #action:active .act-disc{transform:scale(.95)}
-html body.hud-classic.touch #action #action-ico{position:relative;z-index:2;display:grid!important;place-items:center!important;width:38px!important;height:38px!important;margin:0!important;pointer-events:none}
-html body.hud-classic.touch #action #action-ico .ico-mask{width:38px!important;height:38px!important;background:#fff8e8!important;filter:drop-shadow(0 1.5px 1px rgba(36,58,20,.5))!important}
-html body.hud-classic.touch #action.locked .act-disc{background:radial-gradient(120% 100% at 50% 18%,#c9cabd 0%,#a9ab9e 55%,#8d8f83 100%)}
-html body.hud-classic.touch #action.locked #action-ico .ico-mask{background:#55584f!important;filter:none!important}
-/* special arc */
-html body.hud-classic.touch #action.sp-has .sp-arc{display:block;position:absolute;inset:0;width:100%;height:100%;z-index:1;pointer-events:none;overflow:visible}
-html body.hud-classic.touch #action .sp-track{fill:none;stroke:rgba(255,255,255,.3);stroke-width:5}
-html body.hud-classic.touch #action .sp-fill{fill:none;stroke:url(#spGold);stroke-width:5.5;stroke-linecap:round;stroke-dasharray:0 100;
-  filter:drop-shadow(0 0 2.5px rgba(255,205,90,.75));transition:stroke-dasharray .35s ease;opacity:0}
-html body.hud-classic.touch #action.sp-some .sp-fill{opacity:1}
-html body.hud-classic.touch #action .sp-head{transform-origin:50% 50%;transform-box:view-box;transition:transform .35s ease;opacity:0}
-html body.hud-classic.touch #action.sp-some .sp-head{opacity:1}
-html body.hud-classic.touch #action .sp-spark{fill:#fffbe6;filter:drop-shadow(0 0 3px #ffe08a) drop-shadow(0 0 6px rgba(255,200,80,.9))}
-/* full: pulsing glow, the spark circles, the icon breathes */
-html body.hud-classic.touch #action.sp-full{animation:spGlow 1.5s ease-in-out infinite}
-html body.hud-classic.touch #action.sp-full .sp-fill{stroke-width:6.5;animation:spArcPulse 1.5s ease-in-out infinite}
-html body.hud-classic.touch #action.sp-full .sp-head{animation:spOrbit 2.2s linear infinite}
-html body.hud-classic.touch #action.sp-full #action-ico{animation:spIco 1.5s ease-in-out infinite}
-@keyframes spGlow{0%,100%{box-shadow:inset 0 0 0 1.5px rgba(255,240,190,.7),0 6px 16px rgba(30,40,22,.22),0 0 10px 1px rgba(255,200,80,.35)}
-  50%{box-shadow:inset 0 0 0 1.5px rgba(255,240,190,.95),0 6px 16px rgba(30,40,22,.22),0 0 26px 6px rgba(255,200,80,.7)}}
-@keyframes spArcPulse{50%{filter:drop-shadow(0 0 6px rgba(255,214,110,1)) brightness(1.2)}}
-@keyframes spOrbit{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+html body.hud-classic.touch #action:active .act-disc{transform:scale(.93)}
+html body.hud-classic.touch #action #action-ico{position:relative;z-index:3;display:grid!important;place-items:center!important;width:44px!important;height:44px!important;margin:0!important;pointer-events:none}
+html body.hud-classic.touch #action #action-ico .ico-mask{width:44px!important;height:44px!important;background:#fffaf0!important;filter:drop-shadow(0 2px 0 rgba(36,66,16,.7))!important}
+html body.hud-classic.touch #action.locked .act-disc{background:radial-gradient(120% 100% at 50% 12%,#d3d4c8 0%,#a9ab9e 50%,#7f8176 100%);box-shadow:inset 0 0 0 2px rgba(255,255,255,.35),inset 0 -6px 10px rgba(60,62,56,.45),0 3px 0 #5c5e55,0 6px 10px rgba(0,0,0,.35)}
+html body.hud-classic.touch #action.locked #action-ico .ico-mask{background:#4f524a!important;filter:none!important}
+/* punch on every tap: in, then spring back */
+html body.hud-classic.touch #action.act-punch .act-disc{animation:actPunch .28s cubic-bezier(.3,1.6,.5,1)}
+html body.hud-classic.touch #action.act-punch #action-ico{animation:actPunch .28s cubic-bezier(.3,1.6,.5,1)}
+@keyframes actPunch{0%{transform:scale(.86)}100%{transform:scale(1)}}
+/* special: one segment per hit */
+html body.hud-classic.touch #action.sp-has .sp-arc{display:block;position:absolute;inset:0;width:100%;height:100%;z-index:2;pointer-events:none;overflow:visible}
+html body.hud-classic.touch #action .sp-seg{fill:none;stroke:rgba(255,255,255,.2);stroke-width:6;stroke-linecap:round;transition:stroke .2s ease}
+html body.hud-classic.touch #action .sp-seg.on{stroke:url(#spGold);filter:drop-shadow(0 0 3px rgba(255,200,80,.9))}
+html body.hud-classic.touch #action .sp-seg.pop{animation:spPop .5s ease-out}
+@keyframes spPop{0%{stroke-width:11;filter:drop-shadow(0 0 8px #fff3b0) brightness(1.8)}100%{stroke-width:6}}
+/* full: gold rim, pulsing glow, turning light rays, the fist breathes */
+html body.hud-classic.touch #action.sp-full{animation:spGlow 1.4s ease-in-out infinite}
+html body.hud-classic.touch #action.sp-full .act-disc{box-shadow:inset 0 0 0 3px #f6c64e,inset 0 -6px 10px rgba(30,60,14,.6),0 3px 0 #2f5418,0 6px 10px rgba(0,0,0,.4)}
+html body.hud-classic.touch #action.sp-full .sp-seg.on{animation:spSegPulse 1.4s ease-in-out infinite}
+html body.hud-classic.touch #action.sp-full .act-rays{display:block;position:absolute;inset:-22px;border-radius:50%;z-index:0;pointer-events:none;
+  background:repeating-conic-gradient(rgba(255,214,110,.55) 0 6deg,transparent 6deg 30deg);
+  -webkit-mask:radial-gradient(circle,transparent 46%,#000 50%,transparent 72%);mask:radial-gradient(circle,transparent 46%,#000 50%,transparent 72%);animation:spRays 6s linear infinite}
+html body.hud-classic.touch #action.sp-full #action-ico{animation:spIco 1.4s ease-in-out infinite}
+@keyframes spGlow{0%,100%{box-shadow:inset 0 0 0 2px rgba(255,226,140,.8),0 0 12px 2px rgba(255,196,70,.45),0 6px 16px rgba(0,0,0,.4)}
+  50%{box-shadow:inset 0 0 0 2px rgba(255,236,170,1),0 0 28px 8px rgba(255,196,70,.8),0 6px 16px rgba(0,0,0,.4)}}
+@keyframes spSegPulse{50%{filter:drop-shadow(0 0 7px rgba(255,220,120,1)) brightness(1.25)}}
+@keyframes spRays{to{transform:rotate(360deg)}}
 @keyframes spIco{50%{transform:scale(1.08)}}
-/* holding: the disc presses in, gold light fills it from the centre, the arc burns brighter */
-html body.hud-classic.touch #action.sp-charging .act-disc{transform:scale(.94)}
+/* holding: the disc presses in, gold light fills it from the centre, the segments burn brighter */
+html body.hud-classic.touch #action.sp-charging .act-disc{transform:scale(.93)}
 html body.hud-classic.touch #action.sp-charging .act-disc::after{animation:spFillLight .8s cubic-bezier(.3,.6,.4,1) forwards}
-html body.hud-classic.touch #action.sp-charging .sp-fill{stroke-width:8;filter:drop-shadow(0 0 7px rgba(255,214,110,1)) brightness(1.3)}
-html body.hud-classic.touch #action.sp-charging .sp-head{animation-duration:.7s}
+html body.hud-classic.touch #action.sp-charging .sp-seg.on{stroke-width:8;filter:drop-shadow(0 0 7px rgba(255,214,110,1)) brightness(1.3)}
+html body.hud-classic.touch #action.sp-charging .act-rays{animation-duration:1.2s}
 @keyframes spFillLight{from{opacity:.2;transform:scale(.15)}to{opacity:.92;transform:scale(1.05)}}
-/* the icon keeps its contrast on the gold light */
-html body.hud-classic.touch #action.sp-charging #action-ico .ico-mask{background:#fffdf4!important;filter:drop-shadow(0 0 1.5px rgba(122,66,8,.9)) drop-shadow(0 1.5px 2px rgba(122,66,8,.7))!important}
+html body.hud-classic.touch #action.sp-charging #action-ico .ico-mask{background:#fffdf4!important;filter:drop-shadow(0 0 1.5px rgba(122,66,8,.9)) drop-shadow(0 2px 0 rgba(122,66,8,.7))!important}
 /* charged: ready to release, strong throbbing glow */
 html body.hud-classic.touch #action.sp-charged{animation:spCharged .45s ease-in-out infinite}
 html body.hud-classic.touch #action.sp-charged .act-disc{filter:brightness(1.12) saturate(1.15)}
-@keyframes spCharged{0%,100%{box-shadow:inset 0 0 0 2px rgba(255,244,200,1),0 0 18px 5px rgba(255,205,90,.8)}50%{box-shadow:inset 0 0 0 2px rgba(255,244,200,1),0 0 34px 12px rgba(255,205,90,.95)}}
+@keyframes spCharged{0%,100%{box-shadow:inset 0 0 0 2px rgba(255,244,200,1),0 0 18px 5px rgba(255,205,90,.8)}50%{box-shadow:inset 0 0 0 2px rgba(255,244,200,1),0 0 36px 13px rgba(255,205,90,.95)}}
 /* release: shockwave ring + white flash */
-html body.hud-classic.touch #action .act-wave{display:block;position:absolute;inset:0;border-radius:50%;pointer-events:none;z-index:3;opacity:0;
+html body.hud-classic.touch #action .act-wave{display:block;position:absolute;inset:0;border-radius:50%;pointer-events:none;z-index:4;opacity:0;
   box-shadow:0 0 0 4px rgba(255,236,170,.95),0 0 22px 6px rgba(255,205,90,.8),inset 0 0 16px rgba(255,250,225,.55)}
 html body.hud-classic.touch #action.sp-burst .act-wave{animation:spWave .65s ease-out forwards}
 html body.hud-classic.touch #action.sp-burst .act-disc{animation:spFlash .5s ease-out}
 @keyframes spWave{0%{opacity:1;transform:scale(.7)}100%{opacity:0;transform:scale(1.9)}}
 @keyframes spFlash{0%{filter:brightness(2.2) saturate(.5)}100%{filter:none}}
 @media (prefers-reduced-motion:reduce){
-  html body.hud-classic.touch #action.sp-full,html body.hud-classic.touch #action.sp-full .sp-fill,html body.hud-classic.touch #action.sp-full #action-ico,html body.hud-classic.touch #action.sp-charged{animation:none}
-  html body.hud-classic.touch #action.sp-full .sp-head{animation:none;opacity:0}}
+  html body.hud-classic.touch #action.sp-full,html body.hud-classic.touch #action.sp-full .sp-seg.on,html body.hud-classic.touch #action.sp-full #action-ico,html body.hud-classic.touch #action.sp-charged,html body.hud-classic.touch #action.sp-full .act-rays{animation:none}}
+/* Hop on the arc up-left of the main button (centre 56 pt left and 56 pt up of the action centre) */
+html body.hud-classic.touch #hop-btn,html body.hud-classic.touch #hop-btn.show{right:calc(max(10px,env(safe-area-inset-right)) + 77px)!important;bottom:calc(10px + env(safe-area-inset-bottom) + 77px)!important}
+
+/* ===== R128 · phones: the menu stays in boss fights (only the rest of the top HUD steps aside for the boss bar),
+   so the day/night status no longer has an empty gap to its left ===== */
+html body.hud-classic.touch.boss-active #hud{opacity:1!important;pointer-events:none!important}
+html body.hud-classic.touch.boss-active #hud > :not(#game-menu-btn){opacity:0!important;pointer-events:none!important}
+
+/* ===== R128 · phones at night: the light buttons go nearly solid so the moss icons stay readable on a dark scene ===== */
+html body.hud-classic.touch.is-night #hop-btn,html body.hud-classic.touch.is-night #hop-btn.show,html body.hud-classic.touch.is-night #hud #hud-bag.hud-fold-btn,
+html body.hud-classic.touch.is-night #game-menu-btn,html body.hud-classic.touch.is-night #hud #objective.objective-card:not(.open),
+html body.hud-classic.touch.is-night #hud #objective.objective-card.complete:not(.open),html body.hud-classic.touch.is-night #hud #objective.objective-card:not(.open):not(.complete){background:rgba(255,255,255,.88)!important}

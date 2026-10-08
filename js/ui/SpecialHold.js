@@ -3,24 +3,27 @@
 // holding that button. Tap = the normal action / strike (unchanged). When the ring is full, holding ~0.8 s charges
 // (Throw_Charge on the character); releasing after that fires the existing special (SpecialSystem.use, locked logic
 // untouched). Releasing early does nothing and keeps the full ring. Fails soft.
-// R127 (GO 08/10): the button is drawn as a glass rim + moss disc + SVG gold arc with a glowing spark at its head.
-// Full = pulsing glow and the spark circles; holding = gold light grows from the centre and the disc presses in;
-// release = shockwave flash. The look is CSS (styles.css R127); this file only adds the parts and sets the state.
+// R127/R128 (GO 08/10): dark socket + glossy moss disc + one gold segment per hit around it. Every tap punches the
+// button; a newly earned segment pops. Full = gold rim, pulsing glow and turning light rays; holding = gold light
+// grows from the centre and the disc presses in; release = shockwave. The look is CSS (styles.css R127/R128).
 import { SPECIAL } from '../data/combatCatalog.js?build=DAYNIGHT-R81-20261005A';
 
 const HOLD = .8;
+// R128: the meter is one gold segment per hit the special needs (SPECIAL.chargeHits), so every hit visibly counts.
+const N = Math.max(1, SPECIAL.chargeHits | 0 || 6);
+const segs = () => { const out = [], r = 45, c = 50, gap = 7, p = a => `${(c + r * Math.cos(a * Math.PI / 180)).toFixed(2)} ${(c + r * Math.sin(a * Math.PI / 180)).toFixed(2)}`;
+  for (let i = 0; i < N; i++) { const a0 = -90 + i * 360 / N + gap / 2, a1 = -90 + (i + 1) * 360 / N - gap / 2; out.push(`<path class="sp-seg" d="M${p(a0)} A${r} ${r} 0 0 1 ${p(a1)}"/>`); }
+  return out.join(''); };
 const ARC = '<svg class="sp-arc" viewBox="0 0 100 100" aria-hidden="true"><defs><linearGradient id="spGold" x1="0" y1="0" x2="1" y2="1">'
-  + '<stop offset="0" stop-color="#fff0a8"/><stop offset=".5" stop-color="#f3c552"/><stop offset="1" stop-color="#d99a2b"/></linearGradient></defs>'
-  + '<circle class="sp-track" cx="50" cy="50" r="45.5"/><circle class="sp-fill" cx="50" cy="50" r="45.5" pathLength="100" transform="rotate(-90 50 50)"/>'
-  + '<g class="sp-head"><circle class="sp-spark" cx="50" cy="4.5" r="3.4"/></g></svg>';
+  + '<stop offset="0" stop-color="#fff3b0"/><stop offset=".5" stop-color="#f6c64e"/><stop offset="1" stop-color="#e09a22"/></linearGradient></defs>' + segs() + '</svg>';
 
 export class SpecialHold {
   constructor(game) {
     this.g = game; this.btn = document.getElementById('action'); this.charging = false; this.id = null; this.t0 = 0; this.k = -1;
     if (!this.btn) return;
     try {
-      this.btn.insertAdjacentHTML('afterbegin', '<span class="act-disc" aria-hidden="true"></span>' + ARC + '<span class="act-wave" aria-hidden="true"></span>');
-      this.fill = this.btn.querySelector('.sp-fill'); this.head = this.btn.querySelector('.sp-head');
+      this.btn.insertAdjacentHTML('afterbegin', '<span class="act-rays" aria-hidden="true"></span><span class="act-disc" aria-hidden="true"></span>' + ARC + '<span class="act-wave" aria-hidden="true"></span>');
+      this.segs = [...this.btn.querySelectorAll('.sp-seg')];
     } catch {}
     this.btn.addEventListener('pointerdown', e => this.down(e));
     addEventListener('pointerup', e => this.up(e)); addEventListener('pointercancel', e => { if (e.pointerId === this.id) this.end(); });
@@ -28,7 +31,9 @@ export class SpecialHold {
   sp() { return this.g.combat?.special; }
   active() { return !!this.g.input?.isTouch && document.body.classList.contains('hud-classic'); }
   down(e) {
-    if (!this.active() || !this.sp()?.ready?.()) return;
+    if (!this.active()) return;
+    this.restart('act-punch', 300);   // R128: every tap punches the button in and lets it spring back
+    if (!this.sp()?.ready?.()) return;
     this.charging = true; this.id = e.pointerId; this.t0 = performance.now(); this.btn.classList.add('sp-charging');
     clearTimeout(this._chT); this._chT = setTimeout(() => { if (this.charging) this.btn.classList.add('sp-charged'); }, HOLD * 1000);   // R127: not tied to the frame rate
     this.g.character?.instance?.playOverlay?.('Throw_Charge', { loop: true });
@@ -42,18 +47,19 @@ export class SpecialHold {
     clearTimeout(this._chT); this.charging = false; this.id = null; this.btn.classList.remove('sp-charging', 'sp-charged');
     this.g.character?.instance?.stopOverlay?.('Throw_Charge');
   }
-  // release: the restart of the CSS animation needs the class off for one frame
-  burst() {
-    const b = this.btn; b.classList.remove('sp-burst'); void b.offsetWidth; b.classList.add('sp-burst');
-    clearTimeout(this._burstT); this._burstT = setTimeout(() => b.classList.remove('sp-burst'), 700);
+  // restarting a CSS animation needs the class off for one frame
+  restart(cls, ms, el = this.btn) {
+    el.classList.remove(cls); void el.getBoundingClientRect(); el.classList.add(cls);
+    clearTimeout(el['_t_' + cls]); el['_t_' + cls] = setTimeout(() => el.classList.remove(cls), ms);
   }
+  burst() { this.restart('sp-burst', 700); }
   update() {
     if (!this.btn) return;
     const s = this.sp(), has = !!s?.def && this.active(), k = has ? Math.min(1, (s.charge || 0) / SPECIAL.chargeHits) : 0;
     if (k !== this.k) {
+      const lit = Math.floor(k * N + 1e-6), was = this.k < 0 ? lit : Math.floor(this.k * N + 1e-6);
       this.k = k; this.btn.style.setProperty('--sp', `${Math.round(k * 360)}deg`);
-      if (this.fill) this.fill.style.strokeDasharray = `${(k * 100).toFixed(2)} 100`;
-      if (this.head) this.head.style.transform = `rotate(${(k * 360).toFixed(1)}deg)`;
+      this.segs?.forEach((g, i) => { g.classList.toggle('on', i < lit); if (i < lit && i >= was) this.restart('pop', 500, g); });
     }
     this.btn.classList.toggle('sp-has', has); this.btn.classList.toggle('sp-full', has && k >= 1); this.btn.classList.toggle('sp-some', has && k > 0);
     if (this.charging) {
