@@ -41,7 +41,7 @@ const ABILITY = {
 };
 const STATS = [   // personality axes (approved effects table 08/10); R135 makes them real in the game
   { key: 'Speed', icon: 'hop', cls: 'blue', fx: v => v === 3 ? 'Normal speed' : `${v > 3 ? '+' : '−'}${Math.abs(v - 3) * 4}% speed` },
-  { key: 'Courage', icon: 'sword', cls: 'red', fx: v => v >= 5 ? '−10% damage taken' : v === 4 ? '−5% damage taken' : v === 1 ? '+1 s safe after a hit' : v === 2 ? '+0.5 s safe after a hit' : 'Balanced' },
+  { key: 'Courage', icon: 'vest', cls: 'red', fx: v => v >= 5 ? '−10% damage taken' : v === 4 ? '−5% damage taken' : v === 1 ? '+1 s safe after a hit' : v === 2 ? '+0.5 s safe after a hit' : 'Balanced' },   // R134: the game's own vest (protection), not a sword
   { key: 'Social', icon: 'leaf', cls: 'green', fx: v => v <= 1 ? 'No bonus' : `${(v - 1) * 5}% bonus finds` },
   { key: 'Style', icon: 'fist', cls: 'gold', fx: v => v <= 2 ? 'Special in 5 hits' : v === 4 ? '8% critical hits' : v >= 5 ? '15% critical hits' : 'Special in 6 hits' }
 ];

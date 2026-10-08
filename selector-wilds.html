@@ -6,8 +6,9 @@
   <meta name="theme-color" content="#3f5a2a" />
   <title>The Growing Wilds · Choose your plant (test)</title>
   <!-- R132 TEST PAGE (GO 08/10): character select in the style of Jannik's reference. The live selector.html is unchanged. -->
-  <script src="./version.js?v=SELECT-R133-20261008A"></script>
-  <script src="./character-roster.js?v=SELECT-R133-20261008A"></script>
+  <script>(function(){var h=document.documentElement;function f(){var sw=screen.width||9999,sh=screen.height||9999;h.classList.toggle('cs-phone',Math.min(sw,sh)<=500||innerHeight<=500);h.classList.toggle('cs-touch',matchMedia('(hover:none) and (pointer:coarse)').matches||Math.min(sw,sh)<=500);}f();addEventListener('resize',f);addEventListener('orientationchange',f);})();</script>
+  <script src="./version.js?v=DEV-R134-20261008A"></script>
+  <script src="./character-roster.js?v=DEV-R134-20261008A"></script>
   <link href="https://fonts.googleapis.com/css2?family=Lilita+One&family=Manrope:wght@500;600;700;800&display=swap" rel="stylesheet">
   <script type="importmap">{ "imports": { "three": "./vendor/three.module.js", "three/addons/": "./vendor/" } }</script>
   <style>
@@ -16,7 +17,8 @@
     html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#3f5a2a;font-family:Manrope,system-ui,sans-serif;color:var(--ink);-webkit-tap-highlight-color:transparent;user-select:none;-webkit-user-select:none}
     button{font:inherit;color:inherit;border:0;background:none;padding:0;cursor:pointer}
     /* our own world from above, softly out of focus */
-    .cs-bg{position:fixed;inset:-24px;background:url(./assets/ui/selector/world.webp?v=R132) center/cover no-repeat;filter:blur(2.5px) saturate(1.05);transform:scale(1.03);animation:csDrift 40s ease-in-out infinite alternate}
+    .cs-bgclip{position:fixed;inset:0;overflow:hidden;pointer-events:none}   /* R134: the bigger, drifting background must never widen the page (iOS zooms out) */
+    .cs-bg{position:absolute;inset:-24px;background:url(./assets/ui/selector/world.webp?v=R132) center/cover no-repeat;filter:blur(2.5px) saturate(1.05);transform:scale(1.03);animation:csDrift 40s ease-in-out infinite alternate}
     @keyframes csDrift{to{transform:scale(1.08) translate(-1.2%,-.8%)}}
     .cs-shade{position:fixed;inset:0;pointer-events:none;background:radial-gradient(85% 75% at 50% 42%,rgba(20,26,12,0) 35%,rgba(20,26,12,.5) 100%),linear-gradient(180deg,rgba(20,26,12,.18),rgba(20,26,12,0) 30%,rgba(20,26,12,.25))}
     .cs-frame{position:fixed;inset:max(10px,env(safe-area-inset-top)) max(12px,env(safe-area-inset-right)) max(10px,env(safe-area-inset-bottom)) max(12px,env(safe-area-inset-left));border-radius:22px;box-shadow:inset 0 0 0 3px rgba(255,248,230,.55),inset 0 0 0 6px rgba(59,47,34,.35);pointer-events:none}
@@ -52,6 +54,7 @@
     .cs-plate b{font:400 clamp(18px,1.9vw,30px)/1 'Lilita One';color:#fffaf0;text-shadow:0 2px 0 #1d170f}
     .cs-plate small{font:800 clamp(7px,.62vw,10px)/1 Manrope;letter-spacing:.16em;text-transform:uppercase;color:#e9d9b8}
     .cs-arrow{position:static;flex:none}
+    html.cs-touch .cs-arrow{display:none}   /* R134: on touch you swipe or tap a side card / portrait */
     /* live 3D character over the centre card's art box (the portrait stays underneath as the fallback) */
     .cs-live{position:absolute;pointer-events:none;z-index:3;opacity:0;transition:opacity .25s}.cs-live.on{opacity:1}
     .cs-card.main.live .cs-art{opacity:0;transition:opacity .25s .1s}
@@ -72,13 +75,13 @@
     #cs-panel{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(max(10px,env(safe-area-inset-bottom)) + 4.5vh);width:min(1060px,calc(100vw - 80px));min-height:150px;padding:20px 26px 46px;border-radius:20px;
       display:grid;grid-template-columns:1.1fr 1.2fr 1.25fr;gap:0 22px;align-items:center;
       background:radial-gradient(120% 140% at 20% 0%,#fbf3e1,var(--paper) 45%,var(--paper2));box-shadow:0 0 0 3px #6b5236,0 0 0 6px rgba(255,248,230,.35),0 16px 32px rgba(0,0,0,.4),inset 0 0 40px rgba(160,120,60,.18)}
-    .cs-col{min-width:0;padding:0 4px}.cs-col+.cs-col{border-left:2px solid rgba(107,82,54,.28);padding-left:22px}
+    .cs-col{min-width:0;padding:0 4px;align-self:stretch;display:flex;flex-direction:column;justify-content:center}.cs-col+.cs-col{border-left:2px solid rgba(107,82,54,.28);padding-left:22px}
     #cs-name{margin:0;font:400 clamp(26px,2.9vw,46px)/1 'Lilita One';color:var(--ink)}
     #cs-role{display:block;margin-top:6px;font:800 clamp(8px,.78vw,12px)/1 Manrope;letter-spacing:.2em;text-transform:uppercase;color:var(--sub)}
     #cs-desc{margin:8px 0 0;font:600 clamp(10px,.95vw,14px)/1.4 Manrope;color:#4a3d2c}
     body.cs-is-locked #cs-desc{color:var(--moss);font-weight:800}
-    .cs-ab{display:grid;grid-template-columns:auto 1fr;gap:4px 12px;align-items:center}
-    #cs-ab-icon{grid-row:1/3;width:clamp(40px,4vw,60px);height:clamp(40px,4vw,60px);border-radius:50%;background:#e2efcf center/78% no-repeat;box-shadow:0 0 0 3px #6b5236,inset 0 -6px 10px rgba(79,107,50,.25)}
+    .cs-ab{display:grid;align-content:center;grid-template-columns:auto 1fr;gap:4px 12px;align-items:center}
+    #cs-ab-icon{grid-row:1/3;width:clamp(56px,5vw,78px);height:clamp(56px,5vw,78px);border-radius:50%;background:#e2efcf center/145% no-repeat;box-shadow:0 0 0 3px #6b5236,inset 0 -6px 10px rgba(79,107,50,.25)}
     #cs-ab-name{font:400 clamp(15px,1.4vw,22px)/1 'Lilita One';color:var(--ink)}
     #cs-ab-text{margin:0;font:600 clamp(9.5px,.88vw,13px)/1.35 Manrope;color:#4a3d2c}
     .cs-ab-kind{font:800 clamp(7px,.6vw,9.5px)/1 Manrope;letter-spacing:.18em;text-transform:uppercase;color:var(--moss)}
@@ -99,27 +102,27 @@
     #cs-play:disabled{cursor:not-allowed;background:linear-gradient(180deg,#b5b7a6,#7f8470);box-shadow:0 0 0 3px #555a4a,0 8px 14px rgba(0,0,0,.3);text-shadow:none;color:#f6f3e8}
     .cs-tri{width:0;height:0;border-left:16px solid #fffdf0;border-top:10px solid transparent;border-bottom:10px solid transparent;filter:drop-shadow(0 2px 0 #2c4a14)}
     /* phones in landscape: same design, compact; the button moves into the panel's right end */
-    @media (max-height:500px){
-      #cs-stage{top:calc(max(8px,env(safe-area-inset-top)) + 8px);height:auto}
-      .cs-card{width:clamp(100px,15.5vw,142px)}.cs-plate b{font-size:15px}.cs-plate small{font-size:6.5px;letter-spacing:.12em}
-      .cs-round{width:38px;height:38px;font-size:20px}
-      #cs-thumbs{margin-top:30px;gap:6px}.cs-thumb{width:30px;height:30px}
-      .cs-logo{width:clamp(110px,16vw,150px);top:calc(max(8px,env(safe-area-inset-top)) + 8px)}.cs-logo small{display:none}
-      #cs-home{top:calc(max(8px,env(safe-area-inset-top)) + 10px)}
-      #cs-panel{bottom:max(10px,env(safe-area-inset-bottom));width:calc(100vw - max(24px,env(safe-area-inset-left)) - max(24px,env(safe-area-inset-right)) - 24px);min-height:0;padding:10px 14px;border-radius:16px;
-        grid-template-columns:1fr 1.25fr 1.3fr auto;gap:0 12px}
-      .cs-col+.cs-col{padding-left:12px}
-      #cs-name{font-size:24px}#cs-role{font-size:7px;margin-top:4px}#cs-desc{font-size:9px;margin-top:4px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
-      #cs-ab-icon{width:34px;height:34px}#cs-ab-name{font-size:14px}#cs-ab-text{font-size:8.5px}.cs-ab-kind{display:none}
-      .cs-stat{grid-template-columns:12px 38px 1fr;gap:5px}.cs-stat small{display:none}.cs-stat b{font-size:8.5px}.cs-ico{width:11px;height:11px}.cs-bar{height:7px}#cs-stats{gap:3px}
-      #cs-play{position:static;transform:none;height:46px;padding:0 18px;font-size:16px;gap:8px;border-radius:16px}#cs-play:active{transform:scale(1.04,.9)}
-      .cs-tri{border-left-width:11px;border-top-width:7px;border-bottom-width:7px}
-    }
+    /* R134: html.cs-phone is set from the device's screen size (head script), not from the page height: iOS laid the page
+       out ~1110 px wide on Jannik's iPhone, so a height media query never matched there */
+    html.cs-phone #cs-stage{top:calc(max(8px,env(safe-area-inset-top)) + 8px);height:auto}
+    html.cs-phone .cs-card{width:clamp(100px,15.5vw,142px)}html.cs-phone .cs-plate b{font-size:15px}html.cs-phone .cs-plate small{font-size:6.5px;letter-spacing:.12em}
+    html.cs-phone .cs-round{width:38px;height:38px;font-size:20px}
+    html.cs-phone #cs-thumbs{margin-top:30px;gap:6px}html.cs-phone .cs-thumb{width:30px;height:30px}
+    html.cs-phone .cs-logo{width:clamp(110px,16vw,150px);top:calc(max(8px,env(safe-area-inset-top)) + 8px)}html.cs-phone .cs-logo small{display:none}
+    html.cs-phone #cs-home{top:calc(max(8px,env(safe-area-inset-top)) + 10px)}
+    html.cs-phone #cs-panel{bottom:max(10px,env(safe-area-inset-bottom));width:calc(100vw - max(24px,env(safe-area-inset-left)) - max(24px,env(safe-area-inset-right)) - 24px);min-height:0;padding:10px 14px;border-radius:16px;
+    grid-template-columns:1fr 1.25fr 1.3fr auto;gap:0 12px}
+    html.cs-phone .cs-col+.cs-col{padding-left:12px}
+    html.cs-phone #cs-name{font-size:24px}html.cs-phone #cs-role{font-size:7px;margin-top:4px}html.cs-phone #cs-desc{font-size:9px;margin-top:4px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+    html.cs-phone #cs-ab-icon{width:50px;height:50px}html.cs-phone #cs-ab-name{font-size:14px}html.cs-phone #cs-ab-text{font-size:8.5px}html.cs-phone .cs-ab-kind{display:none}
+    html.cs-phone .cs-stat{grid-template-columns:12px 38px 1fr;gap:5px}html.cs-phone .cs-stat small{display:none}html.cs-phone .cs-stat b{font-size:8.5px}html.cs-phone .cs-ico{width:11px;height:11px}html.cs-phone .cs-bar{height:7px}html.cs-phone #cs-stats{gap:3px}
+    html.cs-phone #cs-play{position:static;transform:none;height:46px;padding:0 18px;font-size:16px;gap:8px;border-radius:16px}html.cs-phone #cs-play:active{transform:scale(1.04,.9)}
+    html.cs-phone .cs-tri{border-left-width:11px;border-top-width:7px;border-bottom-width:7px}
     @media (prefers-reduced-motion:reduce){.cs-bg,.cs-card.main .cs-art,.cs-card.main::after{animation:none}}
   </style>
 </head>
 <body>
-  <div class="cs-bg" aria-hidden="true"></div><div class="cs-shade" aria-hidden="true"></div><div class="cs-frame" aria-hidden="true"></div>
+  <div class="cs-bgclip" aria-hidden="true"><div class="cs-bg"></div></div><div class="cs-shade" aria-hidden="true"></div><div class="cs-frame" aria-hidden="true"></div>
   <div class="cs-logo"><img src="./brand/logo/logo-growing-wilds-620w.png" alt="Growing Wilds"><small>GROW. EXPLORE. SURVIVE.</small></div>
   <button id="cs-home" class="cs-round" type="button" aria-label="Back to the start screen" onclick="location.href='./index.html'">‹</button>
   <section id="cs-stage" aria-label="Choose your plant">
@@ -133,7 +136,7 @@
     <button id="cs-play" type="button"></button>
   </section>
   <script type="module">
-    import { mountCharacterSelect } from './js/ui/CharacterSelect.js?build=SELECT-R133-20261008A';
+    import { mountCharacterSelect } from './js/ui/CharacterSelect.js?build=DEV-R134-20261008A';
     mountCharacterSelect();
   </script>
 </body>

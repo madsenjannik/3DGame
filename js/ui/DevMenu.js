@@ -35,6 +35,7 @@ export class DevMenu {
       <div class="dev-menu-body">
         <section><small>KAMERA & STYRING (kun dev)</small><div class="dev-grid profiles">${Object.entries(PROFILES).map(([id, p]) => `<button data-a="cam:${id}">${p.name}</button>`).join('')}</div><p class="dev-note"></p></section>
         <section><small>HUD TEST · NORMAL GAMEPLAY</small><div class="dev-grid hud-tests"><button data-a="hud:current">Current HUD</button><button data-a="hud:d-classic">Test HUD D klassisk (mobil)</button><button data-a="hud:e-desktop">Test HUD E desktop</button></div><p class="dev-note hud-test-note">Kun visuelt layout. Ingen gameplay-logik ændres.</p></section>
+        <section><small>R134 TEST (til/fra)</small><div class="dev-grid"><button data-a="flag:flyIcons">Ikoner flyver op i baren</button><button data-a="flag:tipTop">Tutorial-tip øverst (mobil)</button><button data-a="tips:again">Vis tutorial igen (genindlæser)</button></div><p class="dev-note">Kun visuelt. Slået fra som standard.</p></section>
         <section><small>MÅLING</small><div class="dev-grid"><button data-a="perf">Performance-HUD til/fra</button><button data-a="metrics">Vis startup-tider</button><button data-a="look">3D-look (R70) til/fra</button></div><div class="dev-grid four"><button data-a="q:auto">Auto</button><button data-a="q:mobile-low">Lav</button><button data-a="q:mobile-high">Høj</button><button data-a="q:desktop">Desktop</button></div></section>
         <section><small>RESSOURCER</small><div class="dev-grid">
           <button data-a="mats">+20 materialer</button><button data-a="tools">Alle redskaber</button><button data-a="pots">3 potter + vand</button><button data-a="skip">Spol 5 min frem</button>
@@ -66,7 +67,7 @@ export class DevMenu {
       </div></div>`;
     document.body.appendChild(el); this.el = el; this.open = false;
     this.profile = applyControlProfile(game, savedProfile()); this.markProfile();
-    this.hudB = hudB(!!game.input?.isTouch); this.applyHudTest();
+    this.hudB = hudB(!!game.input?.isTouch); this.applyHudTest(); this.markFlags();
     for (const t of ['pointerdown', 'pointermove', 'pointerup']) { el.addEventListener(t, e => e.stopPropagation()); btn.addEventListener(t, e => e.stopPropagation()); }
     btn.addEventListener('click', () => this.show());
     el.addEventListener('click', e => {
@@ -76,6 +77,9 @@ export class DevMenu {
     addEventListener('keydown', e => { if (this.open && e.key === 'Escape') { e.stopImmediatePropagation(); this.hide(); } }, true);
   }
 
+  // R134: DEV-only visual toggles (read by ImpactFx / ControlTips; both also require the DEV menu to be on)
+  flag(k) { try { return localStorage.getItem(`tgw.dev.${k}`) === '1'; } catch { return false; } }
+  markFlags() { this.el.querySelectorAll('[data-a^="flag:"]').forEach(b => b.classList.toggle('active', this.flag(b.dataset.a.slice(5)))); }
   show() { this.open = true; this.el.classList.add('open'); this.g.input?.resetTouchPointers?.(); }
   hide() { this.open = false; this.el.classList.remove('open'); }
   markProfile() {
@@ -167,6 +171,12 @@ export class DevMenu {
     }
     if (a.startsWith('move:')) { if (!g.world.isGardenSpace()) return this.toast('Gå ind i din have først'); this.hide(); g.buildMode?.start(a.slice(5)); return; }
     if (a === 'layout:reset') { g.garden?.resetToDefaults(); this.toast('Haven er tilbage på standardplaceringer'); return; }
+    if (a.startsWith('flag:')) {
+      const k = a.slice(5), on = !this.flag(k); try { localStorage.setItem(`tgw.dev.${k}`, on ? '1' : '0'); } catch {}
+      if (k === 'tipTop') document.body.classList.toggle('tip-top', on);
+      this.markFlags(); this.toast(`${k === 'flyIcons' ? 'Ikoner flyver op i baren' : 'Tutorial-tip øverst'}: ${on ? 'til' : 'fra'}`); return;
+    }
+    if (a === 'tips:again') { try { localStorage.removeItem('tgw.controlTips.v1'); } catch {} location.reload(); return; }
     if (a === 'look') { const on = g.look?.toggle?.(); this.toast(on ? '3D-look R70: til (kun i verden)' : '3D-look R70: fra (som før)'); return; }
     if (a === 'perf') { g.perfHud?.set(!g.perfHud.on); this.toast(g.perfHud?.on ? 'Performance-HUD til' : 'Performance-HUD fra'); return; }
     if (a === 'metrics') {

@@ -6,6 +6,8 @@
 //  10 resource feedback: wood splinters, stone chips + dust, clay clods, fiber leaves, and a floating +N.
 // Combat, boss and gathering logic stay untouched (damage, timings, AI, rewards): they only call in here, and the
 // camera keeps its own logic (the shake is the same per-frame offset the bosses already use). Fails soft.
+// R134 (GO 08/10, DEV toggle 'Ikoner flyver op i baren'): the resource's own HUD icon flies from the spot into its counter,
+// for gathering and for combat loot. Off unless the DEV menu and the toggle are on; then it replaces the 3D gems.
 import * as THREE from 'three';
 
 const HIT_STOP = .11, STOP_SCALE = .04, SHAKE = .3, FLASH = .16, MAX_PARTS = 140;
@@ -14,6 +16,8 @@ const KIND = {
   wood: { col: 0xd9b483, debris: 'splinter' }, stone: { col: 0x8e8a7e, debris: 'chip', dust: 0xbdb5a5 },
   clay: { col: 0xb9764a, debris: 'chip', dust: 0xc9a07a }, fiber: { col: 0x8fbf5a, debris: 'leaf' }
 };
+const ICON = { wood: 'wood', stone: 'stone', clay: 'clay', fiber: 'fiber', amber: 'amber', shell: 'shell', wild_seed: 'wild-seed' };
+const flyIcons = () => { try { return localStorage.getItem('tgw.devMenu') === '1' && localStorage.getItem('tgw.dev.flyIcons') === '1'; } catch { return false; } };
 const rnd = (a, b) => a + Math.random() * (b - a), ease = k => 1 - (1 - k) * (1 - k), easeIn = k => k * k;
 const NO_FLASH = /Ring|Bit|Spark|Light|Glow|Ghost|Aura|FX|Bar|Eye|Mound|Hole|Clod|Dirt|Ground|Shadow/i;   // only the creature flashes, not its mound
 
@@ -36,7 +40,7 @@ export class ImpactFx {
     this.g = game; this.parts = []; this.freeze = 0; this.shake = 0; this.flashes = []; this.flies = []; this.teleT = 0;
     this.root = new THREE.Group(); this.root.name = 'R129_IMPACT_FX'; game.scene.add(this.root);
     this.glow = glowTexture(); this.text = new Map();
-    game.state?.events?.on?.('fx:gather', e => { try { this.gather(e.kind, e.x, e.y, e.z, e.n); } catch {} });
+    game.state?.events?.on?.('fx:gather', e => { try { this.gather(e.kind, e.x, e.y, e.z, e.n); } catch {} try { this.flyIcon(e.kind, e, e.n); } catch {} });
   }
   // ---- 01 hit-stop: the world runs at 4 % for ~110 ms of real time ----
   timeScale(rawDt) { if (this.freeze <= 0) return 1; this.freeze -= rawDt; return STOP_SCALE; }
@@ -84,6 +88,7 @@ export class ImpactFx {
   }
   // ---- 06 loot magnet: small gems arc up to the HUD counter ----
   lootFly(kind, pos, amount = 1) {
+    try { if (this.flyIcon(kind, pos, amount)) return; } catch {}
     const n = Math.max(1, Math.min(4, amount | 0)), col = KIND[kind]?.col ?? 0xf0c463;
     for (let i = 0; i < n; i++) {
       const mesh = new THREE.Mesh(GEM, new THREE.MeshStandardMaterial({ color: col, emissive: col, emissiveIntensity: .35, roughness: .35 }));
@@ -92,6 +97,26 @@ export class ImpactFx {
       this.flies.push({ mesh, kind, from: mesh.position.clone(), t: -i * .07, dur: .6 });
     }
   }
+  // ---- R134 DEV: 2D icon flight (screen space, so it reads on a phone) ----
+  flyIcon(kind, pos, n = 1) {
+    if (!flyIcons() || !ICON[kind] || !document.body.animate) return false;
+    const v = new THREE.Vector3(pos.x, (pos.y ?? 0) + .5, pos.z).project(this.g.camera), front = v.z < 1 && Math.abs(v.x) < 1.2 && Math.abs(v.y) < 1.2;
+    const sx = front ? (v.x + 1) / 2 * innerWidth : innerWidth / 2, sy = front ? (1 - v.y) / 2 * innerHeight : innerHeight * .55;
+    const c = this.chip(kind), k = Math.max(1, Math.min(4, n | 0));
+    for (let i = 0; i < k; i++) {
+      const el = document.createElement('img'); el.className = 'fx-fly'; el.alt = ''; el.src = `./brand/icons/resources/icon-${ICON[kind]}.png`; document.body.appendChild(el);
+      const x0 = sx + (i - (k - 1) / 2) * 16, dx = c.x - x0, dy = c.y - sy, lift = Math.min(80, Math.abs(dy) * .35 + 30), at = (x, y, s) => `translate(${x}px,${y}px) translate(-50%,-50%) scale(${s})`;
+      const a = el.animate([
+        { transform: at(x0, sy, .4), opacity: 0 },
+        { transform: at(x0, sy - 24, 1.35), opacity: 1, offset: .2 },
+        { transform: at(x0 + dx * .45, sy + dy * .45 - lift, 1.1), opacity: 1, offset: .6 },
+        { transform: at(c.x, c.y, .55), opacity: .9 }
+      ], { duration: 760, delay: i * 90, easing: 'cubic-bezier(.45,0,.6,1)', fill: 'both' });
+      a.onfinish = () => { el.remove(); this.arrive(c.el); }; a.oncancel = () => el.remove();
+    }
+    return true;
+  }
+  arrive(el) { if (!el) return; el.classList.remove('fx-arrive'); void el.offsetWidth; el.classList.add('fx-arrive'); clearTimeout(el._r129); el._r129 = setTimeout(() => el.classList.remove('fx-arrive'), 320); }
   chip(kind) {
     const el = kind === 'golden_seed' || kind === 'rare_seed' ? document.querySelector('.seed-card') : document.querySelector(`.material-chip.${kind}`);
     const r = el?.getBoundingClientRect(); return r && r.width > 0 && getComputedStyle(el).visibility !== 'hidden' ? { el, x: r.left + Math.min(r.width / 2, 18), y: r.top + r.height / 2 } : { el: null, x: innerWidth / 2, y: 30 };
@@ -150,7 +175,7 @@ export class ImpactFx {
       f.mesh.scale.setScalar(1 - .55 * q); f.mesh.rotation.y += rdt * 8;
       if (k >= 1) {
         this.root.remove(f.mesh); f.mesh.material.dispose(); f.mesh.children[0]?.material?.dispose?.(); this.flies.splice(i, 1);
-        if (c.el) { c.el.classList.remove('fx-arrive'); void c.el.offsetWidth; c.el.classList.add('fx-arrive'); clearTimeout(c.el._r129); c.el._r129 = setTimeout(() => c.el.classList.remove('fx-arrive'), 320); }
+        this.arrive(c.el);
       }
     }
     // particles

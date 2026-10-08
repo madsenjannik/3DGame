@@ -683,8 +683,22 @@ try {
       $('.cs-thumb[data-i="4"]').click(); await w(400); o.locked = $('.cs-card.main b').textContent === 'Tulip' && $('#cs-play').disabled && /Grow me/.test($('#cs-desc').textContent) && !$('#cs-ab-text').textContent && !!$('.cs-mystery') && !$('.cs-stat');   /* R133: locked = a mystery */
       document.getElementById('cs-prev').click(); await w(400); o.prev = $('.cs-card.main b').textContent === 'Aloe Vera';
       $('.cs-thumb[data-i="0"]').click(); await w(400); o.open = $('.cs-card.main b').textContent === 'Daisy' && !$('#cs-play').disabled && /Play as Daisy/.test($('#cs-play').textContent);
+      /* R134: phone layout from the device screen, no arrows on touch, a big special icon, equal column dividers, the vest for Courage */
+      const cols = [...document.querySelectorAll('.cs-col')].map(c => Math.round(c.getBoundingClientRect().height));
+      o.r134 = document.documentElement.classList.contains('cs-phone') && getComputedStyle($('#cs-prev')).display === 'none' && $('#cs-ab-icon').getBoundingClientRect().width >= 48 && cols.every(h => h === cols[0]) && /icon-vest/.test($('.cs-stat:nth-child(2) .cs-ico').getAttribute('style')) && document.documentElement.scrollWidth <= innerWidth;
       return o; }) : {};
-    check('character select test page (R132/R133): English, 9 characters, Daisy/Cactus/Swamp open, locked ones a mystery that says how to grow them, browse by thumb and arrow', ok && Object.values(r).length === 4 && Object.values(r).every(Boolean) && !errors.length, errors[0] || JSON.stringify(r)); await ctx.close(); }
+    check('character select test page (R132–R134): English, 9 characters, Daisy/Cactus/Swamp open, locked ones a mystery that says how to grow them, browse by thumb and arrow; phone layout from the screen, no arrows on touch, big special icon, equal dividers', ok && Object.values(r).length === 5 && Object.values(r).every(Boolean) && !errors.length, errors[0] || JSON.stringify(r)); await ctx.close(); }
+  // 17m. R134 DEV toggles (visual only, off by default): resource icons fly into their counter; the tutorial tip sits under the resource bar on phones
+  { const ctx = await context({ viewport: { width: 844, height: 390 }, isMobile: true, hasTouch: true }); await ctx.addInitScript(() => { localStorage.setItem('tgw.dev.flyIcons', '1'); localStorage.setItem('tgw.dev.tipTop', '1'); });
+    const { p, errors, ok } = await startGame(ctx, 'cactus', { hud: 'classic', tips: true }); let r = {};
+    if (ok) { await p.waitForFunction(() => document.querySelector('#control-tips.show'), null, { timeout: 120000 }).catch(() => {}); await p.waitForTimeout(600);
+      r = await p.evaluate(async () => { const g = window.__tgw, ch = g.character?.root?.position || g.character?.position, o = {}, n = () => document.querySelectorAll('.fx-fly').length;
+        const bar = document.querySelector('.material-chip.wood').getBoundingClientRect(), tip = document.getElementById('control-tips').getBoundingClientRect();
+        o.tip = document.body.classList.contains('ct-on') && tip.top >= bar.bottom - 1 && tip.bottom < innerHeight * .45;
+        g.state.events.emit('fx:gather', { kind: 'wood', n: 2, x: ch.x + 1, y: ch.y, z: ch.z }); o.fly = n() === 2;
+        localStorage.setItem('tgw.dev.flyIcons', '0'); const gems = g.fx.flies.length; g.fx.lootFly('clay', ch, 1); o.off = n() === 2 && g.fx.flies.length === gems + 1;   // off: the R129 3D gem as before
+        return o; }); }
+    check('R134 DEV toggles: resource icons fly into the bar, tutorial tip under the resource bar on phones, both off = as before', ok && r.tip && r.fly && r.off && !errors.length, errors[0] || JSON.stringify(r)); await ctx.close(); }
   // 17h. R117 desktop: the click that closes the Bag does not swing; the next click on the view does
   { const ctx = await context({ viewport: { width: 1280, height: 720 } }); const { p, errors, ok } = await startGame(ctx, 'fern', { hud: 'desktop-e' });
     let r = {};

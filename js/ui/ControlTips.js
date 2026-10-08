@@ -2,6 +2,9 @@
 // R120 (GO 07/10): first-time control tips, one short card at a time, per device. A tip completes when the player
 // does the thing (or taps/clicks the card); 'Skip' ends them all. Shown once per device (localStorage), fails soft.
 const KEY = 'tgw.controlTips.v1';
+// R134 (GO 08/10, DEV toggle 'Tutorial-tip øverst'): on phones the card sits under the resource bar, above the
+// character; the toast steps down under it while a tip shows (body.tip-top / body.ct-on, styles.css).
+const tipTop = () => { try { return localStorage.getItem('tgw.devMenu') === '1' && localStorage.getItem('tgw.dev.tipTop') === '1'; } catch { return false; } };
 const done = () => { try { return localStorage.getItem(KEY) === '1'; } catch { return false; } };
 
 const TOUCH = [
@@ -21,6 +24,7 @@ const DESKTOP = [
 
 export class ControlTips {
   constructor(game) {
+    document.body.classList.toggle('tip-top', tipTop());
     this.g = game; this.i = 0; this.t = { look: false, action: false, hop: false }; this.showAt = performance.now() + 2500; this.shownAt = 0;   // real time: frame dt is clamped, so slow devices would wait far longer
     if (done()) { this.off = true; return; }
     this.steps = game.input.isTouch ? TOUCH : DESKTOP;
@@ -40,19 +44,20 @@ export class ControlTips {
     addEventListener('pointerdown', this.onDown, true); addEventListener('keydown', this.onKey, true);
   }
   render() { const s = this.steps[this.i]; this.textEl.textContent = s.text; this.stepEl.textContent = `${this.i + 1}/${this.steps.length}`; this.shownAt = performance.now(); }
-  next() { this.i++; this.t.look = this.t.action = this.t.hop = false; if (this.i >= this.steps.length) return this.finish(); this.el.classList.remove('show'); this.showAt = performance.now() + 600; }
+  vis(on) { this.el?.classList.toggle('show', on); document.body.classList.toggle('ct-on', on); }
+  next() { this.i++; this.t.look = this.t.action = this.t.hop = false; if (this.i >= this.steps.length) return this.finish(); this.vis(false); this.showAt = performance.now() + 600; }
   finish() {
     this.off = true; try { localStorage.setItem(KEY, '1'); } catch {}
     removeEventListener('pointerdown', this.onDown, true); removeEventListener('keydown', this.onKey, true);
-    this.el?.classList.remove('show'); setTimeout(() => this.el?.remove(), 500);
+    this.vis(false); setTimeout(() => this.el?.remove(), 500);
   }
   // blocked: a story choice, portal, panel, map, special mode or build mode owns the screen
   update(dt, blocked) {
     if (this.off) return;
     const showing = this.el.classList.contains('show');
     const now = performance.now();
-    if (blocked) { if (showing) this.el.classList.remove('show'); this.showAt = Math.max(this.showAt, now + 600); return; }
-    if (!showing) { if (now >= this.showAt) { this.render(); this.el.classList.add('show'); } return; }
+    if (blocked) { if (showing) this.vis(false); this.showAt = Math.max(this.showAt, now + 600); return; }
+    if (!showing) { if (now >= this.showAt) { this.render(); this.vis(true); } return; }
     if (now - this.shownAt > 800 && this.steps[this.i].when(this.g, this.t)) this.next();
   }
 }
