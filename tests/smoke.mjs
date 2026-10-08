@@ -196,6 +196,15 @@ try {
       r.kept = await p.evaluate(async () => { const g = window.__tgw; for (let i = 0; i < 60 && !g.vest?.model; i++) await new Promise(x => setTimeout(x, 250)); return g.vestWorn() && !!g.vest?.model?.visible; }); }
     check('life vest R125: boat needs it on, Wear in the Bag puts it on the body, stays on after reload', ok && r.blocked && r.worn && r.onBody && r.kept && !errors.length, errors[0] || JSON.stringify(r)); await ctx.close(); }
 
+  // 2h. R125 greenhouse + Stable per character: the old shared level goes to the last played character only
+  { const ctx = await context({ viewport: { width: 844, height: 390 }, isMobile: true, hasTouch: true }); const p = await ctx.newPage(); const errors = []; p.on('pageerror', e => errors.push(e.message));
+    await p.addInitScript(() => { localStorage.setItem('tgw.controlTips.v1', '1'); localStorage.setItem('dym.homeMovedIn.v1.cactus', '1'); localStorage.setItem('tgw.devMenu', '1');
+      if (!sessionStorage.getItem('r125')) { sessionStorage.setItem('r125', '1'); localStorage.setItem('tgw.lastChar', JSON.stringify({ id: 'fern', name: 'Fern' })); localStorage.setItem('dym-gh-level', '3'); localStorage.setItem('dym.thoraStable.v1', JSON.stringify({ lent: true })); } });
+    await p.goto(B + 'game.html?char=cactus', { waitUntil: 'load' }); const ok = await p.waitForFunction(() => !document.getElementById('loading'), null, { timeout: 240000 }).then(() => true, () => false);
+    const r = ok ? await p.evaluate(async () => { const g = window.__tgw; for (let i = 0; i < 80 && !(g.greenhouse && g.stable); i++) await new Promise(x => setTimeout(x, 250));
+      return { cactusFresh: g.greenhouse?.level === 0 && !g.stable?.saveData?.lent, fernKept: localStorage.getItem('dym-gh-level.fern') === '3' && JSON.parse(localStorage.getItem('dym.thoraStable.v1.fern') || '{}').lent === true, once: localStorage.getItem('tgw.scope.v1') === 'fern' }; }) : {};
+    check('greenhouse + Stable per character (R125): shared progress went to the last played character, a new character starts fresh', ok && r.cactusFresh && r.fernKept && r.once && !errors.length, errors[0] || JSON.stringify(r)); await ctx.close(); }
+
   // 3. Missing assets must not black-screen the game
   { const ctx = await context({ viewport: { width: 844, height: 390 }, isMobile: true, hasTouch: true }, [/assets\/stable\//, /lake_cabin|cabin_fishing_runtime/, /greenhouse-l1/, /characters\/fern\.glb/]);
     const { p, errors, ok } = await startGame(ctx, 'fern'); const failed = ok ? await p.evaluate(() => window.__tgw.failed) : [];

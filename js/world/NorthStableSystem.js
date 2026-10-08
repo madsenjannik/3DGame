@@ -58,16 +58,17 @@ const JCURVE=new THREE.CatmullRomCurve3(_jw.map(([x,z])=>new THREE.Vector3(x,0,z
 const JLEN=JCURVE.getLength();
 
 function deepCopySave(){return JSON.parse(JSON.stringify(DEF));}
-function loadSave(){try{return Object.assign(deepCopySave(),JSON.parse(localStorage.getItem(SAVE_KEY))||{});}catch(e){return deepCopySave();}}
+function loadSave(key=SAVE_KEY){try{return Object.assign(deepCopySave(),JSON.parse(localStorage.getItem(key))||{});}catch(e){return deepCopySave();}}
 function cloneMaterials(root){root.traverse(o=>{if(!o.isMesh)return;if(Array.isArray(o.material))o.material=o.material.map(m=>m.clone());else if(o.material)o.material=o.material.clone();});}
 function makeMarkerLabel(text,width=250,height=78){const canvas=document.createElement('canvas');canvas.width=width;canvas.height=height;const ctx=canvas.getContext('2d');const tex=new THREE.CanvasTexture(canvas);tex.colorSpace=THREE.SRGBColorSpace;const mat=new THREE.SpriteMaterial({map:tex,transparent:true,depthWrite:false});mat.toneMapped=false;mat.opacity=.96;const sprite=new THREE.Sprite(mat);sprite.scale.set(width/320,height/320,1);ctx.clearRect(0,0,width,height);ctx.font=`800 ${Math.round(height*.43)}px Manrope, sans-serif`;ctx.textAlign='center';ctx.textBaseline='middle';ctx.shadowColor='rgba(24,20,12,.68)';ctx.shadowBlur=14;ctx.fillStyle='#fff4d6';ctx.fillText(text,width/2,height/2+1);tex.needsUpdate=true;sprite.userData.baseScale={x:sprite.scale.x,y:sprite.scale.y};return sprite;}
 
 export class NorthStableSystem{
-  constructor(scene,{world,state,renderer}={}){
+  constructor(scene,{world,state,renderer,saveKey=SAVE_KEY}={}){
+    this.saveKey=saveKey;   // R125 (GO 07/10): Stable progress per character
     this.scene=scene;this.world=world;this.state=state;this.renderer=renderer;this.character=null;this.input=null;this.hud=null;this.followCamera=null;
     this.root=new THREE.Group();this.root.name='NORTH_STABLE_ROOT';this.root.position.set(ROOT.x,0,ROOT.z);this.root.rotation.y=ROOT.rotation;this.scene.add(this.root);
     this.loader=new GLTFLoader();this.mixers=[];this.horses=[];this.mount=null;this.ghostHorse=null;this.ready=false;this.mode='world';this.T=0;this._bubbleTimer=0;this._camInit=false;
-    this.saveData=loadSave();this.lent=!!this.saveData.lent;this.access=false;
+    this.saveData=loadSave(this.saveKey);this.lent=!!this.saveData.lent;this.access=false;
     this.ride={x:0,z:0,h:0,v:0,y:0,jumpT:-1,mt:0,refused:-99,reserve:1};this.race=null;this.raceScope='day';
     this._setupDisc='lap_horse';this._setupHorseName=HORSES[0].name;this._setupReturnMode='world';
     this.rideCamYaw=PI;this.rideCamPitch=.42;this.rideCamDist=7;this._rideCamInit=false;this._rideCamPos=new THREE.Vector3();this._rideCamTgt=new THREE.Vector3();this._rideDragging=false;this._ridePointer=null;this._rideLastX=0;this._rideLastY=0;
@@ -133,7 +134,7 @@ export class NorthStableSystem{
     },true);
   }
 
-  save(){try{localStorage.setItem(SAVE_KEY,JSON.stringify(this.saveData));}catch(e){console.warn('[TGW] Stable progress could not be saved',e);}}
+  save(){try{localStorage.setItem(this.saveKey||SAVE_KEY,JSON.stringify(this.saveData));}catch(e){console.warn('[TGW] Stable progress could not be saved',e);}}
   localToWorld(x,z){const c=Math.cos(ROOT.rotation),s=Math.sin(ROOT.rotation);return{x:ROOT.x+c*x+s*z,z:ROOT.z-s*x+c*z};}
   localGroundY(x,z){const w=this.localToWorld(x,z);return (this.world?.groundHeight?.(w.x,w.z)??0)-this.root.position.y;}
   worldToLocal(pos){const c=Math.cos(ROOT.rotation),s=Math.sin(ROOT.rotation),dx=pos.x-ROOT.x,dz=pos.z-ROOT.z;return{x:c*dx-s*dz,z:s*dx+c*dz};}

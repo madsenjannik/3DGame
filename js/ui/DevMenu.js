@@ -200,7 +200,7 @@ export class DevMenu {
       }
       this.hide();
     } else if (a.startsWith('gh:')) {
-      try { localStorage.setItem('dym-gh-level', a.slice(3)); } catch {}
+      try { localStorage.setItem(`dym-gh-level.${this.g.state.player.characterId}`, a.slice(3)); } catch {}   // R125 per character
       w.save.flush(); location.reload();
     } else if (a === 'weed') {
       if (!w.threat.active()) w.threat.start(Date.now());

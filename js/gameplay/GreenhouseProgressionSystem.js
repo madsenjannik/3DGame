@@ -94,7 +94,8 @@ function rotateShapes(shapes,rot){
 }
 
 export class GreenhouseProgressionSystem {
-  constructor(scene,{state,world}){
+  constructor(scene,{state,world,storageKey=STORAGE_KEY}){
+    this.storageKey=storageKey;   // R125 (GO 07/10): one greenhouse level per character
     this.scene=scene;this.state=state;this.world=world;
     this.entries=new Map();this.level=0;this.anim=null;this.cameraExtra=0;this.interaction=null;
     this.origin=new THREE.Vector3(ROOT_X,0,ROOT_Z);this.rot=0;
@@ -115,12 +116,12 @@ export class GreenhouseProgressionSystem {
   readInitialLevel(){
     const params=new URLSearchParams(location.search);
     if(this.devMode&&params.get('ghreset')==='1'){
-      try{localStorage.removeItem(STORAGE_KEY);}catch(e){console.warn('[TGW] Greenhouse save could not be cleared',e);}
+      try{localStorage.removeItem(this.storageKey);}catch(e){console.warn('[TGW] Greenhouse save could not be cleared',e);}
       return 0;
     }
     const query=this.devMode?params.get('ghlevel'):null;
     if(query!==null)return THREE.MathUtils.clamp(parseInt(query,10)||0,0,3);
-    try{return THREE.MathUtils.clamp(parseInt(localStorage.getItem(STORAGE_KEY)||'0',10)||0,0,3);}catch(_){return 0;}
+    try{return THREE.MathUtils.clamp(parseInt(localStorage.getItem(this.storageKey)||'0',10)||0,0,3);}catch(_){return 0;}
   }
 
   async load(level){
@@ -174,7 +175,7 @@ export class GreenhouseProgressionSystem {
     else this.playLoop(entry,'Idle');
   }
 
-  persist(){if(this.devEphemeral||this.levelOverride)return;try{localStorage.setItem(STORAGE_KEY,String(this.level));}catch(e){console.warn('[TGW] Greenhouse progress could not be saved',e);}}
+  persist(){if(this.devEphemeral||this.levelOverride)return;try{localStorage.setItem(this.storageKey,String(this.level));}catch(e){console.warn('[TGW] Greenhouse progress could not be saved',e);}}
 
   startUpgrade(){
     if(this.anim||this.level>=3)return false;

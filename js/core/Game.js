@@ -3,40 +3,40 @@ import * as THREE from 'three';
 import { AssetRegistry } from './AssetRegistry.js';
 import { CharacterController } from './CharacterController.js?build=MOBILE-GESTURE-R34B-20260930A';
 import { GameState } from './GameState.js';
-import { InputManager } from './InputManager.js?build=BAG-VEST-R124-20261008A';
+import { InputManager } from './InputManager.js?build=PER-CHAR-R125-20261008A';
 import { ThirdPersonCamera } from './ThirdPersonCamera.js?build=MOBILE-GESTURE-R34B-20260930A';
 import { CameraOcclusionSystem } from './CameraOcclusionSystem.js?build=NORTH-STABLE-R23O-20260929A';
 import { StructureVisibilitySystem } from '../visual/StructureVisibilitySystem.js?build=NORTH-STABLE-R23O-20260929A';
 import { characterCatalog, resourceCatalog, buildingCatalog } from '../data/assetCatalog.js';
-import { CollectibleSystem } from '../gameplay/CollectibleSystem.js?build=BAG-VEST-R124-20261008A';
-import { MeaningfulChoiceSystem } from '../gameplay/MeaningfulChoiceSystem.js?build=BAG-VEST-R124-20261008A';
-import { GreenhouseProgressionSystem } from '../gameplay/GreenhouseProgressionSystem.js?build=CAMERA-CUTAWAY-CONTEXT-R21D-20260928E';
+import { CollectibleSystem } from '../gameplay/CollectibleSystem.js?build=PER-CHAR-R125-20261008A';
+import { MeaningfulChoiceSystem } from '../gameplay/MeaningfulChoiceSystem.js?build=PER-CHAR-R125-20261008A';
+import { GreenhouseProgressionSystem } from '../gameplay/GreenhouseProgressionSystem.js?build=PER-CHAR-R125-20261008A';
 import { OrangeryHubSystem } from '../gameplay/OrangeryHubSystem.js?build=CAMERA-CUTAWAY-CONTEXT-R21D-20260928E';
 import { FishingV1System } from '../gameplay/FishingV1System.js?build=BAG-NIGHT-R84-20261006A';
 import { ChoicePanel } from '../ui/ChoicePanel.js';
-import { Hud } from '../ui/Hud.js?build=BAG-VEST-R124-20261008A';
+import { Hud } from '../ui/Hud.js?build=PER-CHAR-R125-20261008A';
 import { WorldMap } from '../ui/WorldMap.js?build=WORLD-MAP-R35B-20260930B';
 import { GardenEnvironment } from '../world/GardenEnvironment.js?build=WATER-VEG-R103-20261006A';
 import { WildlifeSystem } from '../world/WildlifeSystem.js?build=CAMERA-CUTAWAY-CONTEXT-R21D-20260928E';
 import { PlayerHomePortalSystem } from '../world/PlayerHomePortalSystem.js?build=ENTRY-R29-20260929A';
-import { NorthStableSystem } from '../world/NorthStableSystem.js?build=STABLE-R42-20261001A';
-import { SaveGame } from './SaveGame.js?build=BAG-VEST-R124-20261008A';
-import { WildsLoopSystem } from '../gameplay/WildsLoopSystem.js?build=BAG-VEST-R124-20261008A';
+import { NorthStableSystem } from '../world/NorthStableSystem.js?build=PER-CHAR-R125-20261008A';
+import { SaveGame } from './SaveGame.js?build=PER-CHAR-R125-20261008A';
+import { WildsLoopSystem } from '../gameplay/WildsLoopSystem.js?build=PER-CHAR-R125-20261008A';
 import { WorkbenchPanel } from '../ui/WorkbenchPanel.js';
-import { DevMenu, devMenuEnabled } from '../ui/DevMenu.js?build=HUD-E-DESKTOP-R85-20261006A';
+import { DevMenu, devMenuEnabled } from '../ui/DevMenu.js?build=PER-CHAR-R125-20261008A';
 import { applyControlProfile, defaultProfile } from './ControlProfiles.js';
 import { PerfHud } from '../dev/PerfHud.js';
-import { QualityManager, QUALITY } from './Quality.js?build=BAG-VEST-R124-20261008A';
+import { QualityManager, QUALITY } from './Quality.js?build=PER-CHAR-R125-20261008A';
 import { InteractionResolver } from './InteractionResolver.js';
 import { log, warn } from '../dev/Log.js';
 import { LookPass } from '../visual/LookPass.js?build=BAG-NIGHT-R84-20261006A';
 import { DayNight } from '../visual/DayNight.js?build=BAG-NIGHT-R84-20261006A';   // R81
 import { TOOLS } from '../data/wildsCatalog.js';   // R124 Bag texts (the Workbench's own effect lines)
 import { WEAPONS } from '../data/combatCatalog.js';   // R124 strike values
-import { VestVisual } from '../gameplay/VestVisual.js?build=BAG-VEST-R124-20261008A';   // R125
-import { GameMenu } from '../ui/GameMenu.js?build=BAG-VEST-R124-20261008A';   // R121
-import { ControlTips } from '../ui/ControlTips.js?build=BAG-VEST-R124-20261008A';   // R120
-import { Lantern } from '../gameplay/Lantern.js?build=BAG-VEST-R124-20261008A';     // R81/R101
+import { VestVisual } from '../gameplay/VestVisual.js?build=PER-CHAR-R125-20261008A';   // R125
+import { GameMenu } from '../ui/GameMenu.js?build=PER-CHAR-R125-20261008A';   // R121
+import { ControlTips } from '../ui/ControlTips.js?build=PER-CHAR-R125-20261008A';   // R120
+import { Lantern } from '../gameplay/Lantern.js?build=PER-CHAR-R125-20261008A';     // R81/R101
 import { BoatEconomySystem } from '../gameplay/BoatEconomySystem.js';
 import { LakeRunSystem } from '../gameplay/LakeRunSystem.js';
 import { GardenBuildSystem } from '../gameplay/GardenBuildSystem.js';
@@ -76,7 +76,13 @@ export class Game {
     // after every member of this wave is fully ready.
     const homePortalPromise=optional('home',()=>new PlayerHomePortalSystem(this.scene,{world:this.world,state:this.state,characterId:this.state.player.characterId,moveInEnabled:!devMode,onSpaceChanged:space=>this.wildlife?.setActive?.(space==='world')}).init());
     try{this.wildlife=new WildlifeSystem(this.scene,{world:this.world,isTouch:this.world.isTouch});Promise.resolve(this.wildlife.init()).catch(e=>{warn('LOAD','wildlife failed',e);this.failed.push('wildlife');});}catch(e){warn('LOAD','wildlife failed',e);this.failed.push('wildlife');this.wildlife=null;}
-    const stablePromise=optional('stable',()=>new NorthStableSystem(this.scene,{world:this.world,state:this.state,renderer:this.renderer}).init());
+    // R125 (GO 07/10): greenhouse level and Stable progress follow the character. The old shared values go once to the
+    // character that was played last (Jannik 07/10); everyone else starts fresh. The shared keys are left in place.
+    const scoped=k=>`${k}.${characterId}`;
+    try{if(!localStorage.getItem('tgw.scope.v1')){const last=JSON.parse(localStorage.getItem('tgw.lastChar')||'null')?.id||characterId;
+      for(const k of ['dym-gh-level','dym.thoraStable.v1']){const v=localStorage.getItem(k);if(v!=null&&localStorage.getItem(`${k}.${last}`)==null)localStorage.setItem(`${k}.${last}`,v);}
+      localStorage.setItem('tgw.scope.v1',last);}}catch{}
+    const stablePromise=optional('stable',()=>new NorthStableSystem(this.scene,{world:this.world,state:this.state,renderer:this.renderer,saveKey:scoped('dym.thoraStable.v1')}).init());
     // Critical: the selected character. If its GLB fails, fall back to the procedural sprout so the game still starts.
     const characterPromise=this.registry.instantiateCharacter(this.state.player.characterId,{uTime:this.uTime}).catch(e=>{warn('LOAD',`character ${this.state.player.characterId} failed; using the fallback sprout`,e);this.failed.push('character');return this.registry.instantiateCharacter('sprout_alpha',{uTime:this.uTime});});
     // R55 staged loading: only home + character gate the first playable frame. Stable, garden
@@ -92,7 +98,7 @@ export class Game {
     const collectiblePromise=optional('golden-seed',()=>new CollectibleSystem(this.world.privateRoot,{state:this.state,resourceCatalog,uTime:this.uTime}).init());
     const choicePromise=optional('seed-choice',()=>new MeaningfulChoiceSystem(this.world.privateRoot,{state:this.state}).init());
     // The old Lookout resource loop is retired: building now happens at the wilds workbench in this garden.
-    const greenhousePromise=optional('greenhouse',()=>new GreenhouseProgressionSystem(this.world.privateRoot,{state:this.state,world:this.world}).init());
+    const greenhousePromise=optional('greenhouse',()=>new GreenhouseProgressionSystem(this.world.privateRoot,{state:this.state,world:this.world,storageKey:scoped('dym-gh-level')}).init());
     const orangeryPromise=optional('orangery',()=>new OrangeryHubSystem(this.scene,{state:this.state,world:this.world,uTime:this.uTime}).init());
     this.hud=new Hud(this.state);this.choicePanel=new ChoicePanel(this.state);
     this.input=new InputManager({joy:document.getElementById('joy'),knob:document.getElementById('joy-knob'),actionButton:document.getElementById('action')});
