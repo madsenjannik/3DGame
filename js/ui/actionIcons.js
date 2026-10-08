@@ -33,4 +33,4 @@ export function actionIconName(it) {
   if (t === 'first-seed') return 'seed';
   return 'leaf';
 }
-export const actionIcon = it => { const n = actionIconName(it); return `<span class="ico-mask" style="--ico:url(./brand/icons/svg/icon-${NAMES.includes(n) ? n : 'leaf'}.svg)"></span>`; };
+export const actionIcon = it => { const n = actionIconName(it); return `<span class="ico-mask" style="--ico:url(./brand/icons/svg/icon-${NAMES.includes(n) ? n : 'leaf'}.svg?v=127)"></span>`; };

@@ -203,15 +203,16 @@ try {
     if (ok) { await p.waitForFunction(() => window.__tgw?.combat?.special && window.__tgw?.lantern?.ready, null, { timeout: 120000 }).catch(() => {});
       Object.assign(r, await p.evaluate(async () => { const g = window.__tgw, w = ms => new Promise(x => setTimeout(x, ms)); g.devMenu.run('tid:day'); await w(800); g.combat.special.charge = 6; await w(600);
         const a = document.getElementById('action'), cs = getComputedStyle;
-        return { ring: a.classList.contains('sp-full') && cs(a, '::before').content !== 'none', noSpecialBtn: cs(document.querySelector('.special-btn')).display === 'none', noLanternBtn: cs(document.getElementById('lantern-btn')).display === 'none' }; }));
+        const arc = a.querySelector('.sp-arc'), fill = a.querySelector('.sp-fill'), ib = a.querySelector('#action-ico .ico-mask').getBoundingClientRect(), ab = a.getBoundingClientRect();   // R127: SVG gold arc, icon centred
+        return { ring: a.classList.contains('sp-full') && !!arc && cs(arc).display !== 'none' && /^100/.test(fill?.style.strokeDasharray || '') && Math.abs(ib.x + ib.width / 2 - ab.x - ab.width / 2) < 1.5 && Math.abs(ib.y + ib.height / 2 - ab.y - ab.height / 2) < 1.5, noSpecialBtn: cs(document.querySelector('.special-btn')).display === 'none', noLanternBtn: cs(document.getElementById('lantern-btn')).display === 'none' }; }));
       const b = await p.evaluate(() => { const x = document.getElementById('action').getBoundingClientRect(); return [x.x + x.width / 2, x.y + x.height / 2]; });
       await p.touchscreen.tap(b[0], b[1]); await p.waitForTimeout(400); r.tapKeeps = await p.evaluate(() => window.__tgw.combat.special.charge === 6);
-      const cdp = await ctx.newCDPSession(p); await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x: b[0], y: b[1] }] }); await p.waitForTimeout(1200);
-      r.charged = await p.evaluate(() => document.getElementById('action').classList.contains('sp-charged'));
+      const cdp = await ctx.newCDPSession(p); await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x: b[0], y: b[1] }] }); await p.waitForTimeout(900);
+      r.charged = await p.waitForFunction(() => document.getElementById('action').classList.contains('sp-charged'), null, { timeout: 5000 }).then(() => true, () => false);
       await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] }); await p.waitForTimeout(400);
       r.fired = await p.evaluate(() => { const s = window.__tgw.combat.special; return s.charge === 0 && (s.busy > 0 || !!s.release); });
       r.dusk = await p.evaluate(async () => { const g = window.__tgw, w = ms => new Promise(x => setTimeout(x, ms)); g.lantern.on = false; g.devMenu.run('tid:night'); for (let i = 0; i < 20 && !g.lantern.on; i++) await w(250); const lit = g.lantern.on; g.devMenu.run('tid:day'); for (let i = 0; i < 20 && g.lantern.on; i++) await w(250); return lit && !g.lantern.on; }); }
-    check('phone thumb arc (R126): special ring on the action button, tap keeps it, hold 0.8 s fires it, no special/lantern buttons, lantern lights at dusk and goes out at dawn', ok && Object.values(r).length === 7 && Object.values(r).every(Boolean) && !errors.length, errors[0] || JSON.stringify(r)); await ctx.close(); }
+    check('phone thumb arc (R126/R127): gold special arc on the action button, icon centred, tap keeps it, hold 0.8 s fires it, no special/lantern buttons, lantern lights at dusk and goes out at dawn', ok && Object.values(r).length === 7 && Object.values(r).every(Boolean) && !errors.length, errors[0] || JSON.stringify(r)); await ctx.close(); }
 
   // 2h. R125 greenhouse + Stable per character: the old shared level goes to the last played character only
   { const ctx = await context({ viewport: { width: 844, height: 390 }, isMobile: true, hasTouch: true }); const p = await ctx.newPage(); const errors = []; p.on('pageerror', e => errors.push(e.message));

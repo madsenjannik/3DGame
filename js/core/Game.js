@@ -3,41 +3,41 @@ import * as THREE from 'three';
 import { AssetRegistry } from './AssetRegistry.js';
 import { CharacterController } from './CharacterController.js?build=MOBILE-GESTURE-R34B-20260930A';
 import { GameState } from './GameState.js';
-import { InputManager } from './InputManager.js?build=PHONE-ARC-R126-20261008A';
+import { InputManager } from './InputManager.js?build=ACTION-AAA-R127-20261008A';
 import { ThirdPersonCamera } from './ThirdPersonCamera.js?build=MOBILE-GESTURE-R34B-20260930A';
 import { CameraOcclusionSystem } from './CameraOcclusionSystem.js?build=NORTH-STABLE-R23O-20260929A';
 import { StructureVisibilitySystem } from '../visual/StructureVisibilitySystem.js?build=NORTH-STABLE-R23O-20260929A';
 import { characterCatalog, resourceCatalog, buildingCatalog } from '../data/assetCatalog.js';
-import { CollectibleSystem } from '../gameplay/CollectibleSystem.js?build=PHONE-ARC-R126-20261008A';
-import { MeaningfulChoiceSystem } from '../gameplay/MeaningfulChoiceSystem.js?build=PHONE-ARC-R126-20261008A';
-import { GreenhouseProgressionSystem } from '../gameplay/GreenhouseProgressionSystem.js?build=PHONE-ARC-R126-20261008A';
+import { CollectibleSystem } from '../gameplay/CollectibleSystem.js?build=ACTION-AAA-R127-20261008A';
+import { MeaningfulChoiceSystem } from '../gameplay/MeaningfulChoiceSystem.js?build=ACTION-AAA-R127-20261008A';
+import { GreenhouseProgressionSystem } from '../gameplay/GreenhouseProgressionSystem.js?build=ACTION-AAA-R127-20261008A';
 import { OrangeryHubSystem } from '../gameplay/OrangeryHubSystem.js?build=CAMERA-CUTAWAY-CONTEXT-R21D-20260928E';
 import { FishingV1System } from '../gameplay/FishingV1System.js?build=BAG-NIGHT-R84-20261006A';
 import { ChoicePanel } from '../ui/ChoicePanel.js';
-import { Hud } from '../ui/Hud.js?build=PHONE-ARC-R126-20261008A';
+import { Hud } from '../ui/Hud.js?build=ACTION-AAA-R127-20261008A';
 import { WorldMap } from '../ui/WorldMap.js?build=WORLD-MAP-R35B-20260930B';
 import { GardenEnvironment } from '../world/GardenEnvironment.js?build=WATER-VEG-R103-20261006A';
 import { WildlifeSystem } from '../world/WildlifeSystem.js?build=CAMERA-CUTAWAY-CONTEXT-R21D-20260928E';
 import { PlayerHomePortalSystem } from '../world/PlayerHomePortalSystem.js?build=ENTRY-R29-20260929A';
-import { NorthStableSystem } from '../world/NorthStableSystem.js?build=PHONE-ARC-R126-20261008A';
-import { SaveGame } from './SaveGame.js?build=PHONE-ARC-R126-20261008A';
-import { WildsLoopSystem } from '../gameplay/WildsLoopSystem.js?build=PHONE-ARC-R126-20261008A';
+import { NorthStableSystem } from '../world/NorthStableSystem.js?build=ACTION-AAA-R127-20261008A';
+import { SaveGame } from './SaveGame.js?build=ACTION-AAA-R127-20261008A';
+import { WildsLoopSystem } from '../gameplay/WildsLoopSystem.js?build=ACTION-AAA-R127-20261008A';
 import { WorkbenchPanel } from '../ui/WorkbenchPanel.js';
-import { DevMenu, devMenuEnabled } from '../ui/DevMenu.js?build=PHONE-ARC-R126-20261008A';
+import { DevMenu, devMenuEnabled } from '../ui/DevMenu.js?build=ACTION-AAA-R127-20261008A';
 import { applyControlProfile, defaultProfile } from './ControlProfiles.js';
 import { PerfHud } from '../dev/PerfHud.js';
-import { QualityManager, QUALITY } from './Quality.js?build=PHONE-ARC-R126-20261008A';
+import { QualityManager, QUALITY } from './Quality.js?build=ACTION-AAA-R127-20261008A';
 import { InteractionResolver } from './InteractionResolver.js';
 import { log, warn } from '../dev/Log.js';
 import { LookPass } from '../visual/LookPass.js?build=BAG-NIGHT-R84-20261006A';
 import { DayNight } from '../visual/DayNight.js?build=BAG-NIGHT-R84-20261006A';   // R81
 import { TOOLS } from '../data/wildsCatalog.js';   // R124 Bag texts (the Workbench's own effect lines)
 import { WEAPONS } from '../data/combatCatalog.js';   // R124 strike values
-import { VestVisual } from '../gameplay/VestVisual.js?build=PHONE-ARC-R126-20261008A';   // R125
-import { SpecialHold } from '../ui/SpecialHold.js?build=PHONE-ARC-R126-20261008A';   // R126
-import { GameMenu } from '../ui/GameMenu.js?build=PHONE-ARC-R126-20261008A';   // R121
-import { ControlTips } from '../ui/ControlTips.js?build=PHONE-ARC-R126-20261008A';   // R120
-import { Lantern } from '../gameplay/Lantern.js?build=PHONE-ARC-R126-20261008A';     // R81/R101
+import { VestVisual } from '../gameplay/VestVisual.js?build=ACTION-AAA-R127-20261008A';   // R125
+import { SpecialHold } from '../ui/SpecialHold.js?build=ACTION-AAA-R127-20261008A';   // R126
+import { GameMenu } from '../ui/GameMenu.js?build=ACTION-AAA-R127-20261008A';   // R121
+import { ControlTips } from '../ui/ControlTips.js?build=ACTION-AAA-R127-20261008A';   // R120
+import { Lantern } from '../gameplay/Lantern.js?build=ACTION-AAA-R127-20261008A';     // R81/R101
 import { BoatEconomySystem } from '../gameplay/BoatEconomySystem.js';
 import { LakeRunSystem } from '../gameplay/LakeRunSystem.js';
 import { GardenBuildSystem } from '../gameplay/GardenBuildSystem.js';
