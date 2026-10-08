@@ -680,11 +680,11 @@ try {
     const ok = await p.waitForFunction(() => document.body.classList.contains('cs-ready'), null, { timeout: 60000 }).then(() => true, () => false);
     const r = ok ? await p.evaluate(async () => { const $ = s => document.querySelector(s), w = ms => new Promise(x => setTimeout(x, ms)), o = {};
       o.start = document.querySelectorAll('.cs-thumb').length === 9 && $('.cs-card.main b').textContent === 'Cactus' && !$('#cs-play').disabled && $('#cs-stats').children.length === 4 && /Thorn Shot/.test($('#cs-ab-name').textContent);
-      $('.cs-thumb[data-i="4"]').click(); await w(400); o.locked = $('.cs-card.main b').textContent === 'Tulip' && $('#cs-play').disabled && /Gro mig/.test($('#cs-desc').textContent);
+      $('.cs-thumb[data-i="4"]').click(); await w(400); o.locked = $('.cs-card.main b').textContent === 'Tulip' && $('#cs-play').disabled && /Grow me/.test($('#cs-desc').textContent) && !$('#cs-ab-text').textContent && !!$('.cs-mystery') && !$('.cs-stat');   /* R133: locked = a mystery */
       document.getElementById('cs-prev').click(); await w(400); o.prev = $('.cs-card.main b').textContent === 'Aloe Vera';
-      $('.cs-thumb[data-i="0"]').click(); await w(400); o.open = $('.cs-card.main b').textContent === 'Daisy' && !$('#cs-play').disabled && /Spil som Daisy/.test($('#cs-play').textContent);
+      $('.cs-thumb[data-i="0"]').click(); await w(400); o.open = $('.cs-card.main b').textContent === 'Daisy' && !$('#cs-play').disabled && /Play as Daisy/.test($('#cs-play').textContent);
       return o; }) : {};
-    check('character select test page (R132): 9 characters, Daisy/Cactus/Swamp open, locked ones say how to grow them, browse by thumb and arrow', ok && Object.values(r).length === 4 && Object.values(r).every(Boolean) && !errors.length, errors[0] || JSON.stringify(r)); await ctx.close(); }
+    check('character select test page (R132/R133): English, 9 characters, Daisy/Cactus/Swamp open, locked ones a mystery that says how to grow them, browse by thumb and arrow', ok && Object.values(r).length === 4 && Object.values(r).every(Boolean) && !errors.length, errors[0] || JSON.stringify(r)); await ctx.close(); }
   // 17h. R117 desktop: the click that closes the Bag does not swing; the next click on the view does
   { const ctx = await context({ viewport: { width: 1280, height: 720 } }); const { p, errors, ok } = await startGame(ctx, 'fern', { hud: 'desktop-e' });
     let r = {};
