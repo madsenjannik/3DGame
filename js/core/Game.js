@@ -341,7 +341,7 @@ export class Game {
     this.run('daynight',()=>this.dayNight.update(gardenSpace));   // R81: 30 min day/night on the shared world only (after the look pass)
     this.hud.setWorldStatus?.(gardenSpace,this.dayNight.isNight?.());   // R88 desktop HUD E status; hidden outside E
     if(!this.lantern&&this.character?.instance)try{this.lantern=new Lantern(this);}catch(e){this.lantern={update(){}};warn('LANTERN','lantern disabled',e);}
-    this.run('hotbar',()=>this.refreshHotbar?.());if(!this._vestChecked&&this.boatEco){this._vestChecked=1;if(this.vestWorn())this.vest?.set(true);}   // R125: the vest's 'own' flag is restored by the boat economythis.run('lantern',()=>this.lantern?.update(dt));this.run('toolvisual',()=>this.equippedToolVisual?.update(dt));
+    this.run('hotbar',()=>this.refreshHotbar?.());if(!this._vestChecked&&this.boatEco){this._vestChecked=1;if(this.vestWorn())this.vest?.set(true);}   /* R124: the vest's 'own' flag is restored by the boat economy */this.run('lantern',()=>this.lantern?.update(dt));this.run('toolvisual',()=>this.equippedToolVisual?.update(dt));
     const portalBusy=this.homePortal?.busy||false;
     const fishingBusy=!gardenSpace&&(this.fishing?.isBusy?.()||false);
     const stableBusy=!gardenSpace&&(this.stable?.isBusy?.()||false);
