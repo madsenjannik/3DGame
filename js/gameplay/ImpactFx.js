@@ -51,7 +51,8 @@ export class ImpactFx {
   }
   objFor(t) {
     const m = t.m; if (!m) return null;
-    if (t.kind === 'giant' || t.kind === 'bear') return m.root || null;
+    if (t.kind === 'giant') return m.giant || null;   // the creature only: the boss root also holds the arena / grove
+    if (t.kind === 'bear') return m.bear || null;
     return m.model?.root || m.root || null;
   }
   flash(obj) {

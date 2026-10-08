@@ -670,8 +670,10 @@ try {
       for (let i = 0; i < 40; i++) fx.update(.05); o.landedFly = fx.flies.length === 0;
       const n0 = fx.parts.length; g.state.events.emit('fx:gather', { kind: 'stone', n: 2, x: ch.position.x, y: ch.position.y, z: ch.position.z + 1 }); o.gather = fx.parts.length > n0 + 10;
       const B = c.boss; if (B) { B.showTele(ch.position.x, ch.position.z + 2, 1.5, .5); fx.update(.016); o.tele = !!B.r129Base?.visible; B.tele.visible = false; fx.update(.016); o.teleOff = !B.r129Base.visible; } else o.tele = o.teleOff = false;
+      const RB = c.bear; fx.hit({ kind: 'giant', m: B, x: B.gx, z: B.gz }); if (RB) fx.hit({ kind: 'bear', m: RB, x: ch.position.x, z: ch.position.z }); fx.freeze = 0; fx.update(.5);   /* R129.1: only the creature flashes, never the arena or the grove */
+      o.arenaSafe = !!B && !B.root.userData.r129Mats && !B.arena?.root?.userData?.r129Mats && (!RB || !RB.root.userData.r129Mats);
       return o; }) : {};
-    check('R129 FX: landed strike = hit-stop + white flash + shake (damage unchanged), loot flies to its counter, gather bursts debris + +N, boss telegraph blinks with a base', ready && Object.values(r).length === 7 && Object.values(r).every(Boolean) && !errors.length, errors[0] || JSON.stringify(r)); await ctx.close(); }
+    check('R129 FX: only the creature flashes (never the boss arena/grove), landed strike = hit-stop + white flash + shake (damage unchanged), loot flies to its counter, gather bursts debris + +N, boss telegraph blinks with a base', ready && Object.values(r).length === 8 && Object.values(r).every(Boolean) && !errors.length, errors[0] || JSON.stringify(r)); await ctx.close(); }
   // 17h. R117 desktop: the click that closes the Bag does not swing; the next click on the view does
   { const ctx = await context({ viewport: { width: 1280, height: 720 } }); const { p, errors, ok } = await startGame(ctx, 'fern', { hud: 'desktop-e' });
     let r = {};

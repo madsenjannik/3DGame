@@ -5647,7 +5647,7 @@ html body.hud-classic.touch .special-btn,html body.hud-classic.touch .special-bt
 html body.hud-classic.touch #hop-btn,html body.hud-classic.touch #hop-btn.show{right:max(10px,env(safe-area-inset-right))!important;bottom:calc(max(10px,env(safe-area-inset-bottom)) + 108px)!important;left:auto!important;top:auto!important;
   width:50px!important;height:50px!important;min-width:50px!important;border-radius:50%!important;padding:0!important;font-size:0!important;color:transparent!important;
   background:rgba(255,255,255,.42)!important;-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);box-shadow:0 4px 10px rgba(30,34,24,.18),inset 0 0 0 1.5px rgba(255,255,255,.75)!important;border:0!important}
-html body.hud-classic.touch #hop-btn::before{content:''!important;display:block!important;width:26px;height:26px;margin:auto;background:#5f8b3a;-webkit-mask:url(./brand/icons/svg/icon-hop.svg) center/contain no-repeat;mask:url(./brand/icons/svg/icon-hop.svg) center/contain no-repeat}
+html body.hud-classic.touch #hop-btn::before{content:''!important;display:block!important;width:26px;height:26px;margin:auto;background:#5f8b3a;-webkit-mask:url(./brand/icons/svg/icon-hop.svg?v=129) center/contain no-repeat;mask:url(./brand/icons/svg/icon-hop.svg?v=129) center/contain no-repeat}
 /* Lantern: no button (lights at dusk by itself) */
 html body.hud-classic.touch #lantern-btn,html body.hud-classic.touch.lantern-ready #lantern-btn{display:none!important}
 /* Secondary round buttons: light semi-transparent white, moss icons (Bag, menu, collapsed objective) */
@@ -5747,3 +5747,7 @@ html body.hud-classic.touch.is-night #hud #objective.objective-card.complete:not
 /* ===== R129 · loot magnet: the counter pops when a flying drop lands (all HUDs) ===== */
 @keyframes fxArrive{0%{transform:scale(1)}40%{transform:scale(1.28)}100%{transform:scale(1)}}
 .material-chip.fx-arrive,.seed-card.fx-arrive{animation:fxArrive .3s ease-out}
+
+/* ===== R129.1 · phones: Hop icon centred. The button is a grid with the hidden 'Hop' text as a second item, which
+   pushed the icon into the upper row; the icon now sits absolutely in the middle ===== */
+html body.hud-classic.touch #hop-btn::before{position:absolute!important;inset:0!important;margin:auto!important}
