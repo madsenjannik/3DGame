@@ -5,12 +5,20 @@ import { MATERIALS, TOOLS } from '../data/wildsCatalog.js';
 import { PROFILES, CONTROL_PROFILE_KEY, savedProfile, applyControlProfile } from '../core/ControlProfiles.js';
 
 export const DEV_MENU_KEY = 'tgw.devMenu';
-export const HUD_TEST_KEY = 'tgw.hudTestV1';
+export const HUD_TEST_KEY = 'tgw.hudTestV1';   // R131: the old 'Test HUD' is gone; the key is only cleared
 export function devMenuEnabled() { try { return localStorage.getItem(DEV_MENU_KEY) === '1'; } catch { return false; } }
-function hudTestEnabled() { try { return localStorage.getItem(HUD_TEST_KEY) === '1'; } catch { return false; } }
-// R74 Test HUD B (touch only): 'light' | 'dark' | '' (off). Separate key so Jannik's Test HUD stays as it is.
+// HUD choice in DEV: '' = Current, 'classic' = Test HUD D (phones), 'desktop-e' = Test HUD E (desktop).
+// R131 (Jannik 08/10): Test HUD, B light/dark and C cream were removed; a device that still has one of them saved
+// gets its device default instead (D on touch, E on desktop).
 export const HUD_B_KEY = 'tgw.hudTestB';
-function hudB() { try { const v = localStorage.getItem(HUD_B_KEY); return v === 'light' || v === 'dark' || v === 'cream' || v === 'classic' || v === 'desktop-e' ? v : ''; } catch { return ''; } }
+const REMOVED_HUDS = ['light', 'dark', 'cream'];
+function hudB(touch) {
+  try {
+    const v = localStorage.getItem(HUD_B_KEY), old = REMOVED_HUDS.includes(v) || localStorage.getItem(HUD_TEST_KEY) === '1';
+    if (old) { const d = touch ? 'classic' : 'desktop-e'; localStorage.setItem(HUD_B_KEY, d); localStorage.removeItem(HUD_TEST_KEY); return d; }
+    return v === 'classic' || v === 'desktop-e' ? v : '';
+  } catch { return ''; }
+}
 
 const SKIP_MS = 5 * 60 * 1000;
 
@@ -26,7 +34,7 @@ export class DevMenu {
       <header><div><small>TEST · RIGTIG SAVE</small><h2>Dev menu</h2></div><button type="button" class="wilds-close" aria-label="Close">✕</button></header>
       <div class="dev-menu-body">
         <section><small>KAMERA & STYRING (kun dev)</small><div class="dev-grid profiles">${Object.entries(PROFILES).map(([id, p]) => `<button data-a="cam:${id}">${p.name}</button>`).join('')}</div><p class="dev-note"></p></section>
-        <section><small>HUD TEST · NORMAL GAMEPLAY</small><div class="dev-grid hud-tests"><button data-a="hud:current">Current HUD</button><button data-a="hud:test">Test HUD</button><button data-a="hud:b-light">Test HUD B lys</button><button data-a="hud:b-dark">Test HUD B mørk</button><button data-a="hud:b-cream">Test HUD C creme</button><button data-a="hud:d-classic">Test HUD D klassisk</button><button data-a="hud:e-desktop">Test HUD E desktop</button></div><p class="dev-note hud-test-note">Kun visuelt layout. Ingen gameplay-logik ændres.</p></section>
+        <section><small>HUD TEST · NORMAL GAMEPLAY</small><div class="dev-grid hud-tests"><button data-a="hud:current">Current HUD</button><button data-a="hud:d-classic">Test HUD D klassisk (mobil)</button><button data-a="hud:e-desktop">Test HUD E desktop</button></div><p class="dev-note hud-test-note">Kun visuelt layout. Ingen gameplay-logik ændres.</p></section>
         <section><small>MÅLING</small><div class="dev-grid"><button data-a="perf">Performance-HUD til/fra</button><button data-a="metrics">Vis startup-tider</button><button data-a="look">3D-look (R70) til/fra</button></div><div class="dev-grid four"><button data-a="q:auto">Auto</button><button data-a="q:mobile-low">Lav</button><button data-a="q:mobile-high">Høj</button><button data-a="q:desktop">Desktop</button></div></section>
         <section><small>RESSOURCER</small><div class="dev-grid">
           <button data-a="mats">+20 materialer</button><button data-a="tools">Alle redskaber</button><button data-a="pots">3 potter + vand</button><button data-a="skip">Spol 5 min frem</button>
@@ -58,7 +66,7 @@ export class DevMenu {
       </div></div>`;
     document.body.appendChild(el); this.el = el; this.open = false;
     this.profile = applyControlProfile(game, savedProfile()); this.markProfile();
-    this.hudTest = hudTestEnabled(); this.hudB = this.hudTest ? '' : hudB(); this.applyHudTest();
+    this.hudB = hudB(!!game.input?.isTouch); this.applyHudTest();
     for (const t of ['pointerdown', 'pointermove', 'pointerup']) { el.addEventListener(t, e => e.stopPropagation()); btn.addEventListener(t, e => e.stopPropagation()); }
     btn.addEventListener('click', () => this.show());
     el.addEventListener('click', e => {
@@ -75,12 +83,9 @@ export class DevMenu {
     this.el.querySelector('.dev-note').textContent = PROFILES[this.profile]?.text || '';
   }
   applyHudTest() {
-    document.body.classList.toggle('hud-test-v1', !!this.hudTest);
-    document.body.classList.toggle('hud-test-b', this.hudB === 'light' || this.hudB === 'dark'); document.body.classList.toggle('hud-b-dark', this.hudB === 'dark');
-    document.body.classList.toggle('hud-cream', this.hudB === 'cream');   // R77 Test HUD C: cream clay material from Visuel Identitet v2 (light)
-    document.body.classList.toggle('hud-classic', this.hudB === 'classic'); // R78 Test HUD D: Klassisk identity candidate
-    document.body.classList.toggle('hud-desktop-e', this.hudB === 'desktop-e'); // R85 desktop-only placement test
-    const on = this.hudTest ? 'hud:test' : this.hudB === 'desktop-e' ? 'hud:e-desktop' : this.hudB === 'classic' ? 'hud:d-classic' : this.hudB ? `hud:b-${this.hudB}` : 'hud:current';
+    document.body.classList.toggle('hud-classic', this.hudB === 'classic'); // R78 Test HUD D: Klassisk (phones)
+    document.body.classList.toggle('hud-desktop-e', this.hudB === 'desktop-e'); // R85 Test HUD E (desktop)
+    const on = this.hudB === 'desktop-e' ? 'hud:e-desktop' : this.hudB === 'classic' ? 'hud:d-classic' : 'hud:current';
     this.el.querySelectorAll('[data-a^="hud:"]').forEach(b => b.classList.toggle('active', b.dataset.a === on));
   }
   toast(t) { this.g.hud?.showToast(t); }
@@ -99,10 +104,10 @@ export class DevMenu {
   run(a) {
     const g = this.g, w = g.wilds, p = w.profile;
     if (a.startsWith('hud:')) {
-      this.hudTest = a === 'hud:test'; this.hudB = a === 'hud:b-light' ? 'light' : a === 'hud:b-dark' ? 'dark' : a === 'hud:b-cream' ? 'cream' : a === 'hud:d-classic' ? 'classic' : a === 'hud:e-desktop' ? 'desktop-e' : '';
-      try { localStorage.setItem(HUD_TEST_KEY, this.hudTest ? '1' : '0'); localStorage.setItem(HUD_B_KEY, this.hudB); } catch {}
+      this.hudB = a === 'hud:d-classic' ? 'classic' : a === 'hud:e-desktop' ? 'desktop-e' : '';
+      try { localStorage.setItem(HUD_B_KEY, this.hudB); localStorage.removeItem(HUD_TEST_KEY); } catch {}
       this.applyHudTest();
-      this.toast(this.hudTest ? 'Test HUD til' : this.hudB ? (this.hudB === 'desktop-e' ? 'Test HUD E (desktop) til' : this.hudB === 'classic' ? 'Test HUD D (klassisk) til' : this.hudB === 'cream' ? 'Test HUD C (creme) til' : `Test HUD B (${this.hudB === 'light' ? 'lys' : 'mørk'}) til`) : 'Current HUD gendannet');
+      this.toast(this.hudB === 'desktop-e' ? 'Test HUD E (desktop) til' : this.hudB === 'classic' ? 'Test HUD D (klassisk) til' : 'Current HUD til');
       this.hide();
       return;
     }

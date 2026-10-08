@@ -1618,6 +1618,7 @@ are only touched where a measured hotspot requires it, minimally.
    failure. Must pass before every push (CLAUDE.md rule 5).
 
 **B status 02/10/2026: complete (R51–R57).** On-device check (iPhone, Jannik 02/10): 60 fps steady (frame max 20–24 ms), 217 draw calls / 370k tris in the garden, 363 / 433k at the lake, mobile-high, 1 WebGL context → no perf work needed before C.
+**R131 (v0.8.131):** DEV HUD tests cleaned up: Current, D (mobile), E (desktop) remain; Test HUD, B and C removed with their CSS (styles proven identical for D, E and Current).
 **R130 (v0.8.130):** fixes on R129: the strike flash lit the whole boss arena/grove (now only the creature), Hop icon centred.
 **R129 (v0.8.129, GO 08/10):** FX layer for every character from Jannik's catalogue: hit-stop + white flash + shake, blinking boss telegraph, loot magnet to the HUD counter, resource feedback with debris and +N. Visual only; combat/boss/gathering logic untouched.
 **R128 (v0.8.128, GO 08/10):** phone action button with power (dark socket, glossy disc, 6 gold hit segments, punch on tap, rays when full) back in the corner where it sat until R125, Hop up-left on the arc, the menu stays in boss fights (no gap at day/night), light buttons near solid at night. Desktop E and special logic untouched.

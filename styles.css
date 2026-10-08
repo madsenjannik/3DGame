@@ -79,7 +79,6 @@ body.fishing-active #hud,body.fishing-active #objective,body.fishing-active #joy
 body.stable-race-active #hud,body.stable-race-active #objective,body.stable-race-active #hint{opacity:0!important;pointer-events:none!important}body.stable-ride-active #hint{opacity:1}body.stable-ride-active #hint{font-size:11px}
 @media(max-width:640px){.stable-side-panel{right:8px;top:62px;width:calc(100% - 16px);max-height:45vh}.stable-race-hud{gap:10px;padding:8px 10px}.stable-race-hud b{font-size:16px}.stable-race-hud #stable-race-time{font-size:20px;min-width:60px}.stable-race-controls{top:auto;bottom:calc(100px + env(safe-area-inset-bottom))}.stable-race-controls kbd{display:none}.stable-race-title b{font-size:34px}.stable-race-message.huge{font-size:64px}}
 
-
 /* R23K — functional setup/result retained; Pace Reserve + horses-only setup. Visual redesign deferred. */
 .stable-ride-setup{position:fixed;inset:0;z-index:58;display:none;align-items:center;justify-content:center;padding:20px;box-sizing:border-box;background:rgba(24,28,20,.32);-webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px);font-family:'Manrope',system-ui,sans-serif;color:#3b352b;pointer-events:auto}.stable-ride-setup.show{display:flex}.stable-setup-card{position:relative;width:min(620px,calc(100vw - 28px));max-height:calc(100vh - 32px);overflow:auto;border-radius:24px;padding:22px;box-sizing:border-box;box-shadow:0 22px 70px rgba(24,20,14,.28)}.stable-setup-close{position:absolute;right:14px;top:14px;height:34px;padding:0 12px;border:0;border-radius:999px;background:rgba(59,53,43,.10);font:700 11px/1 'Manrope';cursor:pointer;color:#3b352b}.stable-setup-close span{display:inline-flex;align-items:center;justify-content:center;min-width:20px;height:20px;margin-right:5px;border-radius:6px;background:rgba(59,53,43,.10);font-size:9px}.stable-setup-kicker{display:block;font:800 10px/1 'Manrope';letter-spacing:.22em;text-transform:uppercase;color:rgba(59,53,43,.55);margin-bottom:8px}.stable-setup-card h2{font:800 30px/1.05 'Manrope';margin:0 90px 4px 0;letter-spacing:-.02em}.stable-setup-card p{margin:0 0 16px;font:600 13px/1.4 'Manrope';color:rgba(59,53,43,.62)}.stable-setup-card h3{margin:18px 0 8px;font:800 10px/1 'Manrope';letter-spacing:.18em;text-transform:uppercase;color:rgba(59,53,43,.55)}.stable-setup-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.stable-setup-stats>div{padding:10px 12px;border-radius:14px;background:rgba(255,255,255,.46);border:1px solid rgba(59,53,43,.10)}.stable-setup-stats span{display:block;font:700 9px/1 'Manrope';letter-spacing:.12em;text-transform:uppercase;color:rgba(59,53,43,.52);margin-bottom:6px}.stable-setup-stats b{font:800 18px/1 'Manrope';font-variant-numeric:tabular-nums}.stable-setup-horses{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.stable-setup-choice{min-height:58px;padding:10px 12px;border-radius:14px;border:1px solid rgba(59,53,43,.14);background:rgba(255,255,255,.54);text-align:left;cursor:pointer;color:#3b352b}.stable-setup-choice b{display:block;font:800 14px/1 'Manrope';margin-bottom:5px}.stable-setup-choice span{font:600 11px/1 'Manrope';color:rgba(59,53,43,.55)}.stable-setup-choice.on{background:#3b352b;color:#f4efe5;border-color:#3b352b}.stable-setup-choice.on span{color:rgba(244,239,229,.68)}.stable-setup-wardrobe{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}.stable-setup-blanket{display:grid;grid-template-columns:22px 1fr auto;align-items:center;gap:9px;min-height:44px;padding:8px 10px;border-radius:13px;border:1px solid rgba(59,53,43,.14);background:rgba(255,255,255,.54);text-align:left;cursor:pointer;color:#3b352b}.stable-setup-blanket i{width:18px;height:18px;border-radius:50%;box-shadow:inset 0 0 0 1px rgba(0,0,0,.13)}.stable-setup-blanket b{font:700 12px/1 'Manrope'}.stable-setup-blanket span{font:600 10px/1 'Manrope';color:rgba(59,53,43,.52)}.stable-setup-blanket.on{background:rgba(150,170,90,.28)}.stable-setup-blanket:disabled{opacity:.45;cursor:default}.stable-setup-start{width:100%;height:50px;margin-top:18px;border:0;border-radius:15px;background:#3b352b;color:#f4efe5;font:800 14px/1 'Manrope';cursor:pointer}.stable-race-stamina{min-width:112px}.stable-race-stamina>div{width:100%;height:5px;border-radius:999px;background:rgba(59,53,43,.13);overflow:hidden;margin-top:5px}.stable-race-stamina i{display:block;width:100%;height:100%;border-radius:999px;background:#7a934b;transition:width .12s linear}.stable-race-stamina b{font-size:14px!important}.stable-race-result{left:50%;top:50%;bottom:auto;transform:translate(-50%,-48%);width:min(500px,calc(100% - 28px));max-height:calc(100% - 48px);padding:22px 20px 18px;box-shadow:0 24px 80px rgba(18,16,12,.30)}.stable-race-result.show{transform:translate(-50%,-50%)}.stable-result-exit{position:absolute;right:12px;top:12px;height:34px;padding:0 12px;border:0;border-radius:999px;background:rgba(59,53,43,.10);color:#3b352b;font:700 11px/1 'Manrope';cursor:pointer}.stable-race-result .btns{margin-top:8px}.stable-race-result .btns button{height:48px}.stable-race-result .stable-lb{max-height:210px;overflow:auto}.stable-race-result #stable-result-kick{margin-top:2px}body.stable-race-result-active .stable-race-controls{display:none!important}body.stable-race-result-active .stable-race-hud{display:none!important}body.stable-setup-active #hud,body.stable-setup-active #objective,body.stable-setup-active #hint,body.stable-setup-active #action{opacity:0!important;pointer-events:none!important}
 @media(max-width:640px){.stable-setup-card{padding:18px 14px}.stable-setup-stats{grid-template-columns:1fr 1fr 1fr}.stable-setup-horses{grid-template-columns:1fr}.stable-setup-wardrobe{grid-template-columns:1fr}.stable-race-stamina{min-width:76px}.stable-race-result{width:calc(100% - 18px);max-height:calc(100% - 28px);padding:18px 14px}.stable-result-exit{right:8px;top:8px}}
@@ -103,7 +102,6 @@ body.stable-race-active #hud,body.stable-race-active #objective,body.stable-race
 @keyframes fishingR33CBite{from{filter:brightness(1.12)}to{filter:brightness(1.34)}}
 @keyframes fishingR33CReel{0%,100%{transform:scale(var(--fish-scale)) rotate(-.35deg)}50%{transform:scale(calc(var(--fish-scale) + .012)) rotate(.35deg)}}
 
-
 /* R33D — FishButton fidelity + landing regression fix.
    Buttons.zip defines one fixed outer ring only. Neutralize the inherited R33B
    pseudo-rings so the Claude olive control renders 1:1 with that component. */
@@ -111,7 +109,6 @@ body.stable-race-active #hud,body.stable-race-active #objective,body.stable-race
 /* During landing, keep the control visually neutral so R33B fish landing/result
    presentation remains the source of truth rather than expanding the button. */
 .fishing-v1.landing .fishing-fbtn{--fish-scale:1!important;--fish-halo:0!important;filter:brightness(1)!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.28),0 10px 30px rgba(20,50,48,.25)!important;opacity:.55;pointer-events:none}
-
 
 /* R33E — Claude catch/result presentation only. Fish is the hero; card sits low and clear. */
 .fishing-result{left:50%;top:auto;bottom:calc(24px + env(safe-area-inset-bottom));transform:translate(-50%,16px);width:min(340px,calc(100% - 24px));border-radius:22px;padding:16px;display:none;flex-direction:column;align-items:center;gap:6px;opacity:0;pointer-events:none;transition:opacity .3s,transform .3s;text-align:center;background:rgba(255,255,255,.66);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);border:1px solid rgba(59,53,43,.12)}
@@ -216,7 +213,6 @@ body.stable-shop-scene .stable-side-panel.shop3d{left:auto;right:calc(22px + env
 .stable-shop-back{width:100%;height:42px;margin-top:9px;border:0;border-radius:13px;background:#35392d;color:#f5f0e6;font:800 11px/1 'Manrope';letter-spacing:.06em;cursor:pointer}
 body.stable-shop-scene #hud,body.stable-shop-scene #objective,body.stable-shop-scene #hint,body.stable-shop-scene #action{opacity:0!important;pointer-events:none!important}
 @media(max-width:640px){body.stable-shop-scene .stable-side-panel.shop3d{left:10px;right:10px;bottom:calc(10px + env(safe-area-inset-bottom));width:auto}.stable-shop-3d-card{padding:13px;border-radius:18px}.stable-shop-3d-card .stable-shop-head{padding-bottom:9px}.stable-shop-3d-card .stable-shop-head h3{font-size:20px!important}.stable-shop-3d-card .stable-shop-head p{font-size:11px;margin-top:6px}.stable-shop-nav{grid-template-columns:42px 1fr 42px}.stable-shop-nav button{width:42px;height:42px}.stable-shop-foot{padding:8px 10px}.stable-shop-back{height:40px}}
-
 
 /* R39 — Stable result + standings premium pass (Claude Variant A direction, TGW runtime data) */
 .stable-result-stage{position:fixed;inset:0!important;left:0!important;top:0!important;bottom:0!important;width:100%!important;max-height:none!important;transform:none!important;padding:0!important;border-radius:0!important;background:linear-gradient(to top,rgba(34,28,20,.48) 0%,rgba(34,28,20,.12) 42%,rgba(34,28,20,0) 66%)!important;box-shadow:none!important;overflow:hidden!important;align-items:center!important;justify-content:flex-end!important;pointer-events:none!important}
@@ -622,7 +618,6 @@ body.stable-race-result-active #hud,body.stable-race-result-active #objective,bo
   .stable-result-ghost-note{font-size:11px!important;line-height:1.35!important;padding:0 4px 2px!important}
 }
 
-
 /* R39E — Result lifecycle guard + living Thora portrait + direct Result/Leaderboard DEV QA. */
 /* Critical lifecycle guard: desktop R39D's visual display:block must never surface Result before race.phase === done. */
 .stable-race-result.stable-result-stage:not(.show){display:none!important}
@@ -834,7 +829,6 @@ body.stable-race-result-active #hud,body.stable-race-result-active #objective,bo
   }
 }
 
-
 /* R40 — Claude Result / Podie / Chalkboard 1:1 runtime port.
    Presentation source of truth: uploaded Result-Podie-Prototype. TGW remains source of truth for gameplay/data. */
 .stable-podie-result{position:fixed!important;inset:0!important;width:100%!important;height:100%!important;max-height:none!important;transform:none!important;left:0!important;bottom:0!important;padding:0!important;border-radius:0!important;overflow:hidden!important;background:#efe8dc!important;display:none!important;z-index:56!important;text-align:left!important;align-items:stretch!important;gap:0!important}
@@ -864,7 +858,6 @@ body.stable-race-result-active #world-canvas,body.stable-race-result-active canv
 @media(max-width:640px){.stable-podie-main{left:50%!important;right:auto!important;top:auto!important;bottom:18px!important;width:calc(100% - 28px)!important;transform:translateX(-50%)!important}.stable-podie-result.board-open .stable-podie-main{opacity:0!important;transform:translate(-50%,40px)!important}.stable-podie-medal-wrap{width:96px!important;height:108px!important;margin-bottom:-54px!important}.stable-podie-result #stable-result-kick.stable-result-medal{width:88px!important;height:88px!important;min-width:88px!important;min-height:88px!important;margin-left:4px!important;font-size:12px!important}.stable-podie-card{padding:68px 20px 18px!important;gap:12px!important;border-radius:28px!important}.stable-podie-card #stable-result-time{font-size:68px!important}.stable-podie-thora-bubble{width:230px}.stable-podie-board-controls{left:14px!important;right:14px!important;top:calc(14px + env(safe-area-inset-top))!important;width:auto!important}.stable-podie-ghostbar{bottom:calc(14px + env(safe-area-inset-bottom));width:calc(100% - 28px);grid-template-columns:auto 1fr}.stable-podie-ghostbar button{grid-column:1/3;grid-row:auto;width:100%}.stable-podie-back{top:calc(14px + env(safe-area-inset-top));left:14px}.stable-podie-result.board-open .stable-podie-back{top:auto;bottom:calc(14px + env(safe-area-inset-bottom));display:none}}
 
 body.stable-race-result-active .stable-race-controls,body.stable-race-result-active .stable-race-hud{display:none!important}
-
 
 /* R41 — Claude Result choreography completion. Visual/timing source of truth: uploaded Result-Podie-Prototype. */
 @keyframes rrSpin{to{transform:rotate(360deg)}}
@@ -912,7 +905,6 @@ body.stable-race-result-active .stable-race-controls,body.stable-race-result-act
 .stable-podie-result #stable-result-kick.stable-result-medal.none{background:#e4dccd!important;border-color:#e4dccd!important;color:#2f2a22!important;box-shadow:0 0 0 6px rgba(251,248,242,.95),0 16px 34px rgba(40,30,15,.28)!important;animation:none!important}
 .stable-podie-result #stable-result-kick.stable-result-medal.dq{animation:none!important}
 .stable-podie-card .stable-result-best.first{background:#2f2a22!important;color:#f4f1e8!important}
-
 
 /* R42 — live podium + world-space race markers + Standings Done. */
 .stable-podie-ghostbar .stable-podie-ghost-actions{grid-column:3;grid-row:1/3;display:flex;align-items:stretch;gap:8px}
@@ -1481,240 +1473,6 @@ body.touch .fishing-fwrap{transform:none!important;left:calc(50% - min(160px,50%
 body.touch .fishing-fbtn-shell{position:fixed!important;right:calc(max(8px,env(safe-area-inset-right)));bottom:calc(6px + env(safe-area-inset-bottom))}
 @media (max-height:430px){body.touch .fishing-fbtn-shell{transform:scale(.86);transform-origin:100% 100%}}
 
-/* =====================================================================================================
-   R73 DEV-only normal HUD test.
-   Toggle: Dev menu -> HUD TEST -> Test HUD. The production/current HUD rules above stay untouched.
-   This block is purely visual and only applies while body.hud-test-v1 is present.
-   ===================================================================================================== */
-body.hud-test-v1{
-  --hudtest-fg:#f7f2e6;
-  --hudtest-muted:rgba(247,242,230,.76);
-  --hudtest-line:rgba(247,242,230,.34);
-  --hudtest-shadow:0 2px 12px rgba(18,26,15,.28);
-}
-
-/* Top HUD becomes three quiet zones: objective text / resources / minimap. */
-body.hud-test-v1 #hud{
-  left:max(26px,env(safe-area-inset-left));
-  right:calc(178px + env(safe-area-inset-right));
-  top:max(18px,env(safe-area-inset-top));
-  height:54px;
-  display:flex;
-  align-items:flex-start;
-  gap:0;
-  overflow:visible;
-}
-body.hud-test-v1.touch #hud{right:calc(154px + env(safe-area-inset-right))}
-
-/* Objective: no card, no blur, no border. */
-body.hud-test-v1 #hud #objective.objective-card{
-  position:relative!important;
-  width:min(330px,31vw)!important;
-  max-width:330px!important;
-  height:auto!important;
-  min-height:44px!important;
-  flex:0 0 auto!important;
-  padding:3px 0 0 42px!important;
-  margin:0!important;
-  border:0!important;
-  border-radius:0!important;
-  background:none!important;
-  box-shadow:none!important;
-  -webkit-backdrop-filter:none!important;
-  backdrop-filter:none!important;
-  color:var(--hudtest-fg)!important;
-  text-shadow:0 2px 10px rgba(14,24,12,.72);
-  pointer-events:none!important;
-}
-body.hud-test-v1 #hud #objective.objective-card::before{
-  left:0!important;top:3px!important;width:28px!important;height:28px!important;margin:0!important;
-  background-size:25px!important;filter:drop-shadow(0 2px 6px rgba(18,28,14,.34));
-}
-body.hud-test-v1 #hud #objective.objective-card::after{display:none!important}
-body.hud-test-v1 #hud #objective small{display:none!important}
-body.hud-test-v1 #hud #objective b{
-  margin:0!important;font:800 14px/1.2 Manrope,system-ui,sans-serif!important;
-  color:var(--hudtest-fg)!important;letter-spacing:-.01em;
-  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
-}
-body.hud-test-v1 #hud #objective #objective-copy{
-  display:block!important;margin-top:4px!important;font:600 11px/1.25 Manrope,system-ui,sans-serif!important;
-  color:var(--hudtest-muted)!important;opacity:1!important;
-  white-space:nowrap!important;overflow:hidden;text-overflow:ellipsis;
-}
-
-/* Inventory is a centered, unboxed icon+number line. */
-body.hud-test-v1 #hud .hud-fold-btn{display:none!important}
-body.hud-test-v1 #hud .inventory-stack{
-  position:absolute!important;
-  left:50%!important;top:0!important;transform:translateX(-50%)!important;
-  display:flex!important;flex-direction:row!important;align-items:center!important;gap:0!important;
-  padding:0!important;margin:0!important;overflow:visible!important;
-  color:var(--hudtest-fg)!important;
-}
-body.hud-test-v1 #hud .seed-card.inventory-card{
-  height:32px!important;padding:0 17px 0 0!important;margin:0 15px 0 0!important;
-  gap:7px!important;border:0!important;border-radius:0!important;background:none!important;
-  box-shadow:none!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important;
-  border-right:1px solid var(--hudtest-line)!important;
-}
-body.hud-test-v1 #hud .seed-card .inventory-icon{
-  font-size:22px!important;color:#f5c84c!important;filter:drop-shadow(0 2px 6px rgba(18,28,14,.34));
-}
-body.hud-test-v1 #hud .seed-card span:last-child{display:flex!important;align-items:center!important;gap:7px!important}
-body.hud-test-v1 #hud .seed-card small{display:none!important}
-body.hud-test-v1 #hud .seed-card b{
-  font:800 14px/1 Manrope,system-ui,sans-serif!important;color:var(--hudtest-fg)!important;
-  text-shadow:0 2px 8px rgba(14,24,12,.6);
-}
-body.hud-test-v1 #hud #materials.materials-card{
-  display:flex!important;align-items:center!important;gap:0!important;height:32px!important;
-  padding:0!important;margin:0!important;border:0!important;background:none!important;box-shadow:none!important;
-  -webkit-backdrop-filter:none!important;backdrop-filter:none!important;opacity:1!important;transform:none!important;
-}
-body.hud-test-v1 #hud #materials .material-chip{
-  position:relative!important;display:flex!important;align-items:center!important;gap:7px!important;
-  min-width:0!important;height:32px!important;padding:0 18px!important;margin:0!important;
-  border:0!important;border-radius:0!important;background:none!important;box-shadow:none!important;
-  -webkit-backdrop-filter:none!important;backdrop-filter:none!important;color:var(--hudtest-fg)!important;
-}
-body.hud-test-v1 #hud #materials .material-chip:not(:last-of-type)::after{
-  content:"";position:absolute;right:0;top:7px;width:1px;height:18px;background:var(--hudtest-line);
-}
-body.hud-test-v1 #hud #materials .material-chip small{display:none!important}
-body.hud-test-v1 #hud #materials .material-chip i{
-  font-size:14px!important;line-height:1!important;filter:drop-shadow(0 2px 5px rgba(18,28,14,.3));
-}
-body.hud-test-v1 #hud #materials .material-chip b{
-  font:800 13px/1 Manrope,system-ui,sans-serif!important;color:var(--hudtest-fg)!important;
-  text-shadow:0 2px 8px rgba(14,24,12,.6);
-}
-body.hud-test-v1 #hud #materials .material-chip.wild_seed.zero,
-body.hud-test-v1 #hud #materials .material-chip.shell.zero{display:none!important}
-body.hud-test-v1 #hud #tools-row.tools-row{display:none!important}
-
-/* Keep the existing minimap data/logic; only make the ring quieter/smaller visually. */
-body.hud-test-v1 .tgw-minimap{
-  transform:scale(.88);transform-origin:top right;
-  box-shadow:0 0 0 1px rgba(247,242,230,.82),0 5px 18px rgba(10,18,8,.22)!important;
-}
-
-/* Touch: no folding behavior in the test layout; always show the actual test HUD. */
-body.hud-test-v1.touch #hud #objective.objective-card:not(.open),
-body.hud-test-v1.touch #hud #objective.objective-card.open{
-  width:min(250px,34vw)!important;max-width:250px!important;padding:3px 0 0 38px!important;
-  border-radius:0!important;animation:none!important;
-}
-body.hud-test-v1.touch #hud #objective:not(.open) b,
-body.hud-test-v1.touch #hud #objective:not(.open) #objective-copy{display:block!important}
-body.hud-test-v1.touch #hud .inventory-stack:not(.open),
-body.hud-test-v1.touch #hud .inventory-stack.open{display:flex!important;animation:none!important}
-body.hud-test-v1.touch #hud #materials .material-chip{padding:0 12px!important}
-
-/* Mobile landscape controls: low-profile, no glass blur. */
-body.hud-test-v1.touch #joy{
-  width:132px;height:132px;left:calc(max(22px,env(safe-area-inset-left)));
-  top:auto;bottom:calc(20px + env(safe-area-inset-bottom));
-  border:1.5px solid rgba(247,242,230,.62);background:rgba(20,29,18,.24)!important;
-  -webkit-backdrop-filter:none!important;backdrop-filter:none!important;box-shadow:none!important;
-}
-body.hud-test-v1.touch #joy-knob{
-  width:52px;height:52px;margin:-26px 0 0 -26px;background:rgba(247,242,230,.68)!important;
-  border:1px solid rgba(255,255,255,.75);box-shadow:0 4px 12px rgba(12,22,10,.22);
-}
-body.hud-test-v1.touch #action{
-  width:70px;height:70px;right:calc(max(22px,env(safe-area-inset-right)));bottom:calc(22px + env(safe-area-inset-bottom));
-  padding:0!important;border-radius:50%;background:rgba(20,29,18,.72)!important;
-  border:1.5px solid rgba(247,242,230,.70)!important;box-shadow:0 5px 16px rgba(12,22,10,.24)!important;
-  -webkit-backdrop-filter:none!important;backdrop-filter:none!important;
-}
-body.hud-test-v1.touch #action-ico{width:36px;height:36px}
-body.hud-test-v1.touch #action #action-label{display:none!important}
-body.hud-test-v1.touch .special-btn{
-  background:rgba(20,29,18,.72)!important;border:1.5px solid rgba(247,242,230,.70)!important;
-  -webkit-backdrop-filter:none!important;backdrop-filter:none!important;
-}
-
-/* Small landscape phones: shrink, never stack. */
-@media (max-height:430px){
-  body.hud-test-v1 #hud{top:max(10px,env(safe-area-inset-top));left:max(18px,env(safe-area-inset-left))}
-  body.hud-test-v1 #hud #objective.objective-card{width:min(220px,32vw)!important}
-  body.hud-test-v1 #hud #objective b{font-size:12px!important}
-  body.hud-test-v1 #hud #objective #objective-copy{font-size:9.5px!important}
-  body.hud-test-v1 #hud #materials .material-chip{padding:0 9px!important;gap:5px!important}
-  body.hud-test-v1 #hud #materials .material-chip i{font-size:12px!important}
-  body.hud-test-v1 #hud #materials .material-chip b{font-size:12px!important}
-  body.hud-test-v1.touch #joy{width:116px;height:116px;bottom:calc(12px + env(safe-area-inset-bottom))}
-  body.hud-test-v1.touch #action{width:62px;height:62px;bottom:calc(14px + env(safe-area-inset-bottom))}
-}
-
-/* Never restyle special-mode HUDs: their own body-state rules remain source of truth. */
-body.hud-test-v1.fishing-active #hud,
-body.hud-test-v1.stable-race-active #hud,
-body.hud-test-v1.lakerun-active #hud{opacity:0!important;pointer-events:none!important}
-
-
-/* R73.1 exact viewport centering + persistent action-button polish for the DEV HUD test. */
-body.hud-test-v1 #hud .inventory-stack{
-  position:fixed!important;
-  left:50vw!important;
-  top:max(18px,env(safe-area-inset-top))!important;
-  transform:translateX(-50%)!important;
-}
-body.hud-test-v1.touch #action{
-  opacity:1;
-  transform:none;
-  pointer-events:auto;
-}
-@media (max-height:430px){
-  body.hud-test-v1 #hud .inventory-stack{top:max(10px,env(safe-area-inset-top))!important}
-}
-
-/* ===== R74 Test HUD B (DEV: 'Test HUD B lys / mørk', touch only). Visual layout only, no gameplay logic.
-   Brand colours from brand/README: Salvie #DFE5D3 surfaces, Kontur #2B2A24 outline + 3 px extrusion like the logo,
-   Guldfrø #E2B552 primary action, Oliven #3A3B33 for the dark variant. Lilita One for titles and numbers. ===== */
-.obj-x{display:none}
-body.hud-test-b{--b-surf:rgba(223,229,211,.95);--b-ink:#2B2A24;--b-sub:rgba(43,42,36,.72);--b-line:#2B2A24;--b-ext:0 3px 0 #2B2A24,0 8px 18px rgba(10,14,8,.28);--b-gold:#E2B552;--b-icon:#2B2A24}
-body.hud-test-b.hud-b-dark{--b-surf:rgba(58,59,51,.9);--b-ink:#F6F0DC;--b-sub:rgba(246,240,220,.74);--b-line:#E2B552;--b-ext:0 3px 0 rgba(20,20,16,.9),0 8px 18px rgba(10,14,8,.32);--b-icon:#F6F0DC}
-/* top row: quest chip, bag, resources (open) */
-body.hud-test-b.touch #hud{top:max(10px,env(safe-area-inset-top));gap:10px;align-items:flex-start}
-body.hud-test-b.touch #hud #objective.objective-card,body.hud-test-b.touch #hud #objective.objective-card:not(.open){display:flex!important;flex-direction:column;justify-content:center;width:auto!important;max-width:min(300px,40vw)!important;min-width:0!important;flex:0 1 auto!important;height:auto!important;min-height:46px;padding:7px 34px 7px 52px!important;border-radius:16px;background:var(--b-surf)!important;border:2.5px solid var(--b-line)!important;box-shadow:var(--b-ext)!important;color:var(--b-ink)!important;-webkit-backdrop-filter:none;backdrop-filter:none;animation:none}
-body.hud-test-b.touch #hud #objective.objective-card::before,body.hud-test-b.touch #hud #objective.objective-card:not(.open)::before{left:8px!important;margin-left:0!important;width:34px;height:34px;margin-top:-17px;background-color:rgba(143,209,79,.25);border:2px solid var(--b-line);background-size:22px}
-body.hud-test-b.touch #hud #objective b,body.hud-test-b.touch #hud #objective:not(.open) b{display:block!important;font:400 15px/1.15 'Lilita One',Manrope,system-ui,sans-serif!important;letter-spacing:.01em;color:var(--b-ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-body.hud-test-b.touch #hud #objective #objective-copy{display:none!important}
-body.hud-test-b.touch #hud #objective.open #objective-copy{display:-webkit-box!important;-webkit-line-clamp:3;-webkit-box-orient:vertical;white-space:normal!important;margin-top:3px;font:600 11.5px/1.3 Manrope,system-ui,sans-serif!important;color:var(--b-sub)!important;opacity:1}
-body.hud-test-b.touch #hud #objective.objective-card::after,body.hud-test-b.touch #hud #objective.objective-card.fresh:not(.open)::after{content:none!important}
-body.hud-test-b.touch #hud #objective .obj-x{display:grid;place-items:center;position:absolute;right:6px;top:50%;width:24px;height:24px;margin-top:-12px;border-radius:50%;font:700 16px/1 Manrope,system-ui,sans-serif;font-style:normal;color:var(--b-ink);background:rgba(43,42,36,.1);cursor:pointer}
-body.hud-test-b.hud-b-dark.touch #hud #objective .obj-x{background:rgba(246,240,220,.14)}
-/* quest hidden: a round button with a gold dot when a new step arrives */
-body.hud-test-b.touch #hud #objective.objective-card.b-hidden{width:46px!important;max-width:46px!important;height:46px!important;min-height:46px;padding:0!important;border-radius:50%}
-body.hud-test-b.touch #hud #objective.b-hidden b,body.hud-test-b.touch #hud #objective.b-hidden #objective-copy,body.hud-test-b.touch #hud #objective.b-hidden .obj-x{display:none!important}
-body.hud-test-b.touch #hud #objective.objective-card.b-hidden::before{left:50%!important;margin-left:-17px!important}
-body.hud-test-b.touch #hud #objective.objective-card.b-hidden.fresh::after{content:''!important;position:absolute;right:-2px;top:-2px;width:12px;height:12px;border-radius:50%;background:var(--b-gold);border:2px solid var(--b-line);transform:none}
-body.hud-test-b.touch #hud .hud-fold-btn{width:46px;height:46px;background:var(--b-surf) url(./brand/icons/64/icon-bag.png) center/28px no-repeat;border:2.5px solid var(--b-line);box-shadow:var(--b-ext);-webkit-backdrop-filter:none;backdrop-filter:none}
-body.hud-test-b.touch #hud .hud-fold-btn.active{background-color:var(--b-gold)}
-body.hud-test-b.touch #hud .seed-card.inventory-card,body.hud-test-b.touch #hud #materials .material-chip,body.hud-test-b.touch #hud #tools-row.tools-row{background:var(--b-surf)!important;border:2px solid var(--b-line)!important;box-shadow:var(--b-ext)!important;color:var(--b-ink)!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important}
-body.hud-test-b.touch #hud .seed-card b,body.hud-test-b.touch #hud #materials .material-chip b{font:400 17px/1 'Lilita One',Manrope,system-ui,sans-serif!important;color:var(--b-ink)}
-body.hud-test-b.touch #hud .seed-card small{color:var(--b-sub);opacity:1}
-body.hud-test-b.touch #hud .seed-card .inventory-icon{color:#c98f1d}
-/* map: same round button language */
-body.hud-test-b.touch .tgw-minimap{width:50px!important;height:50px!important;background:var(--b-surf) url(./brand/icons/64/icon-map.png) center/30px no-repeat!important;border:2.5px solid var(--b-line)!important;box-shadow:var(--b-ext)!important;-webkit-backdrop-filter:none;backdrop-filter:none}
-/* action: big icon only (65 %), Guldfrø; the label moves to a chip above the character */
-body.hud-test-b.touch #action,body.hud-test-b.touch #action.show{transform:none!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important;filter:none!important}
-body.hud-test-b.touch #action{width:76px;height:76px;background:var(--b-gold)!important;border:3px solid #2B2A24!important;box-shadow:0 4px 0 #2B2A24,0 10px 20px rgba(10,14,8,.3)!important}
-body.hud-test-b.touch #action-ico{width:49px;height:49px}
-body.hud-test-b.touch #action-ico .ico-mask{background:#2B2A24;filter:none}
-body.hud-test-b.touch #action #action-label{position:fixed;left:50%;right:auto;top:26%;bottom:auto;transform:translateX(-50%);padding:7px 14px;border-radius:999px;background:var(--b-surf);border:2px solid var(--b-line);box-shadow:var(--b-ext);color:var(--b-ink);font:400 15px/1.1 'Lilita One',Manrope,system-ui,sans-serif;letter-spacing:.01em;pointer-events:none}
-body.hud-test-b.touch #action.locked{background:#b9bcb5!important}
-body.hud-test-b.touch #action.locked .ico-mask{background:#4d4f4a}
-body.hud-test-b.touch #action.locked #action-label{color:var(--b-sub)}
-/* combat: hearts + special bar bottom centre, only while vitals are on */
-body.hud-test-b.touch .hearts{left:50%!important;right:auto!important;top:auto!important;bottom:calc(14px + env(safe-area-inset-bottom))!important;transform:translateX(-50%)!important;background:var(--b-surf)!important;border:2px solid var(--b-line)!important;box-shadow:var(--b-ext)!important}
-body.hud-test-b.touch .special-bar{left:50%!important;right:auto!important;top:auto!important;bottom:calc(58px + env(safe-area-inset-bottom))!important;transform:translateX(-50%)!important;background:var(--b-surf)!important;border:2px solid var(--b-line)!important;box-shadow:var(--b-ext)!important}
-/* resting joystick in the same language */
-body.hud-test-b.touch #joy-rest{background:rgba(223,229,211,.35);border:2px solid rgba(43,42,36,.55)}
-body.hud-test-b.hud-b-dark.touch #joy-rest{background:rgba(58,59,51,.4);border-color:rgba(226,181,82,.55)}
-
 /* ===== R75 HUD rule (phones, Jannik 05/10). Always: joystick, main button (action, else Strike), Hop, quest line, bag, map.
    On interaction: the main button's icon + label (or grey Locked). Golden Seed lives in the bag.
    Special button only when the meter is full or in / just after a fight. ===== */
@@ -1736,64 +1494,6 @@ body:not(.touch) #action.show{transform:none!important}
 #key-hints .kh-mouse.right::after{display:none}#key-hints .kh-mouse.left::after{display:none}
 #key-hints .kh-mouse.right::before,#key-hints .kh-mouse.left::before{content:'';position:absolute;top:0;width:50%;height:45%;background:rgba(246,240,220,.8);border-radius:6px 0 0 0}
 #key-hints .kh-mouse.right::before{right:0;left:auto;border-radius:0 6px 0 0}#key-hints .kh-mouse.left::before{left:0}
-
-/* ===== R77 Test HUD C 'creme' (DEV): material only, from Visuel Identitet v2 (light). Same layout + logic as the
-   current HUD, phones + desktop. Opaque cream clay (gradient #fffaf0 to #e9e3d3, white inner top edge, solid #c4bca8
-   bottom edge + soft shadow; the edge disappears on press), dark ink #2b2a24, no glass/blur, no gold hairlines.
-   Guldfro only on the primary button. Hop + special are cream too (Jannik 05/10: no black). ===== */
-body.hud-cream{--c-bg:linear-gradient(180deg,#fffaf0,#e9e3d3);--c-ink:#2b2a24;--c-sub:rgba(43,42,36,.68);
-  --c-sh:inset 0 2px 0 #fff,0 5px 0 #c4bca8,0 10px 18px rgba(43,42,36,.2);
-  --c-sh-down:inset 0 2px 0 #fff,0 1px 0 #c4bca8,0 4px 10px rgba(43,42,36,.15)}
-body.hud-cream #objective.objective-card,body.hud-cream #hud .seed-card.inventory-card,body.hud-cream #hud #materials .material-chip,body.hud-cream #hud #tools-row.tools-row,
-body.hud-cream .hearts,body.hud-cream .special-bar,body.hud-cream #toast,body.hud-cream.touch #action #action-label,body.hud-cream #key-hints>div,body.hud-cream:not(.touch) #action{
-  background:var(--c-bg)!important;border:0!important;box-shadow:var(--c-sh)!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important;color:var(--c-ink)!important}
-body.hud-cream #objective.objective-card{border-radius:18px!important}
-body.hud-cream #objective.objective-card::before{background-color:rgba(143,209,79,.28)!important;border:0!important;box-shadow:inset 0 2px 3px rgba(43,42,36,.18)}
-body.hud-cream #objective.objective-card::after{color:var(--c-sub)!important}
-body.hud-cream #objective small{color:#9c7426!important}
-body.hud-cream #objective b{color:var(--c-ink)!important;font-weight:800!important}
-body.hud-cream #objective #objective-copy{color:var(--c-sub)!important;opacity:1!important}
-body.hud-cream #objective.objective-card.fresh:not(.open){box-shadow:0 0 0 2px #e2b552,var(--c-sh)!important}
-body.hud-cream #hud .hud-fold-btn{background:url(./brand/icons/64/icon-bag.png) center/26px no-repeat,var(--c-bg)!important;border:0!important;box-shadow:var(--c-sh)!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important}
-body.hud-cream #hud .hud-fold-btn.active{box-shadow:0 0 0 2px #2b2a24,var(--c-sh)!important}
-body.hud-cream.touch .tgw-minimap{background:url(./brand/icons/64/icon-map.png) center/28px no-repeat,var(--c-bg)!important;border:0!important;box-shadow:var(--c-sh)!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important}
-body.hud-cream:not(.touch) .tgw-minimap{box-shadow:0 0 0 4px #efe9da,0 5px 0 4px #c4bca8,0 12px 22px 4px rgba(43,42,36,.25)!important}
-body.hud-cream #hud #materials .material-chip b,body.hud-cream #hud .seed-card b{color:var(--c-ink)!important}
-body.hud-cream #hud .seed-card small{color:var(--c-sub)!important;opacity:1}
-body.hud-cream #hud .seed-card .inventory-icon{color:#c98f1d!important}
-body.hud-cream #hud .material-chip.stone i{color:#7d8288!important}body.hud-cream #hud .material-chip.shell i{color:#b5a27a!important}body.hud-cream #hud .material-chip.amber i{color:#c98f1d!important}
-body.hud-cream .special-bar span{background:rgba(43,42,36,.14)!important;border-color:rgba(43,42,36,.18)!important}
-body.hud-cream .special-bar i{border-color:rgba(43,42,36,.2)!important;background-color:rgba(143,209,79,.2)!important}
-/* press: the edge goes away */
-body.hud-cream #hud .hud-fold-btn:active,body.hud-cream #hop-btn:active,body.hud-cream .special-btn:active,body.hud-cream #objective.objective-card:active{transform:translateY(4px)!important;box-shadow:var(--c-sh-down)!important}
-/* primary: Guldfro clay */
-body.hud-cream.touch #action{background:linear-gradient(180deg,#f8d880,#e2b552 55%,#cf9c3c)!important;border:0!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important;
-  box-shadow:inset 0 2px 0 rgba(255,255,255,.6),0 6px 0 #9c7426,0 10px 18px rgba(156,116,38,.35)!important}
-body.hud-cream.touch #action:active{transform:translateY(5px)!important;box-shadow:inset 0 2px 0 rgba(255,255,255,.5),0 1px 0 #9c7426,0 4px 10px rgba(156,116,38,.25)!important}
-body.hud-cream.touch #action .ico-mask{background:#2b2a24!important;filter:none!important}
-body.hud-cream:not(.touch) #action .ico-mask{background:#2b2a24!important;filter:none!important}
-/* disabled / Locked: loses colour and most of the edge, keeps the shape */
-body.hud-cream #action.locked{background:#e6e1d6!important;box-shadow:inset 0 2px 0 rgba(255,255,255,.5),0 4px 0 #d3ccbb!important;color:#9a958a!important}
-body.hud-cream #action.locked .ico-mask{background:#9a958a!important}
-/* Hop + special: round cream clay */
-body.hud-cream #hop-btn,body.hud-cream .special-btn{background:radial-gradient(circle at 35% 28%,#ffffff,#efe9da 50%,#d9d1bd)!important;border:0!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important;
-  box-shadow:inset 0 2px 0 #fff,0 6px 0 #b4ab93,0 12px 18px rgba(43,42,36,.25)!important;color:#2b2a24!important}
-body.hud-cream .special-btn+*,body.hud-cream .special-btn ~ .special-label{color:#2b2a24}
-/* joystick: sunken cream well + raised white clay knob */
-body.hud-cream #joy-rest,body.hud-cream #joy{background:radial-gradient(circle at 50% 30%,rgba(43,42,36,.2),rgba(244,241,232,.55) 70%)!important;border:0!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important;
-  box-shadow:inset 0 8px 14px rgba(43,42,36,.28),inset 0 -2px 0 rgba(255,255,255,.7),0 1px 0 rgba(255,255,255,.4)!important}
-body.hud-cream #joy-rest i,body.hud-cream #joy-knob{background:radial-gradient(circle at 35% 28%,#ffffff,#efe9da 50%,#cfc6b0)!important;box-shadow:0 6px 0 #b4ab93,0 12px 18px rgba(43,42,36,.3)!important}
-/* desktop keys as cream clay keys (JetBrains Mono) */
-body.hud-cream:not(.touch) #action .key,body.hud-cream #key-hints kbd{display:inline-grid;place-items:center;min-width:30px;height:30px;padding:0 8px;border:0!important;border-radius:8px;box-sizing:border-box;
-  background:linear-gradient(180deg,#fffaf0,#e9e3d3)!important;box-shadow:inset 0 2px 0 #fff,0 3px 0 #c4bca8!important;font:700 12px/1 'JetBrains Mono',ui-monospace,monospace!important;color:#2b2a24!important}
-body.hud-cream #key-hints{opacity:1}
-body.hud-cream #key-hints b{color:var(--c-sub)!important}
-body.hud-cream #key-hints .kh-mouse{border-color:rgba(43,42,36,.6)!important}
-body.hud-cream #key-hints .kh-mouse.right::before,body.hud-cream #key-hints .kh-mouse.left::before{background:rgba(43,42,36,.7)!important}
-body.hud-cream .special-btn i{background-color:#efe9da!important;box-shadow:inset 0 2px 4px rgba(43,42,36,.18)}
-body.hud-cream .special-btn .key{background:linear-gradient(180deg,#fffaf0,#e9e3d3)!important;color:#2b2a24!important;box-shadow:0 2px 0 #c4bca8}
-body.hud-cream .special-btn b{color:#fffaf0;text-shadow:0 1px 3px rgba(43,42,36,.7)}
-
 
 /* ===== R78 Test HUD D 'Klassisk' (DEV) ===== */
 body.hud-classic{--d-moss:#6f9d45;--d-moss-dark:#557c36;--d-gold:#f3c85b;--d-gold-edge:#d8aa3f;--d-ink:#2b2a24;--d-shadow:0 8px 18px rgba(43,42,36,.22)}
@@ -1833,7 +1533,6 @@ body.hud-classic .special-bar i{border-color:rgba(43,42,36,.14)!important;backgr
 
 body.hud-classic.fishing-active #hud,body.hud-classic.stable-race-active #hud,body.hud-classic.lakerun-active #hud{opacity:0!important;pointer-events:none!important}
 @media(max-height:430px){body.hud-classic #hud #objective.objective-card{height:46px!important;min-height:46px!important;min-width:176px!important;max-width:min(260px,36vw)!important}body.hud-classic #hud #objective.objective-card.open{max-width:min(330px,48vw)!important}body.hud-classic.touch #action{width:70px!important;height:70px!important;min-width:70px!important;bottom:calc(12px + env(safe-area-inset-bottom))!important}body.hud-classic.touch #hop-btn{right:calc(max(14px,env(safe-area-inset-right)) + 80px)!important;bottom:calc(21px + env(safe-area-inset-bottom))!important;width:86px!important;height:48px!important}body.hud-classic.touch .special-btn{right:calc(max(14px,env(safe-area-inset-right)) + 47px)!important;bottom:calc(96px + env(safe-area-inset-bottom))!important}body.hud-classic .special-bar{top:calc(max(8px,env(safe-area-inset-top)) + 50px)!important}}
-
 
 /* ===== R78.3 Test HUD D desktop pass (DEV, desktop only) =====
    Desktop focus: more breathing room, contextual combat HUD, and Klassisk cream/moss/gold resource language.
@@ -1944,7 +1643,6 @@ body.lantern-ready.touch #lantern-btn{display:grid;place-items:center;position:f
 @media (max-height:430px){body.lantern-ready.touch #lantern-btn{right:calc(max(18px,env(safe-area-inset-right)) + 14px);bottom:calc(14px + env(safe-area-inset-bottom) + 132px);width:46px;height:46px}}
 body.hud-classic.lantern-ready.touch #lantern-btn{right:calc(max(18px,env(safe-area-inset-right)) + 111px)!important;bottom:calc(92px + env(safe-area-inset-bottom))!important}
 body.fishing-active #lantern-btn,body.boating-active #lantern-btn,body.stable-talk-active #lantern-btn,body.stable-ride-active #lantern-btn,body.stable-race-active #lantern-btn,body.stable-setup-active #lantern-btn,body.stable-shop-scene #lantern-btn,body.stable-race-result-active #lantern-btn,body.lakerun-active #lantern-btn,body.build-mode #lantern-btn,body.choice-open #lantern-btn,body.rotate-gated #lantern-btn,body.world-map-open #lantern-btn,body.boss-active #lantern-btn{display:none!important}
-
 
 /* ===== R83 MOBILE-ONLY HUD D identity pass (GO 05/10) =====
    Scope: body.hud-classic.touch only. Desktop is intentionally untouched.
@@ -2142,7 +1840,6 @@ body.hud-classic.lantern-ready.touch #lantern-btn{
 body.hud-classic.touch .gear-panel{border:0;background:linear-gradient(180deg,var(--m83-moss-hi,#82b455),var(--m83-moss,#6f9d45));color:var(--m83-cream,#fffaf0);box-shadow:inset 0 3px 0 rgba(255,255,255,.16),inset 0 -8px 0 rgba(55,87,36,.28),0 8px 16px rgba(43,42,36,.20);-webkit-backdrop-filter:none;backdrop-filter:none}
 body.fishing-active .gear-panel,body.boating-active .gear-panel,body.stable-talk-active .gear-panel,body.stable-race-active .gear-panel,body.lakerun-active .gear-panel,body.build-mode .gear-panel,body.choice-open .gear-panel,body.world-map-open .gear-panel,body.boss-active .gear-panel{display:none!important}
 
-
 /* ===== R85 Test HUD E desktop placement (DEV / desktop only) ===== */
 .desktop-hotbar-e{display:none}
 body.hud-desktop-e:not(.touch){
@@ -2247,7 +1944,6 @@ body.hud-desktop-e:not(.touch) .gear-panel{
 }
 body.hud-desktop-e:not(.touch) .special-btn{background:conic-gradient(var(--e-gold) var(--k),rgba(196,188,168,.72) var(--k))!important;box-shadow:0 8px 16px rgba(43,42,36,.20)!important}
 body.hud-desktop-e:not(.touch) .special-btn i{border:4px solid var(--e-cream)!important;background-color:var(--e-moss)!important}
-
 
 /* ===== R86 HUD E desktop polish (GO 06/10) =====
    DESKTOP TEST HUD E ONLY. Mobile/touch and splash/start are untouched.
@@ -2393,7 +2089,6 @@ body.hud-desktop-e:not(.touch) #hud #objective.open #objective-copy{
   body.hud-desktop-e:not(.touch) #hud .inventory-stack{max-width:min(780px,calc(100vw - 570px))!important}
 }
 
-
 /* ===== R87 HUD E special-zone cleanup (GO 06/10) =====
    DESKTOP TEST HUD E ONLY. Mobile/touch and splash/start are untouched.
    Health = bottom-center with quickbar. Special = its own bottom-right area. Permanent control strip removed. */
@@ -2462,7 +2157,6 @@ body.hud-desktop-e:not(.touch) .special-btn.full i{
 @media(max-width:1200px){
   body.hud-desktop-e:not(.touch) .special-btn{right:22px!important;bottom:30px!important;width:66px!important;height:66px!important}
 }
-
 
 /* ===== R88 HUD E desktop scale + world status (GO 06/10) =====
    DESKTOP TEST HUD E ONLY. Mobile/touch and splash/start are untouched. */
@@ -2555,7 +2249,6 @@ body.hud-desktop-e:not(.touch) .special-btn{right:max(34px,env(safe-area-inset-r
   body.hud-desktop-e:not(.touch) #hud #hud-bag.hud-fold-btn{left:calc(50% - 350px)!important;width:52px!important;height:52px!important}
   body.hud-desktop-e:not(.touch) .hearts{bottom:94px!important}
 }
-
 
 /* ===== R89 HUD E professional desktop spec (GO 06/10) =====
    DESKTOP TEST HUD E ONLY. Mobile/touch and splash/start remain untouched. */
@@ -2690,7 +2383,6 @@ body.hud-desktop-e:not(.touch) #action-ico .ico-mask{background:#fffaf0!importan
   body.hud-desktop-e:not(.touch) #hud #hud-bag.hud-fold-btn{left:calc(50% - 361px)!important;width:54px!important;height:54px!important}
   body.hud-desktop-e:not(.touch) .hearts{bottom:90px!important}
 }
-
 
 /* ===== R90 HUD E visual system v2 (GO 06/10) =====
    DESKTOP TEST HUD E ONLY. No placement/gameplay changes. Mobile/touch and splash/start untouched.
@@ -2840,7 +2532,6 @@ body.hud-desktop-e:not(.touch) .special-btn .key{
 /* Consistent spacing rhythm without moving any zones. */
 body.hud-desktop-e:not(.touch) #hud .inventory-stack{gap:var(--e2-gap)!important}
 body.hud-desktop-e:not(.touch) .desktop-hotbar-e{gap:var(--e2-gap)!important}
-
 
 /* ===== R91 HUD E target lock (GO 06/10) =====
    DESKTOP TEST HUD E ONLY. Matches the approved mockup direction.
@@ -2999,7 +2690,6 @@ body.hud-desktop-e:not(.touch) .special-btn i{
   background-color:#596640!important;
 }
 
-
 /* ===== R92 HUD E resource icons + warm quickbar (GO 06/10) =====
    DESKTOP TEST HUD E ONLY. Uses dedicated resource PNG assets.
    Mobile/touch, gameplay, minimap and splash/start remain untouched. */
@@ -3068,7 +2758,6 @@ body.hud-desktop-e:not(.touch) #hud #hud-bag.hud-fold-btn.active{
 body.hud-desktop-e:not(.touch) .desktop-hotbar-slot:hover{
   border-color:rgba(216,170,66,.58)!important;
 }
-
 
 /* ===== R93 HUD E approved mockup correction (GO 06/10) =====
    DESKTOP HUD E ONLY. 1:1 visual correction toward the locked mockup.
@@ -3298,7 +2987,6 @@ body.hud-desktop-e:not(.touch) .special-btn.full i{
   body.hud-desktop-e:not(.touch) .special-btn{width:88px!important;height:88px!important;right:30px!important}
 }
 
-
 /* ===== R94 HUD E segmented glass resource bar (GO 06/10) =====
    DESKTOP HUD E ONLY. One coherent top resource bar split into segments.
    Mobile/touch, gameplay, minimap, objective, quickbar and splash/start are untouched. */
@@ -3479,7 +3167,6 @@ body.hud-desktop-e:not(.touch) #hud .inventory-stack .bump{
   body.hud-desktop-e:not(.touch) #hud .seed-card b{font-size:15px!important}
 }
 
-
 /* ===== R95 HUD E matte segmented bar + 3D day/night icons (GO 06/10) =====
    DESKTOP HUD E ONLY. Keep R94 placement + separators, remove glass treatment.
    Use existing rendered 3D sun/moon brand icons. */
@@ -3555,7 +3242,6 @@ body.hud-desktop-e:not(.touch) .desktop-world-status.night{
   }
 }
 
-
 /* ===== R96 HUD E animated 3D identity + coloured hotbar (GO 06/10) =====
    DESKTOP HUD E ONLY. Visual Identity v2 motion family. */
 @keyframes r96-vi-bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}}
@@ -3612,7 +3298,6 @@ body.hud-desktop-e:not(.touch) #hud .seed-card .inventory-icon{
   body.hud-desktop-e:not(.touch) #hud .seed-card .inventory-icon::before,
   body.hud-desktop-e:not(.touch) #hud .seed-card .inventory-icon::after{animation:none!important}
 }
-
 
 /* ===== R97 HUD E icon motion + 3D tool thumbnails (GO 06/10) =====
    DESKTOP HUD E ONLY. */
@@ -3729,7 +3414,6 @@ body.hud-desktop-e:not(.touch) .desktop-hotbar-slot[data-icon="lantern"].filled 
     animation:none!important;
   }
 }
-
 
 /* ===== R98 HUD E source-tool fidelity correction (GO 06/10) =====
    Desktop HUD E only. The five thumbnails in brand/icons/tool3d are rendered
@@ -3857,7 +3541,6 @@ body.hud-desktop-e:not(.touch) .desktop-hotbar-slot:nth-child(7) .slot-icon{anim
   }
 }
 
-
 /* ===== R101 desktop hotbar shortcuts + drag order (GO 06/10) =====
    Behaviour only; R100 tool artwork/animation stays untouched. */
 body.hud-desktop-e:not(.touch) .desktop-hotbar-slot{
@@ -3882,7 +3565,6 @@ body.hud-desktop-e:not(.touch) .desktop-hotbar-slot.drag-over{
   box-shadow:0 0 0 3px rgba(183,198,103,.45),0 4px 0 rgba(58,77,48,.50)!important;
   transform:translateY(-3px) scale(1.025);
 }
-
 
 /* ===== R102 hotbar mouse drag correction (GO 06/10) =====
    The bar must receive pointer input. Mouse interaction is pointer-driven in Hud.js:
@@ -3910,7 +3592,6 @@ body.hud-desktop-e:not(.touch) .hotbar-drag-ghost{
   transition:none!important;
   will-change:transform!important;
 }
-
 
 /* ===== R104 mobile HUD consistency (GO 06/10) =====
    Goal: mobile and desktop feel like the same game without changing desktop placement.
@@ -4014,7 +3695,6 @@ body.hud-desktop-e:not(.touch) .gear-panel .gear-item.selected::after{
   body.hud-classic.touch .gear-panel .gear-item-art{width:31px;height:31px;flex-basis:31px}
   body.hud-classic.touch .gear-panel .gear-item em{font-size:12px!important}
 }
-
 
 /* ===== R105 mobile fullscreen Bag (GO 06/10) =====
    Mobile Bag is a dedicated inventory screen. Desktop hotbar/Bag placement stays unchanged. */
@@ -4237,7 +3917,6 @@ body.hud-classic.touch.mobile-bag-open .gear-empty{
   body.hud-classic.touch.mobile-bag-open .gear-item em{font-size:11px!important}
   body.hud-classic.touch.mobile-bag-open .gear-item small{font-size:8.5px!important}
 }
-
 
 /* ===== R106 cross-platform UI unification (GO 06/10) =====
    Desktop HUD E is the visual source of truth.
@@ -4484,7 +4163,6 @@ body.hud-classic.touch.mobile-bag-open .hotbar-drag-ghost{
   }
 }
 
-
 /* ===== R107 mobile corrective pass after R106 visual QA (GO 06/10) =====
    Fixes the exact iPhone regressions visible in the screenshots:
    1) no pale strip under game/inventory,
@@ -4651,7 +4329,6 @@ body.hud-classic.touch.mobile-bag-open .gear-hotbar-label{
     width:38px!important;height:38px!important;flex-basis:38px!important;
   }
 }
-
 
 /* ===== R108 desktop-reference mobile proportions (GO 06/10) =====
    Source of truth: approved collapsed desktop reference. Mobile keeps touch-only controls,
@@ -4923,7 +4600,6 @@ body.hud-classic.touch.mobile-bag-open .gear-hotbar-label span{display:none!impo
   body.hud-classic.touch.mobile-bag-open .desktop-hotbar-slot{width:48px!important;height:48px!important}
   body.hud-classic.touch.mobile-bag-open .desktop-hotbar-slot .slot-icon{width:34px!important;height:34px!important}
 }
-
 
 /* ===== R109 mobile layout port from approved desktop baseline (GO 07/10) =====
    Desktop information architecture is the source of truth:

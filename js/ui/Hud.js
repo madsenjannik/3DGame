@@ -1,5 +1,5 @@
 // @ts-nocheck
-import { actionIcon, actionIconName } from './actionIcons.js?build=FX-FIX-R130-20261008A';
+import { actionIcon, actionIconName } from './actionIcons.js?build=HUD-CLEANUP-R131-20261008A';
 export class Hud {
   constructor(state){
     this.seed=document.getElementById('seed-count');this.action=document.getElementById('action');this.toast=document.getElementById('toast');this.objective=document.getElementById('objective');this.kicker=document.getElementById('objective-kicker');this.title=document.getElementById('objective-title');this.copy=document.getElementById('objective-copy');this.hint=document.getElementById('hint');this.loading=document.getElementById('loading');this.materials=document.getElementById('materials');
@@ -81,11 +81,8 @@ export class Hud {
     this.buildGear();
     bag.addEventListener('click',e=>{e.stopPropagation();if(this.touch()&&!this.objective.classList.contains('open'))this.anchorMobileTop();this.toggleGear();});
     // R74 Test HUD B: the quest is a one-line chip; tap shows the text, the cross hides it to a round button, tap brings it back.
-    const x=document.createElement('i');x.className='obj-x';x.setAttribute('role','button');x.setAttribute('aria-label','Hide quest');x.textContent='×';this.objective.appendChild(x);
-    const hudB=()=>document.body.classList.contains('hud-test-b');
-    x.addEventListener('click',e=>{if(!hudB())return;e.stopPropagation();const o=this.objective;o.classList.add('b-hidden');o.classList.remove('open','pinned');clearTimeout(this._peekT.get(o));});
     const classic=()=>document.body.classList.contains('hud-classic')||(document.body.classList.contains('hud-desktop-e')&&!this.touch());
-    this.objective.addEventListener('click',e=>{if(!this.touch()&&!classic())return;e.stopPropagation();if(hudB()&&this.objective.classList.contains('b-hidden')){this.objective.classList.remove('b-hidden','fresh');return;}pin(this.objective);if(this.touch())requestAnimationFrame(()=>this.anchorMobileTop());});
+    this.objective.addEventListener('click',e=>{if(!this.touch()&&!classic())return;e.stopPropagation();pin(this.objective);if(this.touch())requestAnimationFrame(()=>this.anchorMobileTop());});
     const title=document.getElementById('objective-title');
     if(title)new MutationObserver(()=>{this.setObjectiveIcon(title.textContent);if(this.touch()){if(!this.objective.classList.contains('open'))this.anchorMobileTop();this.objective.classList.add('fresh');this.peek(this.objective,5000);}}).observe(title,{childList:true,characterData:true,subtree:true});
   }
@@ -263,11 +260,11 @@ export class Hud {
   }
   // R75 HUD rule (phones): the main button is always there; with nothing in reach it is Strike (icon only).
   setActionVisible(v,label='Collect',it=null,persistent=false){
-    const hudTest=document.body.classList.contains('hud-test-v1'),classic=document.body.classList.contains('hud-classic'),classicTouch=classic&&this.touch(),desktopE=document.body.classList.contains('hud-desktop-e')&&!this.touch();
+    const classic=document.body.classList.contains('hud-classic'),classicTouch=classic&&this.touch(),desktopE=document.body.classList.contains('hud-desktop-e')&&!this.touch();
     if(desktopE&&it?.type==='combat-strike')v=false; // R89: desktop strike is mouse-driven; E remains interaction-only
-    const keep=hudTest||persistent,fallback=keep&&!v;
+    const keep=persistent,fallback=keep&&!v;
     const actionLabel=document.getElementById('action-label');
-    actionLabel.textContent=classicTouch?'':fallback?(classic?'Swing':hudTest?'Strike':''):(classic&&it?.type==='combat-strike'?'Swing':label);
+    actionLabel.textContent=classicTouch?'':fallback?(classic?'Swing':''):(classic&&it?.type==='combat-strike'?'Swing':label);
     this.action.setAttribute('aria-label',fallback?'Strike':label);
     this.action.classList.toggle('show',!!v||keep);this.action.classList.toggle('strike-idle',fallback);
     let visualIt=fallback?(classicTouch?{type:'mobile-default-strike'}:{type:'combat-strike'}):it;
