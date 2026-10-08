@@ -3,37 +3,40 @@ import * as THREE from 'three';
 import { AssetRegistry } from './AssetRegistry.js';
 import { CharacterController } from './CharacterController.js?build=MOBILE-GESTURE-R34B-20260930A';
 import { GameState } from './GameState.js';
-import { InputManager } from './InputManager.js?build=SLOTS3-R123-20261007A';
+import { InputManager } from './InputManager.js?build=BAG-VEST-R124-20261008A';
 import { ThirdPersonCamera } from './ThirdPersonCamera.js?build=MOBILE-GESTURE-R34B-20260930A';
 import { CameraOcclusionSystem } from './CameraOcclusionSystem.js?build=NORTH-STABLE-R23O-20260929A';
 import { StructureVisibilitySystem } from '../visual/StructureVisibilitySystem.js?build=NORTH-STABLE-R23O-20260929A';
 import { characterCatalog, resourceCatalog, buildingCatalog } from '../data/assetCatalog.js';
-import { CollectibleSystem } from '../gameplay/CollectibleSystem.js?build=SLOTS3-R123-20261007A';
-import { MeaningfulChoiceSystem } from '../gameplay/MeaningfulChoiceSystem.js?build=SLOTS3-R123-20261007A';
+import { CollectibleSystem } from '../gameplay/CollectibleSystem.js?build=BAG-VEST-R124-20261008A';
+import { MeaningfulChoiceSystem } from '../gameplay/MeaningfulChoiceSystem.js?build=BAG-VEST-R124-20261008A';
 import { GreenhouseProgressionSystem } from '../gameplay/GreenhouseProgressionSystem.js?build=CAMERA-CUTAWAY-CONTEXT-R21D-20260928E';
 import { OrangeryHubSystem } from '../gameplay/OrangeryHubSystem.js?build=CAMERA-CUTAWAY-CONTEXT-R21D-20260928E';
 import { FishingV1System } from '../gameplay/FishingV1System.js?build=BAG-NIGHT-R84-20261006A';
 import { ChoicePanel } from '../ui/ChoicePanel.js';
-import { Hud } from '../ui/Hud.js?build=SLOTS3-R123-20261007A';
+import { Hud } from '../ui/Hud.js?build=BAG-VEST-R124-20261008A';
 import { WorldMap } from '../ui/WorldMap.js?build=WORLD-MAP-R35B-20260930B';
 import { GardenEnvironment } from '../world/GardenEnvironment.js?build=WATER-VEG-R103-20261006A';
 import { WildlifeSystem } from '../world/WildlifeSystem.js?build=CAMERA-CUTAWAY-CONTEXT-R21D-20260928E';
 import { PlayerHomePortalSystem } from '../world/PlayerHomePortalSystem.js?build=ENTRY-R29-20260929A';
 import { NorthStableSystem } from '../world/NorthStableSystem.js?build=STABLE-R42-20261001A';
-import { SaveGame } from './SaveGame.js?build=SLOTS3-R123-20261007A';
-import { WildsLoopSystem } from '../gameplay/WildsLoopSystem.js?build=SLOTS3-R123-20261007A';
+import { SaveGame } from './SaveGame.js?build=BAG-VEST-R124-20261008A';
+import { WildsLoopSystem } from '../gameplay/WildsLoopSystem.js?build=BAG-VEST-R124-20261008A';
 import { WorkbenchPanel } from '../ui/WorkbenchPanel.js';
 import { DevMenu, devMenuEnabled } from '../ui/DevMenu.js?build=HUD-E-DESKTOP-R85-20261006A';
 import { applyControlProfile, defaultProfile } from './ControlProfiles.js';
 import { PerfHud } from '../dev/PerfHud.js';
-import { QualityManager, QUALITY } from './Quality.js?build=SLOTS3-R123-20261007A';
+import { QualityManager, QUALITY } from './Quality.js?build=BAG-VEST-R124-20261008A';
 import { InteractionResolver } from './InteractionResolver.js';
 import { log, warn } from '../dev/Log.js';
 import { LookPass } from '../visual/LookPass.js?build=BAG-NIGHT-R84-20261006A';
 import { DayNight } from '../visual/DayNight.js?build=BAG-NIGHT-R84-20261006A';   // R81
-import { GameMenu } from '../ui/GameMenu.js?build=SLOTS3-R123-20261007A';   // R121
-import { ControlTips } from '../ui/ControlTips.js?build=SLOTS3-R123-20261007A';   // R120
-import { Lantern } from '../gameplay/Lantern.js?build=SLOTS3-R123-20261007A';     // R81/R101
+import { TOOLS } from '../data/wildsCatalog.js';   // R124 Bag texts (the Workbench's own effect lines)
+import { WEAPONS } from '../data/combatCatalog.js';   // R124 strike values
+import { VestVisual } from '../gameplay/VestVisual.js?build=BAG-VEST-R124-20261008A';   // R125
+import { GameMenu } from '../ui/GameMenu.js?build=BAG-VEST-R124-20261008A';   // R121
+import { ControlTips } from '../ui/ControlTips.js?build=BAG-VEST-R124-20261008A';   // R120
+import { Lantern } from '../gameplay/Lantern.js?build=BAG-VEST-R124-20261008A';     // R81/R101
 import { BoatEconomySystem } from '../gameplay/BoatEconomySystem.js';
 import { LakeRunSystem } from '../gameplay/LakeRunSystem.js';
 import { GardenBuildSystem } from '../gameplay/GardenBuildSystem.js';
@@ -129,17 +132,26 @@ export class Game {
     this.wilds.onOpenWorkbench=()=>{this.workbenchPanel.show();this.input.resetTouchPointers?.();};
     const syncTools=()=>this.hud.setTools?.(this.wilds.profile.tools,this.wilds.profile.water);this.wilds.onChange(syncTools);syncTools();
     // R101: stable item IDs let the Bag and persistent 1..0 hotbar refer to the same carried gear.
+    // R124: kind / desc / strike feed the phone Bag's detail card. desc = the game's own lines (Workbench effect, Sigurd's shop).
+    const fx=id=>TOOLS.find(x=>x.id===id)?.effect||'',hit=id=>WEAPONS[id]?`Strike ${WEAPONS[id].dmg} · reach ${WEAPONS[id].reach} m`:'';
     this.hud.gearItems=()=>{const t=this.wilds?.profile?.tools||{},own=this.fishing?.own||{},out=[];
-      if(t.axe)out.push({id:'axe',icon:'axe',hotbarIcon:'axe',name:'Stone Axe'});
-      if(t.pickaxe)out.push({id:'pickaxe',icon:'pickaxe',hotbarIcon:'pickaxe',name:'Stone Pickaxe'});
-      if(t.sickle)out.push({id:'sickle',icon:'sickle',hotbarIcon:'sickle',name:'Sickle'});
-      if(t.can)out.push({id:'can',icon:'drop',hotbarIcon:'watering-can',name:'Watering Can',n:`${this.wilds.profile.water||0} water`});
-      if(own.rodBamboo||this.fishing?.starter)out.push({id:'rod',icon:'rod',hotbarIcon:'rod',name:'Bamboo Rod'});
-      if(own.vest)out.push({id:'vest',icon:'vest',name:'Life Vest'});   // R111: Jannik's icon-vest.svg
-      if(this.lantern?.ready)out.push({id:'lantern',icon:'lantern',hotbarIcon:'lantern',name:'Lantern',n:'night'});
+      if(t.axe)out.push({id:'axe',icon:'axe',hotbarIcon:'axe',name:'Stone Axe',kind:'Tool',desc:fx('axe'),strike:hit('axe')});
+      if(t.pickaxe)out.push({id:'pickaxe',icon:'pickaxe',hotbarIcon:'pickaxe',name:'Stone Pickaxe',kind:'Tool',desc:fx('pickaxe'),strike:hit('pickaxe')});
+      if(t.sickle)out.push({id:'sickle',icon:'sickle',hotbarIcon:'sickle',name:'Sickle',kind:'Tool',desc:fx('sickle'),strike:hit('sickle')});
+      if(t.can)out.push({id:'can',icon:'drop',hotbarIcon:'watering-can',name:'Watering Can',n:`${this.wilds.profile.water||0} water`,count:this.wilds.profile.water||0,kind:'Tool',desc:fx('can')});
+      if(own.rodBamboo||this.fishing?.starter)out.push({id:'rod',icon:'rod',hotbarIcon:'rod',name:'Bamboo Rod',kind:'Fishing',desc:'Beginner rod with a float. Perch and roach.'});
+      if(own.vest)out.push({id:'vest',icon:'vest',name:'Life Vest',kind:'Wear',art:'./brand/icons/tool3d/icon-vest.png?v=R124',desc:'For trips out in the boat.',worn:!!this.vestWorn?.()});   // R111 icon on desktop; R124 3D render in the phone Bag
+      if(this.lantern?.ready)out.push({id:'lantern',icon:'lantern',hotbarIcon:'lantern',name:'Lantern',n:'night',kind:'Night',desc:'The lantern only lights at night'});
       return out;};
     this.hud.hotbarItems=()=>this.hotbarItems();this.hud.hotbarSelected=()=>this.save.profile.hotbar?.selected??-1;this.hud.selectedGearId=()=>this.activeHotbarId();
     this.hud.onHotbarSelect=i=>this.equipHotbarSlot(i);this.hud.onHotbarMove=(a,b)=>this.moveHotbarSlot(a,b);this.hud.hotbarEnabled=()=>this.canUseHotbar();this.hud.hotbarEditable=()=>this.canEditHotbar();this.hud.onGearEquip=id=>this.equipGearItem(id);
+    // R124 phone Bag actions
+    this.hud.onGearPutAway=()=>{const hb=this.syncHotbarLayout();hb.selected=-1;this.save.persist();this.syncHotbarEquipment();this.hud.renderDesktopHotbar?.();};
+    this.hud.onBagPlace=(id,q)=>{const hb=this.syncHotbarLayout(),from=hb.slots.indexOf(id);if(from===q)return;if(from<0){hb.slots[q]=id;this.save.persist();this.refreshHotbar(true);}else this.moveHotbarSlot(from,q);};
+    this.hud.onLanternToggle=()=>this.lantern?.toggle?.();
+    // R125: wear / take off the Life Vest (saved per character; needed to board the boat)
+    this.hud.onVestToggle=()=>{if(!this.fishing?.own?.vest)return;const w=this.save.profile.wear||(this.save.profile.wear={vest:false});w.vest=!w.vest;this.save.persist();
+      this.vest?.set(w.vest);this.hud.showToast?.(w.vest?'Life Vest on':'Life Vest off');};
     this.hud.onGearOpenChange=open=>{
       if(!this.input?.isTouch)return;
       if(open){
@@ -170,7 +182,8 @@ export class Game {
     this.setupRotateGate();
     this.hud.ready();mark('firstPlayableMs');
     try{this.tips=new ControlTips(this);}catch(e){warn('TIPS','control tips disabled',e);}
-    try{this.menu=new GameMenu(this);}catch(e){warn('MENU','game menu disabled',e);}   // R121 in-game menu (fail soft)
+    try{this.menu=new GameMenu(this);}catch(e){warn('MENU','game menu disabled',e);}
+    try{this.vest=new VestVisual(this);if(this.vestWorn())this.vest.set(true);}catch(e){warn('VEST','vest visual disabled',e);}   // R125   // R121 in-game menu (fail soft)
     if(!devMode)try{const id=this.state.player.characterId;localStorage.setItem('tgw.lastChar',JSON.stringify({id,name:characterCatalog[id]?.displayName||id}));}catch{}   // R121 Continue   // R120 first-time control tips (fail soft)
     // Attach background systems as they arrive (each is optional; null when it failed).
     const attach=(promise,fn)=>promise.then(v=>{if(v)fn(v);return v;});
@@ -180,7 +193,7 @@ export class Game {
       attach(choicePromise,c=>{this.choiceWorld=c;this.restoreSeedStory();}),
       attach(greenhousePromise,g=>{const gt=this.garden.transformOf('greenhouse');g.setPlacement(gt.x,gt.z,gt.rot);this.greenhouse=g;this.wilds.setGreenhouse(g);this.cameraOcclusion.greenhouse=g;this.structureVisibility.greenhouse=g;}),
       attach(orangeryPromise,o=>{this.orangery=o;this.cameraOcclusion.orangery=o;this.structureVisibility.orangery=o;}),
-      attach(fishingPromise,f=>{this.fishing=f;this.refreshHotbar?.(true);try{this.boatEco=new BoatEconomySystem({fishing:f,wilds:this.wilds,hud:this.hud}).init();}catch(e){warn('BOAT','economy disabled',e);this.failed.push('boat');}try{this.lakeRun=new LakeRunSystem(this,f);}catch(e){warn('LAKERUN','lake run disabled',e);this.failed.push('lakerun');}})
+      attach(fishingPromise,f=>{this.fishing=f;if(this.vestWorn())this.vest?.set(true);this.refreshHotbar?.(true);try{this.boatEco=new BoatEconomySystem({fishing:f,wilds:this.wilds,hud:this.hud}).init();}catch(e){warn('BOAT','economy disabled',e);this.failed.push('boat');}try{this.lakeRun=new LakeRunSystem(this,f);}catch(e){warn('LAKERUN','lake run disabled',e);this.failed.push('lakerun');}})
     ]).then(()=>{mark('allSystemsReadyMs');this.vegetationMask?.apply();log('LOAD','background systems ready',this.startupMetrics);if(this.failed.length)this.hud.showToast?.(`Some parts could not load: ${this.failed.join(', ')}`);});
     // DEV routes spawn straight into the Stable/Orangery/Fishing, so they wait for everything as before.
     if(devMode)await background;
@@ -216,6 +229,7 @@ export class Game {
     return this.hotbarItems()[i]||null;
   }
   activeHotbarId(){return this.activeHotbarItem()?.id||null;}
+  vestWorn(){return !!(this.save?.profile?.wear?.vest&&this.fishing?.own?.vest);}
   canChangeEquippedGear(){
     return !this.state.choice.open&&!this.homePortal?.busy&&!this.fishing?.isBusy?.()&&!this.stable?.isBusy?.()
       &&!this.workbenchPanel?.open&&!this.buildMode?.active&&!this.worldMap?.isOpen;
@@ -321,7 +335,7 @@ export class Game {
     this.run('daynight',()=>this.dayNight.update(gardenSpace));   // R81: 30 min day/night on the shared world only (after the look pass)
     this.hud.setWorldStatus?.(gardenSpace,this.dayNight.isNight?.());   // R88 desktop HUD E status; hidden outside E
     if(!this.lantern&&this.character?.instance)try{this.lantern=new Lantern(this);}catch(e){this.lantern={update(){}};warn('LANTERN','lantern disabled',e);}
-    this.run('hotbar',()=>this.refreshHotbar?.());this.run('lantern',()=>this.lantern?.update(dt));this.run('toolvisual',()=>this.equippedToolVisual?.update(dt));
+    this.run('hotbar',()=>this.refreshHotbar?.());if(!this._vestChecked&&this.boatEco){this._vestChecked=1;if(this.vestWorn())this.vest?.set(true);}   // R125: the vest's 'own' flag is restored by the boat economythis.run('lantern',()=>this.lantern?.update(dt));this.run('toolvisual',()=>this.equippedToolVisual?.update(dt));
     const portalBusy=this.homePortal?.busy||false;
     const fishingBusy=!gardenSpace&&(this.fishing?.isBusy?.()||false);
     const stableBusy=!gardenSpace&&(this.stable?.isBusy?.()||false);
@@ -377,8 +391,11 @@ export class Game {
       if(!gardenSpace){
         // Boat mode keeps the controller paused while still exposing FishingV1-owned E interactions.
         R.offer('stable',this.stable?.interaction?.(this.character.position));
-        R.offer('lakerun',this.lakeRun?.interaction());
-        if(!this.lakeRun?.busy()){const fi=this.fishing?.interaction?.(this.character.position);R.offer(fi?.type==='fishing-shore'?'shorefish':'fishing',fi);} // R64: no Fish/Dock mid-race; R71 shore Fish yields to everything
+        {let li=this.lakeRun?.interaction();if(li?.type==='lakerun-start'&&!li.disabled&&!this.vestWorn())li={...li,disabled:true,reason:'Wear your Life Vest first (Bag)'};R.offer('lakerun',li);}   // R125
+        if(!this.lakeRun?.busy()){let fi=this.fishing?.interaction?.(this.character.position);
+          // R125: boarding the boat needs the Life Vest on (Bag → Wear)
+          if(fi?.type==='boat-board'&&!fi.disabled&&!this.vestWorn())fi={...fi,disabled:true,reason:this.fishing?.own?.vest?'Wear your Life Vest first (Bag)':'You need a Life Vest'};
+          R.offer(fi?.type==='fishing-shore'?'shorefish':'fishing',fi);} // R64: no Fish/Dock mid-race; R71 shore Fish yields to everything
       }
     }
     const interaction=R.resolve();

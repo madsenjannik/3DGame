@@ -7,9 +7,9 @@
 import * as THREE from 'three';
 import { damp, radialTexture } from '../visual/VisualKit.js';
 import { MATERIALS, NODE_KINDS, TOOLS, HOME_UPGRADES, RULES, PASSIVES, PERKS, GOLDEN_CACHES } from '../data/wildsCatalog.js';
-import { WildsThreatSystem } from './WildsThreatSystem.js?build=SLOTS3-R123-20261007A';
+import { WildsThreatSystem } from './WildsThreatSystem.js?build=BAG-VEST-R124-20261008A';
 import { DailyRequests } from './DailyRequests.js';
-import { GardenPotsSystem } from './GardenPotsSystem.js?build=SLOTS3-R123-20261007A';
+import { GardenPotsSystem } from './GardenPotsSystem.js?build=BAG-VEST-R124-20261008A';
 import { loadWildsModels, loadGardenModels, WildsModel } from './WildsModels.js';
 import { FIXED_HEDGE as HEDGE } from '../data/gardenCatalog.js';
 

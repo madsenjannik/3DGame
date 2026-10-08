@@ -5557,8 +5557,8 @@ html body.hud-classic.touch .desktop-world-status i{filter:drop-shadow(0 1px 2px
 html body.hud-classic.touch #hud #inventory.inventory-stack,html body.hud-classic.touch #hud #inventory.inventory-stack.open,html body.hud-classic.touch #hud .inventory-stack .inventory-card,html body.hud-classic.touch #hud .inventory-stack .materials-card,
 html body.hud-classic.touch #hud .inventory-stack .material-chip{background:none!important;background-image:none!important;border:0!important;box-shadow:none!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important}
 html body.hud-classic.touch #hud .inventory-stack b,html body.hud-classic.touch #hud .inventory-stack small{color:#fffaf0!important;text-shadow:0 1px 2px rgba(20,24,14,.72),0 0 8px rgba(20,24,14,.35)!important}
-html body.hud-classic.touch #hud .inventory-stack .material-chip:not(.r110-hidden),html body.hud-classic.touch #hud .inventory-stack .materials-card{border-left:1px solid rgba(255,250,240,.55)!important;border-radius:0!important}
-html body.hud-classic.touch #hud .inventory-stack .materials-card .material-chip:first-child{border-left:0!important}
+html body.hud-classic.touch #hud #materials .material-chip,html body.hud-classic.touch #hud #inventory .materials-card{border-left:1px solid rgba(255,250,240,.55)!important;border-radius:0!important}
+html body.hud-classic.touch #hud #materials .material-chip:first-child{border-left:0!important}
 html body.hud-classic.touch #hud .inventory-stack .inventory-icon,html body.hud-classic.touch #hud .inventory-stack .material-chip i{filter:drop-shadow(0 1px 2px rgba(20,24,14,.4))!important}
 /* Objective: a small round icon under the minimap; tapping (or a new step) opens the card with the text */
 html body.hud-classic.touch #hud #objective.objective-card:not(.open){width:44px!important;max-width:44px!important;min-width:44px!important;height:44px!important;min-height:44px!important;padding:0!important;
@@ -5592,3 +5592,49 @@ html body.hud-classic.touch.lantern-ready #lantern-btn .ico-mask{width:24px!impo
 html body.hud-classic.touch.lantern-ready #lantern-btn.on{background:linear-gradient(180deg,#ffe08a,#e2b552)!important;box-shadow:0 0 0 3px rgba(226,181,82,.45),0 0 16px rgba(255,200,90,.55)!important}
 html body.hud-classic.touch.lantern-ready:is(.fishing-active,.boating-active,.stable-talk-active,.stable-race-active,.lakerun-active,.mobile-bag-open,.world-map-open,.game-menu-open) #lantern-btn{display:none!important}
 html body.hud-classic.touch:not(.mobile-bag-open) #hud #hud-bag.hud-fold-btn{left:calc(50% - 142px)!important;right:auto!important;transform:none!important}
+
+/* ===== R124 · phone Bag: tool grid + detail card + 3 quick slots, in the HUD E material (GO 07/10) ===== */
+html body.hud-classic.touch.mobile-bag-open .desktop-hotbar-e{display:none!important}
+html body.hud-classic.touch #gear-panel.gear-panel.open{display:block!important;padding:0!important;background:rgba(31,36,27,.42)!important;border:0!important;box-shadow:none!important;overflow:hidden!important}
+.bag2{position:absolute;inset:calc(max(10px,env(safe-area-inset-top))) calc(max(12px,env(safe-area-inset-right))) calc(max(10px,env(safe-area-inset-bottom))) calc(max(12px,env(safe-area-inset-left)));
+  display:grid;grid-template-columns:minmax(0,1fr) min(250px,38%);grid-template-rows:auto minmax(0,1fr) auto;gap:8px 12px;padding:12px 14px;border-radius:24px;
+  background:linear-gradient(180deg,#fffaf0,#f6ecd6);box-shadow:0 16px 36px rgba(31,33,25,.32),inset 0 0 0 1px rgba(153,128,67,.32);font-family:Manrope,system-ui,sans-serif;color:#2b2a24;text-align:left}
+.bag2-head{grid-column:1;display:flex;align-items:flex-start;justify-content:space-between}
+.bag2-head .gear-title{display:block;font:800 17px/1 Manrope,system-ui,sans-serif;letter-spacing:.14em;text-transform:uppercase;color:#2b2a24}
+.bag2-head .gear-subtitle{display:block;margin-top:3px;font:600 11px/1.2 Manrope,system-ui,sans-serif;color:#747766;letter-spacing:0;text-transform:none}
+html body.hud-classic.touch .bag2 .gear-close{position:absolute!important;right:10px!important;top:8px!important;left:auto!important;width:44px!important;height:44px!important;border:0!important;border-radius:50%!important;
+  background:#f3e6c8!important;box-shadow:inset 0 0 0 1px rgba(153,128,67,.32)!important;color:#34352d!important;font:700 22px/1 Manrope,system-ui,sans-serif!important;display:grid!important;place-items:center!important;z-index:2}
+.bag2-grid{grid-column:1;grid-row:2;min-height:0;overflow:auto;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));grid-auto-rows:58px;gap:8px;align-content:start;padding:8px;border-radius:18px;
+  background:rgba(234,215,173,.42);box-shadow:inset 0 0 0 1px rgba(153,128,67,.32)}
+.bag2-tile{position:relative;border:0;border-radius:15px;padding:0;display:grid;place-items:center;cursor:pointer;background:linear-gradient(180deg,#fff9e9,#f3e6c8);box-shadow:inset 0 0 0 1px rgba(153,128,67,.32),0 3px 7px rgba(43,42,36,.1)}
+.bag2-tile.empty{background:rgba(255,250,240,.35);box-shadow:inset 0 0 0 1px rgba(153,128,67,.18);cursor:default}
+.bag2-tile.sel{box-shadow:0 0 0 3px #e2b552,0 4px 12px rgba(226,181,82,.35)}
+.bag2-art{display:block;width:38px;height:38px;background:var(--art) center/contain no-repeat}
+.bag2-art.mask{background:#6f9d45;-webkit-mask:var(--ico) center/72% no-repeat;mask:var(--ico) center/72% no-repeat}
+.bag2-tag{position:absolute;left:5px;top:5px;padding:2px 5px;border-radius:999px;background:#6f9d45;color:#fffaf0;font:800 7.5px/1 Manrope,system-ui,sans-serif;letter-spacing:.06em}
+.bag2-num{position:absolute;right:6px;bottom:4px;font:800 9px/1 Manrope,system-ui,sans-serif;color:#747766}
+.bag2-detail{grid-column:2;grid-row:1/3;min-height:0;overflow:auto;display:flex;flex-direction:column;gap:6px;padding:12px;margin-top:40px;border-radius:18px;background:#fff9e9;box-shadow:inset 0 0 0 1px rgba(153,128,67,.32)}
+.bag2-big{align-self:center;width:84px;height:84px;flex:none;border-radius:22px;display:grid;place-items:center;background:linear-gradient(180deg,#fff9e9,#ead7ad);box-shadow:0 0 0 3px #e2b552,0 6px 14px rgba(226,181,82,.28)}
+.bag2-big .bag2-art{width:62px;height:62px}
+.bag2-detail h3{margin:2px 0 0;text-align:center;font:800 15px/1.15 Manrope,system-ui,sans-serif;color:#2b2a24}
+.bag2-chips{display:flex;flex-wrap:wrap;justify-content:center;gap:5px}
+.bag2-chip{padding:3px 8px;border-radius:999px;background:rgba(226,181,82,.22);color:#6a5321;font:800 9.5px/1.2 Manrope,system-ui,sans-serif}
+.bag2-chip.moss{background:rgba(111,157,69,.16);color:#43622a}
+.bag2-detail p{margin:0;font:600 11.5px/1.4 Manrope,system-ui,sans-serif;color:#34352d}
+.bag2-empty{color:#747766!important}
+.bag2-acts{margin-top:auto;display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.bag2-act{min-height:44px;border:0;border-radius:14px;font:800 12px/1.1 Manrope,system-ui,sans-serif;cursor:pointer;background:#f3e6c8;color:#34352d;box-shadow:inset 0 0 0 1px rgba(153,128,67,.32)}
+.bag2-act.primary{background:linear-gradient(180deg,#82b455,#6f9d45);color:#fffaf0;box-shadow:inset 0 2px 0 rgba(255,255,255,.2)}
+.bag2-act:disabled{opacity:.45;cursor:default}
+.bag2-slots{grid-column:1;grid-row:3;display:flex;align-items:center;gap:8px;min-width:0}
+.bag2-lbl{font:800 10px/1.15 Manrope,system-ui,sans-serif;letter-spacing:.12em;text-transform:uppercase;color:#747766;margin-right:2px}
+.bag2-slot{position:relative;flex:none;width:52px;height:52px;border:0;border-radius:15px;padding:0;display:grid;place-items:center;cursor:pointer;background:linear-gradient(180deg,#fff9e9,#f7ebcf 60%,#ead7ad);
+  box-shadow:0 4px 10px rgba(43,42,36,.16),inset 0 0 0 1px rgba(153,128,67,.32),inset 0 2px 0 rgba(255,255,255,.75)}
+.bag2-slot .bag2-art{width:34px;height:34px}
+.bag2-slot small{position:absolute;right:5px;bottom:3px;font:800 8px/1 Manrope,system-ui,sans-serif;color:#747766}
+.bag2-slot.on{box-shadow:0 0 0 3px #e2b552,0 4px 12px rgba(226,181,82,.35)}
+.bag2-slot.target{box-shadow:0 0 0 3px #82b455,0 4px 10px rgba(43,42,36,.16)}
+.bag2-hint{min-width:0;font:600 10.5px/1.3 Manrope,system-ui,sans-serif;color:#747766}
+@media (max-width:720px){.bag2{grid-template-columns:minmax(0,1fr) 210px}.bag2-grid{grid-auto-rows:52px;gap:6px}.bag2-art{width:34px;height:34px}.bag2-slot{width:46px;height:46px}.bag2-big{width:70px;height:70px}.bag2-big .bag2-art{width:52px;height:52px}}
+.bag2-tile .bag2-art{width:44px;height:44px}
+@media (max-width:720px){.bag2-tile .bag2-art{width:38px;height:38px}}

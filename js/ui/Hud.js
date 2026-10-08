@@ -100,6 +100,7 @@ export class Hud {
     p.addEventListener('click',e=>{
       e.stopPropagation();
       if(e.target.closest?.('.gear-close')){this.toggleGear(false);return;}
+      if(this.bag2Mode()){this.bag2Click(e);return;}   // R124 phone Bag
       const row=e.target.closest?.('.gear-item[data-equip="1"]');if(!row)return;
       const ok=this.onGearEquip?.(row.dataset.itemId);if(ok===false)return;
       this.renderGear();if(this.touch())setTimeout(()=>this.toggleGear(false),110);
@@ -178,8 +179,48 @@ export class Hud {
     document.body.classList.toggle('mobile-bag-open',!!on&&mobile);
     this.onGearOpenChange?.(!!on&&mobile);
   }
+  // R124 (GO 07/10, phones): the Bag is a grid of tools on the left, a detail card on the right (big art, name, kind,
+  // strike, the game's own text, actions) and the 3 quick slots below. Tap = select; Hold / Add to slot / Wear / Light.
+  bag2Mode(){return this.touch()&&document.body.classList.contains('hud-classic');}
+  toolArt(it){
+    const key=it.hotbarIcon||(it.name==='Watering Can'?'watering-can':(it.icon||it.id||''));
+    if(['axe','pickaxe','sickle','watering-can','rod','lantern'].includes(key))return `<i class="bag2-art" style="--art:url(./brand/icons/tool3d/icon-${key}.png?v=R124)"></i>`;
+    if(it.art)return `<i class="bag2-art" style="--art:url(${it.art})"></i>`;
+    return it.icon?`<i class="bag2-art mask" style="--ico:url(./brand/icons/svg/icon-${it.icon}.svg)"></i>`:`<i class="bag2-art"></i>`;
+  }
+  renderBag2(){
+    const items=this.gearItems?.()||[],held=this.selectedGearId?.()||null,slots=(this.hotbarItems?.()||[]).slice(0,3);
+    if(!items.some(it=>it.id===this._bagSel))this._bagSel=items[0]?.id||null;
+    const it=items.find(x=>x.id===this._bagSel)||null,pick=!!this._bagPick&&!!it;
+    const tag=x=>x.id===held?'<span class="bag2-tag">HELD</span>':(x.worn?'<span class="bag2-tag">WORN</span>':'');
+    const tiles=items.map(x=>`<button type="button" class="bag2-tile${x.id===this._bagSel?' sel':''}" data-item-id="${x.id}" aria-label="${x.name}">${this.toolArt(x)}${tag(x)}${x.count!=null?`<span class="bag2-num">${x.count}</span>`:''}</button>`).join('')
+      +'<span class="bag2-tile empty" aria-hidden="true"></span>'.repeat(Math.max(0,8-items.length));
+    let detail='<p class="bag2-empty">Nothing yet. Craft tools at your workbench.</p>';
+    if(it){
+      const chips=[`<span class="bag2-chip moss">${it.kind||'Gear'}</span>`];if(it.strike)chips.push(`<span class="bag2-chip">${it.strike}</span>`);
+      let a1,a2=`<button type="button" class="bag2-act" data-act="slot"${slots.some(s=>s?.id===it.id)?' disabled':''}>${slots.some(s=>s?.id===it.id)?'In a slot':'Add to slot'}</button>`;
+      if(it.id==='vest'){a1=`<button type="button" class="bag2-act primary" data-act="wear">${it.worn?'Take off':'Wear'}</button>`;a2='<button type="button" class="bag2-act" disabled>Worn, not held</button>';}
+      else if(it.id==='lantern'){const night=document.body.classList.contains('lantern-ready');a1=`<button type="button" class="bag2-act primary" data-act="light"${night?'':' disabled'}>${night?(document.body.classList.contains('lantern-lit')?'Put away':'Light it'):'Night only'}</button>`;a2='<button type="button" class="bag2-act" disabled>Own button</button>';}
+      else a1=`<button type="button" class="bag2-act primary" data-act="hold">${held===it.id?'Put away':'Hold'}</button>`;
+      detail=`<div class="bag2-big">${this.toolArt(it)}</div><h3>${it.name}</h3><div class="bag2-chips">${chips.join('')}</div>${it.desc?`<p>${it.desc}</p>`:''}<div class="bag2-acts">${a1}${a2}</div>`;
+    }
+    const sl=[0,1,2].map(q=>{const s=slots[q];return `<button type="button" class="bag2-slot${s&&s.id===held?' on':''}${pick?' target':''}" data-q="${q}" aria-label="Slot ${q+1}${s?': '+s.name:': empty'}">${s?this.toolArt(s):''}<small>${q+1}</small></button>`;}).join('');
+    this.gear.innerHTML=`<div class="bag2"><div class="bag2-head"><div><b class="gear-title">Bag</b><small class="gear-subtitle">Your tools and gear</small></div><button class="gear-close" type="button" aria-label="Close Bag">×</button></div>`
+      +`<div class="bag2-grid">${tiles}</div><div class="bag2-detail">${detail}</div>`
+      +`<div class="bag2-slots"><span class="bag2-lbl">Quick<br>slots</span>${sl}<span class="bag2-hint">${pick?`Tap a slot for ${it.name}.`:'Tap an item, then “Add to slot”.'}</span></div></div>`;
+  }
+  bag2Click(e){
+    const t=e.target.closest?.('[data-item-id],[data-act],[data-q]');if(!t)return;
+    if(t.classList.contains('bag2-tile')){this._bagSel=t.dataset.itemId;this._bagPick=false;}
+    else if(t.dataset.q!=null){const q=+t.dataset.q;if(this._bagPick&&this._bagSel){this.onBagPlace?.(this._bagSel,q);this._bagPick=false;}else this.onHotbarSelect?.(q);}
+    else if(t.dataset.act==='hold'){if(this.selectedGearId?.()===this._bagSel)this.onGearPutAway?.();else this.onGearEquip?.(this._bagSel);}
+    else if(t.dataset.act==='slot'){this._bagPick=true;}
+    else if(t.dataset.act==='wear'){this.onVestToggle?.();}
+    else if(t.dataset.act==='light'){this.onLanternToggle?.();this.toggleGear(false);return;}
+    this.renderBag2();this.renderDesktopHotbar();
+  }
   renderGear(){
-    if(!this.gear)return;const items=this.gearItems?.()||[],selected=this.selectedGearId?.()||null,toolArt=new Set(['axe','pickaxe','sickle','watering-can','rod','lantern']);
+    if(!this.gear)return;if(this.bag2Mode())return this.renderBag2();const items=this.gearItems?.()||[],selected=this.selectedGearId?.()||null,toolArt=new Set(['axe','pickaxe','sickle','watering-can','rod','lantern']);
     const rows=items.length?items.map(it=>{
       const key=it.hotbarIcon||(it.name==='Watering Can'?'watering-can':(it.icon||it.id||'')),art=toolArt.has(key)
         ?`<i class="gear-item-art" style="--gear-art:url(./brand/icons/tool3d/icon-${key}.png?v=R105-20261006)"></i>`

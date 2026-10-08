@@ -127,155 +127,74 @@ try {
     check('water vegetation R103: no brown triangular reed clones; replacement vegetation present',
       ok&&r.ready&&r.reed===0&&r.bulrush>0&&r.total>0&&!errors.length,errors[0]||JSON.stringify(r));await ctx.close(); }
 
-  // 2e. R104 mobile consistency: Bag stays put, quest expands down, Bag tool art + tap-to-equip share desktop state
+  // 2e. R122/R123 phone HUD (approved Bag mockup): menu icon left of day/night, day/night + resources without cards (dividers),
+  //     objective = small icon that opens on tap, round Bag left of 3 slots, compact map and controls
   { const ctx = await context({ viewport: { width: 844, height: 390 }, isMobile: true, hasTouch: true }); const { p, errors, ok } = await startGame(ctx, 'succulent', { hud: 'classic' });
     let r = {};
     if (ok) r = await p.evaluate(async () => {
-      const g=window.__tgw,w=ms=>new Promise(x=>setTimeout(x,ms));Object.assign(g.wilds.profile.tools,{axe:true,pickaxe:true,sickle:true,can:true});g.refreshHotbar(true);await w(120);
-      const obj=document.getElementById('objective'),bag=document.getElementById('hud-bag'),box=e=>e.getBoundingClientRect();
-      obj.classList.remove('open','pinned');g.hud.anchorMobileTop(true);await w(40);
-      const closed={bag:box(bag).left,w:box(obj).width};
-      obj.click();await w(120);
-      const opened={bag:box(bag).left,w:box(obj).width,h:box(obj).height};
-      bag.click();await w(100);
-      const row=document.querySelector('.gear-item[data-item-id="pickaxe"]'),art=row?.querySelector('.gear-item-art');
-      const bagArt=!!art&&getComputedStyle(art).backgroundImage.includes('tool3d/icon-pickaxe.png');
-      row?.click();await w(150);
-      const held=g.equippedToolVisual?.current;
+      const g = window.__tgw, w = ms => new Promise(x => setTimeout(x, ms)); Object.assign(g.wilds.profile.tools, { axe: true, pickaxe: true, sickle: true, can: true }); g.refreshHotbar(true); await w(150);
+      const $ = s => document.querySelector(s), box = e => e?.getBoundingClientRect?.(), cs = e => getComputedStyle(e);
+      const menu = $('#game-menu-btn'), world = $('#desktop-world-status'), inv = $('#inventory'), obj = $('#objective'), bag = $('#hud-bag'), map = $('.tgw-minimap');
+      const slots = [...document.querySelectorAll('#desktop-hotbar-e .desktop-hotbar-slot')].filter(e => cs(e).display !== 'none' && box(e).width > 0);
+      obj.classList.remove('open', 'pinned'); await w(60); const closed = box(obj);
+      obj.click(); await w(150); const opened = box(obj); obj.click(); await w(60);
+      const chips = [...inv.querySelectorAll('.material-chip')].filter(e => cs(e).display !== 'none');
       return {
-        classic:document.body.classList.contains('hud-classic'),
-        fixed:Math.abs(opened.bag-closed.bag)<1.5,
-        vertical:opened.h>52,   // R107 un-froze the open quest width (wide again); it still grows downward
-        bagArt,
-        selected:g.activeHotbarId()==='pickaxe'&&g.save.profile.hotbar.selected===g.save.profile.hotbar.slots.indexOf('pickaxe'),
-        real3d:!!held&&!held.isSprite&&held.parent?.name==='Hand_Socket_R'&&held.children?.some?.(x=>x.isMesh),
-        closes:!document.getElementById('gear-panel').classList.contains('open')
+        menuLeft: box(menu).right <= box(world).left + 2 && box(menu).left < 60,
+        noCards: cs(world).backgroundImage === 'none' && cs(world).backgroundColor === 'rgba(0, 0, 0, 0)' && cs(inv).backgroundImage === 'none' && cs(inv).backgroundColor === 'rgba(0, 0, 0, 0)',
+        dividers: chips.length > 1 && chips.slice(1).every(e => parseFloat(cs(e).borderLeftWidth) >= 1),
+        questIcon: closed.width <= 46 && closed.height <= 46 && Math.abs(closed.right - box(map).right) <= 2,
+        questOpens: opened.width >= 200 && opened.height < 180,
+        bagRound: cs(bag).borderRadius === '50%' && box(bag).right <= box(slots[0]).left,
+        threeSlots: slots.length === 3,
+        compact: box(map).width <= 60 && box($('#hop-btn')).width <= 56 && box($('#action')).width <= 56 && box($('#joy-rest')).width <= 94
       };
     });
-    check('mobile HUD R104: stable Bag/quest, source tool art, tap equips same real 3D hotbar item',
-      ok&&r.classic&&r.fixed&&r.vertical&&r.bagArt&&r.selected&&r.real3d&&r.closes&&!errors.length,errors[0]||JSON.stringify(r));await ctx.close(); }
+    check('phone HUD R122/R123: menu icon left, day/night + resources without cards, objective icon opens on tap, round Bag + 3 slots, compact controls', ok && Object.values(r).length === 8 && Object.values(r).every(Boolean) && !errors.length, errors[0] || JSON.stringify(r)); await ctx.close(); }
 
-  // 2f. R105 mobile fullscreen Bag: fills viewport, blocks/reset gameplay input, close works, tap equip closes
+  // 2f. R124 phone Bag: fullscreen, gameplay input reset, tool grid with 3D art, detail card with the game's own text + strike,
+  //     Hold puts the real 3D tool in the hand, Add to slot places it, auto tool while gathering, close works
   { const ctx = await context({ viewport: { width: 844, height: 390 }, isMobile: true, hasTouch: true }); const { p, errors, ok } = await startGame(ctx, 'succulent', { hud: 'classic' });
-    let r={};
-    if(ok)r=await p.evaluate(async()=>{
-      const g=window.__tgw,w=ms=>new Promise(x=>setTimeout(x,ms));Object.assign(g.wilds.profile.tools,{axe:true,pickaxe:true,sickle:true,can:true});g.refreshHotbar(true);await w(80);
-      g.input.move.x=.7;g.input.move.y=.4;g.input.actionPressed=true;g.input.hopPressed=true;
-      document.getElementById('hud-bag').click();await w(100);
-      const gp=document.getElementById('gear-panel'),b=gp.getBoundingClientRect(),grid=gp.querySelector('.gear-grid');
-      g.input.update();
-      const opened={
-        body:document.body.classList.contains('mobile-bag-open'),
-        full:Math.abs(b.left)<1&&Math.abs(b.top)<1&&Math.abs(b.width-innerWidth)<2&&Math.abs(b.height-innerHeight)<2,
-        grid:getComputedStyle(grid).display==='flex'&&getComputedStyle(grid).flexDirection==='row',   // R107 replaced the R105 3×2 grid with one horizontal slot row
-        reset:g.input.moveMagnitude===0&&g.input.frameMove.x===0&&g.input.frameMove.y===0&&!g.input.actionPressed&&!g.input.hopPressed,
-        close:!!gp.querySelector('.gear-close')
-      };
-      gp.querySelector('.gear-close').click();await w(80);opened.closed=!document.body.classList.contains('mobile-bag-open')&&!gp.classList.contains('open');
-      document.getElementById('hud-bag').click();await w(80);gp.querySelector('.gear-item[data-item-id="pickaxe"]').click();await w(160);
-      opened.equip=g.activeHotbarId()==='pickaxe'&&!gp.classList.contains('open')&&!document.body.classList.contains('mobile-bag-open');
-      return opened;
+    let r = {};
+    if (ok) r = await p.evaluate(async () => {
+      const g = window.__tgw, w = ms => new Promise(x => setTimeout(x, ms)); Object.assign(g.wilds.profile.tools, { axe: true, pickaxe: true, sickle: true, can: true }); g.refreshHotbar(true); await w(120);
+      g.input.move.x = .7; g.input.move.y = .4; g.input.actionPressed = true; g.input.hopPressed = true;
+      document.getElementById('hud-bag').click(); await w(120); g.input.update();
+      const gp = document.getElementById('gear-panel'), b = gp.getBoundingClientRect(), o = {};
+      o.full = document.body.classList.contains('mobile-bag-open') && Math.abs(b.width - innerWidth) < 2 && Math.abs(b.height - innerHeight) < 2;
+      o.reset = g.input.moveMagnitude === 0 && !g.input.actionPressed && !g.input.hopPressed;
+      const tile = gp.querySelector('.bag2-tile[data-item-id="pickaxe"]'); o.art = !!tile && getComputedStyle(tile.querySelector('.bag2-art')).backgroundImage.includes('tool3d/icon-pickaxe.png');
+      tile.click(); await w(80);
+      const d = gp.querySelector('.bag2-detail'); o.detail = /Stone Pickaxe/.test(d.textContent) && /Lets you break Boulders/.test(d.textContent) && /Strike 2/.test(d.textContent);
+      gp.querySelector('.bag2-act[data-act="hold"]').click(); await w(150);
+      const held = g.equippedToolVisual?.current; o.hold = g.activeHotbarId() === 'pickaxe' && !!held && held.parent?.name === 'Hand_Socket_R' && held.children?.some?.(x => x.isMesh);
+      gp.querySelector('.bag2-tile[data-item-id="can"]').click(); await w(60); gp.querySelector('.bag2-act[data-act="slot"]').click(); await w(60); gp.querySelector('.bag2-slot[data-q="0"]').click(); await w(80);
+      o.slot = g.save.profile.hotbar.slots[0] === 'can';
+      gp.querySelector('.gear-close').click(); await w(100); o.closed = !document.body.classList.contains('mobile-bag-open') && !gp.classList.contains('open');
+      g.equipHotbarSlot(-1); g.autoTool({ type: 'wilds-gather', node: { def: { requires: 'axe' } } }); o.auto = g.equippedToolVisual.id === 'axe';
+      return o;
     });
-    check('mobile Bag R105: fullscreen grid, gameplay input blocked/reset, close + equip work',
-      ok&&r.body&&r.full&&r.grid&&r.reset&&r.close&&r.closed&&r.equip&&!errors.length,errors[0]||JSON.stringify(r));await ctx.close(); }
+    check('phone Bag R124: fullscreen + input reset, 3D tool art, detail with game text + strike, Hold = real tool in hand, Add to slot, auto tool, close', ok && Object.values(r).length === 8 && Object.values(r).every(Boolean) && !errors.length, errors[0] || JSON.stringify(r)); await ctx.close(); }
 
-  // 2g. R106 cross-platform UI: mobile surfaces the SAME 10-slot hotbar, touch tap + hold/drag share persisted desktop state
-  { const ctx = await context({ viewport: { width: 844, height: 390 }, isMobile: true, hasTouch: true }); const { p, errors, ok } = await startGame(ctx, 'succulent', { hud: 'classic' });
-    let r={};
-    if(ok){
-      r=await p.evaluate(async()=>{
-        const g=window.__tgw,w=ms=>new Promise(x=>setTimeout(x,ms));Object.assign(g.wilds.profile.tools,{axe:true,pickaxe:true,sickle:true,can:true});g.refreshHotbar(true);await w(100);
-        const bag=document.getElementById('hud-bag'),map=document.querySelector('.tgw-minimap'),mapCanvas=map?.querySelector('canvas');
-        bag.click();await w(100);
-        const q=document.getElementById('desktop-hotbar-e'),slots=[...q.querySelectorAll('.desktop-hotbar-slot')],gp=document.getElementById('gear-panel');
-        const cs=e=>getComputedStyle(e);
-        return {
-          open:document.body.classList.contains('mobile-bag-open')&&gp.classList.contains('open'),
-          sameHotbar:slots.length===10&&cs(q).display==='flex',
-          noNumbers:slots.every(x=>cs(x.querySelector('small')).display==='none'),
-          bagShape:parseFloat(cs(bag).borderRadius)<25,
-          mapReal:!!mapCanvas&&cs(mapCanvas).display==='block'&&parseFloat(cs(map).width)>=50,   // R108/R109 compact map 52–56 px
-          first:g.save.profile.hotbar.slots.slice()
-        };
+  // 2g. R125 Life Vest: worn from the Bag (saved), shown on the body (Spine), the boat needs it on
+  { const ctx = await context({ viewport: { width: 844, height: 390 }, isMobile: true, hasTouch: true }); const { p, errors, ok } = await startGame(ctx, 'fern', { hud: 'classic' });
+    let r = {};
+    if (ok) { await p.waitForFunction(() => window.__tgw?.fishing, null, { timeout: 120000 }).catch(() => {});
+      r = await p.evaluate(async () => {
+        const g = window.__tgw, w = ms => new Promise(x => setTimeout(x, ms)), o = {}; g.fishing.own.vest = 1; g.boatEco?.persist?.(); g.refreshHotbar(true);
+        const fi = g.fishing.interaction.bind(g.fishing); g.fishing.interaction = () => ({ type: 'boat-board', label: 'Board boat', distance: 0 });
+        g.hud.showToast = (orig => t => { o.toast = t; orig.call(g.hud, t); })(g.hud.showToast);
+        g._whyAt = 0; await w(1200); g.input.actionPressed = true; await w(2500); o.blocked = /Wear your Life Vest/.test(o.toast || '');
+        document.getElementById('hud-bag').click(); await w(100); const gp = document.getElementById('gear-panel');
+        gp.querySelector('.bag2-tile[data-item-id="vest"]').click(); await w(60); gp.querySelector('.bag2-act[data-act="wear"]').click(); await w(60); gp.querySelector('.gear-close').click();
+        for (let i = 0; i < 60 && !g.vest?.model; i++) await w(250);
+        o.worn = g.save.profile.wear?.vest === true && g.vestWorn(); o.onBody = !!g.vest?.model?.visible && /Spine|Hips/.test(g.vest.model.parent?.name || '');
+        g.fishing.interaction = fi; g.save.flush(); return o;
       });
-      const from=await p.locator('#desktop-hotbar-e .desktop-hotbar-slot[data-slot="1"]').boundingBox(),to=await p.locator('#desktop-hotbar-e .desktop-hotbar-slot[data-slot="6"]').boundingBox();
-      if(from&&to){
-        await p.mouse.move(from.x+from.width/2,from.y+from.height/2);await p.mouse.down();
-        await p.mouse.move(from.x+from.width/2+9,from.y+from.height/2,{steps:2});
-        await p.mouse.move(to.x+to.width/2,to.y+to.height/2,{steps:8});await p.mouse.up();await p.waitForTimeout(120);
-      }
-      Object.assign(r,await p.evaluate(()=>{
-        const g=window.__tgw;return{dragged:g.save.profile.hotbar.slots[6]==='pickaxe',stillOpen:document.body.classList.contains('mobile-bag-open')};
-      }));
-      if(r.stillOpen){
-        const slot7=await p.locator('#desktop-hotbar-e .desktop-hotbar-slot[data-slot="6"]').boundingBox();
-        if(slot7){await p.mouse.click(slot7.x+slot7.width/2,slot7.y+slot7.height/2);await p.waitForFunction(()=>!document.body.classList.contains('mobile-bag-open'),null,{timeout:4000}).catch(()=>{});}   // R110: the Bag closes on a 110 ms timer; headless frames are slow
-      }
-      Object.assign(r,await p.evaluate(()=>{const g=window.__tgw;return{equipped:g.activeHotbarId()==='pickaxe',closed:!document.body.classList.contains('mobile-bag-open'),selected:g.save.profile.hotbar.selected===6};}));
-    }
-    check('R106 mobile/desktop UI: same 10-slot hotbar, real minimap, rounded family, touch drag + tap equip',
-      ok&&r.open&&r.sameHotbar&&r.noNumbers&&r.bagShape&&r.mapReal&&r.dragged&&r.stillOpen&&r.equipped&&r.closed&&r.selected&&!errors.length,errors[0]||JSON.stringify(r));await ctx.close(); }
-
-  // 2h. R107 iPhone screenshot QA: no lower strip, quest wide, inventory horizontal, controls compact
-  { const ctx = await context({ viewport: { width: 844, height: 390 }, isMobile: true, hasTouch: true }); const { p, errors, ok } = await startGame(ctx, 'succulent', { hud: 'classic' });
-    let r={};
-    if(ok)r=await p.evaluate(async()=>{
-      const g=window.__tgw,w=ms=>new Promise(x=>setTimeout(x,ms));await w(100);
-      const app=document.getElementById('app'),obj=document.getElementById('objective'),bag=document.getElementById('hud-bag'),action=document.getElementById('action'),hop=document.getElementById('hop-btn');
-      obj.classList.remove('open','pinned');g.hud.anchorMobileTop();obj.click();await w(100);
-      const quest=obj.getBoundingClientRect();
-      bag.click();await w(100);
-      const gp=document.getElementById('gear-panel'),grid=gp.querySelector('.gear-grid'),gb=gp.getBoundingClientRect(),ab=app.getBoundingClientRect();
-      return{
-        full:ab.height>=innerHeight-1&&gb.height>=innerHeight-1,
-        questWide:quest.width>=228&&quest.height<180,   // R109 set the open quest to 250 (230 on short phones)
-        row:getComputedStyle(grid).flexDirection==='row',
-        bagSmall:bag.getBoundingClientRect().width<=54,
-        actionSmall:action.getBoundingClientRect().width<=66,
-        hopSmall:hop.getBoundingClientRect().width<=66
-      };
-    });
-    check('mobile R107 QA: full viewport, wide quest, horizontal inventory, compact controls',
-      ok&&r.full&&r.questWide&&r.row&&r.bagSmall&&r.actionSmall&&r.hopSmall&&!errors.length,errors[0]||JSON.stringify(r));await ctx.close(); }
-
-  // 2i. R108 desktop-reference mobile proportions: compact collapsed HUD + desktop-sized inventory/hotbar slots
-  { const ctx = await context({ viewport: { width: 844, height: 390 }, isMobile: true, hasTouch: true }); const { p, errors, ok } = await startGame(ctx, 'succulent', { hud: 'classic' });
-    let r={};
-    if(ok)r=await p.evaluate(async()=>{
-      const g=window.__tgw,w=ms=>new Promise(x=>setTimeout(x,ms));await w(100);
-      const obj=document.getElementById('objective'),bag=document.getElementById('hud-bag'),map=document.querySelector('.tgw-minimap'),world=document.getElementById('desktop-world-status'),joy=document.getElementById('joy-rest'),hop=document.getElementById('hop-btn'),action=document.getElementById('action');
-      obj.classList.remove('open','pinned');g.hud.anchorMobileTop?.();await w(40);
-      const box=e=>e?.getBoundingClientRect?.();
-      const collapsed={quest:box(obj),bag:box(bag),map:box(map),world:box(world),joy:box(joy),hop:box(hop),action:box(action)};
-      bag.click();await w(100);
-      const inv=document.querySelector('.gear-item'),slot=document.querySelector('#desktop-hotbar-e .desktop-hotbar-slot');
-      return{
-        worldVisible:collapsed.world?.width>=120&&collapsed.world?.height<=44,
-        questCompact:collapsed.quest?.width<=220&&collapsed.quest?.height<=52,
-        bag50:collapsed.bag?.width<=52&&collapsed.bag?.height<=52,
-        mapCompact:collapsed.map?.width<=60,
-        joyCompact:collapsed.joy?.width<=94,
-        buttonsCompact:collapsed.hop?.width<=56&&collapsed.action?.width<=56,
-        inventorySlot:box(inv)?.width<=54,
-        hotbarSlot:box(slot)?.width<=52
-      };
-    });
-    check('mobile R108: desktop-reference compact HUD and slot proportions',
-      ok&&r.worldVisible&&r.questCompact&&r.bag50&&r.mapCompact&&r.joyCompact&&r.buttonsCompact&&r.inventorySlot&&r.hotbarSlot&&!errors.length,errors[0]||JSON.stringify(r));await ctx.close(); }
-
-  // 2j. R109 phone layout port: 5 gameplay slots, resources visible, Bag left, all 10 inside overlay
-  { const ctx = await context({ viewport: { width: 844, height: 390 }, isMobile: true, hasTouch: true }); const { p, errors, ok } = await startGame(ctx, 'succulent', { hud: 'classic' });
-    let r={};
-    if(ok)r=await p.evaluate(async()=>{
-      const g=window.__tgw,w=ms=>new Promise(x=>setTimeout(x,ms));Object.assign(g.wilds.profile.tools,{axe:true,pickaxe:true,sickle:true,can:true});g.refreshHotbar(true);await w(120);
-      const q=document.getElementById('desktop-hotbar-e'),slots=[...q.querySelectorAll('.desktop-hotbar-slot')],vis=x=>getComputedStyle(x).display!=='none',bag=document.getElementById('hud-bag'),res=document.getElementById('inventory'),hearts=document.querySelector('.hearts');
-      const gameplay={visibleSlots:slots.filter(vis).length,firstFive:slots.slice(0,5).every(vis),lastFive:slots.slice(5).every(x=>!vis(x)),res:getComputedStyle(res).display!=='none',bagLeft:bag.getBoundingClientRect().right<=slots[0].getBoundingClientRect().left+2,heartsAbove:hearts.getBoundingClientRect().bottom<=slots[0].getBoundingClientRect().top+2};
-      bag.click();await w(120);
-      const gp=document.getElementById('gear-panel'),allInside=slots.every(vis),bg=getComputedStyle(gp).backgroundColor;
-      return {...gameplay,allInside,overlay:document.body.classList.contains('mobile-bag-open')&&bg!=='rgb(255, 250, 240)'};
-    });
-    check('mobile R109: desktop zones + 5 gameplay slots + all 10 in Bag overlay',
-      ok&&r.visibleSlots===5&&r.firstFive&&r.lastFive&&r.res&&r.bagLeft&&r.heartsAbove&&r.allInside&&r.overlay&&!errors.length,errors[0]||JSON.stringify(r));await ctx.close(); }
+      await p.reload({ waitUntil: 'load' }); await p.waitForFunction(() => !document.getElementById('loading'), null, { timeout: 240000 }).catch(() => {});
+      await p.waitForFunction(() => window.__tgw?.fishing, null, { timeout: 120000 }).catch(() => {});
+      r.kept = await p.evaluate(async () => { const g = window.__tgw; for (let i = 0; i < 60 && !g.vest?.model; i++) await new Promise(x => setTimeout(x, 250)); return g.vestWorn() && !!g.vest?.model?.visible; }); }
+    check('life vest R125: boat needs it on, Wear in the Bag puts it on the body, stays on after reload', ok && r.blocked && r.worn && r.onBody && r.kept && !errors.length, errors[0] || JSON.stringify(r)); await ctx.close(); }
 
   // 3. Missing assets must not black-screen the game
   { const ctx = await context({ viewport: { width: 844, height: 390 }, isMobile: true, hasTouch: true }, [/assets\/stable\//, /lake_cabin|cabin_fishing_runtime/, /greenhouse-l1/, /characters\/fern\.glb/]);
@@ -727,13 +646,13 @@ try {
     const phoneFix = ok && await p.evaluate(async () => { const w = ms => new Promise(r => setTimeout(r, ms)), t = document.getElementById('toast'); t.textContent = 'Test'; t.classList.add('show'); await w(500);
       const bar = document.querySelector('#hud .inventory-stack')?.getBoundingClientRect(), toast = t.getBoundingClientRect(); t.classList.remove('show');
       const j = document.getElementById('joy-rest'); j.style.transition = 'none'; document.body.classList.add('fishing-active'); await w(400); const joy = getComputedStyle(j).opacity; document.body.classList.remove('fishing-active'); j.style.transition = '';
-      return { toast: !!bar && toast.top >= bar.bottom - 1, title: parseFloat(getComputedStyle(document.getElementById('objective-title')).fontSize) >= 12, joy: joy === '0', cream: getComputedStyle(document.getElementById('objective')).backgroundColor === 'rgba(255, 249, 235, 0.96)' }; });
+      return { toast: !!bar && toast.top >= bar.bottom - 1, title: parseFloat(getComputedStyle(document.getElementById('objective-title')).fontSize) >= 12, joy: joy === '0', cream: await (async () => { const o = document.getElementById('objective'); o.classList.add('open'); await w(80); const c = getComputedStyle(o).backgroundColor === 'rgba(255, 249, 235, 0.96)'; o.classList.remove('open'); return c; })() }; });   // R122: cream when open (closed = small moss icon)
     check('dev disabled: no dev button, handle or badge', ok && !leak && !errors.length, errors[0]); await ctx.close();
     // R112: players without DEV get the current HUD by device (phone = HUD D with 5 slots, desktop = HUD E with 10)
     const c2 = await context({ viewport: { width: 1280, height: 720 } }); const d = await startGame(c2, 'daisy', { dev: false });
     const deskHud = d.ok && await d.p.evaluate(() => ({ e: document.body.classList.contains('hud-desktop-e') && !document.body.classList.contains('hud-classic'), slots: [...document.querySelectorAll('.desktop-hotbar-slot')].filter(e => e.getBoundingClientRect().width > 0).length }));
     const deskToast = d.ok && await d.p.evaluate(async () => { const t = document.getElementById('toast'); t.textContent = 'Test'; t.classList.add('show'); await new Promise(r => setTimeout(r, 500)); const bar = document.querySelector('#hud #inventory, #hud .inventory-stack')?.getBoundingClientRect(); return !!bar && t.getBoundingClientRect().top >= bar.bottom - 1; });   // R118
-    check('player HUD default (R112): phone gets HUD D (5 slots), desktop gets HUD E (10 slots) without DEV', phoneHud?.d && phoneHud.slots === 5 && deskHud?.e && deskHud.slots === 10 && !d.errors.length, d.errors[0] || JSON.stringify({ phoneHud, deskHud })); await c2.close();
+    check('player HUD default (R112): phone gets HUD D (3 slots, R123), desktop gets HUD E (10 slots) without DEV', phoneHud?.d && phoneHud.slots === 3 && deskHud?.e && deskHud.slots === 10 && !d.errors.length, d.errors[0] || JSON.stringify({ phoneHud, deskHud })); await c2.close();
     check('phone HUD fixes (R115/R118): toast below the resource bar (phone + desktop E), quest title >= 12 px, joystick hidden while fishing, cream quest card', phoneFix && phoneFix.toast && phoneFix.title && phoneFix.joy && phoneFix.cream && deskToast, JSON.stringify({ phoneFix, deskToast })); }
 } finally {
   await browser.close(); server.close();
