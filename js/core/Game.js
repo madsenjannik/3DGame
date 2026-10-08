@@ -3,47 +3,48 @@ import * as THREE from 'three';
 import { AssetRegistry } from './AssetRegistry.js';
 import { CharacterController } from './CharacterController.js?build=MOBILE-GESTURE-R34B-20260930A';
 import { GameState } from './GameState.js';
-import { InputManager } from './InputManager.js?build=ACTION-POWER-R128-20261008A';
+import { InputManager } from './InputManager.js?build=IMPACT-FX-R129-20261008A';
 import { ThirdPersonCamera } from './ThirdPersonCamera.js?build=MOBILE-GESTURE-R34B-20260930A';
 import { CameraOcclusionSystem } from './CameraOcclusionSystem.js?build=NORTH-STABLE-R23O-20260929A';
 import { StructureVisibilitySystem } from '../visual/StructureVisibilitySystem.js?build=NORTH-STABLE-R23O-20260929A';
 import { characterCatalog, resourceCatalog, buildingCatalog } from '../data/assetCatalog.js';
-import { CollectibleSystem } from '../gameplay/CollectibleSystem.js?build=ACTION-POWER-R128-20261008A';
-import { MeaningfulChoiceSystem } from '../gameplay/MeaningfulChoiceSystem.js?build=ACTION-POWER-R128-20261008A';
-import { GreenhouseProgressionSystem } from '../gameplay/GreenhouseProgressionSystem.js?build=ACTION-POWER-R128-20261008A';
+import { CollectibleSystem } from '../gameplay/CollectibleSystem.js?build=IMPACT-FX-R129-20261008A';
+import { MeaningfulChoiceSystem } from '../gameplay/MeaningfulChoiceSystem.js?build=IMPACT-FX-R129-20261008A';
+import { GreenhouseProgressionSystem } from '../gameplay/GreenhouseProgressionSystem.js?build=IMPACT-FX-R129-20261008A';
 import { OrangeryHubSystem } from '../gameplay/OrangeryHubSystem.js?build=CAMERA-CUTAWAY-CONTEXT-R21D-20260928E';
 import { FishingV1System } from '../gameplay/FishingV1System.js?build=BAG-NIGHT-R84-20261006A';
 import { ChoicePanel } from '../ui/ChoicePanel.js';
-import { Hud } from '../ui/Hud.js?build=ACTION-POWER-R128-20261008A';
+import { Hud } from '../ui/Hud.js?build=IMPACT-FX-R129-20261008A';
 import { WorldMap } from '../ui/WorldMap.js?build=WORLD-MAP-R35B-20260930B';
 import { GardenEnvironment } from '../world/GardenEnvironment.js?build=WATER-VEG-R103-20261006A';
 import { WildlifeSystem } from '../world/WildlifeSystem.js?build=CAMERA-CUTAWAY-CONTEXT-R21D-20260928E';
 import { PlayerHomePortalSystem } from '../world/PlayerHomePortalSystem.js?build=ENTRY-R29-20260929A';
-import { NorthStableSystem } from '../world/NorthStableSystem.js?build=ACTION-POWER-R128-20261008A';
-import { SaveGame } from './SaveGame.js?build=ACTION-POWER-R128-20261008A';
-import { WildsLoopSystem } from '../gameplay/WildsLoopSystem.js?build=ACTION-POWER-R128-20261008A';
+import { NorthStableSystem } from '../world/NorthStableSystem.js?build=IMPACT-FX-R129-20261008A';
+import { SaveGame } from './SaveGame.js?build=IMPACT-FX-R129-20261008A';
+import { WildsLoopSystem } from '../gameplay/WildsLoopSystem.js?build=IMPACT-FX-R129-20261008A';
 import { WorkbenchPanel } from '../ui/WorkbenchPanel.js';
-import { DevMenu, devMenuEnabled } from '../ui/DevMenu.js?build=ACTION-POWER-R128-20261008A';
+import { DevMenu, devMenuEnabled } from '../ui/DevMenu.js?build=IMPACT-FX-R129-20261008A';
 import { applyControlProfile, defaultProfile } from './ControlProfiles.js';
 import { PerfHud } from '../dev/PerfHud.js';
-import { QualityManager, QUALITY } from './Quality.js?build=ACTION-POWER-R128-20261008A';
+import { QualityManager, QUALITY } from './Quality.js?build=IMPACT-FX-R129-20261008A';
 import { InteractionResolver } from './InteractionResolver.js';
 import { log, warn } from '../dev/Log.js';
 import { LookPass } from '../visual/LookPass.js?build=BAG-NIGHT-R84-20261006A';
 import { DayNight } from '../visual/DayNight.js?build=BAG-NIGHT-R84-20261006A';   // R81
 import { TOOLS } from '../data/wildsCatalog.js';   // R124 Bag texts (the Workbench's own effect lines)
 import { WEAPONS } from '../data/combatCatalog.js';   // R124 strike values
-import { VestVisual } from '../gameplay/VestVisual.js?build=ACTION-POWER-R128-20261008A';   // R125
-import { SpecialHold } from '../ui/SpecialHold.js?build=ACTION-POWER-R128-20261008A';   // R126
-import { GameMenu } from '../ui/GameMenu.js?build=ACTION-POWER-R128-20261008A';   // R121
-import { ControlTips } from '../ui/ControlTips.js?build=ACTION-POWER-R128-20261008A';   // R120
-import { Lantern } from '../gameplay/Lantern.js?build=ACTION-POWER-R128-20261008A';     // R81/R101
+import { VestVisual } from '../gameplay/VestVisual.js?build=IMPACT-FX-R129-20261008A';   // R125
+import { SpecialHold } from '../ui/SpecialHold.js?build=IMPACT-FX-R129-20261008A';   // R126
+import { GameMenu } from '../ui/GameMenu.js?build=IMPACT-FX-R129-20261008A';   // R121
+import { ControlTips } from '../ui/ControlTips.js?build=IMPACT-FX-R129-20261008A';   // R120
+import { Lantern } from '../gameplay/Lantern.js?build=IMPACT-FX-R129-20261008A';     // R81/R101
 import { BoatEconomySystem } from '../gameplay/BoatEconomySystem.js';
 import { LakeRunSystem } from '../gameplay/LakeRunSystem.js';
 import { GardenBuildSystem } from '../gameplay/GardenBuildSystem.js';
 import { GardenBuildMode } from '../ui/GardenBuildMode.js';
 import { GardenVegetationMask } from '../world/GardenVegetationMask.js';
-import { CombatSystem } from '../gameplay/CombatSystem.js?build=HOTBAR-SHORTCUTS-R101-20261006A';
+import { CombatSystem } from '../gameplay/CombatSystem.js?build=IMPACT-FX-R129-20261008A';
+import { ImpactFx } from '../gameplay/ImpactFx.js?build=IMPACT-FX-R129-20261008A';   // R129 FX layer
 import { EquippedToolVisual } from '../gameplay/EquippedToolVisual.js?build=HOTBAR-HAND-DRAG-R102-20261006A';
 
 export class Game {
@@ -126,7 +127,8 @@ export class Game {
     this.garden=new GardenBuildSystem({profile:this.save.profile,world:this.world});
     this.wilds=new WildsLoopSystem({world:this.world,state:this.state,save:this.save,hud:this.hud,greenhouse:null,garden:this.garden}).init();
     this.workbenchPanel=new WorkbenchPanel({wilds:this.wilds,state:this.state});
-    try{this.combat=new CombatSystem(this);this.wilds.combat=this.combat;}catch(e){warn('COMBAT','combat disabled',e);this.failed.push('combat');} // R61 (fails soft); R62 snails hit through it
+    try{this.combat=new CombatSystem(this);this.wilds.combat=this.combat;}catch(e){warn('COMBAT','combat disabled',e);this.failed.push('combat');}
+    try{this.fx=new ImpactFx(this);}catch(e){warn('FX','impact FX disabled',e);}   // R129: hit-stop, telegraph, loot magnet, resource feedback (visual only) // R61 (fails soft); R62 snails hit through it
     // R60 step 2: build/move mode + vegetation under moved structures; every move re-places the systems.
     this.buildMode=new GardenBuildMode({game:this});this.workbenchPanel.onMove=id=>this.buildMode.start(id);
     if(!this.garden.isDefault('greenhouse'))this.world.setGreenhouseBranch?.(this.garden.currentBranch()); // R60.2 path follows a moved greenhouse
@@ -333,7 +335,7 @@ export class Game {
     this.perfHud?.tick();
   }
   frameStep(){
-    const rawDt=this.clock.getDelta();this.quality?.sample(rawDt);const dt=Math.min(rawDt,1/20);this.time+=dt;this.uTime.value=this.time;this.input.update();
+    const rawDt=this.clock.getDelta();this.quality?.sample(rawDt);const dt=Math.min(rawDt,1/20)*(this.run('fxstop',()=>this.fx?.timeScale(rawDt))??1);   /* R129 hit-stop */this.time+=dt;this.uTime.value=this.time;this.input.update();
     if(this.input.moved&&!this.lastMoved){this.lastMoved=true;this.hud.markMoved();}
 
     const gardenSpace=this.world.isGardenSpace();
@@ -368,7 +370,7 @@ export class Game {
     if(!stableCameraOwner&&!homeCameraOwner)this.followCamera.update(dt);
     this.run('giantcam',()=>this.combat?.boss?.applyCamera(this.camera,this.character));
     this.run('bearcam',()=>this.combat?.bear?.applyCamera?.(this.camera,this.character)); // R79 Root Bear: same low boss camera, kept inside the grove's open core
-    const shk=gardenSpace?0:Math.max(this.combat?.boss?.shake||0,this.combat?.bear?.shake||0);if(shk>0){const a=.22*shk;this.camera.position.x+=(Math.random()-.5)*a;this.camera.position.y+=(Math.random()-.5)*a;} // R63 boss impact
+    const shk=Math.max(gardenSpace?0:Math.max(this.combat?.boss?.shake||0,this.combat?.bear?.shake||0),this.fx?.shakeNow||0);   /* R129: strike shake on top */ if(shk>0){const a=.22*shk;this.camera.position.x+=(Math.random()-.5)*a;this.camera.position.y+=(Math.random()-.5)*a;} // R63 boss impact
     this.homePortal?.update(dt);this.world.update?.(dt,this.time,this.character.position);
 
     if(gardenSpace){
@@ -425,7 +427,7 @@ export class Game {
       else if(interaction.type==='first-seed')this.collectible?.collect(this.character);
       else if(interaction.type==='greenhouse')this.greenhouse?.interact(this.character);
       else if(interaction.type?.startsWith?.('stable-'))this.stable?.interact(interaction);
-      else if(interaction.type?.startsWith?.('wilds-')){this.autoTool(interaction);this.wilds.interact(interaction,this.character);}
+      else if(interaction.type?.startsWith?.('wilds-')){this.autoTool(interaction);const ok=this.wilds.interact(interaction,this.character);if(ok&&interaction.type==='wilds-snail')this.run('fxhit',()=>this.fx?.hit({kind:'snail',m:interaction.snail,x:interaction.snail.x,z:interaction.snail.z}));}
       else if(interaction.type?.startsWith?.('combat-'))this.combat?.interact(interaction.type);
       else if(interaction.type?.startsWith?.('lakerun-'))this.lakeRun?.interact(interaction.type);
       else if(['fish-board','fishing-shop','fishing-spot','fishing-shore','boat-board','boat-fish','boat-dock'].includes(interaction.type))this.fishing?.interact(interaction.type);
@@ -441,6 +443,7 @@ export class Game {
     // Normal traversal gets a consistent cutaway fallback only when a roofed structure
     // leaves too little room for third-person framing. Fishing-owned special cameras
     // remain visually locked and therefore restore all structure materials.
+    this.run('impactfx',()=>this.fx?.update(dt));   // R129: after combat set the boss telegraphs this frame
     this.run('structures',()=>this.structureVisibility?.update(dt,{enabled:!specialCameraBusy}));
     const mapVisible=!gardenSpace&&!portalBusy&&!specialBusy&&!this.state.choice.open;
     this.run('map',()=>{this.worldMap?.setVisible?.(mapVisible);

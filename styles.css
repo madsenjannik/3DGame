@@ -5743,3 +5743,7 @@ html body.hud-classic.touch.boss-active #hud > :not(#game-menu-btn){opacity:0!im
 html body.hud-classic.touch.is-night #hop-btn,html body.hud-classic.touch.is-night #hop-btn.show,html body.hud-classic.touch.is-night #hud #hud-bag.hud-fold-btn,
 html body.hud-classic.touch.is-night #game-menu-btn,html body.hud-classic.touch.is-night #hud #objective.objective-card:not(.open),
 html body.hud-classic.touch.is-night #hud #objective.objective-card.complete:not(.open),html body.hud-classic.touch.is-night #hud #objective.objective-card:not(.open):not(.complete){background:rgba(255,255,255,.88)!important}
+
+/* ===== R129 · loot magnet: the counter pops when a flying drop lands (all HUDs) ===== */
+@keyframes fxArrive{0%{transform:scale(1)}40%{transform:scale(1.28)}100%{transform:scale(1)}}
+.material-chip.fx-arrive,.seed-card.fx-arrive{animation:fxArrive .3s ease-out}

@@ -157,6 +157,7 @@ export class CombatSystem {
       const d = Math.hypot(ch.position.x - it.x, ch.position.z - it.z);
       if (it.state === 'idle' && d < 1.3) {                   // walk over it to pick it up
         it.state = 'collect'; this.w.give(it.kind, it.amount); this.g.hud?.materials?.classList.add('show');
+        try { this.g.fx?.lootFly(it.kind, it.root.position, it.amount); } catch {}   // R129 loot magnet (visual only)
         this.g.hud?.showToast(`${MATERIALS[it.kind]?.name || it.kind} +${it.amount}`);
         const done = () => { it.state = 'gone'; this.root.remove(it.root); };
         if (it.model) it.model.play(['Collect'], done); else done();
@@ -205,7 +206,7 @@ export class CombatSystem {
     else if (t?.kind === 'bear') landed = this.bear.hit(t, wpn.dmg);   // R79
     else if (t?.kind === 'snail') { this.lastCombat = this.time; landed = this.w.threat.swat(t.m, ch, wpn.dmg); }
     else if (t) landed = this.hitMole(t.m, wpn.dmg);   // same range as the Strike prompt: what you are offered, you hit
-    if (landed) this.special?.gain();                  // R65: landed hits fill the character's special meter
+    if (landed) { this.special?.gain(); try { this.g.fx?.hit(t); } catch {} }   // R65: landed hits fill the special meter; R129: hit-stop FX (visual only)
     return landed;
   }
   hurt(amount, fx, fz, push = PLAYER.knockback) {

@@ -7,9 +7,9 @@
 import * as THREE from 'three';
 import { damp, radialTexture } from '../visual/VisualKit.js';
 import { MATERIALS, NODE_KINDS, TOOLS, HOME_UPGRADES, RULES, PASSIVES, PERKS, GOLDEN_CACHES } from '../data/wildsCatalog.js';
-import { WildsThreatSystem } from './WildsThreatSystem.js?build=ACTION-POWER-R128-20261008A';
+import { WildsThreatSystem } from './WildsThreatSystem.js?build=IMPACT-FX-R129-20261008A';
 import { DailyRequests } from './DailyRequests.js';
-import { GardenPotsSystem } from './GardenPotsSystem.js?build=ACTION-POWER-R128-20261008A';
+import { GardenPotsSystem } from './GardenPotsSystem.js?build=IMPACT-FX-R129-20261008A';
 import { loadWildsModels, loadGardenModels, WildsModel } from './WildsModels.js';
 import { FIXED_HEDGE as HEDGE } from '../data/gardenCatalog.js';
 
@@ -581,6 +581,7 @@ export class WildsLoopSystem {
     if (def.seedChance && Math.random() < def.seedChance) { this.give('wild_seed', 1); text += '  Wild Seed +1'; }
     this.hud?.materials?.classList.add('show'); this.hud?.showToast(text);
     node.character?.flash(); this.profile.stats.gathered++;
+    try { this.state.events?.emit?.('fx:gather', { kind: def.material, n, x: node.x, y: node.root?.position?.y ?? 0, z: node.z }); } catch {}   // R129 resource feedback (visual only)
     node.state = 'regrowing'; node.obstacles.forEach(o => this.setObstacle(o, false)); this.profile.nodes[node.id] = Date.now() + this.regrowMs(def, node); this.save.persist();
     this.track(def.material, n); this.track('nodes', 1); for (const [id, b] of Object.entries(def.bonus || {})) this.track(id, b);
   }

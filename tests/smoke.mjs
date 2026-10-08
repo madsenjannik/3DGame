@@ -657,6 +657,21 @@ try {
     const lbl = await q.evaluate(() => ({ label: document.getElementById('start-label').textContent, choose: !document.getElementById('choose-char').hidden }));
     await q.click('#start', { force: true }); const went = await q.waitForURL(/game\.html\?char=fern/, { timeout: 8000 }).then(() => true, () => false);
     check('continue (R121): start screen says CONTINUE AS FERN, offers Choose character, and starts the game as Fern', lbl.label === 'CONTINUE AS FERN' && lbl.choose && went && !qe.length, qe[0] || JSON.stringify({ lbl, went })); await c3.close(); }
+  // 17k. R129 FX (visual only): a landed strike starts the hit-stop, white flash and shake without changing the damage;
+  //      picked-up loot flies to its counter; a gather bursts debris + '+N'; a boss telegraph gets its blinking base
+  { const ctx = await context({ viewport: { width: 844, height: 390 }, isMobile: true, hasTouch: true }); const { p, errors, ok } = await startGame(ctx, 'fern', { hud: 'classic' });
+    const ready = ok && await p.waitForFunction(() => window.__tgw?.combat?.models?.mole && window.__tgw?.fx, null, { timeout: 240000 }).then(() => true, () => false);
+    const r = ready ? await p.evaluate(() => { const g = window.__tgw, c = g.combat, m = c.moles[0], ch = g.character, fx = g.fx, o = {}; g.wilds.profile.tools.axe = true;
+      g.devMenu.teleport('world', m.home.x + 2.0, m.home.z, -Math.PI / 2); for (let i = 0; i < 60 && m.state !== 'up'; i++) c.updateMole(m, .1, ch);
+      m.hp = 99; c.cd = 0; const landed = c.attack(); o.hit = landed && fx.freeze > 0 && fx.shake > 0 && fx.flashes[0]?.mats.length > 0 && m.hp === 99 - c.weapon().dmg && fx.timeScale(0) < .1;
+      fx.freeze = 0; fx.update(.5); o.restored = fx.flashes.length === 0;
+      m.hp = 1; c.cd = 0; c.attack(); for (let i = 0; i < 30; i++) c.updateMole(m, .1, ch); const it = c.loot[0];
+      if (it) { for (let i = 0; i < 14; i++) c.updateLoot(.1, ch); ch.position.x = it.x; ch.position.z = it.z; c.updateLoot(.016, ch); } o.loot = !!it && fx.flies.length > 0;
+      for (let i = 0; i < 40; i++) fx.update(.05); o.landedFly = fx.flies.length === 0;
+      const n0 = fx.parts.length; g.state.events.emit('fx:gather', { kind: 'stone', n: 2, x: ch.position.x, y: ch.position.y, z: ch.position.z + 1 }); o.gather = fx.parts.length > n0 + 10;
+      const B = c.boss; if (B) { B.showTele(ch.position.x, ch.position.z + 2, 1.5, .5); fx.update(.016); o.tele = !!B.r129Base?.visible; B.tele.visible = false; fx.update(.016); o.teleOff = !B.r129Base.visible; } else o.tele = o.teleOff = false;
+      return o; }) : {};
+    check('R129 FX: landed strike = hit-stop + white flash + shake (damage unchanged), loot flies to its counter, gather bursts debris + +N, boss telegraph blinks with a base', ready && Object.values(r).length === 7 && Object.values(r).every(Boolean) && !errors.length, errors[0] || JSON.stringify(r)); await ctx.close(); }
   // 17h. R117 desktop: the click that closes the Bag does not swing; the next click on the view does
   { const ctx = await context({ viewport: { width: 1280, height: 720 } }); const { p, errors, ok } = await startGame(ctx, 'fern', { hud: 'desktop-e' });
     let r = {};
