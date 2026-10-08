@@ -38,8 +38,8 @@ try {
   // 1. Start screen -> selector (desktop)
   { const ctx = await context({ viewport: { width: 1280, height: 720 } }); const p = await ctx.newPage(); const errs = []; p.on('pageerror', e => errs.push(e.message));
     await p.goto(B + 'index.html', { waitUntil: 'load' }); await p.waitForTimeout(5500); await p.click('#start', { force: true });
-    await p.waitForURL(/selector\.html/, { timeout: 20000 }).catch(() => {}); await p.waitForTimeout(6000);
-    check('desktop: start screen -> selector, selector renders', p.url().includes('selector.html') && await p.evaluate(() => document.querySelectorAll('canvas').length > 0) && !errs.length, errs[0]);
+    await p.waitForURL(/selector\.html/, { timeout: 20000 }).catch(() => {}); await p.waitForFunction(() => document.body.classList.contains('cs-ready'), null, { timeout: 60000 }).catch(() => {});
+    check('desktop: start screen -> selector, selector renders (R135: the new card selector)', p.url().includes('selector.html') && await p.evaluate(() => document.querySelectorAll('.cs-card').length === 3 && document.querySelectorAll('.cs-thumb').length === 9) && !errs.length, errs[0]);
     await ctx.close(); }
   // 2. Game on desktop + three phone viewports; move + objective + no page errors
   for (const [name, opts] of [['desktop 1280x720', { viewport: { width: 1280, height: 720 } }], ['phone 844x390', { viewport: { width: 844, height: 390 }, isMobile: true, hasTouch: true }], ['phone 667x375', { viewport: { width: 667, height: 375 }, isMobile: true, hasTouch: true }]]) {
@@ -676,7 +676,7 @@ try {
     check('R129 FX: only the creature flashes (never the boss arena/grove), landed strike = hit-stop + white flash + shake (damage unchanged), loot flies to its counter, gather bursts debris + +N, boss telegraph blinks with a base', ready && Object.values(r).length === 8 && Object.values(r).every(Boolean) && !errors.length, errors[0] || JSON.stringify(r)); await ctx.close(); }
   // 17l. R132 character select TEST PAGE (Jannik's reference style): 9 characters, starters open, locked ones say how to grow them
   { const ctx = await context({ viewport: { width: 844, height: 390 }, isMobile: true, hasTouch: true }); const p = await ctx.newPage(); const errors = []; p.on('pageerror', e => errors.push(e.message));
-    await p.goto(B + 'selector-wilds.html', { waitUntil: 'load' });
+    await p.goto(B + 'selector.html?locks=1', { waitUntil: 'load' });   // R135: ?locks=1 previews the locked design (locks arrive with the seeds)
     const ok = await p.waitForFunction(() => document.body.classList.contains('cs-ready'), null, { timeout: 60000 }).then(() => true, () => false);
     const r = ok ? await p.evaluate(async () => { const $ = s => document.querySelector(s), w = ms => new Promise(x => setTimeout(x, ms)), o = {};
       o.start = document.querySelectorAll('.cs-thumb').length === 9 && $('.cs-card.main b').textContent === 'Cactus' && !$('#cs-play').disabled && $('#cs-stats').children.length === 4 && /Thorn Shot/.test($('#cs-ab-name').textContent);
@@ -687,7 +687,13 @@ try {
       const cols = [...document.querySelectorAll('.cs-col')].map(c => Math.round(c.getBoundingClientRect().height));
       o.r134 = document.documentElement.classList.contains('cs-phone') && getComputedStyle($('#cs-prev')).display === 'none' && $('#cs-ab-icon').getBoundingClientRect().width >= 48 && cols.every(h => h === cols[0]) && /icon-vest/.test($('.cs-stat:nth-child(2) .cs-ico').getAttribute('style')) && document.documentElement.scrollWidth <= innerWidth;
       return o; }) : {};
-    check('character select test page (R132–R134): English, 9 characters, Daisy/Cactus/Swamp open, locked ones a mystery that says how to grow them, browse by thumb and arrow; phone layout from the screen, no arrows on touch, big special icon, equal dividers', ok && Object.values(r).length === 5 && Object.values(r).every(Boolean) && !errors.length, errors[0] || JSON.stringify(r)); await ctx.close(); }
+    /* R135: the game's selector: all 9 open until the seeds, opens on ?char or the last played, the old test address lands here */
+    await p.evaluate(() => localStorage.setItem('tgw.lastChar', JSON.stringify({ id: 'fern', name: 'Fern' })));
+    const at = async (u, f) => { await p.goto(B + u, { waitUntil: 'load' }); await p.waitForFunction(() => document.body.classList.contains('cs-ready'), null, { timeout: 60000 }).catch(() => {}); return p.evaluate(f).catch(() => false); };
+    r.r135 = await at('selector.html?char=tulip', () => document.querySelector('.cs-card.main b').textContent === 'Tulip' && !document.querySelector('#cs-play').disabled && !document.querySelector('.cs-card.locked,.cs-thumb.locked'))
+      && await at('selector.html', () => document.querySelector('.cs-card.main b').textContent === 'Fern')
+      && await at('selector-wilds.html?char=swamp', () => location.pathname.endsWith('/selector.html') && document.querySelector('.cs-card.main b').textContent === 'Swamp');
+    check('character select test page (R132–R134): English, 9 characters, Daisy/Cactus/Swamp open, locked ones a mystery that says how to grow them, browse by thumb and arrow; phone layout from the screen, no arrows on touch, big special icon, equal dividers; R135 it is the game\'s selector: all 9 open, opens on ?char / last played', ok && Object.values(r).length === 6 && Object.values(r).every(Boolean) && !errors.length, errors[0] || JSON.stringify(r)); await ctx.close(); }
   // 17m. R134 DEV toggles (visual only, off by default): resource icons fly into their counter; the tutorial tip sits under the resource bar on phones
   { const ctx = await context({ viewport: { width: 844, height: 390 }, isMobile: true, hasTouch: true }); await ctx.addInitScript(() => { localStorage.setItem('tgw.dev.flyIcons', '1'); localStorage.setItem('tgw.dev.tipTop', '1'); });
     const { p, errors, ok } = await startGame(ctx, 'cactus', { hud: 'classic', tips: true }); let r = {};

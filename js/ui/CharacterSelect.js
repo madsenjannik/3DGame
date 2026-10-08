@@ -1,7 +1,8 @@
 // @ts-nocheck
 // R132/R133 (GO 08/10): character select in the style of Jannik's reference (cards over a render of our own world).
-// TEST PAGE ONLY (selector-wilds.html); the live selector.html and every save stay untouched. Assets are the game's
-// own: the world render, portraits rendered from the character GLBs, the brand logo and the specials' icons.
+// R135 (GO A 08/10): this is now the game's selector (selector.html; the old one is gone). Saves stay untouched.
+// Until the rare-seed unlocks are built (R136) all 9 characters are open; ?locks=1 previews the locked design.
+// Assets are the game's own: the world render, portraits rendered from the character GLBs, the brand logo and the specials' icons.
 // R133: English everywhere, a live 3D character (its own GLB, Idle) on the centre card, WebAudio sounds in the
 // Stable's chime style, and locked characters kept a mystery: no readable silhouette, no texts, no stats.
 import * as THREE from 'three';
@@ -12,6 +13,7 @@ import { SPECIAL } from '../data/combatCatalog.js?build=DAYNIGHT-R81-20261005A';
 const ROSTER = globalThis.DYM_CHARACTER_ROSTER || [];
 const ORDER = ['daisy', 'cactus', 'swamp', 'aloe', 'tulip', 'hyacinth', 'succulent', 'spire', 'fern'];
 const STARTERS = new Set(['daisy', 'cactus', 'swamp']);
+const LOCKS = new URLSearchParams(location.search).get('locks') === '1';   // R135: locks come with the seeds (R136)
 const ENERGY = { daisy: 4, cactus: 3 };                                  // decision 1a: the starters are not all slow
 const GLB = { aloe: 'aloe-vera' };
 const EN = {
@@ -50,7 +52,7 @@ const chr = id => {
   const d = ROSTER.find(r => r.id === id) || { id, name: id, personality: [3, 3, 3, 3] }, p = [...d.personality];
   if (ENERGY[id]) p[0] = ENERGY[id];
   const sp = SPECIAL.chars[id] || {}, ab = ABILITY[sp.kind], [role, desc] = EN[id] || ['', ''];
-  return { id, name: d.name, role, desc, personality: p, open: STARTERS.has(id), special: sp, ability: typeof ab === 'object' ? ab[id] : ab || '' };
+  return { id, name: d.name, role, desc, personality: p, open: LOCKS ? STARTERS.has(id) : d.playable !== false, special: sp, ability: typeof ab === 'object' ? ab[id] : ab || '' };
 };
 const art = id => `./assets/ui/selector/${id}.webp?v=R132`;
 
@@ -115,7 +117,9 @@ class LiveCard {
 
 export function mountCharacterSelect() {
   const $ = s => document.querySelector(s), list = ORDER.map(chr);
-  let i = Math.max(0, ORDER.indexOf(new URLSearchParams(location.search).get('char') || 'cactus')), live = null;
+  let want = new URLSearchParams(location.search).get('char');
+  if (!want) try { want = JSON.parse(localStorage.getItem('tgw.lastChar') || 'null')?.id; } catch {}   // R135: open on the last played character (as the old selector did)
+  let i = Math.max(0, ORDER.indexOf(want || 'cactus')), live = null;
   try { live = new LiveCard($('#cs-stage')); } catch (e) { console.warn('[TGW] no WebGL: portraits only', e); }
   const card = (c, pos) => `<button type="button" class="cs-card ${pos}${c.open ? '' : ' locked'}" data-i="${list.indexOf(c)}" aria-label="${c.open ? c.name : 'Locked character'}">
       <span class="cs-art" style="--art:url(${art(c.id)})"></span>${c.open ? '' : '<span class="cs-lock" aria-hidden="true"></span><span class="cs-q" aria-hidden="true">?</span>'}

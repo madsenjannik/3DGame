@@ -1618,6 +1618,7 @@ are only touched where a measured hotspot requires it, minimally.
    failure. Must pass before every push (CLAUDE.md rule 5).
 
 **B status 02/10/2026: complete (R51–R57).** On-device check (iPhone, Jannik 02/10): 60 fps steady (frame max 20–24 ms), 217 draw calls / 370k tris in the garden, 363 / 433k at the lake, mobile-high, 1 WebGL context → no perf work needed before C.
+**R135 (v0.8.135):** the new card selector replaces the old one as selector.html (all 9 characters open until the seed unlocks; opens on the last played character). Saves untouched.
 **R134 (v0.8.134):** character select round 3 (phone layout from the device screen, no arrows on touch, bigger special icon, vest for Courage, equal dividers) + DEV toggles: resource icons fly into the bar, tutorial tip under the resource bar on phones. Off by default; live selector and saves untouched.
 **R133 (v0.8.133):** character select test page round 2: English, live 3D character on the centre card, sounds, locked characters a mystery (no texts, no stats), more space between cards and portrait circles. Live selector and saves untouched.
 **R132 (v0.8.132, GO 08/10):** character select test page (selector-wilds.html) in Jannik's reference style, made from the game's own world render, GLB portraits, logo and special icons; starters Daisy/Cactus/Swamp, six locked with their grow condition. Live selector and saves untouched; the 08/10 decisions on starters, seeds, shared save and personalities are in HANDOVER Now.

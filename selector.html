@@ -1,274 +1,144 @@
-<!DOCTYPE html>
-<html>
+<!doctype html>
+<html lang="en">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><link rel="manifest" href="./manifest.webmanifest"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="Growing Wilds"><link rel="apple-touch-icon" href="./brand/app-icon/app-icon-180.png">
-<title>The Growing Wilds - Vælg din karakter</title>
-<script src="./character-roster.js"></script>
-<script src="./vendor/react/resources.js"></script>
-<script src="./support.js"></script>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover" />
+  <meta name="theme-color" content="#3f5a2a" />
+  <link rel="manifest" href="./manifest.webmanifest"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <title>The Growing Wilds · Choose your plant</title>
+  <!-- R132–R134 character select in the style of Jannik's reference; R135 (GO A 08/10): the game's selector, replacing the old one (all 9 open until the seed unlocks). -->
+  <script>(function(){var h=document.documentElement;function f(){var sw=screen.width||9999,sh=screen.height||9999;h.classList.toggle('cs-phone',Math.min(sw,sh)<=500||innerHeight<=500);h.classList.toggle('cs-touch',matchMedia('(hover:none) and (pointer:coarse)').matches||Math.min(sw,sh)<=500);}f();addEventListener('resize',f);addEventListener('orientationchange',f);})();</script>
+  <script src="./version.js?v=SELECT-R135-20261008A"></script>
+  <script src="./character-roster.js?v=SELECT-R135-20261008A"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Lilita+One&family=Manrope:wght@500;600;700;800&display=swap" rel="stylesheet">
+  <script type="importmap">{ "imports": { "three": "./vendor/three.module.js", "three/addons/": "./vendor/" } }</script>
+  <style>
+    :root{--ink:#2b2a24;--wood:#3b2f22;--paper:#f6ead2;--paper2:#ecdcbc;--gold:#f0c463;--moss:#4f6b32;--sub:#6b5a44}
+    *{box-sizing:border-box}
+    html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#3f5a2a;font-family:Manrope,system-ui,sans-serif;color:var(--ink);-webkit-tap-highlight-color:transparent;user-select:none;-webkit-user-select:none}
+    button{font:inherit;color:inherit;border:0;background:none;padding:0;cursor:pointer}
+    /* our own world from above, softly out of focus */
+    .cs-bgclip{position:fixed;inset:0;overflow:hidden;pointer-events:none}   /* R134: the bigger, drifting background must never widen the page (iOS zooms out) */
+    .cs-bg{position:absolute;inset:-24px;background:url(./assets/ui/selector/world.webp?v=R132) center/cover no-repeat;filter:blur(2.5px) saturate(1.05);transform:scale(1.03);animation:csDrift 40s ease-in-out infinite alternate}
+    @keyframes csDrift{to{transform:scale(1.08) translate(-1.2%,-.8%)}}
+    .cs-shade{position:fixed;inset:0;pointer-events:none;background:radial-gradient(85% 75% at 50% 42%,rgba(20,26,12,0) 35%,rgba(20,26,12,.5) 100%),linear-gradient(180deg,rgba(20,26,12,.18),rgba(20,26,12,0) 30%,rgba(20,26,12,.25))}
+    .cs-frame{position:fixed;inset:max(10px,env(safe-area-inset-top)) max(12px,env(safe-area-inset-right)) max(10px,env(safe-area-inset-bottom)) max(12px,env(safe-area-inset-left));border-radius:22px;box-shadow:inset 0 0 0 3px rgba(255,248,230,.55),inset 0 0 0 6px rgba(59,47,34,.35);pointer-events:none}
+    .cs-logo{position:fixed;left:calc(max(12px,env(safe-area-inset-left)) + 26px);top:calc(max(10px,env(safe-area-inset-top)) + 14px);width:clamp(150px,19vw,290px);text-align:center}
+    .cs-logo img{display:block;width:100%;filter:drop-shadow(0 6px 10px rgba(0,0,0,.35))}
+    .cs-logo small{display:block;margin-top:4px;font:800 clamp(8px,.85vw,12px)/1 Manrope;letter-spacing:.32em;color:#fffaf0;text-shadow:0 1px 3px rgba(0,0,0,.6)}
+    .cs-round{position:fixed;width:48px;height:48px;border-radius:50%;display:grid;place-items:center;background:rgba(43,38,28,.82);box-shadow:inset 0 0 0 2px rgba(255,248,230,.35),0 4px 10px rgba(0,0,0,.35);color:#fffaf0;font:400 26px/1 'Lilita One'}
+    .cs-round:active{transform:scale(.92)}
+    #cs-home{right:calc(max(12px,env(safe-area-inset-right)) + 24px);top:calc(max(10px,env(safe-area-inset-top)) + 18px)}
+    /* stage: three cards + arrows + portrait row */
+    #cs-stage{position:fixed;left:0;right:0;top:calc(max(10px,env(safe-area-inset-top)) + 4vh);height:56vh;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;touch-action:pan-y}
+    .cs-row{display:flex;align-items:center;gap:clamp(10px,1.4vw,22px)}
+    #cs-cards{display:flex;align-items:center;gap:clamp(10px,1.4vw,22px)}
+    #cs-cards.slide-l .cs-card{animation:csInL .32s cubic-bezier(.3,1.4,.5,1)}#cs-cards.slide-r .cs-card{animation:csInR .32s cubic-bezier(.3,1.4,.5,1)}
+    @keyframes csInL{from{transform:translateX(26%) scale(var(--s,1));opacity:.4}}@keyframes csInR{from{transform:translateX(-26%) scale(var(--s,1));opacity:.4}}
+    .cs-card{--s:1;position:relative;width:clamp(160px,19vw,300px);aspect-ratio:.82;border-radius:16px;overflow:hidden;transform:scale(var(--s));
+      background:url(./assets/ui/selector/meadow.webp?v=R132) center 40%/cover;box-shadow:0 0 0 4px var(--wood),0 0 0 6px rgba(255,248,230,.35),0 14px 24px rgba(0,0,0,.35);transition:transform .3s cubic-bezier(.3,1.6,.5,1)}
+    .cs-card::before{content:'';position:absolute;inset:0;background:linear-gradient(180deg,rgba(255,250,235,.0) 40%,rgba(30,24,16,.25))}
+    .cs-card.side{--s:.86;filter:saturate(.85) brightness(.9)}
+    .cs-card.main{--s:1.08;box-shadow:0 0 0 4px var(--gold),0 0 0 7px #8a6a2a,0 0 26px 6px rgba(240,196,99,.55),0 18px 30px rgba(0,0,0,.4);z-index:1}
+    .cs-card.main::after{content:'';position:absolute;inset:0;background:linear-gradient(115deg,rgba(255,255,255,0) 35%,rgba(255,255,255,.35) 50%,rgba(255,255,255,0) 65%);transform:translateX(-120%);animation:csShine 3.6s ease-in-out 1s infinite}
+    @keyframes csShine{30%,100%{transform:translateX(120%)}}
+    .cs-art{position:absolute;left:4%;right:4%;top:2%;bottom:22%;background:var(--art) center bottom/contain no-repeat;filter:drop-shadow(0 8px 8px rgba(0,0,0,.28))}
+    .cs-card.main .cs-art{animation:csBob 2.6s ease-in-out infinite}
+    @keyframes csBob{50%{transform:translateY(-2.5%)}}
+    .cs-card.locked .cs-art{filter:brightness(0) blur(9px) opacity(.28);transform:scale(.9)}   /* a shape in the mist, not a readable silhouette */
+    .cs-q{position:absolute;left:0;right:0;top:20%;text-align:center;font:400 clamp(54px,6vw,96px)/1 'Lilita One';color:rgba(255,250,240,.9);text-shadow:0 4px 0 rgba(43,34,24,.85),0 0 24px rgba(240,196,99,.55)}
+    .cs-card.locked .cs-lock{top:auto;bottom:30%}
+    .cs-card.locked .cs-plate small{color:#f0c463}
+    .cs-lock{position:absolute;left:50%;top:38%;width:38px;height:38px;margin-left:-19px;border-radius:50%;background:rgba(43,38,28,.85);box-shadow:inset 0 0 0 2px rgba(255,248,230,.5)}
+    .cs-lock::before{content:'';position:absolute;inset:9px;background:#f0c463;-webkit-mask:url(./brand/icons/svg/icon-lock.svg) center/contain no-repeat;mask:url(./brand/icons/svg/icon-lock.svg) center/contain no-repeat}
+    .cs-plate{position:absolute;left:0;right:0;bottom:0;height:24%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;background:linear-gradient(180deg,rgba(59,47,34,.88),rgba(43,34,24,.96));border-top:2px solid rgba(240,196,99,.45)}
+    .cs-plate b{font:400 clamp(18px,1.9vw,30px)/1 'Lilita One';color:#fffaf0;text-shadow:0 2px 0 #1d170f}
+    .cs-plate small{font:800 clamp(7px,.62vw,10px)/1 Manrope;letter-spacing:.16em;text-transform:uppercase;color:#e9d9b8}
+    .cs-arrow{position:static;flex:none}
+    html.cs-touch .cs-arrow{display:none}   /* R134: on touch you swipe or tap a side card / portrait */
+    /* live 3D character over the centre card's art box (the portrait stays underneath as the fallback) */
+    .cs-live{position:absolute;pointer-events:none;z-index:3;opacity:0;transition:opacity .25s}.cs-live.on{opacity:1}
+    .cs-card.main.live .cs-art{opacity:0;transition:opacity .25s .1s}
+    body.cs-go #cs-stage,body.cs-go #cs-panel{transition:transform .5s cubic-bezier(.5,0,.8,.4),opacity .5s;opacity:0}body.cs-go #cs-stage{transform:scale(1.06)}
+    .cs-mystery{display:grid;grid-template-columns:auto 1fr;gap:2px 12px;align-items:center;padding:6px 0}
+    .cs-mystery i{grid-row:1/3;width:clamp(34px,3.4vw,50px);height:clamp(34px,3.4vw,50px);border-radius:50%;background:#2b2418;box-shadow:0 0 0 2px #f0c463;position:relative}
+    .cs-mystery i::before{content:'';position:absolute;inset:26%;background:#f0c463;-webkit-mask:url(./brand/icons/svg/icon-lock.svg) center/contain no-repeat;mask:url(./brand/icons/svg/icon-lock.svg) center/contain no-repeat}
+    .cs-mystery b{font:400 clamp(14px,1.3vw,20px)/1 'Lilita One';color:var(--ink)}.cs-mystery small{font:700 clamp(9px,.8vw,12px)/1.2 Manrope;color:var(--sub)}
+    body.cs-is-locked #cs-role{color:#b07a1a}
+    #cs-thumbs{display:flex;gap:clamp(6px,.7vw,12px);margin-top:clamp(34px,5.6vh,60px)}   /* clears the centre card's 1.08 scale with real air */
+    .cs-thumb{width:clamp(34px,3.6vw,54px);height:clamp(34px,3.6vw,54px);border-radius:50%;overflow:hidden;background:#cfe0b8;box-shadow:0 0 0 3px var(--wood),0 4px 8px rgba(0,0,0,.35);transition:transform .2s}
+    .cs-thumb span{display:block;width:100%;height:100%;background:var(--art) center 8%/190% no-repeat}
+    .cs-thumb.on{box-shadow:0 0 0 3px var(--gold),0 0 0 5px #8a6a2a,0 0 12px rgba(240,196,99,.7);transform:scale(1.12)}
+    .cs-thumb{position:relative}.cs-thumb.locked{background:radial-gradient(circle at 50% 35%,#5a4e3c,#2b2418)}.cs-thumb em{display:grid;place-items:center;width:100%;height:100%;font:400 clamp(16px,1.7vw,24px)/1 'Lilita One';font-style:normal;color:#f0c463;text-shadow:0 2px 0 #1d170f}
+    .cs-thumb.locked::after{content:'';position:absolute;right:-1px;bottom:-1px;width:42%;height:42%;border-radius:50%;background:#2b2a24 center/62% no-repeat;box-shadow:0 0 0 1.5px #f0c463}
+    .cs-thumb.locked::before{content:'';position:absolute;right:calc(-1px + 42% * .19);bottom:calc(-1px + 42% * .19);width:calc(42% * .62);height:calc(42% * .62);z-index:1;background:#f0c463;-webkit-mask:url(./brand/icons/svg/icon-lock.svg) center/contain no-repeat;mask:url(./brand/icons/svg/icon-lock.svg) center/contain no-repeat}
+    /* parchment info panel */
+    #cs-panel{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(max(10px,env(safe-area-inset-bottom)) + 4.5vh);width:min(1060px,calc(100vw - 80px));min-height:150px;padding:20px 26px 46px;border-radius:20px;
+      display:grid;grid-template-columns:1.1fr 1.2fr 1.25fr;gap:0 22px;align-items:center;
+      background:radial-gradient(120% 140% at 20% 0%,#fbf3e1,var(--paper) 45%,var(--paper2));box-shadow:0 0 0 3px #6b5236,0 0 0 6px rgba(255,248,230,.35),0 16px 32px rgba(0,0,0,.4),inset 0 0 40px rgba(160,120,60,.18)}
+    .cs-col{min-width:0;padding:0 4px;align-self:stretch;display:flex;flex-direction:column;justify-content:center}.cs-col+.cs-col{border-left:2px solid rgba(107,82,54,.28);padding-left:22px}
+    #cs-name{margin:0;font:400 clamp(26px,2.9vw,46px)/1 'Lilita One';color:var(--ink)}
+    #cs-role{display:block;margin-top:6px;font:800 clamp(8px,.78vw,12px)/1 Manrope;letter-spacing:.2em;text-transform:uppercase;color:var(--sub)}
+    #cs-desc{margin:8px 0 0;font:600 clamp(10px,.95vw,14px)/1.4 Manrope;color:#4a3d2c}
+    body.cs-is-locked #cs-desc{color:var(--moss);font-weight:800}
+    .cs-ab{display:grid;align-content:center;grid-template-columns:auto 1fr;gap:4px 12px;align-items:center}
+    #cs-ab-icon{grid-row:1/3;width:clamp(56px,5vw,78px);height:clamp(56px,5vw,78px);border-radius:50%;background:#e2efcf center/145% no-repeat;box-shadow:0 0 0 3px #6b5236,inset 0 -6px 10px rgba(79,107,50,.25)}
+    #cs-ab-name{font:400 clamp(15px,1.4vw,22px)/1 'Lilita One';color:var(--ink)}
+    #cs-ab-text{margin:0;font:600 clamp(9.5px,.88vw,13px)/1.35 Manrope;color:#4a3d2c}
+    .cs-ab-kind{font:800 clamp(7px,.6vw,9.5px)/1 Manrope;letter-spacing:.18em;text-transform:uppercase;color:var(--moss)}
+    #cs-stats{display:flex;flex-direction:column;gap:clamp(4px,.7vh,8px)}
+    .cs-stat{display:grid;grid-template-columns:18px 52px 1fr auto;gap:8px;align-items:center}
+    .cs-ico{width:16px;height:16px;background:#5b4a3a;-webkit-mask:var(--ico) center/contain no-repeat;mask:var(--ico) center/contain no-repeat}
+    .cs-stat b{font:800 clamp(9px,.8vw,12.5px)/1 Manrope;color:var(--ink)}
+    .cs-bar{height:clamp(8px,.9vw,12px);border-radius:99px;background:#3d3326;box-shadow:inset 0 1px 2px rgba(0,0,0,.5);overflow:hidden}
+    .cs-bar em{display:block;height:100%;border-radius:99px;transition:width .4s cubic-bezier(.3,1.4,.5,1)}
+    .cs-bar.blue em{background:linear-gradient(180deg,#7fb6f0,#3f7fd0)}.cs-bar.red em{background:linear-gradient(180deg,#f19a8a,#c9533f)}
+    .cs-bar.green em{background:linear-gradient(180deg,#a6dc6a,#5b9a2c)}.cs-bar.gold em{background:linear-gradient(180deg,#ffe08a,#e2a930)}
+    .cs-stat small{font:700 clamp(8.5px,.75vw,11.5px)/1 Manrope;color:var(--moss);white-space:nowrap;min-width:84px}
+    body.cs-is-locked .cs-bar em{filter:grayscale(1) brightness(.8)}
+    #cs-play{position:absolute;left:50%;transform:translateX(-50%);bottom:-29px;height:58px;   /* sits on the panel's lower edge (the panel is its containing block) */padding:0 34px;border-radius:999px;display:flex;align-items:center;gap:14px;
+      font:400 clamp(20px,1.8vw,28px)/1 'Lilita One';color:#fffdf0;text-shadow:0 2px 0 #2c4a14;background:radial-gradient(140% 120% at 30% 0%,#a9d86a -30%,#5c9a2e 55%,#3f7a1e);
+      box-shadow:0 0 0 3px #2c4a14,inset 0 2px 0 rgba(255,255,240,.55),inset 0 -8px 14px rgba(30,60,10,.35),0 10px 18px rgba(0,0,0,.35);z-index:2;white-space:nowrap;transition:transform .2s cubic-bezier(.3,1.8,.5,1)}
+    #cs-play:active{transform:translateX(-50%) scale(1.04,.9)}
+    #cs-play:disabled{cursor:not-allowed;background:linear-gradient(180deg,#b5b7a6,#7f8470);box-shadow:0 0 0 3px #555a4a,0 8px 14px rgba(0,0,0,.3);text-shadow:none;color:#f6f3e8}
+    .cs-tri{width:0;height:0;border-left:16px solid #fffdf0;border-top:10px solid transparent;border-bottom:10px solid transparent;filter:drop-shadow(0 2px 0 #2c4a14)}
+    /* phones in landscape: same design, compact; the button moves into the panel's right end */
+    /* R134: html.cs-phone is set from the device's screen size (head script), not from the page height: iOS laid the page
+       out ~1110 px wide on Jannik's iPhone, so a height media query never matched there */
+    html.cs-phone #cs-stage{top:calc(max(8px,env(safe-area-inset-top)) + 8px);height:auto}
+    html.cs-phone .cs-card{width:clamp(100px,15.5vw,142px)}html.cs-phone .cs-plate b{font-size:15px}html.cs-phone .cs-plate small{font-size:6.5px;letter-spacing:.12em}
+    html.cs-phone .cs-round{width:38px;height:38px;font-size:20px}
+    html.cs-phone #cs-thumbs{margin-top:30px;gap:6px}html.cs-phone .cs-thumb{width:30px;height:30px}
+    html.cs-phone .cs-logo{width:clamp(110px,16vw,150px);top:calc(max(8px,env(safe-area-inset-top)) + 8px)}html.cs-phone .cs-logo small{display:none}
+    html.cs-phone #cs-home{top:calc(max(8px,env(safe-area-inset-top)) + 10px)}
+    html.cs-phone #cs-panel{bottom:max(10px,env(safe-area-inset-bottom));width:calc(100vw - max(24px,env(safe-area-inset-left)) - max(24px,env(safe-area-inset-right)) - 24px);min-height:0;padding:10px 14px;border-radius:16px;
+    grid-template-columns:1fr 1.25fr 1.3fr auto;gap:0 12px}
+    html.cs-phone .cs-col+.cs-col{padding-left:12px}
+    html.cs-phone #cs-name{font-size:24px}html.cs-phone #cs-role{font-size:7px;margin-top:4px}html.cs-phone #cs-desc{font-size:9px;margin-top:4px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+    html.cs-phone #cs-ab-icon{width:50px;height:50px}html.cs-phone #cs-ab-name{font-size:14px}html.cs-phone #cs-ab-text{font-size:8.5px}html.cs-phone .cs-ab-kind{display:none}
+    html.cs-phone .cs-stat{grid-template-columns:12px 38px 1fr;gap:5px}html.cs-phone .cs-stat small{display:none}html.cs-phone .cs-stat b{font-size:8.5px}html.cs-phone .cs-ico{width:11px;height:11px}html.cs-phone .cs-bar{height:7px}html.cs-phone #cs-stats{gap:3px}
+    html.cs-phone #cs-play{position:static;transform:none;height:46px;padding:0 18px;font-size:16px;gap:8px;border-radius:16px}html.cs-phone #cs-play:active{transform:scale(1.04,.9)}
+    html.cs-phone .cs-tri{border-left-width:11px;border-top-width:7px;border-bottom-width:7px}
+    @media (prefers-reduced-motion:reduce){.cs-bg,.cs-card.main .cs-art,.cs-card.main::after{animation:none}}
+  </style>
 </head>
 <body>
-<x-dc>
-<helmet>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,400;6..72,500&family=Manrope:wght@400;500;600&display=swap" rel="stylesheet">
-<script type="importmap">{"imports":{"three":"./vendor/three.module.js","three/addons/":"./vendor/"}}</script>
-<script type="module" src="./selector-stage.js"></script>
-<style>html,body{margin:0;height:100%;background:#e9e2d5;overflow:hidden}a{color:#2e2b26;text-decoration:none}a:hover{color:#5e6b4a}
-.dym-selector-mobile-nav,.dym-selector-mobile-actions,.dym-selector-mobile-walk,.dym-selector-swipe-coach{display:none}
-/* Phone landscape: compress the identity column so name, stats and actions fit in ~390px of height. */
-@media (max-height:500px) and (orientation:landscape){
-  .dym-selector-layout{padding:max(10px,env(safe-area-inset-top)) max(20px,env(safe-area-inset-right)) max(8px,env(safe-area-inset-bottom)) max(20px,env(safe-area-inset-left))!important;gap:4px!important}
-  .dym-selector-kicker,.dym-selector-hint{font-size:10px!important}
-  .dym-selector-counter,.dym-selector-poles{display:none!important}
-  .dym-selector-copy{align-self:center!important;gap:7px!important}
-  .dym-selector-titleblock{gap:3px!important}
-  .dym-selector-name{font-size:30px!important}
-  .dym-selector-role{font-size:10px!important}
-  .dym-selector-desc{font-size:11.5px!important;line-height:1.35!important}
-  .dym-selector-stats{gap:4px!important}
-  .dym-selector-statlabel{font-size:9.5px!important}
-  .dym-selector-actions{flex-wrap:nowrap!important;gap:8px!important}
-  .dym-selector-start{height:40px!important;padding:0 18px!important;font-size:13px!important;white-space:nowrap}
-  .dym-selector-walk{height:40px!important;padding:0 16px!important;white-space:nowrap}
-  .dym-selector-nav-arrow{width:36px!important;height:36px!important}
-}
-@keyframes dymSwipeCoachNudge{0%,100%{transform:translateX(0)}35%{transform:translateX(-7px)}70%{transform:translateX(7px)}}
-@keyframes dymSwipeCoachFade{0%,72%{opacity:1}100%{opacity:0}}
-@media (max-width:520px) and (orientation:portrait){
-  /* v0.3.27 mobile-only: one large hero, real swipe navigation, tighter identity stack. */
-  .dym-selector-screen{--hero-top:38px;--hero-h:40vh;--copy-gap:40px;background:#e9e2d5!important}
-  .dym-selector-screen char-stage{position:absolute!important;inset:var(--hero-top) 0 auto 0!important;width:100%!important;height:var(--hero-h)!important;transform:none!important;transform-origin:center center!important;z-index:1!important;background:transparent!important}
-  .dym-selector-screen char-stage canvas{background:transparent!important}
-  .dym-selector-fade{display:none!important}
-  .dym-selector-layout{display:block!important;padding:max(14px,env(safe-area-inset-top)) 18px max(12px,env(safe-area-inset-bottom)) 18px!important;pointer-events:none!important;z-index:2!important;background:transparent!important}
-  .dym-selector-topbar{display:flex!important;align-items:flex-start!important;justify-content:space-between!important;gap:8px!important;pointer-events:none!important}
-  .dym-selector-kicker{max-width:none!important;font-size:8.5px!important;line-height:1.25!important;letter-spacing:.17em!important}
-  .dym-selector-loading,.dym-selector-hint{display:none!important}
-
-  /* Identity follows immediately after the hero controls. */
-  .dym-selector-copy{position:absolute!important;left:50%!important;right:auto!important;top:calc(var(--hero-top) + var(--hero-h) + var(--copy-gap))!important;bottom:78px!important;width:min(356px,calc(100% - 36px))!important;transform:translateX(-50%)!important;display:flex!important;flex-direction:column!important;justify-content:flex-start!important;gap:0!important;pointer-events:auto!important;min-height:0!important}
-  .dym-selector-counter{display:none!important}
-  .dym-selector-titleblock{gap:7px!important}
-  .dym-selector-name{font-size:clamp(40px,11vw,46px)!important;line-height:.90!important;letter-spacing:-.015em!important}
-  .dym-selector-role{font-size:8.4px!important;line-height:1.2!important;letter-spacing:.16em!important}
-  .dym-selector-desc{max-width:344px!important;font-size:10.4px!important;line-height:1.38!important;margin-top:10px!important;text-wrap:balance!important;color:#504b43!important}
-  .dym-selector-stats{gap:6px!important;margin-top:12px!important;width:max-content!important}
-  .dym-selector-statrow{grid-template-columns:54px 168px!important;gap:10px!important;justify-content:start!important;align-items:center!important}
-  .dym-selector-statlabel{font-size:7.7px!important;line-height:1!important;letter-spacing:.075em!important;color:#6f685e!important}
-  .dym-selector-meter{width:168px!important;gap:3px!important}
-  .dym-selector-poles{width:168px!important;font-size:7.25px!important;line-height:1!important;color:#91887b!important}
-  .dym-selector-segments{width:168px!important;gap:5px!important}
-  .dym-selector-segments>div{height:4px!important;border-radius:999px!important}
-  .dym-selector-actions,.dym-selector-nav{display:none!important}
-
-  /* Mobile navigation is swipe-only. Counter and walk sit together under the hero. */
-  .dym-selector-mobile-nav{position:absolute;left:0;right:0;top:calc(var(--hero-top) + var(--hero-h) - 22px);display:flex!important;flex-direction:column;align-items:center;justify-content:center;gap:7px;pointer-events:none;z-index:7}
-  .dym-selector-mobile-nav>button:not(.dym-selector-mobile-walk){display:none!important}
-  .dym-selector-mobile-nav-count{font-size:8.9px;font-weight:600;letter-spacing:.105em;color:#6b645a;font-variant-numeric:tabular-nums;background:transparent;padding:0;border-radius:0}
-  .dym-selector-mobile-nav-count span{color:#968d80;font-weight:500}
-  .dym-selector-mobile-walk{display:inline-flex!important;position:static!important;align-items:center;justify-content:center;min-height:27px;padding:0 13px!important;margin:0!important;border:1px solid rgba(185,173,154,.78)!important;border-radius:999px!important;background:rgba(246,242,234,.92)!important;color:#5f584e!important;font-family:'Manrope',system-ui,sans-serif;font-size:7.9px!important;font-weight:600!important;letter-spacing:.045em!important;text-decoration:none!important;cursor:pointer;pointer-events:auto!important;box-shadow:0 5px 14px rgba(74,64,49,.07)!important;-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);transition:transform .16s ease,background .16s ease,border-color .16s ease}
-  .dym-selector-mobile-walk::before{content:'';width:4px;height:4px;border-radius:50%;background:#65734f;box-shadow:0 0 0 3px rgba(101,115,79,.10);margin-right:7px;flex:none}
-  .dym-selector-mobile-walk:active{transform:scale(.97)!important;background:#fffaf2!important;border-color:#a99f90!important}
-
-  /* One-time coach over the first hero. It also disappears immediately on first swipe intent. */
-  .dym-selector-swipe-coach{position:absolute;left:50%;top:calc(var(--hero-top) + 20vh);transform:translate(-50%,-50%);display:flex!important;align-items:center;justify-content:center;gap:8px;min-height:26px;padding:0 11px;border:1px solid rgba(190,179,161,.68);border-radius:999px;background:rgba(246,242,234,.84);color:#766e62;font-family:'Manrope',system-ui,sans-serif;font-size:7.5px;font-weight:600;letter-spacing:.035em;pointer-events:none;z-index:8;box-shadow:0 5px 16px rgba(74,64,49,.06);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);animation:dymSwipeCoachFade 3.2s ease forwards}
-  .dym-selector-swipe-coach-arrows{display:inline-block;font-size:11px;letter-spacing:.20em;animation:dymSwipeCoachNudge 1.15s ease-in-out 2}
-
-  .dym-selector-mobile-actions{position:absolute;left:18px;right:18px;bottom:max(14px,env(safe-area-inset-bottom));height:46px;display:grid!important;grid-template-columns:minmax(0,1.45fr) minmax(116px,.85fr);gap:10px;pointer-events:auto;z-index:10}
-  .dym-selector-mobile-start,.dym-selector-mobile-grid{height:46px;border-radius:999px;display:flex;align-items:center;justify-content:center;gap:9px;font-family:'Manrope',system-ui,sans-serif;font-size:10.5px;font-weight:600;letter-spacing:.015em;white-space:nowrap;box-sizing:border-box}
-  .dym-selector-mobile-start{background:#2e2b26;color:#f6f2ea;padding:0 18px;border:1px solid #2e2b26}
-  .dym-selector-mobile-grid{background:#f6f2ea;color:#2e2b26;padding:0 14px;border:1px solid #cfc5b3}
-  .dym-selector-mobile-grid-icon{display:grid;grid-template-columns:repeat(3,3px);gap:2px}
-  .dym-selector-mobile-grid-icon span{width:3px;height:3px;background:#2e2b26;border-radius:1px}
-
-  .dym-selector-grid-overlay{padding:max(18px,env(safe-area-inset-top)) 14px max(18px,env(safe-area-inset-bottom))!important}
-  .dym-selector-grid-inner{gap:16px!important}
-  .dym-selector-grid-head{gap:10px!important}
-  .dym-selector-grid-title{font-size:30px!important}
-  .dym-selector-grid-close{height:36px!important;padding:0 13px!important;font-size:11px!important}
-  .dym-selector-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:10px!important}
-  .dym-selector-tile{gap:7px!important;padding:6px 6px 11px!important}
-}
-@media (max-width:390px) and (orientation:portrait){
-  .dym-selector-screen{--hero-top:36px;--hero-h:39.5vh;--copy-gap:39px}
-  .dym-selector-layout{padding-left:14px!important;padding-right:14px!important}
-  .dym-selector-copy{width:min(344px,calc(100% - 28px))!important;bottom:76px!important}
-  .dym-selector-name{font-size:42px!important}
-  .dym-selector-desc{font-size:10.1px!important;max-width:336px!important;margin-top:9px!important}
-  .dym-selector-stats{margin-top:11px!important}
-  .dym-selector-statrow{grid-template-columns:52px 160px!important;gap:9px!important}
-  .dym-selector-meter,.dym-selector-poles,.dym-selector-segments{width:160px!important}
-  .dym-selector-mobile-actions{left:14px;right:14px;grid-template-columns:minmax(0,1.4fr) minmax(108px,.82fr);gap:8px}
-  .dym-selector-mobile-start,.dym-selector-mobile-grid{font-size:10px!important}
-}
-@media (max-height:680px) and (max-width:520px) and (orientation:portrait){
-  .dym-selector-screen{--hero-top:30px;--hero-h:37.5vh;--copy-gap:36px}
-  .dym-selector-copy{bottom:70px!important}
-  .dym-selector-name{font-size:38px!important}
-  .dym-selector-titleblock{gap:5px!important}
-  .dym-selector-desc{font-size:9.5px!important;line-height:1.30!important;margin-top:7px!important}
-  .dym-selector-stats{gap:4px!important;margin-top:8px!important}
-  .dym-selector-statrow{grid-template-columns:50px 148px!important;gap:8px!important}
-  .dym-selector-meter,.dym-selector-poles,.dym-selector-segments{width:148px!important}
-  .dym-selector-mobile-nav{gap:5px!important}
-  .dym-selector-mobile-walk{min-height:23px!important;padding:0 10px!important;font-size:7.4px!important}
-  .dym-selector-mobile-actions{height:42px;bottom:max(10px,env(safe-area-inset-bottom))}
-  .dym-selector-mobile-start,.dym-selector-mobile-grid{height:42px}
-}
-</style>
-</helmet>
-<div class="dym-selector-screen" data-screen-label="Character selector" style="position:fixed;inset:0;background:#e9e2d5;font-family:'Manrope',system-ui,sans-serif;color:#2e2b26;">
-  <x-import component-from-global-scope="char-stage" index="{{ idxStr }}" walk="{{ walkStr }}" variant="{{ variant }}" style="position:absolute;inset:0;" hint-size="100%,100%"></x-import>
-  <div class="dym-selector-fade" aria-hidden="true" style="position:absolute;left:0;top:0;bottom:0;width:clamp(330px,29vw,510px);pointer-events:none;background:linear-gradient(90deg,#e9e2d5 0%,#e9e2d5 66%,rgba(233,226,213,.96) 73%,rgba(233,226,213,.74) 82%,rgba(233,226,213,0) 100%);"></div>
-
-  <div class="dym-selector-layout" style="position:absolute;inset:0;display:grid;grid-template-rows:auto minmax(0,1fr) auto;padding:clamp(18px,4vh,36px) clamp(24px,4vw,56px);gap:clamp(12px,3vh,28px);pointer-events:none;">
-  <div class="dym-selector-topbar" style="display:flex;justify-content:space-between;align-items:center;gap:16px;">
-    <div class="dym-selector-kicker" style="font-size:12px;font-weight:600;letter-spacing:.18em;text-transform:uppercase;color:#6b645a;">Vælg din karakter</div>
-    <sc-if value="{{ loading }}" hint-placeholder-val="{{ true }}">
-      <div class="dym-selector-loading" style="font-size:12px;color:#6b645a;letter-spacing:.04em;">Indlæser…</div>
-    </sc-if>
-    <div class="dym-selector-hint" style="font-size:12px;color:#8a8275;letter-spacing:.02em;">Træk for at dreje · ← → for at skifte</div>
-  </div>
-
-  <div class="dym-selector-mobile-nav" aria-label="Karakter-navigation">
-    <button onClick="{{ prev }}" aria-label="Forrige karakter">←</button>
-    <div class="dym-selector-mobile-nav-count">{{ num }} <span>/ {{ total }}</span></div>
-    <button onClick="{{ next }}" aria-label="Næste karakter">→</button>
-    <button class="dym-selector-mobile-walk" onClick="{{ toggleWalk }}">{{ walkLabel }}</button>
-  </div>
-  <sc-if value="{{ swipeHint }}" hint-placeholder-val="{{ false }}">
-    <div class="dym-selector-swipe-coach" aria-hidden="true"><span class="dym-selector-swipe-coach-arrows">← →</span><span>Swipe for at skifte</span></div>
-  </sc-if>
-
-  <div class="dym-selector-copy" style="align-self:center;width:min(340px,36vw);display:flex;flex-direction:column;gap:clamp(10px,2.4vh,22px);pointer-events:auto;min-height:0;">
-    <div class="dym-selector-counter" style="font-size:13px;font-weight:500;color:#6b645a;letter-spacing:.08em;">{{ num }} / {{ total }}</div>
-    <div class="dym-selector-titleblock" style="display:flex;flex-direction:column;gap:10px;">
-      <div class="dym-selector-name" style="font-family:'Newsreader',Georgia,serif;font-size:clamp(40px,8vh,76px);line-height:.95;font-weight:400;letter-spacing:-.01em;">{{ cur.name }}</div>
-      <div class="dym-selector-role" style="font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;color:#5e6b4a;">{{ cur.role }}</div>
-    </div>
-    <div class="dym-selector-desc" style="font-size:clamp(14px,1.9vh,16px);line-height:1.5;color:#4a453e;text-wrap:pretty;max-width:320px;">{{ cur.desc }}</div>
-    <sc-if value="{{ showStats }}" hint-placeholder-val="{{ true }}">
-      <div class="dym-selector-stats" style="display:flex;flex-direction:column;gap:clamp(6px,1.2vh,11px);">
-        <sc-for list="{{ stats }}" as="st" hint-placeholder-count="4">
-          <div class="dym-selector-statrow" style="display:grid;grid-template-columns:72px 1fr;align-items:center;gap:12px;">
-            <div class="dym-selector-statlabel" style="font-size:11px;font-weight:600;letter-spacing:.08em;color:#6b645a;text-transform:uppercase;">{{ st.label }}</div>
-            <div class="dym-selector-meter" style="display:flex;flex-direction:column;gap:5px;min-width:0;width:172px;">
-              <div class="dym-selector-poles" style="display:flex;justify-content:space-between;gap:8px;font-size:9px;color:#8a8275;letter-spacing:.02em;width:172px;"><span>{{ st.left }}</span><span>{{ st.right }}</span></div>
-              <div class="dym-selector-segments" aria-label="{{ st.label }}: {{ st.activeLabel }}, niveau {{ st.value }} af 5" style="display:flex;gap:6px;align-items:center;width:172px;">
-                <sc-for list="{{ st.segments }}" as="p" hint-placeholder-count="5">
-                  <div title="{{ p.label }}" style="{{ p.style }}"></div>
-                </sc-for>
-              </div>
-            </div>
-          </div>
-        </sc-for>
-      </div>
-    </sc-if>
-    <div class="dym-selector-actions" style="display:flex;flex-wrap:wrap;gap:10px;">
-      <a class="dym-selector-start" href="{{ gardenHref }}" style="height:48px;padding:0 26px;border-radius:999px;background:#2e2b26;color:#f6f2ea;display:flex;align-items:center;gap:10px;font-size:14px;font-weight:600;letter-spacing:.02em;" style-hover="background:#46423b;color:#f6f2ea;" onClick="{{ startGame }}">{{ startLabel }} <span>→</span></a>
-      <button class="dym-selector-walk" onClick="{{ toggleWalk }}" style="{{ walkBtnStyle }}">{{ walkLabel }}</button>
-    </div>
-  </div>
-
-  <div class="dym-selector-nav" style="display:flex;justify-content:center;align-items:center;gap:12px;min-width:0;pointer-events:auto;">
-    <button class="dym-selector-nav-arrow" onClick="{{ prev }}" aria-label="Forrige" style="flex:none;width:44px;height:44px;border-radius:50%;border:1px solid #cfc5b3;background:#f6f2ea;color:#2e2b26;font-size:18px;cursor:pointer;" style-hover="background:#fff;">←</button>
-    <div class="dym-selector-nav-count" style="min-width:88px;text-align:center;font-size:14px;font-weight:600;letter-spacing:.06em;font-variant-numeric:tabular-nums;">{{ num }} <span style="color:#8a8275;font-weight:500;">/ {{ total }}</span></div>
-    <button class="dym-selector-nav-arrow" onClick="{{ next }}" aria-label="Næste" style="flex:none;width:44px;height:44px;border-radius:50%;border:1px solid #cfc5b3;background:#f6f2ea;color:#2e2b26;font-size:18px;cursor:pointer;" style-hover="background:#fff;">→</button>
-    <button class="dym-selector-grid-btn" onClick="{{ openGrid }}" style="flex:none;height:44px;padding:0 20px;margin-left:10px;border-radius:999px;border:1px solid #cfc5b3;background:#f6f2ea;color:#2e2b26;font-family:inherit;font-size:13px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:10px;" style-hover="background:#fff;"><span style="display:grid;grid-template-columns:repeat(3,4px);gap:2px;"><span style="width:4px;height:4px;background:#2e2b26;border-radius:1px;"></span><span style="width:4px;height:4px;background:#2e2b26;border-radius:1px;"></span><span style="width:4px;height:4px;background:#2e2b26;border-radius:1px;"></span><span style="width:4px;height:4px;background:#2e2b26;border-radius:1px;"></span><span style="width:4px;height:4px;background:#2e2b26;border-radius:1px;"></span><span style="width:4px;height:4px;background:#2e2b26;border-radius:1px;"></span></span>Se alle</button>
-  </div>
-
-  <div class="dym-selector-mobile-actions">
-    <a class="dym-selector-mobile-start" href="{{ gardenHref }}" onClick="{{ startGame }}">{{ startLabel }} <span>→</span></a>
-    <button class="dym-selector-mobile-grid" onClick="{{ openGrid }}">
-      <span class="dym-selector-mobile-grid-icon"><span></span><span></span><span></span><span></span><span></span><span></span></span>
-      <span>Se alle</span>
-    </button>
-  </div>
-  </div>
-  <sc-if value="{{ gridOpen }}" hint-placeholder-val="{{ false }}">
-    <div class="dym-selector-grid-overlay" onClick="{{ closeGrid }}" style="position:absolute;inset:0;background:rgba(233,226,213,.72);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);display:flex;justify-content:center;align-items:flex-start;padding:clamp(24px,6vh,72px) clamp(24px,5vw,72px);overflow-y:auto;">
-      <div class="dym-selector-grid-inner" onClick="{{ stop }}" style="width:100%;max-width:1100px;display:flex;flex-direction:column;gap:28px;">
-        <div class="dym-selector-grid-head" style="display:flex;justify-content:space-between;align-items:baseline;gap:16px;">
-          <div class="dym-selector-grid-title" style="font-family:'Newsreader',Georgia,serif;font-size:44px;line-height:1;">Alle karakterer <span style="font-family:'Manrope',sans-serif;font-size:14px;color:#8a8275;letter-spacing:.06em;">{{ total }}</span></div>
-          <button class="dym-selector-grid-close" onClick="{{ closeGrid }}" style="height:40px;padding:0 18px;border-radius:999px;border:1px solid #cfc5b3;background:#f6f2ea;color:#2e2b26;font-family:inherit;font-size:13px;font-weight:600;cursor:pointer;" style-hover="background:#fff;">Luk · Esc</button>
-        </div>
-        <div class="dym-selector-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:14px;">
-          <sc-for list="{{ tiles }}" as="t" hint-placeholder-count="9">
-            <button class="dym-selector-tile" onClick="{{ t.pick }}" style="{{ t.style }}" style-hover="border-color:#8a8275;">
-              <span style="{{ t.picStyle }}">
-                <span style="position:absolute;top:8px;left:10px;font-size:11px;color:#6b645a;letter-spacing:.08em;font-variant-numeric:tabular-nums;">{{ t.num }}</span>
-              </span>
-              <span style="display:flex;flex-direction:column;gap:5px;padding:2px 4px 0;">
-                <span style="font-family:'Newsreader',Georgia,serif;font-size:24px;line-height:1.05;">{{ t.name }}</span>
-                <span style="font-size:10px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:#5e6b4a;">{{ t.role }}</span>
-              </span>
-            </button>
-          </sc-for>
-        </div>
-      </div>
-    </div>
-  </sc-if>
-</div>
-</x-dc>
-<script type="text/x-dc" data-dc-script data-props="{&quot;variant&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;ring&quot;,&quot;cards&quot;],&quot;default&quot;:&quot;ring&quot;,&quot;tsType&quot;:&quot;'ring'|'cards'&quot;},&quot;showStats&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;}}">
-class Component extends DCLogic {
-  state = { idx: 0, walk: false, ready: false, gridOpen: false, pics: {}, swipeHint: true };
-  chars = globalThis.DYM_CHARACTER_ROSTER || [];
-  axes = [
-    { label:'Energi', left:'Sløv', right:'Energisk', levels:['Sløv','Doven','Rolig','Livlig','Energisk'] },
-    { label:'Mod', left:'Forsigtig', right:'Modig', levels:['Forsigtig','Varsom','Afbalanceret','Dristig','Modig'] },
-    { label:'Social', left:'Solist', right:'Social', levels:['Solist','Reserveret','Åben','Udadvendt','Social'] },
-    { label:'Stil', left:'Planlagt', right:'Spontan', levels:['Planlagt','Struktureret','Fleksibel','Fri','Spontan'] }
-  ];
-  componentDidMount() {
-    let wanted = new URLSearchParams(location.search).get('char');
-    if (!wanted) try { wanted = JSON.parse(localStorage.getItem('tgw.lastChar') || 'null')?.id || null; } catch {}   // R121: open on the last played character
-    const found = wanted ? this.chars.findIndex(c => c.id === wanted) : -1;
-    if (found >= 0) this.setState({ idx: found });
-    this.onKey = e => { if (e.key === 'Escape') return this.setState({ gridOpen: false }); if (this.state.gridOpen) return; if (e.key === 'ArrowRight') this.go(1); if (e.key === 'ArrowLeft') this.go(-1); if (e.key === 'Enter' && this.chars[this.state.idx]?.playable) this.commitAndGo(); };
-    addEventListener('keydown', this.onKey);
-    this.poll = setInterval(() => {
-      const el = document.querySelector('char-stage');
-      if (!el) return;
-      clearInterval(this.poll);
-      el.addEventListener('select', e => this.setState({ idx: e.detail }));
-      this.stage = el;
-      this.onSwipeIntent = () => this.setState({ swipeHint: false });
-      el.addEventListener('swipeintent', this.onSwipeIntent);
-      this.hintTimer = setTimeout(() => this.setState({ swipeHint: false }), 3200);
-      el.addEventListener('portrait', e => this.setState(s => ({ pics: { ...s.pics, [e.detail.i]: e.detail.url } })));
-      el.addEventListener('progress', e => { if (e.detail.near) this.setState({ ready: true }); });
-    }, 100);
-  }
-  componentWillUnmount() { removeEventListener('keydown', this.onKey); clearInterval(this.poll); clearTimeout(this.hintTimer); if(this.stage&&this.onSwipeIntent)this.stage.removeEventListener('swipeintent',this.onSwipeIntent); }
-  go(d) { const N = this.chars.length; this.setState(s => ({ idx: (s.idx + d + N) % N })); }
-  href() { const c=this.chars[this.state.idx]; return c?.playable ? './game.html?char=' + encodeURIComponent(c.id) : '#'; }
-  commitAndGo() { const c=this.chars[this.state.idx]; if(!c?.playable) return; const embed=new URLSearchParams(location.search).get('embed')==='1'; if(embed&&parent!==window){parent.postMessage({type:'dym-selector-start',characterId:c.id},'*');return;} location.href=this.href(); }
-  renderVals() {
-    const { idx, walk, ready, gridOpen, swipeHint } = this.state; const N = this.chars.length, pad = n => String(n).padStart(2, '0');
-    const cur = this.chars[idx];
-    const segment = (filled, active, label) => ({ label, style: { flex: '1 1 0', height: '6px', borderRadius: '999px', background: filled ? '#5e6b4a' : '#d6ccba', opacity: filled ? 1 : .72, transition: 'background .18s ease, opacity .18s ease' } });
-    return {
-      cur, idxStr: String(idx), walkStr: walk ? '1' : '0', variant: this.props.variant ?? 'ring',
-      num: pad(idx + 1), total: pad(N),
-      loading: !ready, gridOpen, swipeHint,
-      openGrid: () => { this.setState({ gridOpen: true }); this.stage && this.stage.portraits && this.stage.portraits(); }, closeGrid: () => this.setState({ gridOpen: false }), stop: e => e.stopPropagation(),
-      tiles: this.chars.map((c, i) => ({ picStyle: { position: 'relative', width: '100%', aspectRatio: '4/5', borderRadius: '10px', overflow: 'hidden', display: 'block', backgroundColor: '#e4dccd', backgroundImage: this.state.pics[i] ? 'url(' + this.state.pics[i] + ')' : 'none', backgroundSize: 'cover', backgroundPosition: 'center' }, name: c.name, role: c.role, num: pad(i + 1), pick: () => this.setState({ idx: i, gridOpen: false }),
-        style: { display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '10px', padding: '8px 8px 14px', borderRadius: '14px', textAlign: 'left', cursor: 'pointer', fontFamily: 'inherit', color: '#2e2b26', background: i === idx ? '#f6f2ea' : 'rgba(246,242,234,.55)', border: '1px solid ' + (i === idx ? '#2e2b26' : '#d6ccba') } })),
-      showStats: this.props.showStats ?? true,
-      stats: this.axes.map((axis, k) => { const value=cur.personality[k]; return { ...axis, value, activeLabel: axis.levels[value-1], segments: [1,2,3,4,5].map(n => segment(n <= value, n === value, axis.levels[n-1])) }; }),
-      gardenHref: this.href(),
-      startLabel: cur.playable ? 'Start i verden' : 'Kommer snart',
-      startGame: e => { e?.preventDefault?.(); if(!cur.playable) return; this.commitAndGo(); },
-      walkLabel: walk ? 'Stop gang' : 'Se gang',
-      walkBtnStyle: { height: '48px', padding: '0 22px', borderRadius: '999px', border: '1px solid ' + (walk ? '#5e6b4a' : '#cfc5b3'), background: walk ? '#e3e6d8' : '#f6f2ea', color: '#2e2b26', fontFamily: 'inherit', fontSize: '14px', fontWeight: 600, cursor: 'pointer' },
-      toggleWalk: () => this.setState(s => ({ walk: !s.walk })),
-      prev: () => this.go(-1), next: () => this.go(1)
-    };
-  }
-}
-</script>
+  <div class="cs-bgclip" aria-hidden="true"><div class="cs-bg"></div></div><div class="cs-shade" aria-hidden="true"></div><div class="cs-frame" aria-hidden="true"></div>
+  <div class="cs-logo"><img src="./brand/logo/logo-growing-wilds-620w.png" alt="Growing Wilds"><small>GROW. EXPLORE. SURVIVE.</small></div>
+  <button id="cs-home" class="cs-round" type="button" aria-label="Back to the start screen" onclick="location.href='./index.html'">‹</button>
+  <section id="cs-stage" aria-label="Choose your plant">
+    <div class="cs-row"><button id="cs-prev" class="cs-round cs-arrow" type="button" aria-label="Previous">‹</button><div id="cs-cards"></div><button id="cs-next" class="cs-round cs-arrow" type="button" aria-label="Next">›</button></div>
+    <div id="cs-thumbs"></div>
+  </section>
+  <section id="cs-panel" aria-live="polite">
+    <div class="cs-col"><h1 id="cs-name"></h1><span id="cs-role"></span><p id="cs-desc"></p></div>
+    <div class="cs-col cs-ab"><i id="cs-ab-icon" aria-hidden="true"></i><div><span class="cs-ab-kind">Special</span><div id="cs-ab-name"></div></div><p id="cs-ab-text" style="grid-column:2"></p></div>
+    <div class="cs-col"><div id="cs-stats"></div></div>
+    <button id="cs-play" type="button"></button>
+  </section>
+  <script type="module">
+    import { mountCharacterSelect } from './js/ui/CharacterSelect.js?build=SELECT-R135-20261008A';
+    mountCharacterSelect();
+  </script>
 </body>
 </html>
