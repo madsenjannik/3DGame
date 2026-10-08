@@ -596,13 +596,13 @@ try {
       g.devMenu.teleport('world', 30, 40, 0); dn.force = 0; dn.update(false); const dayExp = g.renderer.toneMappingExposure, dayFog = g.scene.fog.color.getHex();
       L.update(.016); o.dayLocked = !L.toggle() && !document.body.classList.contains('lantern-ready');
       dn.force = 1; dn.update(false); L.update(.016); o.night = document.body.classList.contains('is-night') && g.scene.fog.color.getHex() !== dayFog && g.world.hemi.intensity < 1 && document.body.classList.contains('lantern-ready');
-      const lit = L.toggle(); L.update(.016); const sock = g.character.instance.socket('Hand_Socket_L'); let up = L.model.parent; o.lantern = lit && L.on && L.model.visible && L.model.parent === sock && L.light?.intensity > 0 && !L.light.castShadow;
+      const lit = L.on; L.update(.016); const sock = g.character.instance.socket('Hand_Socket_L'); let up = L.model.parent; o.lantern = lit && L.on && L.model.visible && L.model.parent === sock && L.light?.intensity > 0 && !L.light.castShadow;
       g.world.setSpace('garden'); g.look.update(true); dn.update(true); L.update(.016); o.garden = document.body.classList.contains('is-night') && g.renderer.toneMappingExposure < 1.01 && L.model.visible && L.light.intensity > 0 && L.light.distance === 16;   // R84: night in the garden too, lantern there too
       g.world.setSpace('world'); g.look.update(false); dn.force = 0; dn.update(false); L.update(.016); o.dayAgain = !L.model.visible && Math.abs(g.renderer.toneMappingExposure - dayExp) < .01; L.on = false; dn.force = null;
       const S = g.combat.special, d = S.def; S.land({ land: { x: 30, z: 42 } }); const z = S.zones[S.zones.length - 1]; o.mud = d.stun > 0 && z?.mesh?.name === 'SPECIAL_MUD_SPLAT' && z.life === d.stun + .5; for (let i = 0; i < 50; i++) S.update(.05); o.mudGone = !S.zones.includes(z);
       const B = g.combat.bear; if (B?.bear) { B.p.defeatedAt = Date.now() - 29 * 60000; const a = B.available(); B.p.defeatedAt = Date.now() - 31 * 60000; o.rematch = !a && B.available(); B.p.defeatedAt = 0; } else o.rematch = false;
       return o; }) : {};
-    check('day/night + lantern (R81/R84): 21/9 min clock, night in the world and the garden, lantern only at night in the left hand with its own light, mud splat, bear rematch = 1 in-game day', ready && ['clock', 'dayLocked', 'night', 'lantern', 'garden', 'dayAgain', 'mud', 'mudGone', 'rematch'].every(k => r[k]) && !errors.length, errors[0] || JSON.stringify(r));
+    check('day/night + lantern (R81/R84): 21/9 min clock, night in the world and the garden, lantern only at night (lights itself at dusk, R126) in the left hand with its own light, mud splat, bear rematch = 1 in-game day', ready && ['clock', 'dayLocked', 'night', 'lantern', 'garden', 'dayAgain', 'mud', 'mudGone', 'rematch'].every(k => r[k]) && !errors.length, errors[0] || JSON.stringify(r));
     await ctx.close(); }
   // 17g. R114 robustness: an optional system that throws mid-game is switched off and frames keep rendering; a lost WebGL
   // context that comes back leaves no overlay, one that stays lost offers tap-to-reload; no 12 s 'Startup error'
