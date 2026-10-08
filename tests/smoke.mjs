@@ -147,10 +147,10 @@ try {
         questOpens: opened.width >= 200 && opened.height < 180,
         bagRound: cs(bag).borderRadius === '50%' && box(bag).right <= box(slots[0]).left,
         threeSlots: slots.length === 3,
-        compact: box(map).width <= 60 && box($('#hop-btn')).width <= 56 && box($('#action')).width <= 56 && box($('#joy-rest')).width <= 94
+        compact: box(map).width <= 60 && box($('#hop-btn')).width <= 52 && box($('#action')).width >= 70 && box($('#joy-rest')).width <= 94   // R126 thumb arc: big action, small Hop
       };
     });
-    check('phone HUD R122/R123: menu icon left, day/night + resources without cards, objective icon opens on tap, round Bag + 3 slots, compact controls', ok && Object.values(r).length === 8 && Object.values(r).every(Boolean) && !errors.length, errors[0] || JSON.stringify(r)); await ctx.close(); }
+    check('phone HUD R122/R123/R126: menu icon left, day/night + resources without cards, objective icon opens on tap, round Bag + 3 slots, thumb-arc controls', ok && Object.values(r).length === 8 && Object.values(r).every(Boolean) && !errors.length, errors[0] || JSON.stringify(r)); await ctx.close(); }
 
   // 2f. R124 phone Bag: fullscreen, gameplay input reset, tool grid with 3D art, detail card with the game's own text + strike,
   //     Hold puts the real 3D tool in the hand, Add to slot places it, auto tool while gathering, close works
@@ -195,6 +195,23 @@ try {
       await p.waitForFunction(() => window.__tgw?.fishing, null, { timeout: 120000 }).catch(() => {});
       r.kept = await p.evaluate(async () => { const g = window.__tgw; for (let i = 0; i < 60 && !g.vest?.model; i++) await new Promise(x => setTimeout(x, 250)); return g.vestWorn() && !!g.vest?.model?.visible; }); }
     check('life vest R125: boat needs it on, Wear in the Bag puts it on the body, stays on after reload', ok && r.blocked && r.worn && r.onBody && r.kept && !errors.length, errors[0] || JSON.stringify(r)); await ctx.close(); }
+
+  // 2i. R126 phone thumb arc: special ring on the action button, tap = strike (keeps the full ring), hold 0.8 s = special,
+  //     no separate special or lantern button; the lantern lights by itself at dusk
+  { const ctx = await context({ viewport: { width: 844, height: 390 }, isMobile: true, hasTouch: true }); const { p, errors, ok } = await startGame(ctx, 'fern', { hud: 'classic' });
+    const r = {};
+    if (ok) { await p.waitForFunction(() => window.__tgw?.combat?.special && window.__tgw?.lantern?.ready, null, { timeout: 120000 }).catch(() => {});
+      Object.assign(r, await p.evaluate(async () => { const g = window.__tgw, w = ms => new Promise(x => setTimeout(x, ms)); g.devMenu.run('tid:day'); await w(800); g.combat.special.charge = 6; await w(600);
+        const a = document.getElementById('action'), cs = getComputedStyle;
+        return { ring: a.classList.contains('sp-full') && cs(a, '::before').content !== 'none', noSpecialBtn: cs(document.querySelector('.special-btn')).display === 'none', noLanternBtn: cs(document.getElementById('lantern-btn')).display === 'none' }; }));
+      const b = await p.evaluate(() => { const x = document.getElementById('action').getBoundingClientRect(); return [x.x + x.width / 2, x.y + x.height / 2]; });
+      await p.touchscreen.tap(b[0], b[1]); await p.waitForTimeout(400); r.tapKeeps = await p.evaluate(() => window.__tgw.combat.special.charge === 6);
+      const cdp = await ctx.newCDPSession(p); await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x: b[0], y: b[1] }] }); await p.waitForTimeout(1200);
+      r.charged = await p.evaluate(() => document.getElementById('action').classList.contains('sp-charged'));
+      await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] }); await p.waitForTimeout(400);
+      r.fired = await p.evaluate(() => { const s = window.__tgw.combat.special; return s.charge === 0 && (s.busy > 0 || !!s.release); });
+      r.dusk = await p.evaluate(async () => { const g = window.__tgw, w = ms => new Promise(x => setTimeout(x, ms)); g.lantern.on = false; g.devMenu.run('tid:night'); for (let i = 0; i < 20 && !g.lantern.on; i++) await w(250); const lit = g.lantern.on; g.devMenu.run('tid:day'); for (let i = 0; i < 20 && g.lantern.on; i++) await w(250); return lit && !g.lantern.on; }); }
+    check('phone thumb arc (R126): special ring on the action button, tap keeps it, hold 0.8 s fires it, no special/lantern buttons, lantern lights at dusk and goes out at dawn', ok && Object.values(r).length === 7 && Object.values(r).every(Boolean) && !errors.length, errors[0] || JSON.stringify(r)); await ctx.close(); }
 
   // 2h. R125 greenhouse + Stable per character: the old shared level goes to the last played character only
   { const ctx = await context({ viewport: { width: 844, height: 390 }, isMobile: true, hasTouch: true }); const p = await ctx.newPage(); const errors = []; p.on('pageerror', e => errors.push(e.message));

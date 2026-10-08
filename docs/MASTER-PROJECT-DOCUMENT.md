@@ -1618,6 +1618,7 @@ are only touched where a measured hotspot requires it, minimally.
    failure. Must pass before every push (CLAUDE.md rule 5).
 
 **B status 02/10/2026: complete (R51–R57).** On-device check (iPhone, Jannik 02/10): 60 fps steady (frame max 20–24 ms), 217 draw calls / 370k tris in the garden, 363 / 433k at the lake, mobile-high, 1 WebGL context → no perf work needed before C.
+**R126 (v0.8.126, GO 08/10):** phone thumb arc: 72 pt moss action with the special as a gold ring (hold 0.8 s to use it, tap still strikes), Hop with the new runner icon, light semi-transparent Bag/menu/objective, no special or lantern buttons; the lantern lights at dusk. Backlog: lantern unlock/purchase.
 **R125 (v0.8.125, GO 07/10, locked systems: storage key only):** greenhouse level and Stable progress follow the character; the old shared progress went to the last played character.
 **R124 (v0.8.124, GO 07/10):** phone Bag per the approved mockup (tool grid, detail card with the game's texts and strike values, Hold / Add to slot / Wear / Light), wearable Life Vest on all 9 characters (Jannik's GLB, fitted from each skeleton), boat + Lake Race need it on.
 **R123 (v0.8.123, GO 07/10):** phones: 3 quick slots, vest/lantern never in them, auto tool in hand while gathering, lantern night button left of Hop.

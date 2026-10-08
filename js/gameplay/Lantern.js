@@ -42,7 +42,11 @@ export class Lantern {
   }
   update(dt) {
     if (!this.socket) return;
-    const avail = this.available(), carry = !!this.ready && (this.g.world.space === 'world' || this.g.world.space === 'garden'), show = carry && (this.equipped || (avail && this.on));
+    const avail = this.available();
+    // R126 (Jannik 08/10): no button; the lantern lights by itself at dusk and goes out at dawn. The Bag (and L on
+    // desktop) can still switch it during the night. Unlock / purchase comes later (backlog).
+    if (avail !== this.wasAvail) { if (this.wasAvail !== undefined || avail) { if (avail && !this.on) { this.toggle(); } else if (!avail && this.on) { this.on = false; try { localStorage.setItem(KEY, 'off'); } catch {} } } this.wasAvail = avail; }
+    const carry = !!this.ready && (this.g.world.space === 'world' || this.g.world.space === 'garden'), show = carry && (this.equipped || (avail && this.on));
     document.body.classList.toggle('lantern-ready', avail); this.btn?.classList.toggle('on', this.on && avail); document.body.classList.toggle('lantern-lit', avail && this.on);   // R110: lit quick slot on phones
     if (this.model) this.model.visible = show;
     this.t += dt; const f = .86 + .1 * Math.sin(this.t * 13.1) + .06 * Math.sin(this.t * 31.7);
