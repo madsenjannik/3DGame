@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="da">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover" />
+  <meta name="theme-color" content="#3f5a2a" />
+  <title>The Growing Wilds · Vælg din plante (test)</title>
+  <!-- R132 TEST PAGE (GO 08/10): character select in the style of Jannik's reference. The live selector.html is unchanged. -->
+  <script src="./version.js?v=SELECT-R132-20261008A"></script>
+  <script src="./character-roster.js?v=SELECT-R132-20261008A"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Lilita+One&family=Manrope:wght@500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root{--ink:#2b2a24;--wood:#3b2f22;--paper:#f6ead2;--paper2:#ecdcbc;--gold:#f0c463;--moss:#4f6b32;--sub:#6b5a44}
+    *{box-sizing:border-box}
+    html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#3f5a2a;font-family:Manrope,system-ui,sans-serif;color:var(--ink);-webkit-tap-highlight-color:transparent;user-select:none;-webkit-user-select:none}
+    button{font:inherit;color:inherit;border:0;background:none;padding:0;cursor:pointer}
+    /* our own world from above, softly out of focus */
+    .cs-bg{position:fixed;inset:-24px;background:url(./assets/ui/selector/world.webp?v=R132) center/cover no-repeat;filter:blur(2.5px) saturate(1.05);transform:scale(1.03);animation:csDrift 40s ease-in-out infinite alternate}
+    @keyframes csDrift{to{transform:scale(1.08) translate(-1.2%,-.8%)}}
+    .cs-shade{position:fixed;inset:0;pointer-events:none;background:radial-gradient(85% 75% at 50% 42%,rgba(20,26,12,0) 35%,rgba(20,26,12,.5) 100%),linear-gradient(180deg,rgba(20,26,12,.18),rgba(20,26,12,0) 30%,rgba(20,26,12,.25))}
+    .cs-frame{position:fixed;inset:max(10px,env(safe-area-inset-top)) max(12px,env(safe-area-inset-right)) max(10px,env(safe-area-inset-bottom)) max(12px,env(safe-area-inset-left));border-radius:22px;box-shadow:inset 0 0 0 3px rgba(255,248,230,.55),inset 0 0 0 6px rgba(59,47,34,.35);pointer-events:none}
+    .cs-logo{position:fixed;left:calc(max(12px,env(safe-area-inset-left)) + 26px);top:calc(max(10px,env(safe-area-inset-top)) + 14px);width:clamp(150px,19vw,290px);text-align:center}
+    .cs-logo img{display:block;width:100%;filter:drop-shadow(0 6px 10px rgba(0,0,0,.35))}
+    .cs-logo small{display:block;margin-top:4px;font:800 clamp(8px,.85vw,12px)/1 Manrope;letter-spacing:.32em;color:#fffaf0;text-shadow:0 1px 3px rgba(0,0,0,.6)}
+    .cs-round{position:fixed;width:48px;height:48px;border-radius:50%;display:grid;place-items:center;background:rgba(43,38,28,.82);box-shadow:inset 0 0 0 2px rgba(255,248,230,.35),0 4px 10px rgba(0,0,0,.35);color:#fffaf0;font:400 26px/1 'Lilita One'}
+    .cs-round:active{transform:scale(.92)}
+    #cs-home{right:calc(max(12px,env(safe-area-inset-right)) + 24px);top:calc(max(10px,env(safe-area-inset-top)) + 18px)}
+    /* stage: three cards + arrows + portrait row */
+    #cs-stage{position:fixed;left:0;right:0;top:calc(max(10px,env(safe-area-inset-top)) + 4vh);height:56vh;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;touch-action:pan-y}
+    .cs-row{display:flex;align-items:center;gap:clamp(10px,1.4vw,22px)}
+    #cs-cards{display:flex;align-items:center;gap:clamp(10px,1.4vw,22px)}
+    #cs-cards.slide-l .cs-card{animation:csInL .32s cubic-bezier(.3,1.4,.5,1)}#cs-cards.slide-r .cs-card{animation:csInR .32s cubic-bezier(.3,1.4,.5,1)}
+    @keyframes csInL{from{transform:translateX(26%) scale(var(--s,1));opacity:.4}}@keyframes csInR{from{transform:translateX(-26%) scale(var(--s,1));opacity:.4}}
+    .cs-card{--s:1;position:relative;width:clamp(160px,19vw,300px);aspect-ratio:.82;border-radius:16px;overflow:hidden;transform:scale(var(--s));
+      background:url(./assets/ui/selector/meadow.webp?v=R132) center 40%/cover;box-shadow:0 0 0 4px var(--wood),0 0 0 6px rgba(255,248,230,.35),0 14px 24px rgba(0,0,0,.35);transition:transform .3s cubic-bezier(.3,1.6,.5,1)}
+    .cs-card::before{content:'';position:absolute;inset:0;background:linear-gradient(180deg,rgba(255,250,235,.0) 40%,rgba(30,24,16,.25))}
+    .cs-card.side{--s:.86;filter:saturate(.85) brightness(.9)}
+    .cs-card.main{--s:1.08;box-shadow:0 0 0 4px var(--gold),0 0 0 7px #8a6a2a,0 0 26px 6px rgba(240,196,99,.55),0 18px 30px rgba(0,0,0,.4);z-index:1}
+    .cs-card.main::after{content:'';position:absolute;inset:0;background:linear-gradient(115deg,rgba(255,255,255,0) 35%,rgba(255,255,255,.35) 50%,rgba(255,255,255,0) 65%);transform:translateX(-120%);animation:csShine 3.6s ease-in-out 1s infinite}
+    @keyframes csShine{30%,100%{transform:translateX(120%)}}
+    .cs-art{position:absolute;left:4%;right:4%;top:2%;bottom:22%;background:var(--art) center bottom/contain no-repeat;filter:drop-shadow(0 8px 8px rgba(0,0,0,.28))}
+    .cs-card.main .cs-art{animation:csBob 2.6s ease-in-out infinite}
+    @keyframes csBob{50%{transform:translateY(-2.5%)}}
+    .cs-card.locked .cs-art{filter:brightness(0) opacity(.72)}
+    .cs-lock{position:absolute;left:50%;top:38%;width:38px;height:38px;margin-left:-19px;border-radius:50%;background:rgba(43,38,28,.85);box-shadow:inset 0 0 0 2px rgba(255,248,230,.5)}
+    .cs-lock::before{content:'';position:absolute;inset:9px;background:#f0c463;-webkit-mask:url(./brand/icons/svg/icon-lock.svg) center/contain no-repeat;mask:url(./brand/icons/svg/icon-lock.svg) center/contain no-repeat}
+    .cs-plate{position:absolute;left:0;right:0;bottom:0;height:24%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;background:linear-gradient(180deg,rgba(59,47,34,.88),rgba(43,34,24,.96));border-top:2px solid rgba(240,196,99,.45)}
+    .cs-plate b{font:400 clamp(18px,1.9vw,30px)/1 'Lilita One';color:#fffaf0;text-shadow:0 2px 0 #1d170f}
+    .cs-plate small{font:800 clamp(7px,.62vw,10px)/1 Manrope;letter-spacing:.16em;text-transform:uppercase;color:#e9d9b8}
+    .cs-arrow{position:static;flex:none}
+    #cs-thumbs{display:flex;gap:clamp(6px,.7vw,12px);margin-top:clamp(14px,2.6vh,26px)}
+    .cs-thumb{width:clamp(34px,3.6vw,54px);height:clamp(34px,3.6vw,54px);border-radius:50%;overflow:hidden;background:#cfe0b8;box-shadow:0 0 0 3px var(--wood),0 4px 8px rgba(0,0,0,.35);transition:transform .2s}
+    .cs-thumb span{display:block;width:100%;height:100%;background:var(--art) center 8%/190% no-repeat}
+    .cs-thumb.on{box-shadow:0 0 0 3px var(--gold),0 0 0 5px #8a6a2a,0 0 12px rgba(240,196,99,.7);transform:scale(1.12)}
+    .cs-thumb{position:relative}.cs-thumb.locked span{filter:brightness(0) opacity(.55)}.cs-thumb.locked{background:#a9b78f}
+    .cs-thumb.locked::after{content:'';position:absolute;right:-1px;bottom:-1px;width:42%;height:42%;border-radius:50%;background:#2b2a24 center/62% no-repeat;box-shadow:0 0 0 1.5px #f0c463}
+    .cs-thumb.locked::before{content:'';position:absolute;right:calc(-1px + 42% * .19);bottom:calc(-1px + 42% * .19);width:calc(42% * .62);height:calc(42% * .62);z-index:1;background:#f0c463;-webkit-mask:url(./brand/icons/svg/icon-lock.svg) center/contain no-repeat;mask:url(./brand/icons/svg/icon-lock.svg) center/contain no-repeat}
+    /* parchment info panel */
+    #cs-panel{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(max(10px,env(safe-area-inset-bottom)) + 4.5vh);width:min(1060px,calc(100vw - 80px));min-height:150px;padding:20px 26px 46px;border-radius:20px;
+      display:grid;grid-template-columns:1.1fr 1.2fr 1.25fr;gap:0 22px;align-items:center;
+      background:radial-gradient(120% 140% at 20% 0%,#fbf3e1,var(--paper) 45%,var(--paper2));box-shadow:0 0 0 3px #6b5236,0 0 0 6px rgba(255,248,230,.35),0 16px 32px rgba(0,0,0,.4),inset 0 0 40px rgba(160,120,60,.18)}
+    .cs-col{min-width:0;padding:0 4px}.cs-col+.cs-col{border-left:2px solid rgba(107,82,54,.28);padding-left:22px}
+    #cs-name{margin:0;font:400 clamp(26px,2.9vw,46px)/1 'Lilita One';color:var(--ink)}
+    #cs-role{display:block;margin-top:6px;font:800 clamp(8px,.78vw,12px)/1 Manrope;letter-spacing:.2em;text-transform:uppercase;color:var(--sub)}
+    #cs-desc{margin:8px 0 0;font:600 clamp(10px,.95vw,14px)/1.4 Manrope;color:#4a3d2c}
+    body.cs-is-locked #cs-desc{color:var(--moss);font-weight:800}
+    .cs-ab{display:grid;grid-template-columns:auto 1fr;gap:4px 12px;align-items:center}
+    #cs-ab-icon{grid-row:1/3;width:clamp(40px,4vw,60px);height:clamp(40px,4vw,60px);border-radius:50%;background:#e2efcf center/78% no-repeat;box-shadow:0 0 0 3px #6b5236,inset 0 -6px 10px rgba(79,107,50,.25)}
+    #cs-ab-name{font:400 clamp(15px,1.4vw,22px)/1 'Lilita One';color:var(--ink)}
+    #cs-ab-text{margin:0;font:600 clamp(9.5px,.88vw,13px)/1.35 Manrope;color:#4a3d2c}
+    .cs-ab-kind{font:800 clamp(7px,.6vw,9.5px)/1 Manrope;letter-spacing:.18em;text-transform:uppercase;color:var(--moss)}
+    #cs-stats{display:flex;flex-direction:column;gap:clamp(4px,.7vh,8px)}
+    .cs-stat{display:grid;grid-template-columns:18px 52px 1fr auto;gap:8px;align-items:center}
+    .cs-ico{width:16px;height:16px;background:#5b4a3a;-webkit-mask:var(--ico) center/contain no-repeat;mask:var(--ico) center/contain no-repeat}
+    .cs-stat b{font:800 clamp(9px,.8vw,12.5px)/1 Manrope;color:var(--ink)}
+    .cs-bar{height:clamp(8px,.9vw,12px);border-radius:99px;background:#3d3326;box-shadow:inset 0 1px 2px rgba(0,0,0,.5);overflow:hidden}
+    .cs-bar em{display:block;height:100%;border-radius:99px;transition:width .4s cubic-bezier(.3,1.4,.5,1)}
+    .cs-bar.blue em{background:linear-gradient(180deg,#7fb6f0,#3f7fd0)}.cs-bar.red em{background:linear-gradient(180deg,#f19a8a,#c9533f)}
+    .cs-bar.green em{background:linear-gradient(180deg,#a6dc6a,#5b9a2c)}.cs-bar.gold em{background:linear-gradient(180deg,#ffe08a,#e2a930)}
+    .cs-stat small{font:700 clamp(8.5px,.75vw,11.5px)/1 Manrope;color:var(--moss);white-space:nowrap;min-width:84px}
+    body.cs-is-locked .cs-bar em{filter:grayscale(1) brightness(.8)}
+    #cs-play{position:absolute;left:50%;transform:translateX(-50%);bottom:-29px;height:58px;   /* sits on the panel's lower edge (the panel is its containing block) */padding:0 34px;border-radius:999px;display:flex;align-items:center;gap:14px;
+      font:400 clamp(20px,1.8vw,28px)/1 'Lilita One';color:#fffdf0;text-shadow:0 2px 0 #2c4a14;background:radial-gradient(140% 120% at 30% 0%,#a9d86a -30%,#5c9a2e 55%,#3f7a1e);
+      box-shadow:0 0 0 3px #2c4a14,inset 0 2px 0 rgba(255,255,240,.55),inset 0 -8px 14px rgba(30,60,10,.35),0 10px 18px rgba(0,0,0,.35);z-index:2;white-space:nowrap;transition:transform .2s cubic-bezier(.3,1.8,.5,1)}
+    #cs-play:active{transform:translateX(-50%) scale(1.04,.9)}
+    #cs-play:disabled{cursor:not-allowed;background:linear-gradient(180deg,#b5b7a6,#7f8470);box-shadow:0 0 0 3px #555a4a,0 8px 14px rgba(0,0,0,.3);text-shadow:none;color:#f6f3e8}
+    .cs-tri{width:0;height:0;border-left:16px solid #fffdf0;border-top:10px solid transparent;border-bottom:10px solid transparent;filter:drop-shadow(0 2px 0 #2c4a14)}
+    /* phones in landscape: same design, compact; the button moves into the panel's right end */
+    @media (max-height:500px){
+      #cs-stage{top:calc(max(8px,env(safe-area-inset-top)) + 8px);height:auto}
+      .cs-card{width:clamp(100px,16.5vw,150px)}.cs-plate b{font-size:15px}.cs-plate small{font-size:6.5px;letter-spacing:.12em}
+      .cs-round{width:38px;height:38px;font-size:20px}
+      #cs-thumbs{margin-top:10px;gap:6px}.cs-thumb{width:30px;height:30px}
+      .cs-logo{width:clamp(110px,16vw,150px);top:calc(max(8px,env(safe-area-inset-top)) + 8px)}.cs-logo small{display:none}
+      #cs-home{top:calc(max(8px,env(safe-area-inset-top)) + 10px)}
+      #cs-panel{bottom:max(10px,env(safe-area-inset-bottom));width:calc(100vw - max(24px,env(safe-area-inset-left)) - max(24px,env(safe-area-inset-right)) - 24px);min-height:0;padding:10px 14px;border-radius:16px;
+        grid-template-columns:1fr 1.25fr 1.3fr auto;gap:0 12px}
+      .cs-col+.cs-col{padding-left:12px}
+      #cs-name{font-size:24px}#cs-role{font-size:7px;margin-top:4px}#cs-desc{font-size:9px;margin-top:4px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+      #cs-ab-icon{width:34px;height:34px}#cs-ab-name{font-size:14px}#cs-ab-text{font-size:8.5px}.cs-ab-kind{display:none}
+      .cs-stat{grid-template-columns:12px 38px 1fr;gap:5px}.cs-stat small{display:none}.cs-stat b{font-size:8.5px}.cs-ico{width:11px;height:11px}.cs-bar{height:7px}#cs-stats{gap:3px}
+      #cs-play{position:static;transform:none;height:46px;padding:0 18px;font-size:16px;gap:8px;border-radius:16px}#cs-play:active{transform:scale(1.04,.9)}
+      .cs-tri{border-left-width:11px;border-top-width:7px;border-bottom-width:7px}
+    }
+    @media (prefers-reduced-motion:reduce){.cs-bg,.cs-card.main .cs-art,.cs-card.main::after{animation:none}}
+  </style>
+</head>
+<body>
+  <div class="cs-bg" aria-hidden="true"></div><div class="cs-shade" aria-hidden="true"></div><div class="cs-frame" aria-hidden="true"></div>
+  <div class="cs-logo"><img src="./brand/logo/logo-growing-wilds-620w.png" alt="Growing Wilds"><small>GRO. UDFORSK. OVERLEV.</small></div>
+  <button id="cs-home" class="cs-round" type="button" aria-label="Til startskærmen" onclick="location.href='./index.html'">‹</button>
+  <section id="cs-stage" aria-label="Vælg din plante">
+    <div class="cs-row"><button id="cs-prev" class="cs-round cs-arrow" type="button" aria-label="Forrige">‹</button><div id="cs-cards"></div><button id="cs-next" class="cs-round cs-arrow" type="button" aria-label="Næste">›</button></div>
+    <div id="cs-thumbs"></div>
+  </section>
+  <section id="cs-panel" aria-live="polite">
+    <div class="cs-col"><h1 id="cs-name"></h1><span id="cs-role"></span><p id="cs-desc"></p></div>
+    <div class="cs-col cs-ab"><i id="cs-ab-icon" aria-hidden="true"></i><div><span class="cs-ab-kind">Special</span><div id="cs-ab-name"></div></div><p id="cs-ab-text" style="grid-column:2"></p></div>
+    <div class="cs-col"><div id="cs-stats"></div></div>
+    <button id="cs-play" type="button"></button>
+  </section>
+  <script type="module">
+    import { mountCharacterSelect } from './js/ui/CharacterSelect.js?build=SELECT-R132-20261008A';
+    mountCharacterSelect();
+  </script>
+</body>
+</html>

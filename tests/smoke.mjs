@@ -674,6 +674,17 @@ try {
       o.arenaSafe = !!B && !B.root.userData.r129Mats && !B.arena?.root?.userData?.r129Mats && (!RB || !RB.root.userData.r129Mats);
       return o; }) : {};
     check('R129 FX: only the creature flashes (never the boss arena/grove), landed strike = hit-stop + white flash + shake (damage unchanged), loot flies to its counter, gather bursts debris + +N, boss telegraph blinks with a base', ready && Object.values(r).length === 8 && Object.values(r).every(Boolean) && !errors.length, errors[0] || JSON.stringify(r)); await ctx.close(); }
+  // 17l. R132 character select TEST PAGE (Jannik's reference style): 9 characters, starters open, locked ones say how to grow them
+  { const ctx = await context({ viewport: { width: 844, height: 390 }, isMobile: true, hasTouch: true }); const p = await ctx.newPage(); const errors = []; p.on('pageerror', e => errors.push(e.message));
+    await p.goto(B + 'selector-wilds.html', { waitUntil: 'load' });
+    const ok = await p.waitForFunction(() => document.body.classList.contains('cs-ready'), null, { timeout: 60000 }).then(() => true, () => false);
+    const r = ok ? await p.evaluate(async () => { const $ = s => document.querySelector(s), w = ms => new Promise(x => setTimeout(x, ms)), o = {};
+      o.start = document.querySelectorAll('.cs-thumb').length === 9 && $('.cs-card.main b').textContent === 'Cactus' && !$('#cs-play').disabled && $('#cs-stats').children.length === 4 && /Thorn Shot/.test($('#cs-ab-name').textContent);
+      $('.cs-thumb[data-i="4"]').click(); await w(400); o.locked = $('.cs-card.main b').textContent === 'Tulip' && $('#cs-play').disabled && /Gro mig/.test($('#cs-desc').textContent);
+      document.getElementById('cs-prev').click(); await w(400); o.prev = $('.cs-card.main b').textContent === 'Aloe Vera';
+      $('.cs-thumb[data-i="0"]').click(); await w(400); o.open = $('.cs-card.main b').textContent === 'Daisy' && !$('#cs-play').disabled && /Spil som Daisy/.test($('#cs-play').textContent);
+      return o; }) : {};
+    check('character select test page (R132): 9 characters, Daisy/Cactus/Swamp open, locked ones say how to grow them, browse by thumb and arrow', ok && Object.values(r).length === 4 && Object.values(r).every(Boolean) && !errors.length, errors[0] || JSON.stringify(r)); await ctx.close(); }
   // 17h. R117 desktop: the click that closes the Bag does not swing; the next click on the view does
   { const ctx = await context({ viewport: { width: 1280, height: 720 } }); const { p, errors, ok } = await startGame(ctx, 'fern', { hud: 'desktop-e' });
     let r = {};
