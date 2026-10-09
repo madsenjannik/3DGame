@@ -128,10 +128,11 @@ function debugBox() {
     el.textContent = [`${window.TGW_VERSION?.version || ''} · tap to hide`,
       `inner ${innerWidth}×${innerHeight} · client ${W}×${d.clientHeight} · scroll ${d.scrollWidth}×${d.scrollHeight}`,
       `screen ${screen.width}×${screen.height} · dpr ${devicePixelRatio} · vv ${vv ? `${Math.round(vv.width)}×${Math.round(vv.height)} @${vv.scale.toFixed(2)}` : '-'}`,
-      `class ${d.className || '-'} · lock ${d.dataset.vpLock || 'no'} · app ${navigator.standalone ? 'home screen' : matchMedia('(display-mode: standalone)').matches ? 'standalone' : 'browser'}`,
+      `load: zoom min ${window.__csLoad && window.__csLoad.scale < 9 ? window.__csLoad.scale.toFixed(2) : '-'} · wider ${window.__csLoad?.over ? `${window.__csLoad.over} at ${window.__csLoad.at} ms` : 'none'}`,
+      `class ${d.className || '-'} · app ${navigator.standalone ? 'home screen' : matchMedia('(display-mode: standalone)').matches ? 'standalone' : 'browser'}`,
       `ua ${/Macintosh/.test(navigator.userAgent) ? 'DESKTOP MODE (Macintosh)' : /iPhone|iPad/.test(navigator.userAgent) ? 'iOS mobile' : 'other'} · wider: ${over.slice(0, 2).map(o => o[1]).join(', ') || 'none'}`].join('\n');
   };
-  fill(); setTimeout(fill, 1200); addEventListener('resize', () => setTimeout(fill, 200));
+  fill(); setTimeout(fill, 1200); setTimeout(fill, 2700); addEventListener('resize', () => setTimeout(fill, 200));
 }
 
 export function mountCharacterSelect() {
