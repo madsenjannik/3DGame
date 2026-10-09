@@ -405,10 +405,11 @@ try {
         const a = A('greenhouse', 6.7, -4, 3), moved = gb.place('greenhouse', a.gx, a.gz, a.rot) === null;
         const stones = g.world.dynamicBranchStones.length > 0 && g.world.branchStones.every(m => !m.visible) && !!g.world.greenhouseBranch;
         const s = A('shrine', 2.3, -3.6, 0), branchBlocks = /greenhouse path/.test(gb.problem('shrine', s.gx, s.gz, s.rot) || '');
-        gb.resetToDefaults(); const restored = !g.world.greenhouseBranch && g.world.branchStones.every(m => m.visible) && g.world.dynamicBranchStones.length === 0;
-        return { spine, moved, stones, branchBlocks, restored }; }));
+        const regrow = (g.vegetationMask.patch || []).some(m => m.visible && m.count > 100);   /* R143: grass grows back where the greenhouse stood */
+        gb.resetToDefaults(); const restored = !g.world.greenhouseBranch && g.world.branchStones.every(m => m.visible) && g.world.dynamicBranchStones.length === 0 && (g.vegetationMask.patch || []).every(m => !m.visible);
+        return { spine, moved, stones, branchBlocks, regrow, restored }; }));
     }
-    check('build mode + paths: invalid blocked, cancel unchanged, place moves + hides vegetation, persists, reset restores, spine reserved, branch follows greenhouse', ok && r.pondBlocked && r.cancelSame && r.placed && r.moved && r.follows && r.hidden > 0 && r.persisted && r.resetHidden === 0 && r.resetPos && r.spine && r.stones && r.branchBlocks && r.restored && !errors.length, errors[0] || JSON.stringify(r));
+    check('build mode + paths: invalid blocked, cancel unchanged, place moves + hides vegetation, persists, reset restores, spine reserved, branch follows greenhouse', ok && r.pondBlocked && r.cancelSame && r.placed && r.moved && r.follows && r.hidden > 0 && r.persisted && r.resetHidden === 0 && r.resetPos && r.spine && r.stones && r.branchBlocks && r.regrow && r.restored && !errors.length, errors[0] || JSON.stringify(r));
     await ctx.close(); }
   // 13. R61 combat: Mole warning→emerge→up, strike with the axe, defeat → loot (walk over) + first bonus, Mole hurts,
   //     wilt drops half the common materials in a pouch + sends you home, pouch recovers them, mercy drops nothing

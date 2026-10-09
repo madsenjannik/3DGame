@@ -7,7 +7,7 @@
 import * as THREE from 'three';
 import { loadGLTF } from '../core/AssetManager.js';
 
-const KEY = 'tgw.lantern';
+const KEY = 'tgw.lantern', UP = new THREE.Vector3(0, 1, 0);
 const read = () => { try { return localStorage.getItem(KEY) === 'on'; } catch { return false; } };
 
 export class Lantern {
@@ -54,6 +54,9 @@ export class Lantern {
       const lit=avail&&this.on;this.light.intensity = lit ? 6 * f : 0;
       if (lit) { this.socket.getWorldPosition(this.light.position); this.light.position.y -= .1; }
     }
+    // R143 (GO 09/10): the lantern hangs straight down whatever the hand's authored angle (Tulip/Hyacinth held it flat):
+    // its world rotation is the character's heading only, so it swings with the walk but never lies on its side
+    if (show && this.model) { const qs = this.socket.getWorldQuaternion(this._qs ||= new THREE.Quaternion()), qy = (this._qy ||= new THREE.Quaternion()).setFromAxisAngle(UP, this.g.character?.heading || 0); this.model.quaternion.copy(qs.invert()).multiply(qy); }
     if (show) { const lit=avail&&this.on;for (const m of this.glow || []) m.emissiveIntensity = lit?1.4*f:0; if (this.flame) { this.flame.visible=lit; if(lit)this.flame.scale.setScalar(.9 + .14 * f); } }
   }
 }

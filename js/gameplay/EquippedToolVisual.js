@@ -13,10 +13,18 @@ const ALIGN={
   can:{s:1.00,p:[0,0,0],r:[0,Math.PI/2,0]}
 };
 
+// R143 (GO 09/10): Hand_Socket_R is authored differently per character (arms down vs T-pose), so one ALIGN only fitted
+// Daisy. Each character's right-hand socket in its idle pose, relative to the character root (measured 09/10); a tool is
+// turned by inv(handRel[char]) * handRel[daisy] before ALIGN, so every character holds it the way Daisy does, and it
+// still follows the hand's animation (strike swings).
+const HAND_REL={daisy:[0.1746,-0.6459,0.1524,0.7274],cactus:[-0.0398,-0.0302,-0.6438,0.7635],swamp:[-0.455,-0.0478,-0.1558,0.8755],aloe:[-0.0497,-0.0059,-0.1794,0.9825],tulip:[0.5565,-0.376,-0.2844,0.6841],hyacinth:[0.4514,-0.5258,-0.4179,0.5876],succulent:[-0.455,-0.0477,-0.1558,0.8755],spire:[-0.0651,-0.0376,-0.5545,0.8289],fern:[-0.1342,-0.0236,-0.1995,0.9704]};
+const REF=new THREE.Quaternion().fromArray(HAND_REL.daisy);
+
 export class EquippedToolVisual{
   constructor(game){
     this.g=game;this.id=null;this.current=null;this.models=new Map();this.tmpScale=new THREE.Vector3();
     this.hand=game.character?.instance?.socket?.('Hand_Socket_R')||game.character?.instance?.socket?.('Hand_R')||null;
+    const rel=HAND_REL[game.state?.player?.characterId];this.fix=rel?new THREE.Quaternion().fromArray(rel).invert().multiply(REF):new THREE.Quaternion();   // R143
   }
   model(id){
     if(!ALIGN[id]||!this.hand)return null;
@@ -24,7 +32,7 @@ export class EquippedToolVisual{
     if(!m){
       m=buildHeldTool(id);if(!m)return null;
       m.name=`HOTBAR_HELD_${id.toUpperCase()}_R102`;m.visible=false;
-      const a=ALIGN[id];m.position.fromArray(a.p);m.rotation.set(...a.r);
+      const a=ALIGN[id];m.position.fromArray(a.p);m.rotation.set(...a.r);m.quaternion.premultiply(this.fix);   // R143: per-character hand fix
       this.hand.add(m);this.models.set(id,m);this.fit(id,m);
     }
     return m;

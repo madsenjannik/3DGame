@@ -35,7 +35,37 @@ export class GardenVegetationMask {
     const g = this.garden; return g.p.garden.buildings.filter(b => !g.isDefault(b.id)).map(b => g.footprintRect(b.id, .25));
   }
 
+  // R143 (GO 09/10): the authored garden was never planted under the greenhouse's default spot (a ~10.7 x 7.3 m rect), so
+  // moving the greenhouse left it bare. A regrow patch fills that rect with the garden's own grass, wisps and tall grass
+  // (instances copied from the authored layers, seeded, paths kept clear); it shows only while the greenhouse is moved.
+  regrow() {
+    const moved = !this.garden.isDefault('greenhouse');
+    if (moved && !this.patch) this.patch = this.buildPatch();
+    for (const m of this.patch || []) m.visible = moved;
+  }
+  buildPatch() {
+    const W = this.world, gh = W.greenhouse; if (!gh) return [];
+    const r = { x0: gh.x - gh.w - .55, x1: gh.x + gh.w + .55, z0: gh.z - gh.l - .55, z1: gh.z + gh.l + .55 }, area = (r.x1 - r.x0) * (r.z1 - r.z0);
+    let seed = 4242; const rnd = () => (seed = seed * 16807 % 2147483647) / 2147483647;
+    const m4 = new THREE.Matrix4(), p = new THREE.Vector3(), q = new THREE.Quaternion(), sc = new THREE.Vector3(), c = new THREE.Color(), srcs = [], out = [];
+    W.privateRoot.traverse(o => { if (o.isInstancedMesh && !o.userData.regrow && ['grass', 'wisp', 'tall'].includes(o.userData.calmType)) srcs.push(o); });
+    for (const src of srcs) {
+      const n = Math.min(4000, Math.round(src.count / 625 * area)); if (!n) continue;   // the same density as the authored ~25 x 25 m garden
+      const mesh = new THREE.InstancedMesh(src.geometry, src.material, n); mesh.userData = { calmType: src.userData.calmType, regrow: true }; mesh.name = `R143_REGROW_${src.userData.calmType}`;
+      let k = 0;
+      for (let i = 0; i < n * 3 && k < n; i++) {
+        const x = r.x0 + rnd() * (r.x1 - r.x0), z = r.z0 + rnd() * (r.z1 - r.z0), j = Math.floor(rnd() * src.count);
+        if (W.pathDistance?.(x, z) < .74) continue;
+        src.getMatrixAt(j, m4); m4.decompose(p, q, sc); p.x = x; p.z = z; m4.compose(p, q, sc); mesh.setMatrixAt(k, m4);
+        if (src.instanceColor) { src.getColorAt(j, c); mesh.setColorAt(k, c); } k++;
+      }
+      mesh.count = k; mesh.receiveShadow = src.receiveShadow; mesh.castShadow = src.castShadow; mesh.frustumCulled = false; src.parent.add(mesh); out.push(mesh);
+    }
+    return out;
+  }
+
   apply() {
+    try { this.regrow(); } catch (e) { console.warn('[TGW] regrow patch', e); }
     this.collect();
     // R60.2: a moved greenhouse also clears a strip along its new branch path.
     const rects = this.rects(), g = this.garden, branch = g.isDefault('greenhouse') ? null : g.currentBranch();
