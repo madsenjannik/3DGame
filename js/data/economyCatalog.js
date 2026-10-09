@@ -20,3 +20,7 @@ export const SPECIAL_SEEDS = [
   { id: 'aloe',      name: 'Aloe Seed',      how: 'Harvest your first special plant',   met: (p) => !!p.specialHarvest },
   { id: 'fern',      name: 'Fern Seed',      how: 'Hidden in the Dark Forest (coming)', met: () => false }
 ];
+
+// R150: the community tree in the Orangery starts as bare soil (stage 0) and is fed one Golden Seed at a time.
+// TREE_COSTS[s] = seeds that grow stage s into s + 1 (10 steps, 52 seeds to the last stage). Long-term on purpose.
+export const TREE_COSTS = [1, 1, 2, 3, 4, 5, 6, 8, 10, 12];

@@ -3,52 +3,53 @@ import * as THREE from 'three';
 import { AssetRegistry } from './AssetRegistry.js';
 import { CharacterController } from './CharacterController.js?build=MOBILE-GESTURE-R34B-20260930A';
 import { GameState } from './GameState.js';
-import { InputManager } from './InputManager.js?build=SAVE-R149-20261009A';
+import { InputManager } from './InputManager.js?build=SAVE-R150-20261009A';
 import { ThirdPersonCamera } from './ThirdPersonCamera.js?build=MOBILE-GESTURE-R34B-20260930A';
 import { CameraOcclusionSystem } from './CameraOcclusionSystem.js?build=NORTH-STABLE-R23O-20260929A';
 import { StructureVisibilitySystem } from '../visual/StructureVisibilitySystem.js?build=NORTH-STABLE-R23O-20260929A';
 import { characterCatalog, resourceCatalog, buildingCatalog } from '../data/assetCatalog.js';
-import { CollectibleSystem } from '../gameplay/CollectibleSystem.js?build=SAVE-R149-20261009A';
-import { MeaningfulChoiceSystem } from '../gameplay/MeaningfulChoiceSystem.js?build=SAVE-R149-20261009A';
-import { GreenhouseProgressionSystem } from '../gameplay/GreenhouseProgressionSystem.js?build=SAVE-R149-20261009A';
+import { CollectibleSystem } from '../gameplay/CollectibleSystem.js?build=SAVE-R150-20261009A';
+import { MeaningfulChoiceSystem } from '../gameplay/MeaningfulChoiceSystem.js?build=SAVE-R150-20261009A';
+import { GreenhouseProgressionSystem } from '../gameplay/GreenhouseProgressionSystem.js?build=SAVE-R150-20261009A';
 import { OrangeryHubSystem } from '../gameplay/OrangeryHubSystem.js?build=CAMERA-CUTAWAY-CONTEXT-R21D-20260928E';
 import { FishingV1System } from '../gameplay/FishingV1System.js?build=BAG-NIGHT-R84-20261006A';
 import { ChoicePanel } from '../ui/ChoicePanel.js';
-import { Hud } from '../ui/Hud.js?build=SAVE-R149-20261009A';
+import { Hud } from '../ui/Hud.js?build=SAVE-R150-20261009A';
 import { WorldMap } from '../ui/WorldMap.js?build=WORLD-MAP-R35B-20260930B';
 import { GardenEnvironment } from '../world/GardenEnvironment.js?build=WATER-VEG-R103-20261006A';
 import { WildlifeSystem } from '../world/WildlifeSystem.js?build=CAMERA-CUTAWAY-CONTEXT-R21D-20260928E';
 import { PlayerHomePortalSystem } from '../world/PlayerHomePortalSystem.js?build=ENTRY-R29-20260929A';
-import { NorthStableSystem } from '../world/NorthStableSystem.js?build=SAVE-R149-20261009A';
-import { SaveGame, pickWinner } from './SaveGame.js?build=SAVE-R149-20261009A';
-import { SpecialSeeds } from '../gameplay/SpecialSeeds.js?build=SAVE-R149-20261009A';   // R149
-import { WildsLoopSystem } from '../gameplay/WildsLoopSystem.js?build=SAVE-R149-20261009A';
-import { WorkbenchPanel } from '../ui/WorkbenchPanel.js?build=SAVE-R149-20261009A';
-import { DevMenu, devMenuEnabled } from '../ui/DevMenu.js?build=SAVE-R149-20261009A';
+import { NorthStableSystem } from '../world/NorthStableSystem.js?build=SAVE-R150-20261009A';
+import { SaveGame, pickWinner } from './SaveGame.js?build=SAVE-R150-20261009A';
+import { SpecialSeeds } from '../gameplay/SpecialSeeds.js?build=SAVE-R150-20261009A';   // R149
+import { OrangeryTree } from '../gameplay/OrangeryTree.js?build=SAVE-R150-20261009A';   // R150
+import { WildsLoopSystem } from '../gameplay/WildsLoopSystem.js?build=SAVE-R150-20261009A';
+import { WorkbenchPanel } from '../ui/WorkbenchPanel.js?build=SAVE-R150-20261009A';
+import { DevMenu, devMenuEnabled } from '../ui/DevMenu.js?build=SAVE-R150-20261009A';
 import { applyControlProfile, defaultProfile } from './ControlProfiles.js';
 import { PerfHud } from '../dev/PerfHud.js';
-import { QualityManager, QUALITY } from './Quality.js?build=SAVE-R149-20261009A';
+import { QualityManager, QUALITY } from './Quality.js?build=SAVE-R150-20261009A';
 import { InteractionResolver } from './InteractionResolver.js';
 import { log, warn } from '../dev/Log.js';
 import { LookPass } from '../visual/LookPass.js?build=BAG-NIGHT-R84-20261006A';
 import { DayNight } from '../visual/DayNight.js?build=BAG-NIGHT-R84-20261006A';   // R81
 import { TOOLS } from '../data/wildsCatalog.js';   // R124 Bag texts (the Workbench's own effect lines)
 import { WEAPONS } from '../data/combatCatalog.js';   // R124 strike values
-import { VestVisual } from '../gameplay/VestVisual.js?build=SAVE-R149-20261009A';   // R125
-import { SpecialHold } from '../ui/SpecialHold.js?build=SAVE-R149-20261009A';   // R126
-import { GameMenu } from '../ui/GameMenu.js?build=SAVE-R149-20261009A';   // R121
-import { ControlTips } from '../ui/ControlTips.js?build=SAVE-R149-20261009A';   // R120
-import { Lantern } from '../gameplay/Lantern.js?build=SAVE-R149-20261009A';     // R81/R101
+import { VestVisual } from '../gameplay/VestVisual.js?build=SAVE-R150-20261009A';   // R125
+import { SpecialHold } from '../ui/SpecialHold.js?build=SAVE-R150-20261009A';   // R126
+import { GameMenu } from '../ui/GameMenu.js?build=SAVE-R150-20261009A';   // R121
+import { ControlTips } from '../ui/ControlTips.js?build=SAVE-R150-20261009A';   // R120
+import { Lantern } from '../gameplay/Lantern.js?build=SAVE-R150-20261009A';     // R81/R101
 import { BoatEconomySystem } from '../gameplay/BoatEconomySystem.js';
 import { LakeRunSystem } from '../gameplay/LakeRunSystem.js';
 import { GardenBuildSystem } from '../gameplay/GardenBuildSystem.js';
 import { GardenBuildMode } from '../ui/GardenBuildMode.js';
 import { GardenVegetationMask } from '../world/GardenVegetationMask.js';
-import { CombatSystem } from '../gameplay/CombatSystem.js?build=SAVE-R149-20261009A';
-import { isToolJob } from '../ui/actionIcons.js?build=SAVE-R149-20261009A';   // R142
-import { CharacterSwapSpot } from '../gameplay/CharacterSwapSpot.js?build=SAVE-R149-20261009A';   // R138
-import { ImpactFx } from '../gameplay/ImpactFx.js?build=SAVE-R149-20261009A';   // R129 FX layer
-import { EquippedToolVisual } from '../gameplay/EquippedToolVisual.js?build=SAVE-R149-20261009A';
+import { CombatSystem } from '../gameplay/CombatSystem.js?build=SAVE-R150-20261009A';
+import { isToolJob } from '../ui/actionIcons.js?build=SAVE-R150-20261009A';   // R142
+import { CharacterSwapSpot } from '../gameplay/CharacterSwapSpot.js?build=SAVE-R150-20261009A';   // R138
+import { ImpactFx } from '../gameplay/ImpactFx.js?build=SAVE-R150-20261009A';   // R129 FX layer
+import { EquippedToolVisual } from '../gameplay/EquippedToolVisual.js?build=SAVE-R150-20261009A';
 
 export class Game {
   async init({characterId='succulent',devMode=false}={}){
@@ -109,6 +110,7 @@ export class Game {
     this.homePortal=await homePortalPromise;
     try{this.swapSpot=new CharacterSwapSpot(this);}catch(e){warn('SWAP','character swap spot disabled',e);}   // R138: switch character at home (fails soft)
     try{this.specialSeeds=new SpecialSeeds(this);}catch(e){warn('SEEDS','special seeds disabled',e);}   // R149: one seed per character, planted at the Ring
+    try{this.orangeryTree=new OrangeryTree(this);}catch(e){warn('TREE','orangery tree feeding disabled',e);}   // R150: Golden Seeds feed the community tree
     const instance=await characterPromise;mark('worldCriticalReadyMs');
     this.scene.add(instance.root);
     this.character=new CharacterController({instance,world:this.world,state:this.state});
@@ -424,6 +426,7 @@ export class Game {
       if(!gardenSpace){
         // Boat mode keeps the controller paused while still exposing FishingV1-owned E interactions.
         R.offer('stable',this.stable?.interaction?.(this.character.position));
+        if(!specialBusy)R.offer('orangery',this.orangeryTree?.interaction?.(this.character.position));   // R150: feed the community tree
         {let li=this.lakeRun?.interaction();if(li?.type==='lakerun-start'&&!li.disabled&&!this.vestWorn())li={...li,disabled:true,reason:'Wear your Life Vest first (Bag)'};R.offer('lakerun',li);}   // R125
         if(!this.lakeRun?.busy()){let fi=this.fishing?.interaction?.(this.character.position);
           // R125: boarding the boat needs the Life Vest on (Bag → Wear)
@@ -452,6 +455,7 @@ export class Game {
     if(!this.state.choice.open&&action&&interaction&&!interaction.disabled){
       if(interaction.type==='home-swap')this.swapSpot?.interact();   // R138
       if(interaction.type==='home-plant')this.swapSpot?.plantSeed();   // R149
+      if(interaction.type==='orangery-feed')this.orangeryTree?.feed();   // R150
       else if(interaction.type==='home-enter'||interaction.type==='home-exit')this.homePortal?.interact(interaction.type,this.character,this.followCamera,this.hud);
       else if(interaction.type==='first-seed')this.collectible?.collect(this.character);
       else if(interaction.type==='greenhouse')this.greenhouse?.interact(this.character);
@@ -474,6 +478,7 @@ export class Game {
     // remain visually locked and therefore restore all structure materials.
     this.run('swapspot',()=>this.swapSpot?.update(this.time,dt));   // R138
     this.run('specialseeds',()=>this.specialSeeds?.update(dt));   // R149
+    this.run('orangerytree',()=>this.orangeryTree?.update());   // R150
     this.run('impactfx',()=>this.fx?.update(dt));   // R129: after combat set the boss telegraphs this frame
     this.run('structures',()=>this.structureVisibility?.update(dt,{enabled:!specialCameraBusy}));
     const mapVisible=!gardenSpace&&!portalBusy&&!specialBusy&&!this.state.choice.open;

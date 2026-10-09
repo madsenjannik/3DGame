@@ -1619,6 +1619,7 @@ are only touched where a measured hotspot requires it, minimally.
    failure. Must pass before every push (CLAUDE.md rule 5).
 
 **B status 02/10/2026: complete (R51–R57).** On-device check (iPhone, Jannik 02/10): 60 fps steady (frame max 20–24 ms), 217 draw calls / 370k tris in the garden, 363 / 433k at the lake, mobile-high, 1 WebGL context → no perf work needed before C.
+**R150 (v0.8.150):** Golden Seeds feed the Orangery's community tree (starts as soil, 52 seeds to the last stage).
 **R149 (v0.8.149):** Special Seeds (Tulip, Hyacinth, Succulent, Spire; Aloe R151, Fern later) earned into the Bag, planted at the Sprouting Ring to open the character; bosses give no Golden Seed.
 **R148 (v0.8.148):** Perk Shrine: perks cost amber 10 / 15 / 20 / 30; Golden Seeds no longer buy perks.
 **R147 (v0.8.147):** desktop HUD from Jannik's approved mockup (glass circles, plain text, action pill above the hearts, key hints, lantern at night).

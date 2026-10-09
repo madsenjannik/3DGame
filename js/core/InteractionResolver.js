@@ -10,6 +10,7 @@ export const PRIORITY = {
   home: 45,        // shed door / back to the world
   greenhouse: 35,  // build / upgrade greenhouse
   'first-seed': 30,// first Golden Seed
+  orangery: 30,    // R150: feed the community tree a Golden Seed
   wilds: 10,       // nodes, thornbrush, workbench, pots, weeds, snails
   shorefish: 9     // R71: 'Fish' anywhere along the lake/stream shore; anything else nearby wins
 };
