@@ -714,12 +714,15 @@ try {
         o.worldNone = g.world.space !== 'garden' && !g.swapSpot.interaction({ x: s.x, z: s.z });
         g.devMenu.teleport('garden', s.x, s.z, 0); for (let i = 0; i < 30 && g.interactions.last?.interaction?.type !== 'home-swap'; i++) await w(250);
         const d = g.homePortal.gardenDoorPoint; o.offer = g.interactions.last?.interaction?.type === 'home-swap' && Math.hypot(s.x - d.x, s.z - d.z) > 2.15 && g.swapSpot.m.visible;
+        /* R139: Jannik's Spirebænken: open characters show their sprout, locked ones soil with the seed; Idle runs; the stone magic brightens when you stand on it */
+        for (let i = 0; i < 40 && !g.swapSpot.model; i++) await w(250); const M = g.swapSpot.model, vis = n => M?.getObjectByName(n)?.visible;
+        o.model = !!M && vis('Sprout_cactus') && !vis('Soil_cactus') && !vis('Sprout_tulip') && vis('Soil_tulip') && !!g.swapSpot.mixer && g.swapSpot.near > .5 && g.swapSpot.ringOut.material.opacity > .6;
         return o; });
       await p.evaluate(() => window.__tgw.swapSpot.interact()); r.nav = await p.waitForURL(/selector\.html\?char=cactus&from=home/, { timeout: 20000 }).then(() => true, () => false);
       if (r.nav) { await p.waitForFunction(() => document.body.classList.contains('cs-ready'), null, { timeout: 60000 }).catch(() => {}); await p.click('#cs-home'); r.back = await p.waitForURL(/game\.html\?char=cactus/, { timeout: 20000 }).then(() => true, () => false); } }
     const c2 = await context({ viewport: { width: 844, height: 390 }, isMobile: true, hasTouch: true }); const q = await c2.newPage(); await q.addInitScript(() => localStorage.removeItem('tgw.devMenu'));
     await q.goto(B + 'game.html?char=tulip'); r.guard = await q.waitForURL(/selector\.html\?char=tulip/, { timeout: 30000 }).then(() => true, () => false); await c2.close();
-    check('R138 switch at home: gold SWITCH circle in the garden opens the selector, back returns to the game; a locked character is sent to the selector', ok && r.worldNone && r.offer && r.nav && r.back && r.guard && !errors.length, errors[0] || JSON.stringify(r)); await ctx.close(); }
+    check('R138/R139 switch at home: Spirebænken in the garden (sprouts = open characters, magic on the stone) opens the selector, back returns to the game; a locked character is sent to the selector', ok && r.worldNone && r.offer && r.model && r.nav && r.back && r.guard && !errors.length, errors[0] || JSON.stringify(r)); await ctx.close(); }
   // 17m. R134 DEV toggles (visual only, off by default): resource icons fly into their counter; the tutorial tip sits under the resource bar on phones
   { const ctx = await context({ viewport: { width: 844, height: 390 }, isMobile: true, hasTouch: true }); await ctx.addInitScript(() => { localStorage.setItem('tgw.dev.flyIcons', '1'); localStorage.setItem('tgw.dev.tipTop', '1'); });
     const { p, errors, ok } = await startGame(ctx, 'cactus', { hud: 'classic', tips: true }); let r = {};

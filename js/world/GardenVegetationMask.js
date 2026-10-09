@@ -13,6 +13,7 @@ const COVERABLE = new Set(['stone', 'static']); // authored small stones (addObs
 export class GardenVegetationMask {
   constructor({ world, garden }) {
     this.world = world; this.garden = garden; this.meshes = null; this.hiddenColliders = [];
+    this.fixed = [];   // R139: fixed footprints that always clear vegetation (Spirebænken); { x0, x1, z0, z1 }
   }
 
   // Collect instanced vegetation (new meshes only, so late-loading decor is picked up on the next apply).
@@ -40,11 +41,14 @@ export class GardenVegetationMask {
     const rects = this.rects(), g = this.garden, branch = g.isDefault('greenhouse') ? null : g.currentBranch();
     const onBranch = (x, z) => { if (!branch) return false; for (let i = 0; i < branch.length - 1; i++) { const a = branch[i], vx = branch[i + 1].x - a.x, vz = branch[i + 1].z - a.z, L = vx * vx + vz * vz || 1; let t = ((x - a.x) * vx + (z - a.z) * vz) / L; t = t < 0 ? 0 : t > 1 ? 1 : t; if (Math.hypot(x - a.x - vx * t, z - a.z - vz * t) < .72) return true; } return false; };
     const inside = (x, z) => rects.some(r => x > r.x0 && x < r.x1 && z > r.z0 && z < r.z1) || onBranch(x, z);
+    // R139: fixed footprints hide vegetation only (not counted in 'hidden', which stays 'under moved structures'); their
+    // small-stone colliders stay (under Spirebænken they sit beneath the pots)
+    const fixedIn = (x, z) => this.fixed.some(r => x > r.x0 && x < r.x1 && z > r.z0 && z < r.z1);
     for (const e of this.meshes) {
       const arr = e.mesh.instanceMatrix.array; let hidden = 0, changed = false;
       for (let i = 0; i < e.mesh.count; i++) {
-        const cover = inside(e.pos[i * 2], e.pos[i * 2 + 1]), o = i * 16;
-        if (cover) { hidden++; if (arr[o] !== 0 || arr[o + 5] !== 0 || arr[o + 10] !== 0) { ZERO.toArray(arr, o); changed = true; } }
+        const px = e.pos[i * 2], pz = e.pos[i * 2 + 1], moved = inside(px, pz), cover = moved || fixedIn(px, pz), o = i * 16;
+        if (cover) { if (moved) hidden++; if (arr[o] !== 0 || arr[o + 5] !== 0 || arr[o + 10] !== 0) { ZERO.toArray(arr, o); changed = true; } }
         else if (arr[o] !== e.original[o] || arr[o + 5] !== e.original[o + 5] || arr[o + 10] !== e.original[o + 10]) { for (let k = 0; k < 16; k++) arr[o + k] = e.original[o + k]; changed = true; }
       }
       e.hidden = hidden; if (changed) e.mesh.instanceMatrix.needsUpdate = true;
