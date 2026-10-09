@@ -89,11 +89,11 @@ function buildFenceSegments(yard){
 }
 
 export class PlayerHomePortalSystem{
-  constructor(scene,{world,state,characterId,onSpaceChanged,moveInEnabled=true}={}){
+  constructor(scene,{world,state,characterId,onSpaceChanged,moveInEnabled=true,moveInKey=''}={}){
     this.scene=scene;this.world=world;this.state=state;this.characterId=characterId||state?.player?.characterId||'succulent';
     this.prefix=PREFIX[this.characterId]||'Succulent';this.onSpaceChanged=onSpaceChanged||(()=>{});
     this.worldHome=null;this.gardenHome=null;this.worldMixer=null;this.gardenMixer=null;this.clips=[];this.busy=false;
-    this.moveInEnabled=moveInEnabled!==false;this.moveInKey=`dym.homeMovedIn.${MOVE_IN_STORAGE_VERSION}.${this.characterId}`;this.moveInPending=this.moveInEnabled&&!this.hasMovedIn();this.moveInActive=false;this.moveInPhase='idle';this.moveInElapsed=0;this.moveInDuration=0;this.moveInAction=null;
+    this.moveInEnabled=moveInEnabled!==false;this.moveInKey=moveInKey||`dym.homeMovedIn.${MOVE_IN_STORAGE_VERSION}.${this.characterId}`;   /* R138: Game passes the shared key */this.moveInPending=this.moveInEnabled&&!this.hasMovedIn();this.moveInActive=false;this.moveInPhase='idle';this.moveInElapsed=0;this.moveInDuration=0;this.moveInAction=null;
     this.moveInCameraTarget=new THREE.Vector3();this.moveInCameraDir=new THREE.Vector3();this.moveInCameraPos=new THREE.Vector3();this.moveInExitStartPos=new THREE.Vector3();this.moveInExitStartLook=new THREE.Vector3();this.moveInExitPos=new THREE.Vector3();this.moveInExitLook=new THREE.Vector3();this.moveInCameraDistance=10;
     this.worldDoorPoint=new THREE.Vector3();this.gardenDoorPoint=new THREE.Vector3();this.worldSegments=[];this.gardenSegments=[];this.worldCameraBox=null;this.gardenCameraBox=null;
     // Future access hooks: private by default. The state shape already reserves team,

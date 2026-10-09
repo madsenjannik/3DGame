@@ -629,6 +629,7 @@ Unless a runtime bug appears, the remaining content/progression order is:
 Separate validation/technical items:
 - final real-device approval of R34B mobile gesture controls;
 - SaveGame: new progression uses `tgw.save` (SaveGameV2, per character). Stable/Greenhouse/MoveIn/Fishing keys are NOT migrated yet — separate GO;
+- **R138 (GO 09/10): one shared game.** `tgw.save` v4 holds one profile (`profiles.shared`) for every character plus `unlocked` (the 3 starters Daisy/Cactus/Swamp + every character played before). The v3 per-character profiles were merged once: the most advanced profile wins (`SaveGame.profileScore`: boss wins, greenhouse level, garden level, tools, pots, Lake Run gold, fish species; ties go to the last played); the v3 save is kept in `tgw.save.premerge`. Greenhouse level `dym-gh-level.shared` = the highest level any character reached; Stable `dym.thoraStable.v1.shared` = the winning (else last played) character's progress; moved in `dym.homeMovedIn.v1.shared` = any character moved in. Per-character keys stay in place. The shed still follows the active character (option A). Switching happens at the gold SWITCH circle on the garden lawn beside the shed (`CharacterSwapSpot`); a locked character cannot be started outside DEV.;
 - performance work remains measurement-first; do not optimize without evidence;
 - central interaction resolver / broader architecture seams are only introduced when a concrete need justifies them.
 
@@ -1618,6 +1619,7 @@ are only touched where a measured hotspot requires it, minimally.
    failure. Must pass before every push (CLAUDE.md rule 5).
 
 **B status 02/10/2026: complete (R51–R57).** On-device check (iPhone, Jannik 02/10): 60 fps steady (frame max 20–24 ms), 217 draw calls / 370k tris in the garden, 363 / 433k at the lake, mobile-high, 1 WebGL context → no perf work needed before C.
+**R138 (v0.8.138):** one shared game for all characters (save v4, the most advanced profile won the merge, old save kept), starters Daisy/Cactus/Swamp + played characters open, the rest locked, gold SWITCH circle on the garden lawn.
 **R137 (v0.8.137):** selector: minimum-scale=1 against the iOS zoom-out, the R136 width lock removed, the readout records the load. Saves untouched.
 **R136 (v0.8.136):** selector back button fixed (the stage covered it), phone layout width pinned to the screen when iOS lays it out wider, viewport readout (?debug=1 / DEV). Saves untouched.
 **R135 (v0.8.135):** the new card selector replaces the old one as selector.html (all 9 characters open until the seed unlocks; opens on the last played character). Saves untouched.

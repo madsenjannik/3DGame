@@ -3,8 +3,28 @@
 // R57: last-known-good backup ('tgw.save.bak'), build/version stamp, corrupt-save fallback, DEV export/import.
 // Older systems (Stable, Greenhouse, MoveIn, Fishing) keep their own locked storage keys;
 // they move in here only under a separately approved scope.
-const SAVE_KEY = 'tgw.save', BACKUP_KEY = 'tgw.save.bak', CORRUPT_KEY = 'tgw.save.corrupt'; // R113: unreadable text is kept, never overwritten
-export const SAVE_VERSION = 3;
+// R138 (GO 09/10, Jannik approved the proposals): one shared game for all characters. v4 merges the per-character
+// profiles into profiles.shared (the most advanced one wins, ties go to the character played last); the whole v3 save is
+// kept once in 'tgw.save.premerge'. data.unlocked lists the characters you may play: the 3 starters + every character
+// that had a profile (played before = stays open). The seed unlocks add to it later.
+const SAVE_KEY = 'tgw.save', BACKUP_KEY = 'tgw.save.bak', CORRUPT_KEY = 'tgw.save.corrupt', PREMERGE_KEY = 'tgw.save.premerge'; // R113: unreadable text is kept, never overwritten
+export const SAVE_VERSION = 4;
+export const SHARED_ID = 'shared';
+export const STARTERS = ['daisy', 'cactus', 'swamp'];
+const ls = k => { try { return localStorage.getItem(k); } catch { return null; } };
+const lastPlayed = () => { try { return JSON.parse(ls('tgw.lastChar') || 'null')?.id || ''; } catch { return ''; } };
+// How far a profile got: the bosses count most, then the greenhouse (its own key), the garden, tools, pots, Lake Run gold
+// and fish species; what was gathered only breaks near-ties.
+export function profileScore(p, id) {
+  if (!p || typeof p !== 'object') return -1;
+  const c = p.combat || {}, n = o => Object.keys(o || {}).length;
+  return ((c.giant?.wins | 0) > 0 ? 1000 : 0) + ((c.bear?.wins | 0) > 0 ? 1000 : 0) + (Math.max(0, Math.min(3, parseInt(ls(`dym-gh-level.${id}`) || '0', 10) || 0)) * 120)
+    + (p.homeLevel | 0) * 50 + n(p.tools) * 20 + (p.pots?.count | 0) * 20 + ((p.lakeRun?.golds | 0) > 0 ? 40 : 0) + n(p.fishing?.log) * 10 + Math.min(30, (p.stats?.gathered | 0) / 10);
+}
+export function pickWinner(profiles) {
+  const last = lastPlayed(), ids = Object.keys(profiles || {}).filter(k => k !== SHARED_ID && profiles[k] && typeof profiles[k] === 'object');
+  return ids.map(id => ({ id, s: profileScore(profiles[id], id) })).sort((a, b) => b.s - a.s || (b.id === last) - (a.id === last))[0]?.id || '';
+}
 
 function blankProfile() {
   return {
@@ -31,8 +51,9 @@ function blankProfile() {
 }
 
 function migrate(raw) {
-  if (!raw || typeof raw !== 'object') return { version: SAVE_VERSION, profiles: {} };
-  const save = { version: raw.version | 0, profiles: raw.profiles && typeof raw.profiles === 'object' ? raw.profiles : {} };
+  if (!raw || typeof raw !== 'object') return { version: SAVE_VERSION, profiles: {}, unlocked: [...STARTERS] };
+  const save = { version: raw.version | 0, profiles: raw.profiles && typeof raw.profiles === 'object' ? raw.profiles : {}, unlocked: Array.isArray(raw.unlocked) ? raw.unlocked : [] };
+  if (typeof raw.mergedFrom === 'string') save.mergedFrom = raw.mergedFrom;
   // v2: builds moved into the private garden and Planter Beds (old home level 1) became
   // greenhouse pots. Old levels shift down by one; a paid-for bed level becomes one free pot.
   if (save.version < 2) for (const p of Object.values(save.profiles)) {
@@ -42,6 +63,14 @@ function migrate(raw) {
   }
   // v3: no data change — adds the meta stamp (build, savedAt) written on every flush.
   // R58 adds profile.fishing + profile.boat, R60 profile.garden; additive with defaults, so no version bump.
+  // v4 (R138): one shared profile; every character that had a profile stays open.
+  if (save.version < 4) {
+    const ids = Object.keys(save.profiles).filter(k => k !== SHARED_ID && save.profiles[k] && typeof save.profiles[k] === 'object');
+    save.unlocked = [...save.unlocked, ...ids];
+    if (!save.profiles[SHARED_ID] && ids.length) { const w = pickWinner(save.profiles); save.profiles = { [SHARED_ID]: save.profiles[w] }; save.mergedFrom = w; }
+    else if (save.profiles[SHARED_ID]) save.profiles = { [SHARED_ID]: save.profiles[SHARED_ID] };
+  }
+  save.unlocked = [...new Set([...STARTERS, ...save.unlocked.filter(x => typeof x === 'string' && /^[a-z_]{2,24}$/.test(x))])];
   save.version = SAVE_VERSION;
   return save;
 }
@@ -127,6 +156,12 @@ function readStore(key) {
   return { raw, data: migrate(parsed) };
 }
 
+// R138: the characters you may play (no SaveGame instance needed: the selector and the start guard read it too)
+export function unlockedIds() {
+  try { const r = readStore(SAVE_KEY); return new Set(r.data ? r.data.unlocked : STARTERS); }
+  catch { try { const b = readStore(BACKUP_KEY); return new Set(b.data ? b.data.unlocked : STARTERS); } catch { return new Set(STARTERS); } }
+}
+
 export class SaveGame {
   // ephemeral: DEV routes play with a throwaway profile and never write storage.
   constructor({ characterId, ephemeral = false }) {
@@ -143,8 +178,11 @@ export class SaveGame {
         catch (e2) { console.warn('[TGW] Backup unreadable too; starting fresh', e2); }
       }
     }
-    this.profile = validProfile(this.data.profiles[characterId]);
-    this.data.profiles[characterId] = this.profile;
+    // R138: the v3 save as it was before the merge is kept once, whatever happens afterwards
+    if (!ephemeral && this.loadedRaw && ls(PREMERGE_KEY) == null) try { if ((JSON.parse(this.loadedRaw).version | 0) < 4) localStorage.setItem(PREMERGE_KEY, this.loadedRaw); } catch {}
+    this.profile = validProfile(this.data.profiles[SHARED_ID]);
+    this.data.profiles[SHARED_ID] = this.profile;
+    if (!Array.isArray(this.data.unlocked)) this.data.unlocked = [...STARTERS];
     this.timer = null; this.deleted = false;
     // R113: ask the browser to keep this site's storage (installed iOS web apps get it without a prompt). Fails soft.
     if (!ephemeral) try { navigator.storage?.persist?.()?.catch?.(() => {}); } catch {}
@@ -152,9 +190,13 @@ export class SaveGame {
     document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') this.flush(); });
   }
 
-  // DEV: drop this character's wilds profile; nothing is written afterwards (caller reloads).
+  // R138: playing a character keeps it open (the start guard only lets open characters in, outside DEV)
+  unlock(id) { if (typeof id === 'string' && !this.data.unlocked.includes(id)) { this.data.unlocked.push(id); this.persist(); } }
+  isUnlocked(id) { return this.data.unlocked.includes(id); }
+
+  // DEV: drop the shared wilds profile (R138: one game for every character); nothing is written afterwards (caller reloads).
   resetProfile() {
-    delete this.data.profiles[this.characterId]; this.deleted = true; this.flush(); this.ephemeral = true;
+    delete this.data.profiles[SHARED_ID]; this.deleted = true; this.flush(); this.ephemeral = true;
   }
 
   // Coalesce bursts of changes (gathering several nodes) into one write.
@@ -176,7 +218,7 @@ export class SaveGame {
       if (!this.backedUp && this.loadedRaw) { localStorage.setItem(BACKUP_KEY, this.loadedRaw); this.backedUp = true; }
       // R113: another tab may have saved other characters since we loaded. Re-read and replace only our own profile,
       // so two open tabs never wipe each other's characters (same character: last write still wins).
-      try { const cur = readStore(SAVE_KEY).data; if (cur) { const own = this.data.profiles[this.characterId]; this.data.profiles = cur.profiles; if (this.deleted) delete this.data.profiles[this.characterId]; else this.data.profiles[this.characterId] = own; } } catch {}
+      try { const cur = readStore(SAVE_KEY).data; if (cur) { const own = this.data.profiles[SHARED_ID]; this.data.profiles = cur.profiles; if (this.deleted) delete this.data.profiles[SHARED_ID]; else this.data.profiles[SHARED_ID] = own; this.data.unlocked = [...new Set([...(cur.unlocked || []), ...this.data.unlocked])]; } } catch {}
       const out = this.serialize(); JSON.parse(out); // never write something we cannot read back
       localStorage.setItem(SAVE_KEY, out);
     } catch (e) { if (!this.warned) { this.warned = true; console.warn('[TGW] Progress could not be saved', e); } }

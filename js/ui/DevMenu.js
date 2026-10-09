@@ -63,7 +63,7 @@ export class DevMenu {
           <button data-a="weed">Ukrudt nu</button><button data-a="snail">Snegl nu</button><button data-a="clearthreat">Fjern ukrudt + snegle</button>
         </div></section>
         <section><small>SAVE</small><div class="dev-grid"><button data-a="save:copy">Kopiér save (JSON)</button><button data-a="save:download">Download save</button><button data-a="save:import">Importér save…</button></div></section>
-        <section><small>FARE</small><div class="dev-grid"><button data-a="reset" class="danger">Nulstil wilds-save (denne karakter)</button></div></section>
+        <section><small>FARE</small><div class="dev-grid"><button data-a="reset" class="danger">Nulstil wilds-save (fælles, alle karakterer)</button></div></section>
       </div></div>`;
     document.body.appendChild(el); this.el = el; this.open = false;
     this.profile = applyControlProfile(game, savedProfile()); this.markProfile();
@@ -215,7 +215,7 @@ export class DevMenu {
       }
       this.hide();
     } else if (a.startsWith('gh:')) {
-      try { localStorage.setItem(`dym-gh-level.${this.g.state.player.characterId}`, a.slice(3)); } catch {}   // R125 per character
+      try { localStorage.setItem(`dym-gh-level.shared`, a.slice(3)); } catch {}   // R138 shared greenhouse
       w.save.flush(); location.reload();
     } else if (a === 'weed') {
       if (!w.threat.active()) w.threat.start(Date.now());

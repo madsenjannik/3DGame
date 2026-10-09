@@ -216,14 +216,14 @@ try {
       r.dusk = await p.evaluate(async () => { const g = window.__tgw, w = ms => new Promise(x => setTimeout(x, ms)); g.lantern.on = false; g.devMenu.run('tid:night'); for (let i = 0; i < 20 && !g.lantern.on; i++) await w(250); const lit = g.lantern.on; await w(400); const nightBtn = /rgba\(255, 255, 255, 0\.88\)/.test(getComputedStyle(document.getElementById('hop-btn')).backgroundColor);   /* R128: light buttons near solid at night */ g.devMenu.run('tid:day'); for (let i = 0; i < 20 && g.lantern.on; i++) await w(250); return lit && nightBtn && !g.lantern.on; }); }
     check('phone thumb arc (R126-R128): action in the corner + Hop up-left, menu stays in boss fights, night buttons near solid, 6 gold segments, icon centred, tap keeps it, hold 0.8 s fires it, no special/lantern buttons, lantern lights at dusk and goes out at dawn', ok && Object.values(r).length === 9 && Object.values(r).every(Boolean) && !errors.length, errors[0] || JSON.stringify(r)); await ctx.close(); }
 
-  // 2h. R125 greenhouse + Stable per character: the old shared level goes to the last played character only
+  // 2h. R138 (replaces R125's per-character test): greenhouse = the highest level any character reached, Stable = the winning/last played profile's
   { const ctx = await context({ viewport: { width: 844, height: 390 }, isMobile: true, hasTouch: true }); const p = await ctx.newPage(); const errors = []; p.on('pageerror', e => errors.push(e.message));
     await p.addInitScript(() => { localStorage.setItem('tgw.controlTips.v1', '1'); localStorage.setItem('dym.homeMovedIn.v1.cactus', '1'); localStorage.setItem('tgw.devMenu', '1');
       if (!sessionStorage.getItem('r125')) { sessionStorage.setItem('r125', '1'); localStorage.setItem('tgw.lastChar', JSON.stringify({ id: 'fern', name: 'Fern' })); localStorage.setItem('dym-gh-level', '3'); localStorage.setItem('dym.thoraStable.v1', JSON.stringify({ lent: true })); } });
     await p.goto(B + 'game.html?char=cactus', { waitUntil: 'load' }); const ok = await p.waitForFunction(() => !document.getElementById('loading'), null, { timeout: 240000 }).then(() => true, () => false);
     const r = ok ? await p.evaluate(async () => { const g = window.__tgw; for (let i = 0; i < 80 && !(g.greenhouse && g.stable); i++) await new Promise(x => setTimeout(x, 250));
-      return { cactusFresh: g.greenhouse?.level === 0 && !g.stable?.saveData?.lent, fernKept: localStorage.getItem('dym-gh-level.fern') === '3' && JSON.parse(localStorage.getItem('dym.thoraStable.v1.fern') || '{}').lent === true, once: localStorage.getItem('tgw.scope.v1') === 'fern' }; }) : {};
-    check('greenhouse + Stable per character (R125): shared progress went to the last played character, a new character starts fresh', ok && r.cactusFresh && r.fernKept && r.once && !errors.length, errors[0] || JSON.stringify(r)); await ctx.close(); }
+      return { shared: g.greenhouse?.level === 3 && g.stable?.saveData?.lent === true, keys: localStorage.getItem('dym-gh-level.shared') === '3' && localStorage.getItem('dym.homeMovedIn.v1.shared') === '1', once: !!localStorage.getItem('tgw.shared.v1') }; }) : {};
+    check('greenhouse + Stable shared (R138): a new character gets the highest greenhouse and the last played Stable progress, moved in is shared', ok && r.shared && r.keys && r.once && !errors.length, errors[0] || JSON.stringify(r)); await ctx.close(); }
 
   // 3. Missing assets must not black-screen the game
   { const ctx = await context({ viewport: { width: 844, height: 390 }, isMobile: true, hasTouch: true }, [/assets\/stable\//, /lake_cabin|cabin_fishing_runtime/, /greenhouse-l1/, /characters\/fern\.glb/]);
@@ -234,16 +234,25 @@ try {
     const r = await p.evaluate(async () => { const { SaveGame } = await import('./js/core/SaveGame.js'); localStorage.clear();
       localStorage.setItem('tgw.save', JSON.stringify({ version: 1, profiles: { fern: { homeLevel: 3, inventory: { wood: 5 } } } }));
       const a = new SaveGame({ characterId: 'fern' }); const migrated = a.profile.homeLevel === 2 && a.profile.pots.count === 1; a.profile.inventory.stone = 4; a.flush();
-      const b = new SaveGame({ characterId: 'fern' }); return { migrated, persisted: b.profile.inventory.stone === 4 && b.profile.inventory.wood === 5, version: JSON.parse(localStorage.getItem('tgw.save')).version }; });
-    check('save: v1 -> v3 migration + reload persistence', r.migrated && r.persisted && r.version === 3, JSON.stringify(r));
+      const b = new SaveGame({ characterId: 'fern' }), d = JSON.parse(localStorage.getItem('tgw.save'));
+      return { migrated, persisted: b.profile.inventory.stone === 4 && b.profile.inventory.wood === 5, version: d.version, open: ['daisy', 'cactus', 'swamp', 'fern'].every(x => d.unlocked.includes(x)) && !d.unlocked.includes('tulip'), premerge: JSON.parse(localStorage.getItem('tgw.save.premerge') || '{}').version === 1 }; });
+    check('save: v1 -> v4 migration (R138: one shared profile, played characters stay open, the old save kept) + reload persistence', r.migrated && r.persisted && r.version === 4 && r.open && r.premerge, JSON.stringify(r));
+    // R138: the most advanced profile wins the merge (a boss win beats more wood); ties go to the character played last
+    const m = await p.evaluate(async () => { const { SaveGame } = await import('./js/core/SaveGame.js?r138'); localStorage.clear();
+      localStorage.setItem('tgw.save', JSON.stringify({ version: 3, profiles: { tulip: { inventory: { wood: 90 } }, fern: { inventory: { wood: 2 }, combat: { giant: { wins: 1, defeatedAt: 1 } } } } }));
+      const a = new SaveGame({ characterId: 'daisy' }); a.flush(); const d = JSON.parse(localStorage.getItem('tgw.save'));
+      localStorage.clear(); localStorage.setItem('tgw.lastChar', JSON.stringify({ id: 'aloe' })); localStorage.setItem('tgw.save', JSON.stringify({ version: 3, profiles: { tulip: { inventory: { wood: 1 } }, aloe: { inventory: { wood: 1 } } } }));
+      const t = new SaveGame({ characterId: 'daisy' });
+      return { boss: a.profile.inventory.wood === 2 && d.mergedFrom === 'fern' && Object.keys(d.profiles).join() === 'shared' && d.unlocked.includes('tulip'), tie: t.profile && t.data.mergedFrom === 'aloe' }; });
+    check('save merge (R138): the most advanced profile becomes the shared game, ties go to the last played', m.boss && m.tie, JSON.stringify(m));
     // R113: two open tabs (two characters) never wipe each other; an unreadable save + backup is kept aside, not overwritten
     const t = await p.evaluate(async () => { const { SaveGame } = await import('./js/core/SaveGame.js?r113'); localStorage.clear();
-      const a = new SaveGame({ characterId: 'fern' }), b = new SaveGame({ characterId: 'tulip' });
-      a.profile.inventory.wood = 5; a.flush(); b.profile.inventory.stone = 3; b.flush(); a.profile.inventory.wood = 6; a.flush();
-      const d = JSON.parse(localStorage.getItem('tgw.save')); const tabs = d.profiles.fern?.inventory.wood === 6 && d.profiles.tulip?.inventory.stone === 3;
+      const a = new SaveGame({ characterId: 'fern' }), b = new SaveGame({ characterId: 'tulip' });   /* R138: one shared game; the open characters of both tabs survive */
+      a.unlock('fern'); a.profile.inventory.wood = 5; a.flush(); b.unlock('tulip'); b.profile.inventory.stone = 3; b.flush(); a.profile.inventory.wood = 6; a.flush();
+      const d = JSON.parse(localStorage.getItem('tgw.save')); const tabs = d.profiles.shared?.inventory.wood === 6 && d.unlocked.includes('fern') && d.unlocked.includes('tulip');
       localStorage.setItem('tgw.save', '{broken'); localStorage.setItem('tgw.save.bak', '{broken too'); new SaveGame({ characterId: 'fern' }).flush();
       return { tabs, corruptKept: localStorage.getItem('tgw.save.corrupt') === '{broken' }; });
-    check('save (R113): two tabs keep both characters, corrupt save text is kept aside', t.tabs && t.corruptKept, JSON.stringify(t)); await ctx.close(); }
+    check('save (R113/R138): two tabs keep both open characters, corrupt save text is kept aside', t.tabs && t.corruptKept, JSON.stringify(t)); await ctx.close(); }
   // 6. R58 boat economy: vest -> rent -> waterfall reward -> fishing + boat persist across reload
   { const ctx = await context({ viewport: { width: 844, height: 390 }, isMobile: true, hasTouch: true }); const { p, errors, ok } = await startGame(ctx, 'fern');
     const ready = ok && await p.waitForFunction(() => window.__tgw?.boatEco, null, { timeout: 240000 }).then(() => true, () => false);
@@ -303,7 +312,7 @@ try {
       for (let i = 0; i < 30 * 200 && L.state === 'racing'; i++) { const n = L.next, q = L.seq[n], l = f.boatWorldToLocal(B.homePos.clone().set(q.x, B.homePos.y, q.z)); B.tgt = { x: l.x, z: l.z }; step(); if (L.next > n + 1) order = false; }
       const res = L.p; o.order = order; o.state = L.state; o.pen = L.pen >= 2; o.pb = res.best > 30 && res.best < 80 && res.ghost.length > 300 && res.splits.length === L.seq.length;
       o.reward = inv('amber') > amber || inv('fiber') > 0; o.card = document.querySelector('.lakerun-result').classList.contains('show') && res.attempts === 1;
-      g.save.flush(); o.saved = JSON.parse(localStorage.getItem('tgw.save')).profiles.fern.lakeRun.best === res.best;
+      g.save.flush(); o.saved = JSON.parse(localStorage.getItem('tgw.save')).profiles.shared.lakeRun.best === res.best;
       o.t = res.best; return o;
     }) : {};
     check('lake race: hidden until the dock circle, start there, shore fishing on lake + stream, grey Locked without rod/boat (R72), countdown hold, buoys in order, log penalty, finish + medal reward, PB + ghost saved', ready && r.offer && r.shore && r.locked && r.held && r.order && r.state === 'result' && r.pen && r.pb && r.reward && r.card && r.saved && !errors.length, errors[0] || JSON.stringify(r));
@@ -630,7 +639,7 @@ try {
     const r = ok ? await p.evaluate(async () => { const g = window.__tgw; await new Promise(r => setTimeout(r, 4000));
       return { resolved: g.state.choice.resolved && g.state.choice.result === 'plant', seedHidden: g.collectible?.status === 'collected' && g.collectible?.root?.visible === false,
         lotus: g.choiceWorld?.lotusPhase === 'idle' && g.choiceWorld?.lotusRoot?.visible === true, quest: document.getElementById('objective-title').textContent !== 'Find the Golden Seed',
-        kept: JSON.parse(localStorage.getItem('tgw.save')).profiles.fern.story?.seed === 'plant' }; }) : {};
+        kept: JSON.parse(localStorage.getItem('tgw.save')).profiles.shared.story?.seed === 'plant' }; }) : {};
     check('golden seed story (R119): saved plant restores the lotus at rest, hides the seed, quest moves on, choice stays saved', ok && Object.values(r).length === 5 && Object.values(r).every(Boolean) && !errors.length, errors[0] || JSON.stringify(r)); await ctx.close(); }
   // 17j. R120 first-time control tips: phone shows touch tips, a tap advances, Skip ends them and they never come back
   { const ctx = await context({ viewport: { width: 844, height: 390 }, isMobile: true, hasTouch: true }); const { p, errors, ok } = await startGame(ctx, 'daisy', { dev: false, tips: true });
@@ -687,16 +696,30 @@ try {
       const cols = [...document.querySelectorAll('.cs-col')].map(c => Math.round(c.getBoundingClientRect().height));
       o.r134 = document.documentElement.classList.contains('cs-phone') && getComputedStyle($('#cs-prev')).display === 'none' && $('#cs-ab-icon').getBoundingClientRect().width >= 48 && cols.every(h => h === cols[0]) && /icon-vest/.test($('.cs-stat:nth-child(2) .cs-ico').getAttribute('style')) && document.documentElement.scrollWidth <= innerWidth;
       return o; }) : {};
-    /* R135: the game's selector: all 9 open until the seeds, opens on ?char or the last played, the old test address lands here */
-    await p.evaluate(() => localStorage.setItem('tgw.lastChar', JSON.stringify({ id: 'fern', name: 'Fern' })));
+    /* R135/R138: the game's selector: locks on (starters + played characters open), opens on ?char or the last played, the old test address lands here */
+    await p.evaluate(() => { localStorage.setItem('tgw.lastChar', JSON.stringify({ id: 'fern', name: 'Fern' })); localStorage.setItem('tgw.save', JSON.stringify({ version: 4, profiles: {}, unlocked: ['daisy', 'cactus', 'swamp', 'fern'] })); });
     const at = async (u, f) => { await p.goto(B + u, { waitUntil: 'load' }); await p.waitForFunction(() => document.body.classList.contains('cs-ready'), null, { timeout: 60000 }).catch(() => {}); return p.evaluate(f).catch(() => false); };
-    r.r135 = await at('selector.html?char=tulip', () => document.querySelector('.cs-card.main b').textContent === 'Tulip' && !document.querySelector('#cs-play').disabled && !document.querySelector('.cs-card.locked,.cs-thumb.locked'))
-      && await at('selector.html', () => document.querySelector('.cs-card.main b').textContent === 'Fern')
+    r.r135 = await at('selector.html?char=tulip', () => document.querySelector('.cs-card.main b').textContent === 'Tulip' && document.querySelector('#cs-play').disabled && document.querySelectorAll('.cs-thumb:not(.locked)').length === 4)
+      && await at('selector.html', () => document.querySelector('.cs-card.main b').textContent === 'Fern' && !document.querySelector('#cs-play').disabled)
+      && await at('selector.html?locks=0&char=tulip', () => !document.querySelector('#cs-play').disabled)
       && await at('selector-wilds.html?char=swamp', () => location.pathname.endsWith('/selector.html') && document.querySelector('.cs-card.main b').textContent === 'Swamp');
     /* R136: the back button takes the tap (the stage used to cover it) and leads home; ?debug=1 shows the viewport readout */
     r.r136 = await at('selector.html?debug=1', () => { const b = document.getElementById('cs-home').getBoundingClientRect(); return !!document.elementFromPoint(b.left + b.width / 2, b.top + b.height / 2)?.closest('#cs-home') && /inner \d+×\d+/.test(document.getElementById('cs-debug')?.textContent || '') && /load: zoom min/.test(document.getElementById('cs-debug').textContent) && document.querySelector('meta[name=viewport]').content.includes('minimum-scale=1'); })   /* R137: no zoom-out on iOS */
       && await p.click('#cs-home').then(() => p.waitForURL(/index\.html/, { timeout: 15000 })).then(() => true, () => false);
-    check('character select test page (R132–R134): English, 9 characters, Daisy/Cactus/Swamp open, locked ones a mystery that says how to grow them, browse by thumb and arrow; phone layout from the screen, no arrows on touch, big special icon, equal dividers; R135 it is the game\'s selector: all 9 open, opens on ?char / last played; R136 back button works, debug readout', ok && Object.values(r).length === 7 && Object.values(r).every(Boolean) && !errors.length, errors[0] || JSON.stringify(r)); await ctx.close(); }
+    check('character select test page (R132–R134): English, 9 characters, Daisy/Cactus/Swamp open, locked ones a mystery that says how to grow them, browse by thumb and arrow; phone layout from the screen, no arrows on touch, big special icon, equal dividers; R135/R138 the game\'s selector: starters + played open, opens on ?char / last played; R136 back button works, debug readout', ok && Object.values(r).length === 7 && Object.values(r).every(Boolean) && !errors.length, errors[0] || JSON.stringify(r)); await ctx.close(); }
+  // 17n. R138 switch character at home: a gold SWITCH circle on the garden lawn (garden only, away from the door) opens the selector and its back button returns; a locked character cannot be started outside DEV
+  { const ctx = await context({ viewport: { width: 844, height: 390 }, isMobile: true, hasTouch: true }); const { p, errors, ok } = await startGame(ctx, 'cactus', { hud: 'classic' }); let r = {};
+    if (ok) { r = await p.evaluate(async () => { const g = window.__tgw, w = ms => new Promise(x => setTimeout(x, ms)), o = {};
+        for (let i = 0; i < 60 && !g.swapSpot?.spot; i++) await w(250); const s = g.swapSpot?.spot; if (!s) return { spot: false };
+        o.worldNone = g.world.space !== 'garden' && !g.swapSpot.interaction({ x: s.x, z: s.z });
+        g.devMenu.teleport('garden', s.x, s.z, 0); for (let i = 0; i < 30 && g.interactions.last?.interaction?.type !== 'home-swap'; i++) await w(250);
+        const d = g.homePortal.gardenDoorPoint; o.offer = g.interactions.last?.interaction?.type === 'home-swap' && Math.hypot(s.x - d.x, s.z - d.z) > 2.15 && g.swapSpot.m.visible;
+        return o; });
+      await p.evaluate(() => window.__tgw.swapSpot.interact()); r.nav = await p.waitForURL(/selector\.html\?char=cactus&from=home/, { timeout: 20000 }).then(() => true, () => false);
+      if (r.nav) { await p.waitForFunction(() => document.body.classList.contains('cs-ready'), null, { timeout: 60000 }).catch(() => {}); await p.click('#cs-home'); r.back = await p.waitForURL(/game\.html\?char=cactus/, { timeout: 20000 }).then(() => true, () => false); } }
+    const c2 = await context({ viewport: { width: 844, height: 390 }, isMobile: true, hasTouch: true }); const q = await c2.newPage(); await q.addInitScript(() => localStorage.removeItem('tgw.devMenu'));
+    await q.goto(B + 'game.html?char=tulip'); r.guard = await q.waitForURL(/selector\.html\?char=tulip/, { timeout: 30000 }).then(() => true, () => false); await c2.close();
+    check('R138 switch at home: gold SWITCH circle in the garden opens the selector, back returns to the game; a locked character is sent to the selector', ok && r.worldNone && r.offer && r.nav && r.back && r.guard && !errors.length, errors[0] || JSON.stringify(r)); await ctx.close(); }
   // 17m. R134 DEV toggles (visual only, off by default): resource icons fly into their counter; the tutorial tip sits under the resource bar on phones
   { const ctx = await context({ viewport: { width: 844, height: 390 }, isMobile: true, hasTouch: true }); await ctx.addInitScript(() => { localStorage.setItem('tgw.dev.flyIcons', '1'); localStorage.setItem('tgw.dev.tipTop', '1'); });
     const { p, errors, ok } = await startGame(ctx, 'cactus', { hud: 'classic', tips: true }); let r = {};

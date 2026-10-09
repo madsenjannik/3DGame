@@ -3,48 +3,49 @@ import * as THREE from 'three';
 import { AssetRegistry } from './AssetRegistry.js';
 import { CharacterController } from './CharacterController.js?build=MOBILE-GESTURE-R34B-20260930A';
 import { GameState } from './GameState.js';
-import { InputManager } from './InputManager.js?build=SELECT-R137-20261009A';
+import { InputManager } from './InputManager.js?build=SAVE-R138-20261009A';
 import { ThirdPersonCamera } from './ThirdPersonCamera.js?build=MOBILE-GESTURE-R34B-20260930A';
 import { CameraOcclusionSystem } from './CameraOcclusionSystem.js?build=NORTH-STABLE-R23O-20260929A';
 import { StructureVisibilitySystem } from '../visual/StructureVisibilitySystem.js?build=NORTH-STABLE-R23O-20260929A';
 import { characterCatalog, resourceCatalog, buildingCatalog } from '../data/assetCatalog.js';
-import { CollectibleSystem } from '../gameplay/CollectibleSystem.js?build=SELECT-R137-20261009A';
-import { MeaningfulChoiceSystem } from '../gameplay/MeaningfulChoiceSystem.js?build=SELECT-R137-20261009A';
-import { GreenhouseProgressionSystem } from '../gameplay/GreenhouseProgressionSystem.js?build=SELECT-R137-20261009A';
+import { CollectibleSystem } from '../gameplay/CollectibleSystem.js?build=SAVE-R138-20261009A';
+import { MeaningfulChoiceSystem } from '../gameplay/MeaningfulChoiceSystem.js?build=SAVE-R138-20261009A';
+import { GreenhouseProgressionSystem } from '../gameplay/GreenhouseProgressionSystem.js?build=SAVE-R138-20261009A';
 import { OrangeryHubSystem } from '../gameplay/OrangeryHubSystem.js?build=CAMERA-CUTAWAY-CONTEXT-R21D-20260928E';
 import { FishingV1System } from '../gameplay/FishingV1System.js?build=BAG-NIGHT-R84-20261006A';
 import { ChoicePanel } from '../ui/ChoicePanel.js';
-import { Hud } from '../ui/Hud.js?build=SELECT-R137-20261009A';
+import { Hud } from '../ui/Hud.js?build=SAVE-R138-20261009A';
 import { WorldMap } from '../ui/WorldMap.js?build=WORLD-MAP-R35B-20260930B';
 import { GardenEnvironment } from '../world/GardenEnvironment.js?build=WATER-VEG-R103-20261006A';
 import { WildlifeSystem } from '../world/WildlifeSystem.js?build=CAMERA-CUTAWAY-CONTEXT-R21D-20260928E';
 import { PlayerHomePortalSystem } from '../world/PlayerHomePortalSystem.js?build=ENTRY-R29-20260929A';
-import { NorthStableSystem } from '../world/NorthStableSystem.js?build=SELECT-R137-20261009A';
-import { SaveGame } from './SaveGame.js?build=SELECT-R137-20261009A';
-import { WildsLoopSystem } from '../gameplay/WildsLoopSystem.js?build=SELECT-R137-20261009A';
+import { NorthStableSystem } from '../world/NorthStableSystem.js?build=SAVE-R138-20261009A';
+import { SaveGame, pickWinner } from './SaveGame.js?build=SAVE-R138-20261009A';
+import { WildsLoopSystem } from '../gameplay/WildsLoopSystem.js?build=SAVE-R138-20261009A';
 import { WorkbenchPanel } from '../ui/WorkbenchPanel.js';
-import { DevMenu, devMenuEnabled } from '../ui/DevMenu.js?build=SELECT-R137-20261009A';
+import { DevMenu, devMenuEnabled } from '../ui/DevMenu.js?build=SAVE-R138-20261009A';
 import { applyControlProfile, defaultProfile } from './ControlProfiles.js';
 import { PerfHud } from '../dev/PerfHud.js';
-import { QualityManager, QUALITY } from './Quality.js?build=SELECT-R137-20261009A';
+import { QualityManager, QUALITY } from './Quality.js?build=SAVE-R138-20261009A';
 import { InteractionResolver } from './InteractionResolver.js';
 import { log, warn } from '../dev/Log.js';
 import { LookPass } from '../visual/LookPass.js?build=BAG-NIGHT-R84-20261006A';
 import { DayNight } from '../visual/DayNight.js?build=BAG-NIGHT-R84-20261006A';   // R81
 import { TOOLS } from '../data/wildsCatalog.js';   // R124 Bag texts (the Workbench's own effect lines)
 import { WEAPONS } from '../data/combatCatalog.js';   // R124 strike values
-import { VestVisual } from '../gameplay/VestVisual.js?build=SELECT-R137-20261009A';   // R125
-import { SpecialHold } from '../ui/SpecialHold.js?build=SELECT-R137-20261009A';   // R126
-import { GameMenu } from '../ui/GameMenu.js?build=SELECT-R137-20261009A';   // R121
-import { ControlTips } from '../ui/ControlTips.js?build=SELECT-R137-20261009A';   // R120
-import { Lantern } from '../gameplay/Lantern.js?build=SELECT-R137-20261009A';     // R81/R101
+import { VestVisual } from '../gameplay/VestVisual.js?build=SAVE-R138-20261009A';   // R125
+import { SpecialHold } from '../ui/SpecialHold.js?build=SAVE-R138-20261009A';   // R126
+import { GameMenu } from '../ui/GameMenu.js?build=SAVE-R138-20261009A';   // R121
+import { ControlTips } from '../ui/ControlTips.js?build=SAVE-R138-20261009A';   // R120
+import { Lantern } from '../gameplay/Lantern.js?build=SAVE-R138-20261009A';     // R81/R101
 import { BoatEconomySystem } from '../gameplay/BoatEconomySystem.js';
 import { LakeRunSystem } from '../gameplay/LakeRunSystem.js';
 import { GardenBuildSystem } from '../gameplay/GardenBuildSystem.js';
 import { GardenBuildMode } from '../ui/GardenBuildMode.js';
 import { GardenVegetationMask } from '../world/GardenVegetationMask.js';
-import { CombatSystem } from '../gameplay/CombatSystem.js?build=SELECT-R137-20261009A';
-import { ImpactFx } from '../gameplay/ImpactFx.js?build=SELECT-R137-20261009A';   // R129 FX layer
+import { CombatSystem } from '../gameplay/CombatSystem.js?build=SAVE-R138-20261009A';
+import { CharacterSwapSpot } from '../gameplay/CharacterSwapSpot.js?build=SAVE-R138-20261009A';   // R138
+import { ImpactFx } from '../gameplay/ImpactFx.js?build=SAVE-R138-20261009A';   // R129 FX layer
 import { EquippedToolVisual } from '../gameplay/EquippedToolVisual.js?build=HOTBAR-HAND-DRAG-R102-20261006A';
 
 export class Game {
@@ -76,20 +77,35 @@ export class Game {
     // R36: World-critical GLBs are independent. Start them together instead of
     // serially waiting shed -> stable -> character. Gameplay still starts only
     // after every member of this wave is fully ready.
-    const homePortalPromise=optional('home',()=>new PlayerHomePortalSystem(this.scene,{world:this.world,state:this.state,characterId:this.state.player.characterId,moveInEnabled:!devMode,onSpaceChanged:space=>this.wildlife?.setActive?.(space==='world')}).init());
     try{this.wildlife=new WildlifeSystem(this.scene,{world:this.world,isTouch:this.world.isTouch});Promise.resolve(this.wildlife.init()).catch(e=>{warn('LOAD','wildlife failed',e);this.failed.push('wildlife');});}catch(e){warn('LOAD','wildlife failed',e);this.failed.push('wildlife');this.wildlife=null;}
-    // R125 (GO 07/10): greenhouse level and Stable progress follow the character. The old shared values go once to the
+    // R125 (GO 07/10; R138 replaces it with the shared keys below): greenhouse level and Stable progress follow the character. The old shared values go once to the
     // character that was played last (Jannik 07/10); everyone else starts fresh. The shared keys are left in place.
     const scoped=k=>`${k}.${characterId}`;
     try{if(!localStorage.getItem('tgw.scope.v1')){const last=JSON.parse(localStorage.getItem('tgw.lastChar')||'null')?.id||characterId;
       for(const k of ['dym-gh-level','dym.thoraStable.v1']){const v=localStorage.getItem(k);if(v!=null&&localStorage.getItem(`${k}.${last}`)==null)localStorage.setItem(`${k}.${last}`,v);}
       localStorage.setItem('tgw.scope.v1',last);}}catch{}
-    const stablePromise=optional('stable',()=>new NorthStableSystem(this.scene,{world:this.world,state:this.state,renderer:this.renderer,saveKey:scoped('dym.thoraStable.v1')}).init());
+    // R138 (GO 09/10): one shared game. Greenhouse = the highest level any character reached; Stable = the progress of the
+    // profile that wins the save merge (else the last played, else any); moved in = any character moved in. The per-character
+    // keys stay in place (nothing is deleted); 'tgw.shared.v1' makes the greenhouse/Stable copy happen once.
+    try{const keys=Object.keys(localStorage),sh=k=>`${k}.shared`;
+      if(!localStorage.getItem('tgw.shared.v1')){
+        let gh=-1;for(const k of keys)if((k==='dym-gh-level'||k.startsWith('dym-gh-level.'))&&k!==sh('dym-gh-level'))gh=Math.max(gh,parseInt(localStorage.getItem(k)||'0',10)||0);
+        if(gh>=0&&localStorage.getItem(sh('dym-gh-level'))==null)localStorage.setItem(sh('dym-gh-level'),String(Math.min(3,gh)));
+        let win='';try{const raw=JSON.parse(localStorage.getItem('tgw.save')||'null');win=raw?.mergedFrom||((raw?.version|0)<4?pickWinner(raw?.profiles):'');}catch{}
+        const S='dym.thoraStable.v1',last=JSON.parse(localStorage.getItem('tgw.lastChar')||'null')?.id||'';
+        const src=[win,last].map(c=>c?localStorage.getItem(`${S}.${c}`):null).find(v=>v!=null)??keys.filter(k=>k.startsWith(S+'.')&&k!==sh(S)).map(k=>localStorage.getItem(k))[0]??localStorage.getItem(S);
+        if(src&&localStorage.getItem(sh(S))==null)localStorage.setItem(sh(S),src);
+        localStorage.setItem('tgw.shared.v1',win||last||characterId);}
+      const MI='dym.homeMovedIn.v1';if(localStorage.getItem(sh(MI))!=='1'&&keys.some(k=>k.startsWith(MI+'.')&&localStorage.getItem(k)==='1'))localStorage.setItem(sh(MI),'1');}catch{}
+    const shared=k=>`${k}.shared`;
+    const homePortalPromise=optional('home',()=>new PlayerHomePortalSystem(this.scene,{world:this.world,state:this.state,characterId:this.state.player.characterId,moveInKey:'dym.homeMovedIn.v1.shared',moveInEnabled:!devMode,onSpaceChanged:space=>this.wildlife?.setActive?.(space==='world')}).init());
+    const stablePromise=optional('stable',()=>new NorthStableSystem(this.scene,{world:this.world,state:this.state,renderer:this.renderer,saveKey:shared('dym.thoraStable.v1')}).init());
     // Critical: the selected character. If its GLB fails, fall back to the procedural sprout so the game still starts.
     const characterPromise=this.registry.instantiateCharacter(this.state.player.characterId,{uTime:this.uTime}).catch(e=>{warn('LOAD',`character ${this.state.player.characterId} failed; using the fallback sprout`,e);this.failed.push('character');return this.registry.instantiateCharacter('sprout_alpha',{uTime:this.uTime});});
     // R55 staged loading: only home + character gate the first playable frame. Stable, garden
     // progression, Orangery and Fishing keep loading and attach themselves when ready.
     this.homePortal=await homePortalPromise;
+    try{this.swapSpot=new CharacterSwapSpot(this);}catch(e){warn('SWAP','character swap spot disabled',e);}   // R138: switch character at home (fails soft)
     const instance=await characterPromise;mark('worldCriticalReadyMs');
     this.scene.add(instance.root);
     this.character=new CharacterController({instance,world:this.world,state:this.state});
@@ -100,7 +116,7 @@ export class Game {
     const collectiblePromise=optional('golden-seed',()=>new CollectibleSystem(this.world.privateRoot,{state:this.state,resourceCatalog,uTime:this.uTime}).init());
     const choicePromise=optional('seed-choice',()=>new MeaningfulChoiceSystem(this.world.privateRoot,{state:this.state}).init());
     // The old Lookout resource loop is retired: building now happens at the wilds workbench in this garden.
-    const greenhousePromise=optional('greenhouse',()=>new GreenhouseProgressionSystem(this.world.privateRoot,{state:this.state,world:this.world,storageKey:scoped('dym-gh-level')}).init());
+    const greenhousePromise=optional('greenhouse',()=>new GreenhouseProgressionSystem(this.world.privateRoot,{state:this.state,world:this.world,storageKey:shared('dym-gh-level')}).init());
     const orangeryPromise=optional('orangery',()=>new OrangeryHubSystem(this.scene,{state:this.state,world:this.world,uTime:this.uTime}).init());
     this.hud=new Hud(this.state);this.choicePanel=new ChoicePanel(this.state);
     this.input=new InputManager({joy:document.getElementById('joy'),knob:document.getElementById('joy-knob'),actionButton:document.getElementById('action')});
@@ -120,6 +136,7 @@ export class Game {
     if(this.worldMap)optional('map',()=>this.worldMap.ready);
     // Core loop v1 (shared world). DEV routes use a throwaway profile that is never written.
     this.save=new SaveGame({characterId:this.state.player.characterId,ephemeral:devMode});
+    if(!devMode&&!devMenuEnabled())try{this.save.unlock(this.state.player.characterId);}catch{}   // R138: played = stays open (DEV play does not unlock)
     // R119 (GO 07/10): the first Golden Seed choice is saved per character and restored on load (no story replay).
     this.state.events.on('choice:resolved',e=>{if(e?.result==='plant'||e?.result==='donate'){this.save.profile.story={seed:e.result};this.save.persist();}});
     this.restoreSeedStory();
@@ -394,6 +411,7 @@ export class Game {
         const gi=this.wilds?.update(dt,this.time,this.character,'garden').interaction;if(!building)R.offer('wilds',gi);
         if(seed.near&&!building)R.offer('first-seed',{type:'first-seed',label:'Collect Golden Seed'});
         if(!building)R.offer('greenhouse',greenhouse.interaction);
+        if(!building&&!specialBusy)R.offer('home',this.swapSpot?.interaction?.(this.character.position));   // R138: gold SWITCH circle by the shed
       }
       if(!gardenSpace&&!specialBusy)R.offer('wilds',this.wilds?.update(dt,this.time,this.character,'world').interaction);
       R.offer('combat',this.run('combat',()=>this.combat?.update(dt,this.time,this.character,!specialBusy&&!portalBusy&&!building))?.interaction);
@@ -423,7 +441,8 @@ export class Game {
     // R116: pressing a Locked / unavailable action says why instead of doing nothing (once per 1.5 s).
     if(!this.state.choice.open&&action&&interaction?.disabled&&nowMs-(this._whyAt||0)>1500){this._whyAt=nowMs;this.hud.showToast?.(interaction.reason||(interaction.locked?'Not unlocked yet':interaction.label));}
     if(!this.state.choice.open&&action&&interaction&&!interaction.disabled){
-      if(interaction.type==='home-enter'||interaction.type==='home-exit')this.homePortal?.interact(interaction.type,this.character,this.followCamera,this.hud);
+      if(interaction.type==='home-swap')this.swapSpot?.interact();   // R138
+      else if(interaction.type==='home-enter'||interaction.type==='home-exit')this.homePortal?.interact(interaction.type,this.character,this.followCamera,this.hud);
       else if(interaction.type==='first-seed')this.collectible?.collect(this.character);
       else if(interaction.type==='greenhouse')this.greenhouse?.interact(this.character);
       else if(interaction.type?.startsWith?.('stable-'))this.stable?.interact(interaction);
@@ -443,6 +462,7 @@ export class Game {
     // Normal traversal gets a consistent cutaway fallback only when a roofed structure
     // leaves too little room for third-person framing. Fishing-owned special cameras
     // remain visually locked and therefore restore all structure materials.
+    this.run('swapspot',()=>this.swapSpot?.update(this.time,dt));   // R138
     this.run('impactfx',()=>this.fx?.update(dt));   // R129: after combat set the boss telegraphs this frame
     this.run('structures',()=>this.structureVisibility?.update(dt,{enabled:!specialCameraBusy}));
     const mapVisible=!gardenSpace&&!portalBusy&&!specialBusy&&!this.state.choice.open;
