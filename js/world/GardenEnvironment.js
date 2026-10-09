@@ -110,6 +110,13 @@ export class GardenEnvironment {
   }
   isGardenSpace(){return this.space==='garden';}
   setHomeCollisionResolver(fn){this.homeCollisionResolver=typeof fn==='function'?fn:null;}
+  // R142: the garden ground's own colour at a spot (the same noise as the ground's vertex colours, without pond/trail), so a
+  // structure can wear it and read as part of the garden (the Sprouting Ring's mound)
+  groundColorAt(x,z,c=new THREE.Color()){
+    const n=(Math.sin(x*.46)+Math.cos(z*.39)+Math.sin((x-z)*1.13)+Math.cos((x+z)*.18))*.125+.50;
+    c.copy(color(0x4d6d31)).lerp(color(0x5e793f),THREE.MathUtils.clamp(n,0,1)).lerp(color(0x829555),THREE.MathUtils.clamp((Math.sin(x*1.7-z*.8)+1)*.18,0,.28));
+    const pd=this.pathDistance?.(x,z)??9;if(pd<1.18)c.lerp(color(0xa56e43),(1-THREE.MathUtils.smoothstep(pd,.42,1.18))*.84);return c;
+  }
   groundHeight(x=0,z=0){return this.space==='garden'?(this.gardenHeight?.(x,z)||0):(this.sharedLandscape?.groundHeight(x,z)??0);}   // R141: the private garden is flat except where a structure adds height (gardenHeight: the Sprouting Ring's mound)
   addCollider(x,z,r){this.colliders.push({x,z,r,kind:'static',traversal:'blocked',space:this._collisionSpace||'garden'});}
   addWaterBody(body){this.localWaterBodies.push(body);return body;}

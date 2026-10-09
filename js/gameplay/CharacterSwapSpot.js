@@ -67,6 +67,12 @@ export class CharacterSwapSpot {
     scene.traverse(o => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; }
       if (o.name === 'Stone_Glow' && o.material) { o.material = o.material.clone(); this.glowMats.push({ m: o.material, base: o.material.emissiveIntensity || 1 }); } });
     const disc = scene.getObjectByName('Ground_Patch'); if (disc) disc.visible = false;   // the garden's own grass meets the pots instead
+    // R142 (GO 09/10): the mound wears the garden ground's own colours (vertex colours from the ground's pattern where it stands)
+    try { const mound = scene.getObjectByName('Mound'), W = this.g.world; if (mound?.isMesh && W.groundColorAt) { this.m.add(scene); this.m.updateMatrixWorld(true);
+      const geo = mound.geometry.clone(), pos = geo.attributes.position, cols = new Float32Array(pos.count * 3), v = new THREE.Vector3(), c = new THREE.Color();
+      for (let i = 0; i < pos.count; i++) { v.fromBufferAttribute(pos, i).applyMatrix4(mound.matrixWorld); W.groundColorAt(v.x, v.z, c); cols[i * 3] = c.r; cols[i * 3 + 1] = c.g; cols[i * 3 + 2] = c.b; }
+      geo.setAttribute('color', new THREE.BufferAttribute(cols, 3)); mound.geometry = geo;
+      mound.material = mound.material.clone(); mound.material.vertexColors = true; mound.material.color.set(0xffffff); mound.material.roughness = 1; mound.material.metalness = 0; } } catch (e) { console.warn('[TGW] mound colour', e); }
     this.m.add(scene); this.applyUnlocked();
     // each pot and pergola post is solid; the rim is a wall except at the steps (round colliders, garden space only)
     try { this.m.updateMatrixWorld(true); const v = new THREE.Vector3(), W = this.g.world, add = (x, z, r) => { const c = { x, z, r, kind: 'ring-pot', traversal: 'blocked', space: 'garden' }; W.colliders.push(c); this.potColliders.push(c); };

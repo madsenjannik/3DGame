@@ -3,49 +3,50 @@ import * as THREE from 'three';
 import { AssetRegistry } from './AssetRegistry.js';
 import { CharacterController } from './CharacterController.js?build=MOBILE-GESTURE-R34B-20260930A';
 import { GameState } from './GameState.js';
-import { InputManager } from './InputManager.js?build=SAVE-R141-20261009A';
+import { InputManager } from './InputManager.js?build=SAVE-R142-20261009A';
 import { ThirdPersonCamera } from './ThirdPersonCamera.js?build=MOBILE-GESTURE-R34B-20260930A';
 import { CameraOcclusionSystem } from './CameraOcclusionSystem.js?build=NORTH-STABLE-R23O-20260929A';
 import { StructureVisibilitySystem } from '../visual/StructureVisibilitySystem.js?build=NORTH-STABLE-R23O-20260929A';
 import { characterCatalog, resourceCatalog, buildingCatalog } from '../data/assetCatalog.js';
-import { CollectibleSystem } from '../gameplay/CollectibleSystem.js?build=SAVE-R141-20261009A';
-import { MeaningfulChoiceSystem } from '../gameplay/MeaningfulChoiceSystem.js?build=SAVE-R141-20261009A';
-import { GreenhouseProgressionSystem } from '../gameplay/GreenhouseProgressionSystem.js?build=SAVE-R141-20261009A';
+import { CollectibleSystem } from '../gameplay/CollectibleSystem.js?build=SAVE-R142-20261009A';
+import { MeaningfulChoiceSystem } from '../gameplay/MeaningfulChoiceSystem.js?build=SAVE-R142-20261009A';
+import { GreenhouseProgressionSystem } from '../gameplay/GreenhouseProgressionSystem.js?build=SAVE-R142-20261009A';
 import { OrangeryHubSystem } from '../gameplay/OrangeryHubSystem.js?build=CAMERA-CUTAWAY-CONTEXT-R21D-20260928E';
 import { FishingV1System } from '../gameplay/FishingV1System.js?build=BAG-NIGHT-R84-20261006A';
 import { ChoicePanel } from '../ui/ChoicePanel.js';
-import { Hud } from '../ui/Hud.js?build=SAVE-R141-20261009A';
+import { Hud } from '../ui/Hud.js?build=SAVE-R142-20261009A';
 import { WorldMap } from '../ui/WorldMap.js?build=WORLD-MAP-R35B-20260930B';
 import { GardenEnvironment } from '../world/GardenEnvironment.js?build=WATER-VEG-R103-20261006A';
 import { WildlifeSystem } from '../world/WildlifeSystem.js?build=CAMERA-CUTAWAY-CONTEXT-R21D-20260928E';
 import { PlayerHomePortalSystem } from '../world/PlayerHomePortalSystem.js?build=ENTRY-R29-20260929A';
-import { NorthStableSystem } from '../world/NorthStableSystem.js?build=SAVE-R141-20261009A';
-import { SaveGame, pickWinner } from './SaveGame.js?build=SAVE-R141-20261009A';
-import { WildsLoopSystem } from '../gameplay/WildsLoopSystem.js?build=SAVE-R141-20261009A';
+import { NorthStableSystem } from '../world/NorthStableSystem.js?build=SAVE-R142-20261009A';
+import { SaveGame, pickWinner } from './SaveGame.js?build=SAVE-R142-20261009A';
+import { WildsLoopSystem } from '../gameplay/WildsLoopSystem.js?build=SAVE-R142-20261009A';
 import { WorkbenchPanel } from '../ui/WorkbenchPanel.js';
-import { DevMenu, devMenuEnabled } from '../ui/DevMenu.js?build=SAVE-R141-20261009A';
+import { DevMenu, devMenuEnabled } from '../ui/DevMenu.js?build=SAVE-R142-20261009A';
 import { applyControlProfile, defaultProfile } from './ControlProfiles.js';
 import { PerfHud } from '../dev/PerfHud.js';
-import { QualityManager, QUALITY } from './Quality.js?build=SAVE-R141-20261009A';
+import { QualityManager, QUALITY } from './Quality.js?build=SAVE-R142-20261009A';
 import { InteractionResolver } from './InteractionResolver.js';
 import { log, warn } from '../dev/Log.js';
 import { LookPass } from '../visual/LookPass.js?build=BAG-NIGHT-R84-20261006A';
 import { DayNight } from '../visual/DayNight.js?build=BAG-NIGHT-R84-20261006A';   // R81
 import { TOOLS } from '../data/wildsCatalog.js';   // R124 Bag texts (the Workbench's own effect lines)
 import { WEAPONS } from '../data/combatCatalog.js';   // R124 strike values
-import { VestVisual } from '../gameplay/VestVisual.js?build=SAVE-R141-20261009A';   // R125
-import { SpecialHold } from '../ui/SpecialHold.js?build=SAVE-R141-20261009A';   // R126
-import { GameMenu } from '../ui/GameMenu.js?build=SAVE-R141-20261009A';   // R121
-import { ControlTips } from '../ui/ControlTips.js?build=SAVE-R141-20261009A';   // R120
-import { Lantern } from '../gameplay/Lantern.js?build=SAVE-R141-20261009A';     // R81/R101
+import { VestVisual } from '../gameplay/VestVisual.js?build=SAVE-R142-20261009A';   // R125
+import { SpecialHold } from '../ui/SpecialHold.js?build=SAVE-R142-20261009A';   // R126
+import { GameMenu } from '../ui/GameMenu.js?build=SAVE-R142-20261009A';   // R121
+import { ControlTips } from '../ui/ControlTips.js?build=SAVE-R142-20261009A';   // R120
+import { Lantern } from '../gameplay/Lantern.js?build=SAVE-R142-20261009A';     // R81/R101
 import { BoatEconomySystem } from '../gameplay/BoatEconomySystem.js';
 import { LakeRunSystem } from '../gameplay/LakeRunSystem.js';
 import { GardenBuildSystem } from '../gameplay/GardenBuildSystem.js';
 import { GardenBuildMode } from '../ui/GardenBuildMode.js';
 import { GardenVegetationMask } from '../world/GardenVegetationMask.js';
-import { CombatSystem } from '../gameplay/CombatSystem.js?build=SAVE-R141-20261009A';
-import { CharacterSwapSpot } from '../gameplay/CharacterSwapSpot.js?build=SAVE-R141-20261009A';   // R138
-import { ImpactFx } from '../gameplay/ImpactFx.js?build=SAVE-R141-20261009A';   // R129 FX layer
+import { CombatSystem } from '../gameplay/CombatSystem.js?build=SAVE-R142-20261009A';
+import { isToolJob } from '../ui/actionIcons.js?build=SAVE-R142-20261009A';   // R142
+import { CharacterSwapSpot } from '../gameplay/CharacterSwapSpot.js?build=SAVE-R142-20261009A';   // R138
+import { ImpactFx } from '../gameplay/ImpactFx.js?build=SAVE-R142-20261009A';   // R129 FX layer
 import { EquippedToolVisual } from '../gameplay/EquippedToolVisual.js?build=HOTBAR-HAND-DRAG-R102-20261006A';
 
 export class Game {
@@ -435,9 +436,13 @@ export class Game {
     if(this.wilds&&nowMs-(this._objAt||0)>1000){this._objAt=nowMs;if(!(gardenSpace&&!this.state.choice.resolved))this.hud.setObjective?.('NEXT STEP',this.wilds.goal());}
     const mainIdle=this.input.isTouch&&!this.state.choice.open&&!specialBusy&&!portalBusy&&!building&&!wildsPanel&&!this.lakeRun?.busy?.()&&!this.mapBlocking; // R75: persistent main button on phones
     this.hud.setActionVisible(!!interaction,interaction?.label||'Collect',interaction,mainIdle);this.hud.action.classList.toggle('locked',!!interaction?.locked);this.hud.action.classList.toggle('wilds-locked',!!(interaction?.disabled&&!interaction?.locked)); // R72: requirement missing = grey 'Locked'; other disabled states (growing) keep their text
-    const action=this.input.consumeAction(),click=this.input.consumeStrike?.();
-    // R76 desktop: left click on the game view always strikes (never interacts); E interacts.
-    if(click&&!this.input.isTouch&&!this.state.choice.open&&!specialBusy&&!portalBusy&&!building&&!wildsPanel&&!this.mapBlocking&&!this.lakeRun?.busy?.())this.combat?.attack?.();
+    let action=this.input.consumeAction();const click=this.input.consumeStrike?.();
+    // R76 desktop: left click on the game view strikes; E interacts. R142 (GO 09/10): tool work (chop, mine, dig, cut, weed, snail,
+    // water) is a left click too, and E no longer does it on desktop (it says to click instead). Phones are unchanged.
+    const toolJob=!this.input.isTouch&&isToolJob(interaction);
+    if(toolJob&&action){action=false;if(nowMs-(this._clickAt||0)>1500){this._clickAt=nowMs;this.hud.showToast?.('Left click to use your tool');}}
+    if(click&&!this.input.isTouch&&!this.state.choice.open&&!specialBusy&&!portalBusy&&!building&&!wildsPanel&&!this.mapBlocking&&!this.lakeRun?.busy?.()){
+      if(toolJob&&interaction.type!=='combat-strike')action=true;else this.combat?.attack?.();}
     // R116: pressing a Locked / unavailable action says why instead of doing nothing (once per 1.5 s).
     if(!this.state.choice.open&&action&&interaction?.disabled&&nowMs-(this._whyAt||0)>1500){this._whyAt=nowMs;this.hud.showToast?.(interaction.reason||(interaction.locked?'Not unlocked yet':interaction.label));}
     if(!this.state.choice.open&&action&&interaction&&!interaction.disabled){

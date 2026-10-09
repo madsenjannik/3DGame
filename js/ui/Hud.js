@@ -1,5 +1,5 @@
 // @ts-nocheck
-import { actionIcon, actionIconName } from './actionIcons.js?build=SAVE-R141-20261009A';
+import { actionIcon, actionIconName, isToolJob } from './actionIcons.js?build=SAVE-R142-20261009A';
 export class Hud {
   constructor(state){
     this.seed=document.getElementById('seed-count');this.action=document.getElementById('action');this.toast=document.getElementById('toast');this.objective=document.getElementById('objective');this.kicker=document.getElementById('objective-kicker');this.title=document.getElementById('objective-title');this.copy=document.getElementById('objective-copy');this.hint=document.getElementById('hint');this.loading=document.getElementById('loading');this.materials=document.getElementById('materials');
@@ -269,6 +269,8 @@ export class Hud {
     this.action.classList.toggle('show',!!v||keep);this.action.classList.toggle('strike-idle',fallback);
     let visualIt=fallback?(classicTouch?{type:'mobile-default-strike'}:{type:'combat-strike'}):it;
     if(classicTouch&&it?.type==='combat-strike')visualIt={...it,type:'mobile-combat-strike',label};
+    // R142: desktop shows a left-click mouse instead of 'E' for tool work
+    const key=this.action.querySelector('.key');if(key){const mouse=!this.touch()&&isToolJob(it);if(key._mouse!==mouse){key._mouse=mouse;key.classList.toggle('mouse',mouse);key.innerHTML=mouse?'<i class="kh-mouse left" aria-label="Left click"></i>':'E';}}
     const ico=document.getElementById('action-ico');
     if(ico&&(v||keep)){const n=actionIconName(visualIt);if(n!==this._icoName){this._icoName=n;ico.innerHTML=actionIcon(visualIt);this.action.dataset.icon=n;}}
   }

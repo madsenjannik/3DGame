@@ -5436,3 +5436,8 @@ html body.hud-classic.touch #hop-btn::before{position:absolute!important;inset:0
 html body.hud-classic.touch.tip-top #control-tips{bottom:auto;top:calc(max(9px,env(safe-area-inset-top)) + 46px);transform:translate(-50%,-8px)}
 html body.hud-classic.touch.tip-top #control-tips.show{transform:translate(-50%,0)}
 html body.hud-classic.touch.tip-top.ct-on #toast{top:calc(max(9px,env(safe-area-inset-top)) + 116px)!important}
+
+/* R142 (GO 09/10): desktop tool work is a left click; the action pill shows a mouse with the left button lit instead of 'E' */
+#action .key.mouse{display:inline-grid;place-items:center}
+#action .key.mouse .kh-mouse{display:block;width:11px;height:16px;border:1.5px solid currentColor;border-radius:6px;position:relative;box-sizing:border-box}
+#action .key.mouse .kh-mouse::before{content:'';position:absolute;left:0;top:0;width:50%;height:45%;background:currentColor;border-radius:5px 0 0 0}

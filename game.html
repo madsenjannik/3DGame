@@ -6,9 +6,9 @@
   <meta name="theme-color" content="#dfe6d6" />
   <link rel="manifest" href="./manifest.webmanifest"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="Growing Wilds"><link rel="apple-touch-icon" href="./brand/app-icon/app-icon-180.png">
 <title>The Growing Wilds</title>
-  <script src="./version.js?v=SAVE-R141-20261009A"></script>
+  <script src="./version.js?v=SAVE-R142-20261009A"></script>
   <link href="https://fonts.googleapis.com/css2?family=Lilita+One&family=Manrope:wght@500;600;700;800&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="./styles.css?v=SAVE-R141-20261009A" />
+  <link rel="stylesheet" href="./styles.css?v=SAVE-R142-20261009A" />
   <!-- Vendored three@0.165.0, MIT license in vendor/LICENSE -->
   <script type="importmap">
   {
@@ -234,7 +234,7 @@
 
   <div id="joy-rest" aria-hidden="true"><i></i></div>
   <div id="joy" aria-hidden="true"><div id="joy-knob"></div></div>
-  <div id="key-hints" aria-hidden="true"><div class="kh-left"><span class="kh-wasd"><kbd>W</kbd><span><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd></span></span><b>Move</b><span class="kh-mouse right"></span><b>Look</b><span class="kh-mouse left"></span><b>Strike</b><kbd>Space</kbd><b>Hop</b></div><div class="kh-right"><kbd>E</kbd><b>Interact</b><kbd>M</kbd><b>Map</b><span class="kh-lantern"><kbd>L</kbd><b>Lantern</b></span></div></div>
+  <div id="key-hints" aria-hidden="true"><div class="kh-left"><span class="kh-wasd"><kbd>W</kbd><span><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd></span></span><b>Move</b><span class="kh-mouse right"></span><b>Look</b><span class="kh-mouse left"></span><b>Strike · tools</b><kbd>Space</kbd><b>Hop</b></div><div class="kh-right"><kbd>E</kbd><b>Interact</b><kbd>M</kbd><b>Map</b><span class="kh-lantern"><kbd>L</kbd><b>Lantern</b></span></div></div>
   <button id="hop-btn" type="button" aria-label="Hop">Hop</button>
   <button id="action" type="button"><span class="key">E</span><i id="action-ico" aria-hidden="true"></i><span id="action-label">Collect</span></button>
   <div id="toast" role="status">Golden Seed collected</div>
@@ -260,7 +260,7 @@
   <script type="module">
     const __p=new URLSearchParams(location.search);
     const __run=__p.get('run')||String(Date.now());
-    import('./js/main.js?build=SAVE-R141-20261009A&run='+encodeURIComponent(__run)).catch(error => {
+    import('./js/main.js?build=SAVE-R142-20261009A&run='+encodeURIComponent(__run)).catch(error => {
       console.error(error);
       const loading = document.getElementById('loading');
       if (loading) {

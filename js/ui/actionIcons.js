@@ -33,4 +33,6 @@ export function actionIconName(it) {
   if (t === 'first-seed') return 'seed';
   return 'leaf';
 }
+// R142 (GO 09/10): on desktop, work done with a tool or your fists is a left click (like a strike); E is for the rest
+export const isToolJob = it => !!it && (['wilds-gather', 'wilds-cut', 'wilds-weed', 'wilds-snail', 'combat-strike'].includes(it.type) || (it.type === 'wilds-pot' && it.act === 'water'));
 export const actionIcon = it => { const n = actionIconName(it); return `<span class="ico-mask" style="--ico:url(./brand/icons/svg/icon-${NAMES.includes(n) ? n : 'leaf'}.svg?v=127)"></span>`; };

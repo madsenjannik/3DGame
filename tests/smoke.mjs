@@ -731,6 +731,14 @@ try {
     const c2 = await context({ viewport: { width: 844, height: 390 }, isMobile: true, hasTouch: true }); const q = await c2.newPage(); await q.addInitScript(() => localStorage.removeItem('tgw.devMenu'));
     await q.goto(B + 'game.html?char=tulip'); r.guard = await q.waitForURL(/selector\.html\?char=tulip/, { timeout: 30000 }).then(() => true, () => false); await c2.close();
     check('R138–R141 switch at home: the Sprouting Ring in the garden (walkable mound, sprouts + vines = open, padlocks = locked, pots/posts solid, shrubs gone, magic on the stone) opens the selector, back returns to the game; a locked character is sent to the selector', ok && r.worldNone && r.offer && r.model && r.walk && r.nav && r.back && r.guard && !errors.length, errors[0] || JSON.stringify(r)); await ctx.close(); }
+  // 17o. R142 desktop: tool work is a left click (the pill shows a mouse), E no longer gathers; the Sprouting Ring's mound wears the garden ground colours
+  { const ctx = await context({ viewport: { width: 1280, height: 720 } }); const { p, errors, ok } = await startGame(ctx, 'cactus', { hud: 'desktop-e' }); let r = {};
+    if (ok) { r = await p.evaluate(async () => { const g = window.__tgw, w = ms => new Promise(x => setTimeout(x, ms)); g.devMenu.run('tools'); g.devMenu.run('tp:node');
+        for (let i = 0; i < 40 && g.interactions.last?.interaction?.type !== 'wilds-gather'; i++) await w(250); const it = g.interactions.last?.interaction; window.__n = it?.node;
+        const M = g.swapSpot?.model?.getObjectByName('Mound'); return { pill: it?.type === 'wilds-gather' && !!document.querySelector('#action .key.mouse'), mound: !!M?.material?.vertexColors && !!M?.geometry?.attributes?.color }; });
+      await p.keyboard.press('KeyE'); await p.waitForTimeout(2500); r.eNo = await p.evaluate(() => window.__n?.state === 'ready');
+      await p.mouse.click(640, 400); for (let i = 0; i < 20 && !r.click; i++) { await p.waitForTimeout(500); r.click = await p.evaluate(() => window.__n?.state !== 'ready'); } }
+    check('R142 desktop: tool work is a left click (mouse on the pill), E no longer gathers; the mound wears the garden ground colours', ok && r.pill && r.eNo && r.click && r.mound && !errors.length, errors[0] || JSON.stringify(r)); await ctx.close(); }
   // 17m. R134 DEV toggles (visual only, off by default): resource icons fly into their counter; the tutorial tip sits under the resource bar on phones
   { const ctx = await context({ viewport: { width: 844, height: 390 }, isMobile: true, hasTouch: true }); await ctx.addInitScript(() => { localStorage.setItem('tgw.dev.flyIcons', '1'); localStorage.setItem('tgw.dev.tipTop', '1'); });
     const { p, errors, ok } = await startGame(ctx, 'cactus', { hud: 'classic', tips: true }); let r = {};

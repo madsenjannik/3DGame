@@ -17,7 +17,7 @@ const TOUCH = [
 const DESKTOP = [
   { text: 'W A S D to walk · Shift to run', when: g => ['KeyW', 'KeyA', 'KeyS', 'KeyD'].some(k => g.input.keys[k]) },
   { text: 'Hold the right mouse button and drag to look', when: (g, t) => t.look },
-  { text: 'Left click strikes · E interacts', when: (g, t) => t.action },
+  { text: 'Left click strikes and uses your tools · E interacts', when: (g, t) => t.action },   // R142
   { text: 'Space hops', when: g => g.input.keys.Space },
   { text: 'B opens the bag · 1 to 0 pick a quick slot · M map · L lantern', when: g => ['KeyB', 'KeyM', 'KeyL', 'Digit1', 'Digit2'].some(k => g.input.keys[k]) }
 ];
