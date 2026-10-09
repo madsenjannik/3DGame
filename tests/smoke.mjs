@@ -875,6 +875,16 @@ try {
       const avail = W.pots.available; W.pots.available = () => true; const offers = []; W.pots.update(.016, 1, { position: { x: W.pots.slots[0].g.position.x + .3, z: W.pots.slots[0].g.position.z } }, x => offers.push(x)); o.pot = offers.some(x => /golden 2\/3/.test(x.label)); W.pots.available = avail;
       return o; });
     check('R154 discoverability: first Golden Seed explained once, tree on the map while holding one, a seen boss stays on the map, the pot shows golden n/3', ok && ['teach', 'once', 'tree', 'treeGone', 'bossHidden', 'boss', 'pot'].every(k => r[k]) && !errors.length, errors[0] || JSON.stringify(r)); await ctx.close(); }
+  // 17y. R155 visual QA fixes (phone): resource counts are cream on the scene, the Seeds tab shows a padlock for locked seeds,
+  // owned workbench rows are not faded, the world map hides the HUD behind it
+  { const ctx = await context({ viewport: { width: 844, height: 390 }, isMobile: true, hasTouch: true }); const { p, errors, ok } = await startGame(ctx, 'cactus', { hud: 'classic' }); let r = {};
+    if (ok) r = await p.evaluate(async () => { const g = window.__tgw, w = ms => new Promise(x => setTimeout(x, ms)), o = {}; g.devMenu.run('mats'); g.devMenu.run('tools'); await w(800);
+      const b = document.querySelector('#materials .material-chip b'), rgb = getComputedStyle(b).color.match(/\d+/g).map(Number); o.cream = Math.min(...rgb.slice(0, 3)) > 200;
+      const P = g.workbenchPanel; P.show(); P.tab = 'chars'; P.render(); o.lock = P.el.querySelectorAll('.wilds-item .wilds-lock').length >= 4;
+      P.tab = 'tools'; P.render(); const own = P.el.querySelector('.wilds-item.owned'); o.owned = !!own && getComputedStyle(own).opacity === '1'; P.hide();
+      g.worldMap.open(); await w(600); o.map = getComputedStyle(document.getElementById('hud')).visibility === 'hidden'; g.worldMap.close(); await w(300); o.mapBack = getComputedStyle(document.getElementById('hud')).visibility === 'visible';
+      return o; });
+    check('R155 visual QA (phone): cream resource counts, padlocks in the Seeds tab, owned rows not faded, the map hides the HUD', ok && ['cream', 'lock', 'owned', 'map', 'mapBack'].every(k => r[k]) && !errors.length, errors[0] || JSON.stringify(r)); await ctx.close(); }
   // 17m. R134 DEV toggles (visual only, off by default): resource icons fly into their counter; the tutorial tip sits under the resource bar on phones
   { const ctx = await context({ viewport: { width: 844, height: 390 }, isMobile: true, hasTouch: true }); await ctx.addInitScript(() => { localStorage.setItem('tgw.dev.flyIcons', '1'); localStorage.setItem('tgw.dev.tipTop', '1'); });
     const { p, errors, ok } = await startGame(ctx, 'cactus', { hud: 'classic', tips: true }); let r = {};

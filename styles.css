@@ -5570,3 +5570,23 @@ body.reduce-motion *,body.reduce-motion *::before,body.reduce-motion *::after{an
 /* R154: a gold dot on a workbench tab with something waiting */
 .wilds-tabs button{position:relative}
 .wilds-tabs button.has-dot::after{content:'';position:absolute;top:5px;right:9px;width:7px;height:7px;border-radius:50%;background:#e2b552;box-shadow:0 0 0 2px rgba(255,250,238,.9)}
+
+/* ===== R155 · visual QA fixes (sub-agent screenshots on phone + desktop, open GO 09/10) ===== */
+/* phone: the resource counts were near-black on the scene since R122 (a chip rule beat the cream one) */
+html body.hud-classic.touch #hud #materials .material-chip b{color:#fffaf0!important;text-shadow:0 1px 2px rgba(20,24,14,.72),0 0 8px rgba(20,24,14,.35)!important}
+/* workbench: a long list fades at the bottom so it reads as scrollable; owned rows stay readable */
+.wilds-list{padding-bottom:14px;-webkit-mask-image:linear-gradient(#000 calc(100% - 22px),transparent);mask-image:linear-gradient(#000 calc(100% - 22px),transparent)}
+.wilds-item.owned{opacity:1}.wilds-item.owned .wilds-icon{opacity:.6}
+.wilds-item.owned button:disabled{background:transparent;color:#5f8b3a;min-width:0;padding:0 6px;font-weight:800}
+.wilds-icon .wilds-lock{display:block;width:18px;height:18px;background:#8a8471;-webkit-mask:var(--ico) center/contain no-repeat;mask:var(--ico) center/contain no-repeat}
+.wilds-costs.neutral .wilds-cost{background:#e6e3d8;color:#6f7468}
+.wilds-list>.wilds-note:first-child{margin-top:4px}
+/* desktop: the glass menu button reads at night too */
+html body.hud-desktop-e:not(.touch){--r147-glass:rgba(255,255,255,.58)}
+html body.hud-desktop-e:not(.touch) #game-menu-btn i{background:#3f6324!important}
+/* Bag: a disabled action ('In a slot') is readable */
+.bag2-act:disabled{opacity:1!important;background:#ece4d0!important;color:#8a8471!important}
+/* phone: the world map sits on its own, no HUD buttons showing through */
+html body.touch.world-map-open #hud,html body.touch.world-map-open #objective,html body.touch.world-map-open #game-menu-btn{visibility:hidden!important}
+/* desktop Bag: the item name stays on one line, the hint wraps under it */
+.gear-item-copy em{white-space:nowrap}

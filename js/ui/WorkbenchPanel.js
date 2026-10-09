@@ -1,6 +1,6 @@
 // @ts-nocheck
 import { MATERIALS, TOOLS, HOME_UPGRADES, PERKS, POTS } from '../data/wildsCatalog.js';
-import { WORKSHOP_UPGRADES } from '../data/workshopCatalog.js?build=SAVE-R154-20261009A';   // R144
+import { WORKSHOP_UPGRADES } from '../data/workshopCatalog.js?build=SAVE-R155-20261009A';   // R144
 
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 
@@ -70,7 +70,7 @@ export class WorkbenchPanel {
       html += `<p class="wilds-note">${shrine ? `Grow a permanent perk for amber. Each new perk costs more than the last. You have <b>${amber}</b> Amber.` : 'Build the Perk Shrine (Home tab) to grow perks for amber.'}</p>`;
       for (const k of PERKS) {
         const owned = !!w.profile.perks[k.id], can = shrine && !owned && amber >= price;
-        html += `<article class="wilds-item${owned ? ' owned' : ''}"><div class="wilds-icon">✦</div><div class="wilds-body"><b>${esc(k.name)}</b><p>${esc(k.text)}</p>${owned ? '' : `<div class="wilds-costs">${this.costHtml({ amber: price })}</div>`}</div>
+        html += `<article class="wilds-item${owned ? ' owned' : ''}"><div class="wilds-icon">✦</div><div class="wilds-body"><b>${esc(k.name)}</b><p>${esc(k.text)}</p>${owned ? '' : `<div class="wilds-costs${shrine ? '' : ' neutral'}">${this.costHtml({ amber: price })}</div>`}</div>
           <button type="button" data-plant="${k.id}" ${can ? '' : 'disabled'}>${owned ? 'Grown' : 'Grow'}</button></article>`;
       }
     } else if (this.tab === 'chars') {
@@ -80,7 +80,7 @@ export class WorkbenchPanel {
       for (const d of rows) {
         const st = d.state === 'open' ? 'Grown' : d.state === 'bag' ? 'In your Bag' : 'Locked', who = d.id[0].toUpperCase() + d.id.slice(1);
         const line = d.state === 'bag' ? '<p>Plant it at the Sprouting Ring.</p>' : d.state === 'open' ? `<p>${esc(who)} can be chosen at the Ring.</p>` : `<p class="wilds-unlock"><i class="ico-mask" style="--ico:url(./brand/icons/svg/icon-lock.svg)"></i>${esc(d.how)}</p>`;
-        html += `<article class="wilds-item${d.state === 'open' ? ' owned' : ''}${d.state === 'bag' ? ' ready' : ''}"><div class="wilds-icon">${d.state === 'locked' ? '·' : '🌱'}</div><div class="wilds-body"><b>${esc(d.name)}</b>${line}</div><span class="wilds-count">${st}</span></article>`;
+        html += `<article class="wilds-item${d.state === 'open' ? ' owned' : ''}${d.state === 'bag' ? ' ready' : ''}"><div class="wilds-icon">${d.state === 'locked' ? '<i class="ico-mask wilds-lock" style="--ico:url(./brand/icons/svg/icon-lock.svg)"></i>' : '🌱'}</div><div class="wilds-body"><b>${esc(d.name)}</b>${line}</div><span class="wilds-count">${st}</span></article>`;
       }
     } else if (this.tab === 'today') {
       const d = w.daily, view = d.view();
@@ -111,6 +111,6 @@ export class WorkbenchPanel {
         [['greenhouse', 'Greenhouse'], ['workshop', 'Workshop'], ['rain', 'Rain barrel'], ['shrine', 'Perk Shrine']].map(([id, n]) => `<button type="button" data-move="${id}">Move ${n}</button>`).join('')}</div>`;
     }
     this.el.querySelector('.wilds-list').innerHTML = html;
-    this.el.querySelector('.wilds-inv').innerHTML = Object.values(MATERIALS).map(m => `<span><i>${m.icon}</i>${this.state.inventory.get(m.id) || 0}</span>`).join('');
+    this.el.querySelector('.wilds-inv').innerHTML = Object.values(MATERIALS).map(m => `<span title="${esc(m.name)}" aria-label="${esc(m.name)}"><i>${m.icon}</i>${this.state.inventory.get(m.id) || 0}</span>`).join('');   // R155: names on hover / for screen readers
   }
 }
