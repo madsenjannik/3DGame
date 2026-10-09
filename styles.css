@@ -5445,3 +5445,75 @@ html body.hud-classic.touch.tip-top.ct-on #toast{top:calc(max(9px,env(safe-area-
 /* R144: workshop unlock placeholder (padlock) in the workbench panel */
 .wilds-unlock{display:flex;align-items:center;gap:6px;margin:4px 0 0;font-weight:700;color:#8a6a2a}
 .wilds-unlock .ico-mask{display:inline-block;width:13px;height:13px;background:#8a6a2a;-webkit-mask:var(--ico) center/contain no-repeat;mask:var(--ico) center/contain no-repeat}
+
+/* ===== R147 · desktop HUD in the mobile style (GO 09/10, Jannik's approved mockup). Desktop HUD E only:
+   frosted glass circles with green line icons, plain readable text on the scene instead of cream cards.
+   Top left menu + day, top centre resources, top right minimap + next step, bottom hearts, action pill,
+   round Bag + 10 cream slots, key hints bottom left, lantern bottom right (at night). Phones untouched. ===== */
+html body.hud-desktop-e:not(.touch){--r147-glass:rgba(255,255,255,.42);--r147-ring:inset 0 0 0 1.5px rgba(255,255,255,.75);--r147-moss:#5f8b3a;--r147-txt:#fffdf4;
+  --r147-shadow:0 1px 3px rgba(20,28,14,.55),0 0 10px rgba(20,28,14,.25)}
+/* menu: glass circle top left */
+html body.hud-desktop-e:not(.touch) #game-menu-btn{left:22px!important;right:auto!important;top:calc(18px + env(safe-area-inset-top))!important;width:48px!important;height:48px!important;
+  background:var(--r147-glass)!important;-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);box-shadow:0 4px 10px rgba(30,34,24,.18),var(--r147-ring)!important;gap:4.5px!important}
+html body.hud-desktop-e:not(.touch) #game-menu-btn i{width:20px!important;height:2.5px!important;background:var(--r147-moss)!important}
+html body.hud-desktop-e:not(.touch) #objective.open ~ #game-menu-btn{opacity:1;pointer-events:auto!important}
+/* day / night: plain text next to the menu */
+html body.hud-desktop-e:not(.touch) .desktop-world-status,html body.hud-desktop-e:not(.touch) .desktop-world-status.night{left:84px!important;top:calc(20px + env(safe-area-inset-top))!important;
+  height:48px!important;min-height:0!important;padding:0!important;gap:10px!important;background:none!important;border:0!important;box-shadow:none!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important}
+html body.hud-desktop-e:not(.touch) .desktop-world-status small,html body.hud-desktop-e:not(.touch) .desktop-world-status b{color:var(--r147-txt)!important;text-shadow:var(--r147-shadow)!important}
+html body.hud-desktop-e:not(.touch) .desktop-world-status small{opacity:.9!important}
+/* resources: no card, one plain strip */
+html body.hud-desktop-e:not(.touch) #hud .inventory-stack{background:none!important;border:0!important;box-shadow:none!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important;padding:0!important;min-height:44px!important}
+html body.hud-desktop-e:not(.touch) #hud .seed-card.inventory-card{order:-1!important;background:none!important;border:0!important;box-shadow:none!important}
+html body.hud-desktop-e:not(.touch) #hud #materials .material-chip b,html body.hud-desktop-e:not(.touch) #hud .seed-card b{color:var(--r147-txt)!important;text-shadow:var(--r147-shadow)!important}
+html body.hud-desktop-e:not(.touch) #hud .seed-card b{color:#ffe08a!important;font-size:18px!important}
+html body.hud-desktop-e:not(.touch) #hud #materials .material-chip i,html body.hud-desktop-e:not(.touch) #hud .seed-card .inventory-icon{filter:drop-shadow(0 1px 2px rgba(20,24,14,.45))!important}
+html body.hud-desktop-e:not(.touch) #hud #materials .material-chip:not(:first-child)::before{background:rgba(255,253,244,.45)!important}
+html body.hud-desktop-e:not(.touch) #hud .seed-card.inventory-card + #materials .material-chip:first-child::before{content:"";position:absolute;left:0;top:9px;bottom:9px;width:1px;background:rgba(255,253,244,.45)!important}
+/* minimap: a glass rim; the M key sits on it */
+html body.hud-desktop-e:not(.touch) .tgw-minimap{top:calc(16px + env(safe-area-inset-top))!important;right:22px!important;box-shadow:0 4px 12px rgba(30,34,24,.22),0 0 0 5px rgba(255,255,255,.42),0 0 0 6.5px rgba(255,255,255,.75)!important}
+html body.hud-desktop-e:not(.touch) .tgw-minimap-key{right:30px!important;top:calc(166px + env(safe-area-inset-top))!important;width:auto!important;height:auto!important;padding:4px 5px!important;
+  border-radius:5px!important;background:#fffdf4!important;color:#2b2a24!important;font:800 10px/1 Manrope,system-ui,sans-serif!important;box-shadow:0 1px 2px rgba(0,0,0,.2)!important}
+/* next step: under the map, right aligned plain text + the context icon in a glass circle */
+html body.hud-desktop-e:not(.touch) #hud #objective.objective-card,html body.hud-desktop-e:not(.touch) #hud #objective.objective-card.open{right:22px!important;top:calc(212px + env(safe-area-inset-top))!important;
+  width:auto!important;max-width:380px!important;height:auto!important;min-height:44px!important;padding:2px 56px 2px 0!important;text-align:right!important;
+  background:none!important;border:0!important;box-shadow:none!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important;color:var(--r147-txt)!important}
+html body.hud-desktop-e:not(.touch) #hud #objective.objective-card::before{left:auto!important;right:0!important;top:50%!important;width:44px!important;height:44px!important;margin-top:-22px!important;
+  background-color:var(--r147-glass)!important;background-size:20px!important;box-shadow:0 4px 10px rgba(30,34,24,.18),var(--r147-ring)!important;-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px)}
+html body.hud-desktop-e:not(.touch) #hud #objective.objective-card::after{display:none!important}
+html body.hud-desktop-e:not(.touch) #hud #objective #objective-kicker{display:block!important;font:800 9.5px/1 Manrope,system-ui,sans-serif!important;letter-spacing:.2em!important;color:var(--r147-txt)!important;opacity:.85!important;text-shadow:var(--r147-shadow)!important}
+html body.hud-desktop-e:not(.touch) #hud #objective b{display:block!important;margin-top:3px!important;font:800 15px/1.2 Manrope,system-ui,sans-serif!important;color:var(--r147-txt)!important;text-shadow:var(--r147-shadow)!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important}
+html body.hud-desktop-e:not(.touch) #hud #objective:not(.open) #objective-copy{display:none!important}
+html body.hud-desktop-e:not(.touch) #hud #objective.open #objective-copy{display:block!important;margin-top:4px!important;max-width:300px!important;margin-left:auto!important;color:var(--r147-txt)!important;opacity:.92!important;text-shadow:var(--r147-shadow)!important}
+html body.hud-desktop-e:not(.touch) #hud #objective.objective-card.complete{opacity:1!important}
+/* hearts sit just above the action pill row */
+html body.hud-desktop-e:not(.touch) .hearts{bottom:calc(98px + env(safe-area-inset-bottom))!important;top:auto!important}
+/* bag: a round glass button with the B key */
+html body.hud-desktop-e:not(.touch) #hud #hud-bag.hud-fold-btn{width:64px!important;height:64px!important;border-radius:50%!important;background:var(--r147-glass)!important;
+  -webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);box-shadow:0 4px 10px rgba(30,34,24,.18),var(--r147-ring)!important;border:0!important}
+html body.hud-desktop-e:not(.touch) #hud #hud-bag.hud-fold-btn::before{width:30px!important;height:30px!important;background:var(--r147-moss)!important;
+  -webkit-mask:url(./brand/icons/svg/icon-bag.svg) center/contain no-repeat;mask:url(./brand/icons/svg/icon-bag.svg) center/contain no-repeat;animation:none!important}
+/* key hints bottom left */
+#desk-hints{display:none}
+html body.hud-desktop-e:not(.touch) #desk-hints{position:fixed;left:22px;bottom:calc(26px + env(safe-area-inset-bottom));z-index:18;display:flex;flex-direction:column;gap:7px;pointer-events:none;
+  font:700 11px/1 Manrope,system-ui,sans-serif;color:var(--r147-txt);text-shadow:var(--r147-shadow)}
+#desk-hints div{display:flex;align-items:center;gap:6px}
+#desk-hints kbd{min-width:20px;height:20px;display:inline-grid;place-items:center;padding:0 5px;border-radius:5px;background:rgba(255,253,244,.18);border:1px solid rgba(255,253,244,.55);color:#fffdf4;font:800 10px/1 Manrope,system-ui,sans-serif;text-shadow:none}
+#desk-hints .ms{position:relative;display:inline-block;width:12px;height:18px;border:1.5px solid rgba(255,253,244,.85);border-radius:6px;box-sizing:border-box}
+#desk-hints .ms::before{content:'';position:absolute;top:0;width:50%;height:45%;background:rgba(255,253,244,.9)}
+#desk-hints .ms.l::before{left:0;border-radius:4px 0 0 0}#desk-hints .ms.r::before{right:0;border-radius:0 4px 0 0}
+html body.hud-desktop-e:not(.touch).fishing-active #desk-hints,html body.hud-desktop-e:not(.touch).boating-active #desk-hints,html body.hud-desktop-e:not(.touch).game-menu-open #desk-hints{display:none}
+/* the DEV button moves next to the lantern so the hints keep the corner */
+html body.hud-desktop-e:not(.touch) .dev-menu-btn{left:auto!important;right:86px!important;bottom:calc(33px + env(safe-area-inset-bottom))!important}
+/* lantern: glass circle bottom right with the L key, while the lantern can be used (night) */
+html body.hud-desktop-e:not(.touch).lantern-ready #lantern-btn{display:grid;place-items:center;position:fixed;z-index:20;right:22px;bottom:calc(26px + env(safe-area-inset-bottom));width:48px;height:48px;padding:0;border:0;border-radius:50%;
+  color:var(--r147-moss);background:var(--r147-glass);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);box-shadow:0 4px 10px rgba(30,34,24,.18),var(--r147-ring);cursor:pointer}
+html body.hud-desktop-e:not(.touch).lantern-ready #lantern-btn .ico-mask{width:22px;height:22px}
+html body.hud-desktop-e:not(.touch).lantern-ready #lantern-btn::after{content:'L';position:absolute;right:-3px;top:-3px;padding:3px 4px;border-radius:4px;background:#fffdf4;color:#2b2a24;font:800 9px/1 Manrope,system-ui,sans-serif;box-shadow:0 1px 2px rgba(0,0,0,.2)}
+html body.hud-desktop-e:not(.touch).lantern-ready #lantern-btn.on{color:#e0a43a;box-shadow:0 0 0 2px rgba(255,200,110,.6),0 4px 10px rgba(30,34,24,.18)}
+/* action: a dark pill centred above the hearts (mouse = tool work, E = the rest) */
+html body.hud-desktop-e:not(.touch) #action,html body.hud-desktop-e:not(.touch) #action.show{left:50%!important;right:auto!important;top:auto!important;bottom:calc(138px + env(safe-area-inset-bottom))!important;
+  transform:translateX(-50%)!important;padding:8px 18px 8px 9px!important;gap:10px!important;border:0!important;border-radius:999px!important;
+  background:rgba(43,52,33,.82)!important;box-shadow:0 6px 16px rgba(0,0,0,.25)!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important;font:800 15px/1 Manrope,system-ui,sans-serif!important}
+html body.hud-desktop-e:not(.touch) #action .key{width:28px!important;height:28px!important;min-width:28px!important;border-radius:50%!important;background:#fffdf4!important;color:#2b2a24!important;display:grid!important;place-items:center!important;padding:0!important}
+html body.hud-desktop-e:not(.touch) #action #action-label{color:#fffdf4!important}

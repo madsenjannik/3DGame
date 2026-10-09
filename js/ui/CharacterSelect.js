@@ -10,7 +10,7 @@ import * as THREE from 'three';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { loadGLTF } from '../core/AssetManager.js';
 import { SPECIAL } from '../data/combatCatalog.js?build=DAYNIGHT-R81-20261005A';
-import { unlockedIds } from '../core/SaveGame.js?build=SAVE-R146-20261009A';
+import { unlockedIds } from '../core/SaveGame.js?build=SAVE-R147-20261009A';
 
 const ROSTER = globalThis.DYM_CHARACTER_ROSTER || [];
 const ORDER = ['daisy', 'cactus', 'swamp', 'aloe', 'tulip', 'hyacinth', 'succulent', 'spire', 'fern'];

@@ -1,5 +1,5 @@
 // @ts-nocheck
-import { actionIcon, actionIconName, isToolJob } from './actionIcons.js?build=SAVE-R146-20261009A';
+import { actionIcon, actionIconName, isToolJob } from './actionIcons.js?build=SAVE-R147-20261009A';
 export class Hud {
   constructor(state){
     this.seed=document.getElementById('seed-count');this.action=document.getElementById('action');this.toast=document.getElementById('toast');this.objective=document.getElementById('objective');this.kicker=document.getElementById('objective-kicker');this.title=document.getElementById('objective-title');this.copy=document.getElementById('objective-copy');this.hint=document.getElementById('hint');this.loading=document.getElementById('loading');this.materials=document.getElementById('materials');
@@ -157,6 +157,10 @@ export class Hud {
     const w=document.createElement('div');w.id='desktop-world-status';w.className='desktop-world-status';
     w.innerHTML='<i aria-hidden="true"></i><span><small>DAY</small><b>THE WILDS</b></span>';
     document.body.appendChild(w);this.worldStatus=w;
+    // R147 desktop HUD (Jannik's approved mockup 09/10): quiet key hints bottom left (CSS shows them on desktop HUD E only)
+    const kh=document.createElement('div');kh.id='desk-hints';kh.setAttribute('aria-hidden','true');
+    kh.innerHTML='<div><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> Move · <kbd>Shift</kbd> Run</div><div><i class="ms r"></i> Look · <i class="ms l"></i> Strike · tools</div><div><kbd>E</kbd> Interact · <kbd>Space</kbd> Hop</div>';
+    document.body.appendChild(kh);
     addEventListener('pointerdown',e=>{if(this.gear?.classList.contains('open')&&!this.gear.contains(e.target)&&e.target!==this.bag){this.toggleGear(false);e.tgwClosedGear=true;}});   // R117: InputManager skips the strike for this click
   }
   toggleGear(on=!this.gear?.classList.contains('open')){
