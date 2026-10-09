@@ -5562,3 +5562,11 @@ html body.hud-classic.touch:has(#objective.open) #toast{left:calc((100vw - 250px
 #tab-lost{position:fixed;inset:0;z-index:9000;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;border:0;padding:24px;
   background:rgba(25,31,21,.82);color:#fffdf4;font:700 15px/1.4 Manrope,system-ui,sans-serif;cursor:pointer;-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px)}
 #tab-lost b{font-size:19px}#tab-lost span{padding:10px 18px;border-radius:999px;background:#e2b552;color:#2b2a24;font-weight:800}
+/* R153: milestone toasts (seed earned, planted, tree grows, golden plant) in gold on every HUD */
+html body #toast.milestone{background:linear-gradient(180deg,#f7d77c,#e2b552)!important;color:#2b2a24!important;text-shadow:none!important;box-shadow:0 6px 18px rgba(120,84,20,.35),inset 0 0 0 1px rgba(255,255,255,.5)!important}
+/* R154: reduce motion in the game (start-screen setting or the device's): no hurt flash, no pulsing HUD effects */
+body.reduce-motion.hurt-flash::after{animation:none;opacity:0}
+body.reduce-motion *,body.reduce-motion *::before,body.reduce-motion *::after{animation-duration:.001s!important;animation-iteration-count:1!important;transition-duration:.001s!important}
+/* R154: a gold dot on a workbench tab with something waiting */
+.wilds-tabs button{position:relative}
+.wilds-tabs button.has-dot::after{content:'';position:absolute;top:5px;right:9px;width:7px;height:7px;border-radius:50%;background:#e2b552;box-shadow:0 0 0 2px rgba(255,250,238,.9)}

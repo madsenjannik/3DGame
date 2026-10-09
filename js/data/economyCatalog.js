@@ -6,6 +6,8 @@
 // New file (tagged import) so cached older modules never miss an export.
 
 // Price of the next perk = PERK_PRICES[number of perks you already own].
+import { LAKE_RUN } from './wildsCatalog.js';
+
 export const PERK_PRICES = [10, 15, 20, 30];
 export const perkPrice = owned => PERK_PRICES[Math.min(owned, PERK_PRICES.length - 1)];
 
@@ -16,7 +18,7 @@ export const SPECIAL_SEEDS = [
   { id: 'tulip',     name: 'Tulip Seed',     how: 'Defeat the Wood Giant',              met: (p) => (p.combat?.giant?.wins | 0) > 0 },
   { id: 'hyacinth',  name: 'Hyacinth Seed',  how: 'Defeat the Root Bear',               met: (p) => (p.combat?.bear?.wins | 0) > 0 },
   { id: 'succulent', name: 'Succulent Seed', how: 'Catch all 5 fish species',           met: (p, g) => (g.fishing?.speciesN?.() | 0) >= 5 || ['roach', 'perch', 'bream', 'pike', 'eel'].every(k => p.fishing?.log?.[k]) },   // R153: the saved catch log counts too
-  { id: 'spire',     name: 'Spire Seed',     how: 'Win gold in the Lake Run',           met: (p) => (p.lakeRun?.golds | 0) > 0 },
+  { id: 'spire',     name: 'Spire Seed',     how: 'Win gold in the Lake Race',          met: (p) => (p.lakeRun?.golds | 0) > 0 || ((p.lakeRun?.best || 0) > 0 && p.lakeRun.best <= LAKE_RUN.medals[0]) },   // R154: a gold time counts even on an unrewarded run
   { id: 'aloe',      name: 'Aloe Seed',      how: 'Harvest a golden greenhouse plant',  met: (p) => !!p.specialHarvest },
   { id: 'fern',      name: 'Fern Seed',      how: 'Hidden in the Dark Forest (coming)', met: () => false }
 ];

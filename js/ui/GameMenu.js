@@ -2,7 +2,7 @@
 // R121 (GO 07/10): small in-game menu. Round button under the quest card (phone + desktop E) and Esc on desktop when
 // nothing else is open. Resume · Controls (shows the first-time tips again) · Choose character · Start screen.
 // No pause: the day/night clock follows real time, so the menu is only a layer over the game. Fails soft.
-import { ControlTips } from './ControlTips.js?build=SAVE-R152-20261009A';
+import { ControlTips } from './ControlTips.js?build=SAVE-R153-20261009A';
 
 const BUSY_CLASSES = ['fishing-active', 'boating-active', 'stable-talk-active', 'stable-race-active', 'lakerun-active', 'mobile-bag-open', 'choice-open', 'rotate-gated'];
 

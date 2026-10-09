@@ -7,13 +7,13 @@
 import * as THREE from 'three';
 import { damp, radialTexture } from '../visual/VisualKit.js';
 import { MATERIALS, NODE_KINDS, TOOLS, HOME_UPGRADES, RULES, PASSIVES, PERKS, GOLDEN_CACHES } from '../data/wildsCatalog.js';
-import { WildsThreatSystem } from './WildsThreatSystem.js?build=SAVE-R152-20261009A';
+import { WildsThreatSystem } from './WildsThreatSystem.js?build=SAVE-R153-20261009A';
 import { DailyRequests } from './DailyRequests.js';
-import { GardenPotsSystem } from './GardenPotsSystem.js?build=SAVE-R152-20261009A';
+import { GardenPotsSystem } from './GardenPotsSystem.js?build=SAVE-R153-20261009A';
 import { loadWildsModels, loadGardenModels, WildsModel } from './WildsModels.js';
-import { WORKSHOP_UPGRADES, WORKSHOP_FILES, WORKSHOP_SCALE } from '../data/workshopCatalog.js?build=SAVE-R152-20261009A';   // R144
+import { WORKSHOP_UPGRADES, WORKSHOP_FILES, WORKSHOP_SCALE } from '../data/workshopCatalog.js?build=SAVE-R153-20261009A';   // R144
 import { loadGLTF } from '../core/AssetManager.js';
-import { perkPrice } from '../data/economyCatalog.js?build=SAVE-R152-20261009A';   // R148
+import { perkPrice } from '../data/economyCatalog.js?build=SAVE-R153-20261009A';   // R148
 import { FIXED_HEDGE as HEDGE } from '../data/gardenCatalog.js';
 
 const HOME = { x: 0, z: 4.7 };
@@ -300,7 +300,7 @@ export class WildsLoopSystem {
   // Garden props a weed must not sprout on.
   homeProps() {
     const w = this.at('workshop'), b = this.at('rain'), c = this.at('rain', -.95, 0), sh = this.at('shrine');
-    return [{ x: w.x, z: w.z, r: 1.1 }, { x: b.x, z: b.z, r: .9 }, { x: c.x, z: c.z, r: .8 }, { x: sh.x, z: sh.z, r: 1 }];
+    return [{ x: w.x, z: w.z, r: 1.1 }, { x: b.x, z: b.z, r: .9 }, { x: c.x, z: c.z, r: .8 }, { x: sh.x, z: sh.z, r: 1 }, ...(this.extraProps?.() || [])];   // R154: + the Sprouting Ring
   }
   perkPrice() { return perkPrice(PERKS.filter(k => this.profile.perks[k.id]).length); }
   plantSeed(perkId) {
@@ -412,7 +412,7 @@ export class WildsLoopSystem {
       for (const n of ['Ruin', 'Ghost']) { const o = m.root.getObjectByName(`Workshop_L${lvl}_${n}`); if (o) o.visible = false; }
       w.root.add(m.root); (this.gardenMixers ||= []).push(m); showBench(false);
       const clip = lvl === 1 ? 'Build' : 'Upgrade';
-      if (celebrate && m.has(clip)) m.play([clip], () => m.loop('Idle')); else m.loop('Idle');
+      if (celebrate && m.has(clip)) m.play([clip], () => { m.loop('Idle'); this.setWorkshopPosts(true); }); else m.loop('Idle');   // R154: posts again once the build clip has finished
       this.setWorkshopPosts(true);
     }).catch(e => console.warn('[TGW] workshop model failed; the bench stays', e));
   }
@@ -420,7 +420,9 @@ export class WildsLoopSystem {
     for (const o of this.workshopPosts || []) this.setObstacle(o, false); this.workshopPosts = [];
     const m = this.workshopModel; if (!on || !m) return;
     m.root.updateMatrixWorld(true); const v = new THREE.Vector3();
-    m.root.traverse(o => { if (/^Post_\d$/.test(o.name)) { o.getWorldPosition(v); this.workshopPosts.push(this.gardenObstacle(v.x, v.z, .13, 'workshop-post')); } });
+    // R154: the posts' shape is baked into each Post_N mesh about 1 m out (the node sits at 0,0,0), so use the geometry's centre
+    m.root.traverse(o => { if (!/^Post_\d$/.test(o.name)) return; const geo = o.geometry; if (geo) { geo.boundingBox || geo.computeBoundingBox(); geo.boundingBox.getCenter(v).applyMatrix4(o.matrixWorld); } else o.getWorldPosition(v);
+      this.workshopPosts.push(this.gardenObstacle(v.x, v.z, .13, 'workshop-post')); });
   }
   upgradeWorkshop() {
     const next = WORKSHOP_UPGRADES[this.profile.workshop | 0];

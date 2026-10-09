@@ -43,6 +43,8 @@ export class CharacterSwapSpot {
     const sp = this.g.homePortal?.gardenSpawn?.(); if (!sp) return false;
     const p = { x: sp.x + SIDE, z: sp.z + BACK };
     this.spot = { x: p.x, z: p.z };
+    // R154: nothing may be built on the Ring and no weed may sprout under its mound (it stays fixed, rule 7)
+    try { this.g.garden?.trees?.push({ x: p.x, z: p.z, r: FOOT + .2 }); const W = this.g.wilds; if (W) { W.extraProps = () => [{ x: p.x, z: p.z, r: FOOT + .3 }]; W.threat?.relayout?.(); } } catch {}
     const m = this.m = new THREE.Group(); m.name = 'R140_SPROUTING_RING'; m.position.set(p.x, 0, p.z);
     m.rotation.y = Math.PI / 2;   // the model's front (+z, its stepping stones) faces the garden path
     (this.g.world.privateRoot || this.g.scene).add(m);
@@ -109,9 +111,17 @@ export class CharacterSwapSpot {
   // R149: plant the Special Seed: the character's pot grows (Pop_<id>), the padlock goes, the selector opens it
   plantSeed() {
     const d = this.g.specialSeeds?.plant?.(); if (!d) return false;
-    this.applyUnlocked(); const clip = this.clips?.find(c => c.name === `Pop_${d.id}`);
-    if (clip && this.mixer) { const a = this.mixer.clipAction(clip); a.reset(); a.setLoop(THREE.LoopOnce, 1); a.clampWhenFinished = true; a.play(); }
-    this.g.hud?.showToast?.(`${d.name} planted. ${d.id[0].toUpperCase() + d.id.slice(1)} has sprouted and can be chosen here`);
+    // R153: the pot's own Pop_<id> clip lifts the padlock and the soil (it animates their scale), so they stay visible
+    // until it has played; the sprout and vine appear at once. Then the normal open/locked state takes over.
+    const clip = this.clips?.find(c => c.name === `Pop_${d.id}`), M = this.model, set = (n, v) => { const x = M?.getObjectByName(n); if (x) x.visible = v; };
+    if (clip && this.mixer && M) {
+      set(`Sprout_${d.id}`, true); set(`Vine_${d.id}`, true); const a = this.mixer.clipAction(clip); a.reset(); a.setLoop(THREE.LoopOnce, 1); a.clampWhenFinished = true; a.play();
+      const done = e => { if (e.action !== a) return; this.mixer.removeEventListener('finished', done); this.applyUnlocked(); }; this.mixer.addEventListener('finished', done);
+      setTimeout(() => this.applyUnlocked(), 4000);   // safety: never stuck half-open
+    } else this.applyUnlocked();
+    try { const pot = M?.getObjectByName(`Pot_${d.id}`), v = new THREE.Vector3(); if (pot) pot.getWorldPosition(v); else v.set(this.spot.x, 0, this.spot.z);
+      v.y += .6; this.g.fx?.burst?.(v, 0xffd86b, 14, 1.2); this.g.fx?.floatText?.(d.id[0].toUpperCase() + d.id.slice(1) + '!', v.clone().setY(v.y + .4)); } catch {}
+    this.g.hud?.showToast?.(`${d.name} planted. ${d.id[0].toUpperCase() + d.id.slice(1)} has sprouted and can be chosen here`, { milestone: true });
     return true;
   }
   interact() {
@@ -122,6 +132,10 @@ export class CharacterSwapSpot {
     if (!this.spot) { if (this.g.homePortal?.gardenHome) this.build(); return; }
     const vis = this.m.visible = this.g.world?.space === 'garden'; if (!vis) return;
     this.mixer?.update(dt); this.holo?.update(t, dt);
+    // R153: the agreed 'calling' beacon: while a Special Seed waits in the Bag, a gold light rises from the stone
+    const calling = !!this.g.specialSeeds?.inBag?.().length;
+    if (calling && !this.beacon) { this.beacon = createHoloIndicator({ radius: .5, height: 2.4, intensity: .6, breath: 1.6, scanSpeed: 2.4, scanDensity: 80, baseRing: false, groundHalo: true, fadeIn: .4 }); this.beacon.group.position.y = this.model ? TOP + .14 : .02; this.m.add(this.beacon.group); }
+    if (this.beacon) { this.beacon.group.visible = calling; if (calling) this.beacon.update(t, dt); }
     const c = this.g.character?.position, d = c ? Math.hypot(c.x - this.spot.x, c.z - this.spot.z) : 9;
     this.near += ((d < NEAR ? 1 : 0) - this.near) * Math.min(1, dt * 5); const k = this.near, br = .5 + .5 * Math.sin(t * 2.2);
     this.ring.rotation.y = t * .3; this.ring.material.opacity = .22 + .16 * br + .55 * k; this.ring.scale.setScalar(1 + .08 * k);

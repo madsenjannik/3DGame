@@ -12,7 +12,7 @@ import { WoodGiantBoss } from './WoodGiantBoss.js';
 import { RootBearBoss } from './RootBearBoss.js?build=DAYNIGHT-R81-20261005A';
 import { SpecialSystem } from './SpecialSystem.js?build=DAYNIGHT-R81-20261005A';
 import { MATERIALS } from '../data/wildsCatalog.js';
-import { PLAYER, WEAPONS, WEAPON_ORDER, ATTACK_COOLDOWN, MOLE, WILT, LOOT_FILES, SPECIAL, SNAIL } from '../data/combatCatalog.js?build=SAVE-R152-20261009A';
+import { PLAYER, WEAPONS, WEAPON_ORDER, ATTACK_COOLDOWN, MOLE, WILT, LOOT_FILES, SPECIAL, SNAIL } from '../data/combatCatalog.js?build=SAVE-R153-20261009A';
 
 const DIR = './assets/combat/';
 const MAX_HP = PLAYER.hearts * 2;

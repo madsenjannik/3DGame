@@ -6,7 +6,7 @@
 // R127/R128 (GO 08/10): dark socket + glossy moss disc + one gold segment per hit around it. Every tap punches the
 // button; a newly earned segment pops. Full = gold rim, pulsing glow and turning light rays; holding = gold light
 // grows from the centre and the disc presses in; release = shockwave. The look is CSS (styles.css R127/R128).
-import { SPECIAL } from '../data/combatCatalog.js?build=SAVE-R152-20261009A';
+import { SPECIAL } from '../data/combatCatalog.js?build=SAVE-R153-20261009A';
 
 const HOLD = .8;
 // R128: the meter is one gold segment per hit the special needs (SPECIAL.chargeHits), so every hit visibly counts.

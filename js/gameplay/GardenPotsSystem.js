@@ -6,7 +6,7 @@ import * as THREE from 'three';
 import { loadGLTF } from '../core/AssetManager.js';
 import { POTS, MATERIALS } from '../data/wildsCatalog.js';
 import { WildsModel } from './WildsModels.js';
-import { SPECIAL_POT, dayKey, prevDay } from '../data/economyCatalog.js?build=SAVE-R152-20261009A';   // R151
+import { SPECIAL_POT, dayKey, prevDay } from '../data/economyCatalog.js?build=SAVE-R153-20261009A';   // R151
 const PLANT_CLIPS = ['Seed', 'Sprout', 'Bud', 'Bloom']; // R59.2 garden_pot_plant.glb stage loops
 
 const GH = { x: 6.5, z: -11.2 };                 // fallback only until the greenhouse attaches (R60: slots follow its placement)
@@ -117,7 +117,7 @@ export class GardenPotsSystem {
     if (care.last !== today) { care.streak = care.last === prevDay(today) ? (care.streak | 0) + 1 : 1; care.last = today; }
     const golden = !s.special && care.streak >= SPECIAL_POT.days; if (golden) s.special = true;
     this.w.save.persist();
-    this.w.hud?.showToast(golden ? 'This plant glows golden · harvest it when it flowers' : s.special ? `Watered · ${this.p.water} water left in the can`
+    this.w.hud?.showToast(golden ? { text: 'This plant glows golden · harvest it when it flowers', milestone: true } : s.special ? `Watered · ${this.p.water} water left in the can`
       : `Watered · ${this.p.water} water left · this pot: day ${Math.min(care.streak, SPECIAL_POT.days)}/${SPECIAL_POT.days} for a golden plant`); this.w.emit();
     return true;
   }
@@ -129,7 +129,7 @@ export class GardenPotsSystem {
     for (const [id, n] of Object.entries(got)) this.w.give(id, n);
     const special = !!s.special; if (special) this.p.specialHarvest = true;   // R151: the first special harvest earns the Aloe Seed (SpecialSeeds)
     this.p.pots.slots[i] = null; this.w.save.persist(); character?.flash();
-    this.w.hud?.showToast(`${special ? 'Golden harvest!' : 'Harvest'}  ${Object.entries(got).map(([id, n]) => `${MATERIALS[id].name} +${n}`).join('  ')}`);
+    this.w.hud?.showToast(`${special ? 'Golden harvest!' : 'Harvest'}  ${Object.entries(got).map(([id, n]) => `${MATERIALS[id].name} +${n}`).join('  ')}`, { milestone: special });
     this.w.track('harvest', 1); this.w.emit();
     return true;
   }

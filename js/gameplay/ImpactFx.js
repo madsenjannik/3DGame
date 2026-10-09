@@ -50,7 +50,7 @@ export class ImpactFx {
     const obj = this.objFor(t), p = new THREE.Vector3(t.x, 0, t.z);
     if (obj) { const b = new THREE.Box3().setFromObject(obj); if (!b.isEmpty()) { b.getCenter(p); p.y = b.min.y + (b.max.y - b.min.y) * .55; } }
     else p.y = this.ground(t.x, t.z) + .45;
-    this.freeze = HIT_STOP; this.shake = SHAKE; if (obj) this.flash(obj);
+    if (!this.g.reduceMotion) { this.freeze = HIT_STOP; this.shake = SHAKE; if (obj) this.flash(obj); }   // R154: reduce motion
     this.burst(p, GOLD, 16, 1);
   }
   objFor(t) {

@@ -1,5 +1,5 @@
 // @ts-nocheck
-import { actionIcon, actionIconName, isToolJob } from './actionIcons.js?build=SAVE-R152-20261009A';
+import { actionIcon, actionIconName, isToolJob } from './actionIcons.js?build=SAVE-R153-20261009A';
 export class Hud {
   constructor(state){
     this.seed=document.getElementById('seed-count');this.action=document.getElementById('action');this.toast=document.getElementById('toast');this.objective=document.getElementById('objective');this.kicker=document.getElementById('objective-kicker');this.title=document.getElementById('objective-title');this.copy=document.getElementById('objective-copy');this.hint=document.getElementById('hint');this.loading=document.getElementById('loading');this.materials=document.getElementById('materials');
@@ -36,7 +36,7 @@ export class Hud {
     state.events.on('hotspot:collected',()=>{this.objective.classList.add('complete');this.title.textContent='Hotspot secured';this.copy.textContent='The Lookout revealed a Golden Seed that would otherwise stay hidden.';this.showToast('Golden Seed secured');});
     state.events.on('golden-lotus:payoff-started',()=>{this.kicker.textContent='GROWTH';this.title.textContent='The Golden Lotus is awakening';this.copy.textContent='Watch what your Golden Seed becomes.';});
     state.events.on('golden-lotus:grown',()=>{this.objective.classList.add('complete');this.kicker.textContent='GOLDEN GROWTH';this.title.textContent='Golden Lotus';this.copy.textContent='Your first rare payoff plant has bloomed.';this.showToast('Golden Lotus bloomed');});
-    state.events.on('greenhouse:level-changed',e=>{this.showToast(e.level===1?'Drivhus bygget':'Drivhus opgraderet');});
+    state.events.on('greenhouse:level-changed',e=>{this.showToast(e.level===1?'Greenhouse built':'Greenhouse upgraded');   /* R154: English (was Danish) */});
   }
   // R69a unified landscape HUD (Jannik's HUD concept 03/10): one top row = objective chip, Golden Seed chip, resource
   // chips; the minimap stays top right. Replaces R66's hidden/peek phone HUD. A chip pulses briefly when its count rises.
@@ -281,11 +281,17 @@ export class Hud {
     if(ico&&(v||keep)){const n=actionIconName(visualIt);if(n!==this._icoName){this._icoName=n;ico.innerHTML=actionIcon(visualIt);this.action.dataset.icon=n;}}
   }
   // R116: toasts queue (max 3) instead of overwriting each other; the same text again just stays up longer.
-  showToast(text){
-    const q=this._toastQ||(this._toastQ=[]);
-    if(this.toast.classList.contains('show')&&text!==this.toast.textContent){if(q.length<3&&!q.includes(text))q.push(text);return;}
-    this.toast.textContent=text;this.toast.classList.add('show');clearTimeout(this.toastTimer);
-    this.toastTimer=setTimeout(()=>{this.toast.classList.remove('show');if(q.length)this.toastTimer=setTimeout(()=>this.showToast(q.shift()),450);},2200);
+  // R153: milestone toasts (seed earned, planted, tree grows, golden plant) go first, are never dropped, show in gold;
+  // every toast stays up longer the longer it is (2.2 to 6 s).
+  showToast(text,opts={}){
+    if(text&&typeof text==='object'){opts=text;text=text.text;}
+    const q=this._toastQ||(this._toastQ=[]),ms=!!opts.milestone;
+    if(this.toast.classList.contains('show')&&text!==this.toast.textContent){
+      if(ms){if(!q.some(x=>(x?.text||x)===text))q.unshift({text,milestone:true});}else if(q.length<3&&!q.includes(text))q.push(text);
+      return;}
+    this.toast.textContent=text;this.toast.classList.toggle('milestone',ms);this.toast.classList.add('show');clearTimeout(this.toastTimer);
+    const dur=Math.max(2200,Math.min(6000,1800+40*String(text).length));
+    this.toastTimer=setTimeout(()=>{this.toast.classList.remove('show');if(q.length)this.toastTimer=setTimeout(()=>this.showToast(q.shift()),450);},dur);
   }
   markMoved(){this.hint.style.opacity='0';}
   ready(){this.renderDesktopHotbar?.();requestAnimationFrame(()=>{this.anchorMobileTop?.(true);this.loading.classList.add('hide');setTimeout(()=>this.loading.remove(),1000);});}

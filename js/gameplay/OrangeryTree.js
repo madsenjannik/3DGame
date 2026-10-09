@@ -5,7 +5,7 @@
 // shared save; until there is a server it is your own tree on this device. Uses OrangeryHubSystem.setStage (its
 // collision rebuild and lantern shatter at stage 6 come with it). DEV ?treeStage still wins. Fails soft.
 import * as THREE from 'three';
-import { TREE_COSTS, TREE_NAMES } from '../data/economyCatalog.js?build=SAVE-R152-20261009A';
+import { TREE_COSTS, TREE_NAMES } from '../data/economyCatalog.js?build=SAVE-R153-20261009A';
 
 const NEAR = 3.2, SIGN = 11;   // R152: the progress sign shows within 11 m
 // R152: a small in-world sign over the soil ('COMMUNITY TREE · 1/2'), drawn on top so the trunk never hides it
@@ -55,8 +55,11 @@ export class OrangeryTree {
     t.fed++; let grew = false;
     if (t.fed >= this.need()) { t.stage++; t.fed = 0; grew = true; this.show(t.stage, { playShatter: true }); }
     this.g.save.persist();
+    // R153: feeding is a moment: gold sparks at the soil and the count floats up; growing is a bigger burst
+    try { const p = this.g.orangery.root.position, v = new THREE.Vector3(p.x, p.y + .5, p.z); this.g.fx?.burst?.(v, 0xffd86b, grew ? 22 : 8, grew ? 2 : 1);
+      this.g.fx?.floatText?.(grew ? `Stage ${t.stage}` : `${t.fed}/${this.need()}`, v.clone().setY(v.y + .6)); } catch {}
     const name = TREE_NAMES[t.stage];   // R153: English names (the manifest's are Danish)
-    this.g.hud?.showToast?.(grew ? `The tree grows · stage ${t.stage}${name ? ' · ' + name : ''}` : `The tree drinks the seed · ${t.fed}/${this.need()}`);
+    this.g.hud?.showToast?.(grew ? `The tree grows · stage ${t.stage}${name ? ' · ' + name : ''}` : `The tree drinks the seed · ${t.fed}/${this.need()}`, { milestone: grew });
     return true;
   }
 }

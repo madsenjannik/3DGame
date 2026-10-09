@@ -1,6 +1,6 @@
 // @ts-nocheck
 import { MATERIALS, TOOLS, HOME_UPGRADES, PERKS, POTS } from '../data/wildsCatalog.js';
-import { WORKSHOP_UPGRADES } from '../data/workshopCatalog.js?build=SAVE-R152-20261009A';   // R144
+import { WORKSHOP_UPGRADES } from '../data/workshopCatalog.js?build=SAVE-R153-20261009A';   // R144
 
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 
@@ -34,7 +34,10 @@ export class WorkbenchPanel {
     wilds.onChange(() => { if (this.open) this.render(); });
   }
 
-  show() { this.open = true; this.render(); this.el.classList.add('open'); this.el.querySelector('.wilds-close').focus({ preventScroll: true }); }
+  // R154: open on the tab with something waiting (a Special Seed → Seeds, an affordable perk → Perks), else the last one used
+  pickTab() { const w = this.wilds; try { if (w.specialSeeds?.inBag?.().length) return 'chars'; if (w.profile.homeLevel >= 2 && PERKS.some(k => !w.profile.perks[k.id]) && (this.state.inventory.get('amber') || 0) >= w.perkPrice()) return 'seeds'; } catch {} return this.tab; }
+  dots() { const w = this.wilds, d = {}; try { d.chars = !!w.specialSeeds?.inBag?.().length; d.seeds = w.profile.homeLevel >= 2 && PERKS.some(k => !w.profile.perks[k.id]) && (this.state.inventory.get('amber') || 0) >= w.perkPrice(); } catch {} return d; }
+  show() { this.open = true; this.tab = this.pickTab(); this.render(); this.el.classList.add('open'); this.el.querySelector('.wilds-close').focus({ preventScroll: true }); }
   hide() { this.open = false; this.el.classList.remove('open'); }
 
   costHtml(cost) {
@@ -50,7 +53,7 @@ export class WorkbenchPanel {
     const w = this.wilds;
     const tr = w.passive; this.el.querySelector('.wilds-trait').innerHTML = tr ? `<small>YOUR TRAIT</small><b>${esc(tr.name)}</b><span>${esc(tr.text)}</span>` : '';
     { const gl = this.wilds.goal(); this.el.querySelector('.wilds-goal').innerHTML = `<small>NEXT GOAL</small><span><b>${esc(gl.title)}</b> · ${esc(gl.copy)}</span>`; }   // R153: the title too (the copy alone read like a fragment)
-    this.el.querySelectorAll('[data-tab]').forEach(b => b.setAttribute('aria-selected', String(b.dataset.tab === this.tab)));
+    const dots = this.dots(); this.el.querySelectorAll('[data-tab]').forEach(b => { b.setAttribute('aria-selected', String(b.dataset.tab === this.tab)); b.classList.toggle('has-dot', !!dots[b.dataset.tab] && b.dataset.tab !== this.tab); });   // R154: a dot where something waits
     let html = '';
     if (this.tab === 'tools') {
       for (const t of TOOLS) {
