@@ -7,9 +7,15 @@
   <link rel="manifest" href="./manifest.webmanifest"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <title>The Growing Wilds · Choose your plant</title>
   <!-- R132–R134 character select in the style of Jannik's reference; R135 (GO A 08/10): the game's selector, replacing the old one (all 9 open until the seed unlocks). -->
-  <script>(function(){var h=document.documentElement;function f(){var sw=screen.width||9999,sh=screen.height||9999;h.classList.toggle('cs-phone',Math.min(sw,sh)<=500||innerHeight<=500);h.classList.toggle('cs-touch',matchMedia('(hover:none) and (pointer:coarse)').matches||Math.min(sw,sh)<=500);}f();addEventListener('resize',f);addEventListener('orientationchange',f);})();</script>
-  <script src="./version.js?v=SELECT-R135-20261008A"></script>
-  <script src="./character-roster.js?v=SELECT-R135-20261008A"></script>
+  <script>/* R134: html.cs-phone / cs-touch from the device screen. R136: if a phone lays the page out wider than its screen (iOS zoomed out on Jannik's iPhone), pin the layout width to the screen's width */
+  (function(){var h=document.documentElement,vp=document.querySelector('meta[name=viewport]'),base=vp&&vp.content;
+    function sh(){return Math.min(screen.width||9999,screen.height||9999);}
+    function lock(){if(!vp||sh()>500)return;var land=matchMedia('(orientation:landscape)').matches,w=land?Math.max(screen.width,screen.height):sh();
+      if(innerWidth>w*1.04&&h.dataset.vpLock!=String(w)){vp.content='width='+w+',initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover';h.dataset.vpLock=w;}}
+    function f(){lock();var s=sh();h.classList.toggle('cs-phone',s<=500||innerHeight<=500);h.classList.toggle('cs-touch',matchMedia('(hover:none) and (pointer:coarse)').matches||s<=500);}
+    f();addEventListener('resize',f);addEventListener('load',f);addEventListener('orientationchange',function(){if(vp&&base){vp.content=base;delete h.dataset.vpLock;}setTimeout(f,300);});})();</script>
+  <script src="./version.js?v=SELECT-R136-20261009A"></script>
+  <script src="./character-roster.js?v=SELECT-R136-20261009A"></script>
   <link href="https://fonts.googleapis.com/css2?family=Lilita+One&family=Manrope:wght@500;600;700;800&display=swap" rel="stylesheet">
   <script type="importmap">{ "imports": { "three": "./vendor/three.module.js", "three/addons/": "./vendor/" } }</script>
   <style>
@@ -28,7 +34,8 @@
     .cs-logo small{display:block;margin-top:4px;font:800 clamp(8px,.85vw,12px)/1 Manrope;letter-spacing:.32em;color:#fffaf0;text-shadow:0 1px 3px rgba(0,0,0,.6)}
     .cs-round{position:fixed;width:48px;height:48px;border-radius:50%;display:grid;place-items:center;background:rgba(43,38,28,.82);box-shadow:inset 0 0 0 2px rgba(255,248,230,.35),0 4px 10px rgba(0,0,0,.35);color:#fffaf0;font:400 26px/1 'Lilita One'}
     .cs-round:active{transform:scale(.92)}
-    #cs-home{right:calc(max(12px,env(safe-area-inset-right)) + 24px);top:calc(max(10px,env(safe-area-inset-top)) + 18px)}
+    #cs-home{right:calc(max(12px,env(safe-area-inset-right)) + 24px);top:calc(max(10px,env(safe-area-inset-top)) + 18px);z-index:6}   /* R136: above #cs-stage, which spans the full width and swallowed the tap */
+    #cs-debug{position:fixed;left:calc(max(12px,env(safe-area-inset-left)) + 8px);top:calc(max(10px,env(safe-area-inset-top)) + 6px);z-index:9;max-width:min(92vw,520px);padding:6px 9px;border-radius:8px;background:rgba(20,18,12,.86);color:#f6efd8;font:600 10px/1.35 ui-monospace,Menlo,monospace;white-space:pre-wrap;pointer-events:auto}
     /* stage: three cards + arrows + portrait row */
     #cs-stage{position:fixed;left:0;right:0;top:calc(max(10px,env(safe-area-inset-top)) + 4vh);height:56vh;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;touch-action:pan-y}
     .cs-row{display:flex;align-items:center;gap:clamp(10px,1.4vw,22px)}
@@ -137,7 +144,7 @@
     <button id="cs-play" type="button"></button>
   </section>
   <script type="module">
-    import { mountCharacterSelect } from './js/ui/CharacterSelect.js?build=SELECT-R135-20261008A';
+    import { mountCharacterSelect } from './js/ui/CharacterSelect.js?build=SELECT-R136-20261009A';
     mountCharacterSelect();
   </script>
 </body>

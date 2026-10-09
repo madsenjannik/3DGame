@@ -115,7 +115,27 @@ class LiveCard {
   }
 }
 
+// R136: viewport facts on the device (?debug=1, or the DEV menu switched on): what size iOS really lays the page out at,
+// whether it runs as the home-screen app or in desktop mode, and which element (if any) reaches past the screen. Tap hides it.
+function debugBox() {
+  let dev = false; try { dev = localStorage.getItem('tgw.devMenu') === '1'; } catch {}
+  if (new URLSearchParams(location.search).get('debug') !== '1' && !dev) return;
+  const el = document.createElement('div'); el.id = 'cs-debug'; document.body.appendChild(el); el.addEventListener('click', () => el.remove());
+  const fill = () => {
+    const d = document.documentElement, W = d.clientWidth, vv = window.visualViewport, over = [];
+    for (const e of document.querySelectorAll('body *')) { if (e.closest('.cs-bgclip') || e === el) continue; const r = e.getBoundingClientRect(); if (r.width && r.right > W + 1) over.push([r.right, `${e.tagName.toLowerCase()}${e.id ? '#' + e.id : ''}${e.classList[0] ? '.' + e.classList[0] : ''} R${Math.round(r.right)}`]); }
+    over.sort((a, b) => b[0] - a[0]);
+    el.textContent = [`${window.TGW_VERSION?.version || ''} · tap to hide`,
+      `inner ${innerWidth}×${innerHeight} · client ${W}×${d.clientHeight} · scroll ${d.scrollWidth}×${d.scrollHeight}`,
+      `screen ${screen.width}×${screen.height} · dpr ${devicePixelRatio} · vv ${vv ? `${Math.round(vv.width)}×${Math.round(vv.height)} @${vv.scale.toFixed(2)}` : '-'}`,
+      `class ${d.className || '-'} · lock ${d.dataset.vpLock || 'no'} · app ${navigator.standalone ? 'home screen' : matchMedia('(display-mode: standalone)').matches ? 'standalone' : 'browser'}`,
+      `ua ${/Macintosh/.test(navigator.userAgent) ? 'DESKTOP MODE (Macintosh)' : /iPhone|iPad/.test(navigator.userAgent) ? 'iOS mobile' : 'other'} · wider: ${over.slice(0, 2).map(o => o[1]).join(', ') || 'none'}`].join('\n');
+  };
+  fill(); setTimeout(fill, 1200); addEventListener('resize', () => setTimeout(fill, 200));
+}
+
 export function mountCharacterSelect() {
+  try { debugBox(); } catch {}
   const $ = s => document.querySelector(s), list = ORDER.map(chr);
   let want = new URLSearchParams(location.search).get('char');
   if (!want) try { want = JSON.parse(localStorage.getItem('tgw.lastChar') || 'null')?.id; } catch {}   // R135: open on the last played character (as the old selector did)
