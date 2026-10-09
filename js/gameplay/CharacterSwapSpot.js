@@ -86,7 +86,7 @@ export class CharacterSwapSpot {
         if (Math.abs(q.x) < STEP_W && q.z > STEP_IN && q.z < STEP_OUT) return TOP * (STEP_OUT - q.z) / (STEP_OUT - STEP_IN);
         if (r < .5) return TOP + .13; if (r < .66) return TOP + .13 * (.66 - r) / .16;   // standing on the stone
         if (r <= FLAT) return TOP; if (r < FOOT) return TOP * (FOOT - r) / (FOOT - FLAT); return 0; }; } catch {}
-    const idle = clips?.find(c => c.name === 'Idle');
+    const idle = clips?.find(c => c.name === 'Idle'); this.clips = clips || [];
     if (idle) { this.mixer = new THREE.AnimationMixer(scene); this.mixer.clipAction(idle).play(); }
   }
   // open = its sprout; locked = soil with a sprig and the padlock (the shared save's list)
@@ -102,7 +102,17 @@ export class CharacterSwapSpot {
   interaction(pos) {
     if (!this.spot || !pos || this.g.world?.space !== 'garden') return null;
     const d = Math.hypot(pos.x - this.spot.x, pos.z - this.spot.z); if (d > RADIUS) return null;
+    const seed = this.g.specialSeeds?.inBag?.()[0];   // R149: a Special Seed in the Bag is planted here first
+    if (seed && this.model) return { type: 'home-plant', label: `Plant ${seed.name}`, distance: d };
     return { type: 'home-swap', label: 'Switch character', distance: d };
+  }
+  // R149: plant the Special Seed: the character's pot grows (Pop_<id>), the padlock goes, the selector opens it
+  plantSeed() {
+    const d = this.g.specialSeeds?.plant?.(); if (!d) return false;
+    this.applyUnlocked(); const clip = this.clips?.find(c => c.name === `Pop_${d.id}`);
+    if (clip && this.mixer) { const a = this.mixer.clipAction(clip); a.reset(); a.setLoop(THREE.LoopOnce, 1); a.clampWhenFinished = true; a.play(); }
+    this.g.hud?.showToast?.(`${d.name} planted. ${d.id[0].toUpperCase() + d.id.slice(1)} has sprouted and can be chosen here`);
+    return true;
   }
   interact() {
     try { this.g.save?.flush(); } catch {}

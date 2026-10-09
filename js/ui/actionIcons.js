@@ -29,6 +29,7 @@ export function actionIconName(it) {
   if (t === 'fish-board') return 'info';
   if (t.startsWith('lakerun-')) return 'flag';
   if (t.startsWith('stable-')) return 'horseshoe';
+  if (t === 'home-plant' || t === 'orangery-feed') return 'seed';   // R149 / R150
   if (t.startsWith('home-')) return 'door';
   if (t === 'first-seed') return 'seed';
   return 'leaf';

@@ -8,3 +8,15 @@
 // Price of the next perk = PERK_PRICES[number of perks you already own].
 export const PERK_PRICES = [10, 15, 20, 30];
 export const perkPrice = owned => PERK_PRICES[Math.min(owned, PERK_PRICES.length - 1)];
+
+// R149: Special Seeds, one per character (never a currency). Each is earned once while the character is still locked,
+// sits in the Bag, and is planted at the Sprouting Ring (Pop_<id> grows it), which unlocks the character.
+// `met` reads the shared save profile (+ the fishing system for the catch log), so a goal reached before R149 counts.
+export const SPECIAL_SEEDS = [
+  { id: 'tulip',     name: 'Tulip Seed',     how: 'Defeat the Wood Giant',              met: (p) => (p.combat?.giant?.wins | 0) > 0 },
+  { id: 'hyacinth',  name: 'Hyacinth Seed',  how: 'Defeat the Root Bear',               met: (p) => (p.combat?.bear?.wins | 0) > 0 },
+  { id: 'succulent', name: 'Succulent Seed', how: 'Catch all 5 fish species',           met: (p, g) => (g.fishing?.speciesN?.() | 0) >= 5 },
+  { id: 'spire',     name: 'Spire Seed',     how: 'Win gold in the Lake Run',           met: (p) => (p.lakeRun?.golds | 0) > 0 },
+  { id: 'aloe',      name: 'Aloe Seed',      how: 'Harvest your first special plant',   met: (p) => !!p.specialHarvest },
+  { id: 'fern',      name: 'Fern Seed',      how: 'Hidden in the Dark Forest (coming)', met: () => false }
+];

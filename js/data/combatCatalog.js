@@ -74,7 +74,7 @@ export const GIANT = {
   // R64.1: higher and further back so the root warnings on the ground around you are in view (was 7.5 / 1.4 / .45 / 68 / 58).
   camera: { distance: 9.5, height: 3.0, chestY: 5.2, lookBlend: .3, fovPortrait: 74, fovLandscape: 62, outside: 2, wallLift: .9, edgeLift: .3, liftMax: 3.5, gateFade: .2 },
   rematchHours: 24,
-  reward: { first: { golden_seed: 1, amber: 3, wood: 10 }, again: { amber: 2, wood: 8 } }
+  reward: { first: { amber: 3, wood: 10 }, again: { amber: 2, wood: 8 } }   // R149: the first win gives the Tulip Seed (SpecialSeeds), no Golden Seed
 };
 
 // R79 Root Bear, second boss (Jannik 05/10, GO): lives in its own grove (SharedLandscape.bearGrove), 65 % of the Wood
@@ -96,7 +96,7 @@ export const ROOT_BEAR = {
   camera: { distance: 8, height: 2.4, chestY: 3.1, lookBlend: .3, fovPortrait: 74, fovLandscape: 62, edgeLift: .35, liftMax: 3.5 },
   rematchHours: 24,          // R81: replaced by rematchGameDays (Jannik: 'Golden seed og 1 døgn i spillet')
   rematchGameDays: 1,        // one in-game day = 30 real minutes (DayNight.DAY_MS)
-  reward: { first: { golden_seed: 1, amber: 3, wood: 10 }, again: { amber: 2, wood: 8 } },   // same as the Wood Giant
+  reward: { first: { amber: 3, wood: 10 }, again: { amber: 2, wood: 8 } },   // same as the Wood Giant; R149: the Hyacinth Seed instead of a Golden Seed
   grove: { seed: 7979, trees: 30, clusters: 8, ring: [17, 26], scale: [1.3, 1.8], rocks: 4 }
 };
 

@@ -194,7 +194,7 @@ export class RootBearBoss {
     const first = !this.p.wins; this.p.wins++; this.p.defeatedAt = Date.now(); this.g.save.persist();
     const rw = first ? RB.reward.first : RB.reward.again, f = this.local(0, 6); let i = 0; const n = Object.keys(rw).length;
     for (const [id, k] of Object.entries(rw)) { if (this.c.models[`loot_${id}`]) this.c.dropLoot(id, k, f.x, f.z, i++, n); else this.w.give(id, k); }
-    this.g.hud?.showToast(first ? 'The Root Bear sinks into its roots. A Golden Seed glows where it stood!' : 'The Root Bear sinks into its roots again.');
+    this.g.hud?.showToast(first ? 'The Root Bear sinks into its roots. Something glows where it stood!' : 'The Root Bear sinks into its roots again.');   // R149: the Hyacinth Seed follows
   }
   // Player strike: nearest body circle. Returns a target for CombatSystem.
   target(px, pz, reach) {

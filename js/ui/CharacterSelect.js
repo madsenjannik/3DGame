@@ -10,7 +10,7 @@ import * as THREE from 'three';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { loadGLTF } from '../core/AssetManager.js';
 import { SPECIAL } from '../data/combatCatalog.js?build=DAYNIGHT-R81-20261005A';
-import { unlockedIds } from '../core/SaveGame.js?build=SAVE-R148-20261009A';
+import { unlockedIds } from '../core/SaveGame.js?build=SAVE-R149-20261009A';
 
 const ROSTER = globalThis.DYM_CHARACTER_ROSTER || [];
 const ORDER = ['daisy', 'cactus', 'swamp', 'aloe', 'tulip', 'hyacinth', 'succulent', 'spire', 'fern'];
@@ -32,7 +32,7 @@ const EN = {
 };
 const UNLOCK = {
   aloe: 'Grow me: your first greenhouse harvest', tulip: 'Grow me: defeat the Wood Giant', hyacinth: 'Grow me: defeat the Root Bear',
-  succulent: 'Grow me: catch all 3 fish species', spire: 'Grow me: win gold in the Lake Run', fern: 'Grow me: the Dark Forest (coming soon)'
+  succulent: 'Grow me: catch all 5 fish species', spire: 'Grow me: win gold in the Lake Run', fern: 'Grow me: the Dark Forest (coming soon)'
 };
 // One line per special, from its data in combatCatalog (kind, damage, effect)
 const ABILITY = {

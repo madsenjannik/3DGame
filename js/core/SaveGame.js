@@ -32,6 +32,8 @@ function blankProfile() {
     tools: {},            // tool id -> true
     homeLevel: 0,         // 0..3 garden upgrades (barrel, shrine, hedge)
     workshop: 0,          // R144: 0 = the bench alone, 1..3 = workshop levels around it
+    specialSeeds: {},     // R149: character id -> 1 (in the Bag) | 2 (planted at the Sprouting Ring)
+    specialHarvest: false, // R151: harvested a special (glowing) pot plant once -> Aloe Seed
     pots: { count: 0, slots: [null, null, null] }, // greenhouse pots: slot -> { stage, wet, readyAt }
     water: 0,             // watering-can charges
     nodes: {},            // node id -> epoch ms when it has regrown
@@ -83,6 +85,8 @@ function validProfile(p) {
   for (const [k, v] of Object.entries(p.tools || {})) if (v === true) out.tools[k] = true;
   out.homeLevel = Math.max(0, Math.min(3, p.homeLevel | 0));
   out.workshop = Math.max(0, Math.min(3, p.workshop | 0));   // R144
+  for (const [k, v] of Object.entries(p.specialSeeds || {})) if ((v === 1 || v === 2) && /^[a-z_]{2,24}$/.test(k)) out.specialSeeds[k] = v;   // R149
+  out.specialHarvest = p.specialHarvest === true;   // R151
   out.pots.count = Math.max(0, Math.min(3, p.pots?.count | 0));
   if (Array.isArray(p.pots?.slots)) out.pots.slots = [0, 1, 2].map(i => { const s = p.pots.slots[i]; return s && Number.isInteger(s.stage) ? { stage: Math.max(0, Math.min(3, s.stage)), wet: s.wet === true, readyAt: Number.isFinite(s.readyAt) ? s.readyAt : 0 } : null; });
   out.water = Math.max(0, Math.min(9, p.water | 0));

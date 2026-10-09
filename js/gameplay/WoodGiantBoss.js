@@ -208,7 +208,7 @@ export class WoodGiantBoss {
     const rw = first ? GIANT.reward.first : GIANT.reward.again;
     let i = 0; const n = Object.keys(rw).length;
     for (const [id, k] of Object.entries(rw)) { if (this.c.models[`loot_${id}`]) this.c.dropLoot(id, k, this.gx, this.gz + 3, i++, n); else this.w.give(id, k); }
-    this.g.hud?.showToast(first ? 'The Wood Giant rests. A Golden Seed glows where it stood!' : 'The Wood Giant rests again.');
+    this.g.hud?.showToast(first ? 'The Wood Giant rests. Something glows where it stood!' : 'The Wood Giant rests again.');   // R149: the Tulip Seed follows (SpecialSeeds)
   }
 
   // Player strike: body (legs) or a risen root's weak point. Returns a target for CombatSystem.

@@ -5517,3 +5517,5 @@ html body.hud-desktop-e:not(.touch) #action,html body.hud-desktop-e:not(.touch) 
   background:rgba(43,52,33,.82)!important;box-shadow:0 6px 16px rgba(0,0,0,.25)!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important;font:800 15px/1 Manrope,system-ui,sans-serif!important}
 html body.hud-desktop-e:not(.touch) #action .key{width:28px!important;height:28px!important;min-width:28px!important;border-radius:50%!important;background:#fffdf4!important;color:#2b2a24!important;display:grid!important;place-items:center!important;padding:0!important}
 html body.hud-desktop-e:not(.touch) #action #action-label{color:#fffdf4!important}
+/* R149: the hearts sat on top of the open Bag (R147 moved them up); they step aside while it is open */
+html body.hud-desktop-e:not(.touch):has(#gear-panel.open) .hearts{opacity:0!important;pointer-events:none!important}

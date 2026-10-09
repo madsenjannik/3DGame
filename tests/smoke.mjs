@@ -462,7 +462,7 @@ try {
     check('combat: mole cycle, strike + defeat + loot, mole hurts, wilt pouch (half), recover, mercy, garden snail', ready && r.seq === 'warning>emerge>up' && r.defeated && r.loot >= 2 && r.collected && r.hurt && r.wilt && r.back && r.mercy && r.snail === true && !errors.length, errors[0] || JSON.stringify(r));
     await ctx.close(); }
   // 14. R63 Wood Giant: arena placed, wake + camera pull-back, stomp hurts 1 heart, weak window doubles damage,
-  //     roots hurt + weak point damages the Giant, defeat → sinks, gate opens, Golden Seed loot, win saved
+  //     roots hurt + weak point damages the Giant, defeat → sinks, gate opens, no Golden Seed (R149: the Tulip Seed instead), win saved
   { const ctx = await context({ viewport: { width: 844, height: 390 }, isMobile: true, hasTouch: true }); const { p, errors, ok } = await startGame(ctx, 'fern');
     const ready = ok && await p.waitForFunction(() => window.__tgw?.combat?.boss?.giant, null, { timeout: 240000 }).then(() => true, () => false);
     const r = ready ? await p.evaluate(() => { const g = window.__tgw, c = g.combat, B = c.boss, ch = g.character, o = {}; g.wilds.profile.tools.axe = true;
@@ -486,10 +486,10 @@ try {
       c.heal(true); c.invuln = 0; B.spawnWave(B.gx, B.gz); ch.isGrounded = false; w0 = c.hp; for (let i = 0; i < 12; i++) B.updateWaves(.1, ch); ch.isGrounded = true; o.wave = waveHit && c.hp === w0;
       c.heal(true); for (let k = 0; k < 90 && B.hp > 0; k++) { B.weak = 0; ch.position.set(B.gx, ch.position.y, B.gz + 3); c.cd = 0; c.invuln = 1; c.attack(); }
       for (let i = 0; i < 40; i++) B.update(.1, ch);
-      o.win = B.state === 'resting' && B.p.wins === 1 && c.loot.some(l => l.kind === 'golden_seed') && !g.followCamera.bossZoom || g.followCamera.bossZoom === 1;
-      o.win = o.win && B.state === 'resting' && B.p.wins === 1 && c.loot.some(l => l.kind === 'golden_seed');
+      o.win = B.state === 'resting' && B.p.wins === 1 && !c.loot.some(l => l.kind === 'golden_seed') && !g.followCamera.bossZoom || g.followCamera.bossZoom === 1;
+      o.win = o.win && B.state === 'resting' && B.p.wins === 1 && !c.loot.some(l => l.kind === 'golden_seed');
       return o; }) : {};
-    check('wood giant: asleep until the FIGHT circle (R72 Sleep/WakeUp), arena walls collide, free between the legs, thrown back by big hits, FIGHT marker starts it + doors close, camera lock, stomp hurts, weak window x3, bark 1, roots + weak point, shockwave (hop to dodge), defeat + golden seed + saved', ready && r.walls && r.between && r.thrown && r.wake && r.stomp && r.weak && r.bark && r.roots && r.wave && r.win && !errors.length, errors[0] || JSON.stringify(r));
+    check('wood giant: asleep until the FIGHT circle (R72 Sleep/WakeUp), arena walls collide, free between the legs, thrown back by big hits, FIGHT marker starts it + doors close, camera lock, stomp hurts, weak window x3, bark 1, roots + weak point, shockwave (hop to dodge), defeat + no golden seed (R149) + saved', ready && r.walls && r.between && r.thrown && r.wake && r.stomp && r.weak && r.bark && r.roots && r.wave && r.win && !errors.length, errors[0] || JSON.stringify(r));
     await ctx.close(); }
   // 17c. R65 character specials: Swing/Throw overlays on the locked character, landed hits fill the meter, all nine
   // specials hurt a Mole, the Giant's bark takes 0 and its weak window takes damage, a garden snail can be hit
@@ -538,7 +538,7 @@ try {
     await ctx.close(); }
   // 17d. R79 Root Bear: grove (30 conifers on the ring, open core, mossy rocks), asleep + solid, wakes on its own at
   // 8 m (no circle), Sweep ring + its own Roots spike line hurt, weak window x3 / bark 1, gives up outside the grove,
-  // awake window = wanders the core + attacks within 8 m, lies down on its den again, defeat = Golden Seed + 24 h
+  // awake window = wanders the core + attacks within 8 m, lies down on its den again, defeat = Hyacinth Seed (R149, no Golden Seed) + 24 h
   // rematch saved, wilting ends the fight, Wood Giant arena unchanged
   { const ctx = await context({ viewport: { width: 844, height: 390 }, isMobile: true, hasTouch: true }); const { p, errors, ok } = await startGame(ctx, 'fern');
     const ready = ok && await p.waitForFunction(() => window.__tgw?.combat?.bear?.bear && window.__tgw.combat.models?.loot_golden_seed, null, { timeout: 240000 }).then(() => true, () => false);
@@ -579,10 +579,10 @@ try {
   put(B.bx + 6, B.bz); run(1); o.aggro = B.state === 'chase';
   // back to sleep when the window ends: walks to the den and lies down
   B.end(false); put(B.den.x + 40, B.den.z); B.forceAwake = false; run(400); o.lie = B.state === 'sleep' && Math.hypot(B.bx - B.den.x, B.bz - B.den.z) < .1 && Math.abs(B.heading - B.den.heading) < .01;
-  // defeat: sinks, Golden Seed loot, win + 24 h rematch saved
+  // defeat: sinks, no Golden Seed loot (R149), win + 24 h rematch saved
   put(B.den.x + Math.sin(h) * 7, B.den.z + Math.cos(h) * 7); run(1); run(45);
   c.heal(true); for (let k = 0; k < 90 && B.hp > 0; k++) { B.weak = 1; const f = B.local(0, 5); put(f.x, f.z); c.cd = 0; c.invuln = 1; c.attack(); }
-  run(40); o.win = B.state === 'resting' && !B.bear.visible && B.p.wins === 1 && B.p.defeatedAt > 0 && c.loot.some(l => l.kind === 'golden_seed') && !B.available() && B.bodyParts.every(b => b.o.r < .1);
+  run(40); o.win = B.state === 'resting' && !B.bear.visible && B.p.wins === 1 && B.p.defeatedAt > 0 && !c.loot.some(l => l.kind === 'golden_seed') && !B.available() && B.bodyParts.every(b => b.o.r < .1);
   g.save.persist(); const saved = JSON.parse(JSON.stringify(g.save.profile.combat.bear)); o.saved = saved.wins === 1 && saved.defeatedAt === B.p.defeatedAt;
   // R79 the giant arena did not move
   o.arena = Math.round(c.boss.site.x) === 14 && Math.round(c.boss.site.z) === -79;
@@ -591,7 +591,7 @@ try {
   c.invuln = 0; c.hurt(99, ch.position.x + .1, ch.position.z); for (let i = 0; i < 400 && c.wilting; i++) await w(100);
   o.wilt = fought && !B.fighting() && !g.followCamera.lockYaw && B.hp === 35;
   B.forceAwake = null; return o; }) : {};
-    check('root bear: grove + open core, asleep + solid, wakes at 8 m, sweep + roots hurt, weak x3 / bark 1, leash, wanders the core + aggro, lies down again, defeat + golden seed + saved, wilt ends it, giant arena unchanged', ready && ['grove', 'sleep', 'wake', 'risen', 'sweep', 'weak', 'bark', 'roots', 'lob', 'leash', 'wander', 'aggro', 'lie', 'win', 'saved', 'arena', 'wilt'].every(k => r[k]) && !errors.length, errors[0] || JSON.stringify(r));
+    check('root bear: grove + open core, asleep + solid, wakes at 8 m, sweep + roots hurt, weak x3 / bark 1, leash, wanders the core + aggro, lies down again, defeat (no golden seed, R149) + saved, wilt ends it, giant arena unchanged', ready && ['grove', 'sleep', 'wake', 'risen', 'sweep', 'weak', 'bark', 'roots', 'lob', 'leash', 'wander', 'aggro', 'lie', 'win', 'saved', 'arena', 'wilt'].every(k => r[k]) && !errors.length, errors[0] || JSON.stringify(r));
     await ctx.close(); }
   // 17e. R80 fishing grip: the bamboo rod sits in the right hand only while fishing (fist in the hand's own colour, float
   // dangling under the tip, cast from the tip, wind-up moves the rod back, reel cranks the left hand), bones go back after
@@ -777,6 +777,21 @@ try {
       g.workbenchPanel?.show?.(); const P = g.workbenchPanel; if (P) { P.tab = 'seeds'; P.render(); o.panel = /Perks/.test(P.el.textContent) && /Perk Shrine|amber/i.test(P.el.textContent); P.hide?.(); } else o.panel = false;
       return o; });
     check('R148 Perk Shrine: perks cost amber (10, then 15 / 20 / 30), Golden Seeds do not buy them, the tab says Perks', ok && r.noSeed && r.first && r.rest && r.panel && !errors.length, errors[0] || JSON.stringify(r)); await ctx.close(); }
+  // 17r. R149 Special Seeds (Jannik 09/10): a met goal (here: the Wood Giant beaten) puts the Tulip Seed in the Bag (not in a quick
+  // slot); at the Sprouting Ring E offers 'Plant Tulip Seed', planting opens Tulip (sprout, no padlock); bosses give no Golden Seed
+  { const ctx = await context({ viewport: { width: 1280, height: 720 } }); const { p, errors, ok } = await startGame(ctx, 'cactus', { hud: 'desktop-e' }); let r = {};
+    if (ok) r = await p.evaluate(async () => { const g = window.__tgw, w = ms => new Promise(x => setTimeout(x, ms)), o = {}, S = g.specialSeeds;
+      const { GIANT, ROOT_BEAR } = await import('./js/data/combatCatalog.js'); o.noGolden = !GIANT.reward.first.golden_seed && !ROOT_BEAR.reward.first.golden_seed;
+      o.start = !!S && !S.s.tulip && !g.save.isUnlocked('tulip');
+      g.save.profile.combat.giant.wins = 1; for (let i = 0; i < 40 && S.s.tulip !== 1; i++) await w(250);
+      const bag = g.hud.gearItems().map(x => x.id); o.bag = S.s.tulip === 1 && bag.includes('seed-tulip') && !g.save.profile.hotbar.slots.includes('seed-tulip');
+      for (let i = 0; i < 240 && !g.swapSpot?.model; i++) await w(250); const s = g.swapSpot.spot; g.devMenu.teleport('garden', s.x, s.z, 0); await w(600);
+      o.offer = g.swapSpot.interaction({ x: s.x, z: s.z })?.label === 'Plant Tulip Seed';
+      o.planted = g.swapSpot.plantSeed() && S.s.tulip === 2 && g.save.isUnlocked('tulip') && !g.hud.gearItems().some(x => x.id === 'seed-tulip');
+      const M = g.swapSpot.model, vis = n => M.getObjectByName(n)?.visible; o.ring = vis('Sprout_tulip') && !vis('Lock_tulip') && g.swapSpot.interaction({ x: s.x, z: s.z })?.type === 'home-swap';
+      await w(1500); o.once = S.s.tulip === 2 && !g.hud.gearItems().some(x => x.id === 'seed-tulip');   // never earned twice
+      return o; });
+    check('R149 Special Seeds: Giant beaten -> Tulip Seed in the Bag (no quick slot), Ring offers Plant Tulip Seed, planting opens Tulip, bosses give no Golden Seed', ok && ['noGolden', 'start', 'bag', 'offer', 'planted', 'ring', 'once'].every(k => r[k]) && !errors.length, errors[0] || JSON.stringify(r)); await ctx.close(); }
   // 17m. R134 DEV toggles (visual only, off by default): resource icons fly into their counter; the tutorial tip sits under the resource bar on phones
   { const ctx = await context({ viewport: { width: 844, height: 390 }, isMobile: true, hasTouch: true }); await ctx.addInitScript(() => { localStorage.setItem('tgw.dev.flyIcons', '1'); localStorage.setItem('tgw.dev.tipTop', '1'); });
     const { p, errors, ok } = await startGame(ctx, 'cactus', { hud: 'classic', tips: true }); let r = {};
