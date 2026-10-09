@@ -110,7 +110,7 @@ export class GardenEnvironment {
   }
   isGardenSpace(){return this.space==='garden';}
   setHomeCollisionResolver(fn){this.homeCollisionResolver=typeof fn==='function'?fn:null;}
-  groundHeight(x=0,z=0){return this.space==='garden'?0:(this.sharedLandscape?.groundHeight(x,z)??0);}
+  groundHeight(x=0,z=0){return this.space==='garden'?(this.gardenHeight?.(x,z)||0):(this.sharedLandscape?.groundHeight(x,z)??0);}   // R141: the private garden is flat except where a structure adds height (gardenHeight: the Sprouting Ring's mound)
   addCollider(x,z,r){this.colliders.push({x,z,r,kind:'static',traversal:'blocked',space:this._collisionSpace||'garden'});}
   addWaterBody(body){this.localWaterBodies.push(body);return body;}
   resolveLocalWaterBody(p,body,radius){

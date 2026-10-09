@@ -9,6 +9,10 @@
 // the garden: its own ground disc is hidden and the garden grass grows up to the pots (a round clearing only under the
 // ring; the two shrubs and their collider go for good), each pot gets a small collider. 'This matters' comes from the
 // stone only: a rune ring on the stone, motes rising from it and Stone_Glow breathing, all brighter when you stand on it.
+// R141 (GO A 09/10): model v2.1: a raised mound (0.34 m) with front steps, a pergola with a swinging sign and 4 lanterns,
+// one vine per character on the posts (Pop_<id> grows it), pollen in the model's own Idle. The mound is walkable: the
+// garden gets a height function for it (top, steps as a ramp, outer slope), a ring of colliders along its rim leaves the
+// steps as the only way up, and the pergola posts are solid. The model's pollen replaces my motes; the rune ring stays.
 import * as THREE from 'three';
 import { createHoloIndicator } from '../visual/holo-indicator.js';
 import { loadGLTF } from '../core/AssetManager.js';
@@ -16,7 +20,9 @@ import { loadGLTF } from '../core/AssetManager.js';
 const MODEL = './assets/garden/spirebaenken.glb';
 const IDS = ['daisy', 'cactus', 'swamp', 'aloe', 'tulip', 'hyacinth', 'succulent', 'spire', 'fern'];
 // metres from the garden spawn to the ring's stone (the authored bed-shrub pair at -6.5, 6.7); clearing radius; stone reach
-const SIDE = -6.7, BACK = -2.95, CLEAR = 2.05, RADIUS = 1.0, NEAR = .75, MOTES = 10, POT_R = .3;
+const SIDE = -6.7, BACK = -2.95, CLEAR = 2.5, RADIUS = 1.0, NEAR = .75, MOTES = 0, POT_R = .3;
+// the mound in model space (+z = the steps): top height, flat top radius, outer foot radius, rim collider radius, steps strip
+const TOP = .34, FLAT = 2.22, FOOT = 2.52, RIM = 2.27, STEP_W = .62, STEP_IN = 1.84, STEP_OUT = 2.78, POST_R = .14;
 const GOLD = new THREE.Color(0xffd98a);
 
 function canvasTex(draw, size = 256) {
@@ -49,7 +55,7 @@ export class CharacterSwapSpot {
   buildMagic() {
     const fx = this.fx = new THREE.Group(); fx.name = 'R140_STONE_MAGIC'; this.m.add(fx);
     this.ring = new THREE.Mesh(new THREE.PlaneGeometry(1.15, 1.15).rotateX(-Math.PI / 2), new THREE.MeshBasicMaterial({ map: runeTex(), color: GOLD, transparent: true, opacity: .4, depthWrite: false, blending: THREE.AdditiveBlending, side: THREE.DoubleSide }));
-    this.ring.position.y = .135; this.ring.renderOrder = 4; fx.add(this.ring);   // on the stone's rim, around Stone_Inner
+    this.ring.position.y = TOP + .135; this.ring.renderOrder = 4; fx.add(this.ring);   // on the stone's rim, around Stone_Inner (on the mound)
     const tex = glowTex();
     for (let i = 0; i < MOTES; i++) {
       const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, color: GOLD, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending }));
@@ -62,10 +68,18 @@ export class CharacterSwapSpot {
       if (o.name === 'Stone_Glow' && o.material) { o.material = o.material.clone(); this.glowMats.push({ m: o.material, base: o.material.emissiveIntensity || 1 }); } });
     const disc = scene.getObjectByName('Ground_Patch'); if (disc) disc.visible = false;   // the garden's own grass meets the pots instead
     this.m.add(scene); this.applyUnlocked();
-    // each pot is solid (small round colliders at the pots' world positions; garden space only)
-    try { this.m.updateMatrixWorld(true); const v = new THREE.Vector3(), W = this.g.world;
-      for (const id of IDS) { const pot = scene.getObjectByName(`Pot_${id}`); if (!pot) continue; pot.getWorldPosition(v);
-        const c = { x: v.x, z: v.z, r: POT_R, kind: 'ring-pot', traversal: 'blocked', space: 'garden' }; W.colliders.push(c); this.potColliders.push(c); } } catch {}
+    // each pot and pergola post is solid; the rim is a wall except at the steps (round colliders, garden space only)
+    try { this.m.updateMatrixWorld(true); const v = new THREE.Vector3(), W = this.g.world, add = (x, z, r) => { const c = { x, z, r, kind: 'ring-pot', traversal: 'blocked', space: 'garden' }; W.colliders.push(c); this.potColliders.push(c); };
+      for (const id of IDS) { const pot = scene.getObjectByName(`Pot_${id}`); if (pot) { pot.getWorldPosition(v); add(v.x, v.z, POT_R); } }
+      const posts = new Set(); for (const id of IDS) { const vine = scene.getObjectByName(`Vine_${id}`); if (!vine) continue; vine.getWorldPosition(v); const k = `${v.x.toFixed(2)},${v.z.toFixed(2)}`; if (!posts.has(k)) { posts.add(k); add(v.x, v.z, POST_R); } }
+      for (let i = 0, n = 44; i < n; i++) { const a = i / n * Math.PI * 2, lx = Math.sin(a) * RIM, lz = Math.cos(a) * RIM; if (Math.abs(lx) < STEP_W + .12 && lz > 0) continue;
+        v.set(lx, 0, lz); this.m.localToWorld(v); const c = { x: v.x, z: v.z, r: .17, kind: 'ring-rim', traversal: 'blocked', space: 'garden' }; W.colliders.push(c); this.potColliders.push(c); }
+      // walkable mound: model-space height (top, steps as a ramp, outer slope down to the garden)
+      const inv = new THREE.Matrix4().copy(this.m.matrixWorld).invert(), q = new THREE.Vector3();
+      W.gardenHeight = (x, z) => { q.set(x, 0, z).applyMatrix4(inv); const r = Math.hypot(q.x, q.z); if (r >= FOOT + .3) return 0;
+        if (Math.abs(q.x) < STEP_W && q.z > STEP_IN && q.z < STEP_OUT) return TOP * (STEP_OUT - q.z) / (STEP_OUT - STEP_IN);
+        if (r < .5) return TOP + .13; if (r < .66) return TOP + .13 * (.66 - r) / .16;   // standing on the stone
+        if (r <= FLAT) return TOP; if (r < FOOT) return TOP * (FOOT - r) / (FOOT - FLAT); return 0; }; } catch {}
     const idle = clips?.find(c => c.name === 'Idle');
     if (idle) { this.mixer = new THREE.AnimationMixer(scene); this.mixer.clipAction(idle).play(); }
   }
@@ -73,7 +87,7 @@ export class CharacterSwapSpot {
   applyUnlocked() {
     if (!this.model) return; const open = new Set(this.g.save?.data?.unlocked || ['daisy', 'cactus', 'swamp']);
     for (const id of IDS) { const o = open.has(id), set = (n, v) => { const x = this.model.getObjectByName(n); if (x) x.visible = v; };
-      set(`Sprout_${id}`, o); set(`Soil_${id}`, !o); set(`Lock_${id}`, !o); }
+      set(`Sprout_${id}`, o); set(`Soil_${id}`, !o); set(`Lock_${id}`, !o); set(`Vine_${id}`, o); }   // R141: the vines climb the pergola as characters open
   }
   fallback() {
     const holo = this.holo = createHoloIndicator({ radius: .58, height: 1.3, intensity: .48, breath: 2.4, scanSpeed: 2.0, scanDensity: 90, baseRing: true, groundHalo: true, fadeIn: .35 });
