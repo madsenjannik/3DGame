@@ -404,7 +404,7 @@ try {
       await step(() => { const g = window.__tgw; g.devMenu.run('mats'); g.wilds.upgradeHome(); g.wilds.upgradeHome(); g.devMenu.teleport('garden', -3.85, 3.6, Math.PI); g.buildMode.start('shrine'); }); await W(5000);
       r.pondBlocked = await step(() => window.__tgw.buildMode.placeBtn.disabled && /pond/.test(window.__tgw.buildMode.snap?.why || ''));
       r.cancelSame = await step(() => { const g = window.__tgw, before = JSON.stringify(g.garden.get('shrine')); g.buildMode.cancel(); return !g.buildMode.active && JSON.stringify(g.garden.get('shrine')) === before; });
-      await step(() => { const g = window.__tgw; g.devMenu.teleport('garden', -3.6, 9.0, -Math.PI / 2); g.buildMode.start('shrine'); }); await W(5000);
+      await step(() => { const g = window.__tgw; g.devMenu.teleport('garden', -8.5, 0.6, Math.PI); g.buildMode.start('shrine'); }); await W(5000);   // R153: the old spot (-3.6, 9) now overlaps the Sprouting Ring, which is reserved
       Object.assign(r, await step(() => { const g = window.__tgw, placed = g.buildMode.confirm(), t = g.garden.transformOf('shrine'), grp = g.wilds.upgradeL2.position, ob = g.wilds.upgradeObstacles[2];
         g.save.flush(); return { placed, moved: !g.garden.isDefault('shrine'), follows: grp.x === t.x && grp.z === t.z && ob.x === t.x && ob.z === t.z, hidden: g.vegetationMask.meshes.reduce((a, e) => a + e.hidden, 0) }; }));
       await p.reload({ waitUntil: 'load' }); await p.waitForFunction(() => window.__tgw?.wilds?.gardenModels && window.__tgw.greenhouse?.entries.size === 3, null, { timeout: 240000 }).catch(() => {});
@@ -826,7 +826,7 @@ try {
   { const ctx = await context({ viewport: { width: 1280, height: 720 } }); const { p, errors, ok } = await startGame(ctx, 'cactus', { hud: 'desktop-e' }); let r = {};
     if (ok) r = await p.evaluate(async () => { const g = window.__tgw, w = ms => new Promise(x => setTimeout(x, ms)), o = {}, W = g.wilds, S = g.specialSeeds; for (let i = 0; i < 60 && !W.profile; i++) await w(250);
       S.earn('tulip'); o.goal = W.goal().title === 'Plant your Tulip Seed';
-      g.state.inventory.set('golden_seed', 2); o.tree = /Feed the community tree/.test(W.treeGoal()?.title || '') && /0\/1/.test(W.treeGoal().copy);
+      for (let i = 0; i < 480 && !g.orangery?.ready; i++) await w(250); g.state.inventory.set('golden_seed', 2); o.tree = /Feed the community tree/.test(W.treeGoal()?.title || '') && /0\/1/.test(W.treeGoal().copy);
       const P = g.workbenchPanel; P.show(); P.tab = 'chars'; P.render(); const items = [...P.el.querySelectorAll('.wilds-item')], txt = n => items.find(x => x.textContent.includes(n))?.textContent || '';
       o.tab = items.length === 6 && /In your Bag/.test(txt('Tulip Seed')) && /Locked/.test(txt('Fern Seed')) && /Root Bear/.test(txt('Hyacinth Seed')) && P.el.querySelector('.wilds-item.ready') != null; P.hide();
       for (let i = 0; i < 240 && !g.swapSpot?.model; i++) await w(250); g.swapSpot.plantSeed(); o.after = W.goal().title !== 'Plant your Tulip Seed';
@@ -844,7 +844,7 @@ try {
       o.stopped = g.save.readOnly === true && localStorage.getItem('tgw.save') === before && !!document.getElementById('tab-lost');
       return o; });
     check('R153 tab guard: another tab claiming the game stops this tab saving and shows Play here', ok && r.owner && r.stopped && !errors.length, errors[0] || JSON.stringify(r)); await ctx.close(); }
-  // 17w. R154 review fixes: reduce motion (no hit-stop/shake), the workbench opens on the tab that matters with a dot, the
+  // 17w. R153 review fixes: reduce motion (no hit-stop/shake), the workbench opens on the tab that matters with a dot, the
   // workshop posts stand where the posts are (not stacked at the bench), nothing builds on the Ring, the vest stays on while
   // boating, a gold Lake Race time counts for the Spire Seed
   { const ctx = await context({ viewport: { width: 1280, height: 720 } }); await ctx.addInitScript(() => localStorage.setItem('dymGame.entry.reduceMotion', '1'));
@@ -858,7 +858,23 @@ try {
       for (let i = 0; i < 480 && !(g.fishing && g.boatEco); i++) await w(250); g.fishing.own.vest = 1; g.save.profile.wear = { vest: true }; document.body.classList.add('boating-active'); g.hud.onVestToggle(); o.vest = g.save.profile.wear.vest === true; document.body.classList.remove('boating-active');
       const { SPECIAL_SEEDS } = await import('./js/data/economyCatalog.js'); const sp = SPECIAL_SEEDS.find(d => d.id === 'spire'); o.spire = sp.met({ lakeRun: { golds: 0, best: 44.2 } }, g) && !sp.met({ lakeRun: { golds: 0, best: 50 } }, g);
       return o; });
-    check('R154 review fixes: reduce motion, workbench opens on the waiting tab with a dot, workshop posts spread out, the Ring is reserved and weed-free, the vest stays on in the boat, a gold time earns the Spire Seed', ok && ['motion', 'tab', 'dot', 'posts', 'ring', 'vest', 'spire'].every(k => r[k]) && !errors.length, errors[0] || JSON.stringify(r)); await ctx.close(); }
+    check('R153 review fixes: reduce motion, workbench opens on the waiting tab with a dot, workshop posts spread out, the Ring is reserved and weed-free, the vest stays on in the boat, a gold time earns the Spire Seed', ok && ['motion', 'tab', 'dot', 'posts', 'ring', 'vest', 'spire'].every(k => r[k]) && !errors.length, errors[0] || JSON.stringify(r)); await ctx.close(); }
+  // 17x. R154 discoverability: the first Golden Seed explains itself once (gold toast), the map marks the Orangery tree while
+  // you hold one, a boss you came near stays on the map, the pot shows its golden count
+  { const ctx = await context({ viewport: { width: 1280, height: 720 } }); const { p, errors, ok } = await startGame(ctx, 'cactus', { hud: 'desktop-e' }); let r = {};
+    if (ok) r = await p.evaluate(async () => { const g = window.__tgw, w = ms => new Promise(x => setTimeout(x, ms)), o = {}, D = g.discovery, inv = g.state.inventory; for (let i = 0; i < 480 && !g.orangery?.ready; i++) await w(250);
+      const toasts = []; g.hud.showToast = (orig => (t, op) => { toasts.push([t, op]); orig.call(g.hud, t, op); })(g.hud.showToast);
+      inv.set('golden_seed', 1); for (let i = 0; i < 20 && !D.seen.golden; i++) await w(250);
+      o.teach = D.seen.golden === true && toasts.some(([t, op]) => /Feed it to the community tree/.test(t) && op?.milestone);
+      const n = toasts.length; inv.set('golden_seed', 2); await w(2500); o.once = !toasts.slice(n).some(([t]) => /Feed it to the community tree/.test(t));
+      o.tree = D.markers().some(m => m.label === 'Tree'); inv.set('golden_seed', 0); o.treeGone = !D.markers().some(m => m.label === 'Tree');
+      const site = D.sites().find(x => x.id === 'bear'); o.bossHidden = !D.markers().some(m => m.type === 'boss' && m.label === 'Root Bear');
+      if (site) { g.devMenu.teleport('world', site.x + 20, site.z, 0); for (let i = 0; i < 20 && !D.seen.bear; i++) await w(250); }
+      o.boss = !!site && D.markers().some(m => m.type === 'boss' && m.label === 'Root Bear');
+      const W = g.wilds, P = W.profile, { dayKey } = await import('./js/data/economyCatalog.js'); P.tools.can = true; P.pots.count = 1; P.pots.slots[0] = { stage: 1, wet: true, readyAt: Date.now() + 600000 }; P.pots.care = [{ last: dayKey(), streak: 2 }, {}, {}];
+      const avail = W.pots.available; W.pots.available = () => true; const offers = []; W.pots.update(.016, 1, { position: { x: W.pots.slots[0].g.position.x + .3, z: W.pots.slots[0].g.position.z } }, x => offers.push(x)); o.pot = offers.some(x => /golden 2\/3/.test(x.label)); W.pots.available = avail;
+      return o; });
+    check('R154 discoverability: first Golden Seed explained once, tree on the map while holding one, a seen boss stays on the map, the pot shows golden n/3', ok && ['teach', 'once', 'tree', 'treeGone', 'bossHidden', 'boss', 'pot'].every(k => r[k]) && !errors.length, errors[0] || JSON.stringify(r)); await ctx.close(); }
   // 17m. R134 DEV toggles (visual only, off by default): resource icons fly into their counter; the tutorial tip sits under the resource bar on phones
   { const ctx = await context({ viewport: { width: 844, height: 390 }, isMobile: true, hasTouch: true }); await ctx.addInitScript(() => { localStorage.setItem('tgw.dev.flyIcons', '1'); localStorage.setItem('tgw.dev.tipTop', '1'); });
     const { p, errors, ok } = await startGame(ctx, 'cactus', { hud: 'classic', tips: true }); let r = {};

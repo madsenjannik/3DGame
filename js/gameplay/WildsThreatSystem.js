@@ -5,7 +5,7 @@ import * as THREE from 'three';
 import { THREAT } from '../data/wildsCatalog.js';
 import { WildsModel } from './WildsModels.js';
 import { loadGLTF } from '../core/AssetManager.js';
-import { SNAIL } from '../data/combatCatalog.js?build=SAVE-R153-20261009A';
+import { SNAIL } from '../data/combatCatalog.js?build=SAVE-R154-20261009A';
 const WEED_STAGES = ['Spire', 'Busk', 'Tornet']; // R59.2 garden_weeds.glb subtrees, one per stage
 
 // R60: the greenhouse position comes from GardenBuildSystem (placed transform), not a constant.
@@ -45,7 +45,7 @@ export class WildsThreatSystem {
   }
 
   buildSpots() {
-    const rand = rng(2024), avoid = this.w.homeProps(), spots = [];
+    const rand = rng(2024), avoid = [...this.w.homeProps(), ...(this.w.extraProps?.() || [])], spots = [];   // R153: + the Sprouting Ring (no weeds under its mound)
     const GH = this.w.garden?.transformOf('greenhouse') || { x: 6.5, z: -11.2, rot: 0 }, [gs, gc] = QSC[GH.rot || 0];
     for (let i = 0; i < 2400 && spots.length < 22; i++) {
       // Half the candidates hug the greenhouse so the threat reaches the pots.

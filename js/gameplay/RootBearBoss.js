@@ -10,7 +10,7 @@
 import * as THREE from 'three';
 import { loadGLTF } from '../core/AssetManager.js';
 import { DAY_MS } from '../visual/DayNight.js?build=DAYNIGHT-R81-20261005A';
-import { ROOT_BEAR as RB } from '../data/combatCatalog.js?build=SAVE-R153-20261009A';
+import { ROOT_BEAR as RB } from '../data/combatCatalog.js?build=SAVE-R154-20261009A';
 
 const DIR = './assets/combat/';
 const ROCK = './assets/environment/pure-poly/PP_Rock_Moss_Grown_09.glb';

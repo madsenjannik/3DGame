@@ -44,7 +44,7 @@ export class CharacterSwapSpot {
     const p = { x: sp.x + SIDE, z: sp.z + BACK };
     this.spot = { x: p.x, z: p.z };
     // R154: nothing may be built on the Ring and no weed may sprout under its mound (it stays fixed, rule 7)
-    try { this.g.garden?.trees?.push({ x: p.x, z: p.z, r: FOOT + .2 }); const W = this.g.wilds; if (W) { W.extraProps = () => [{ x: p.x, z: p.z, r: FOOT + .3 }]; W.threat?.relayout?.(); } } catch {}
+    try { this.g.garden?.trees?.push({ x: p.x, z: p.z, r: FOOT + .2, id: 'Sprouting Ring' }); const W = this.g.wilds; if (W) { W.extraProps = () => [{ x: p.x, z: p.z, r: FOOT + .3 }]; W.threat?.relayout?.(); } } catch {}
     const m = this.m = new THREE.Group(); m.name = 'R140_SPROUTING_RING'; m.position.set(p.x, 0, p.z);
     m.rotation.y = Math.PI / 2;   // the model's front (+z, its stepping stones) faces the garden path
     (this.g.world.privateRoot || this.g.scene).add(m);

@@ -96,7 +96,7 @@ export class GardenBuildSystem {
       if (r.kind === 'circle' && Math.hypot(x - r.x, z - r.z) < r.r) return r.id;
       if (r.kind === 'ellipse' && Math.hypot((x - r.x) / r.rx, (z - r.z) / r.rz) < 1) return r.id;
     }
-    for (const t of this.trees) if (Math.hypot(x - t.x, z - t.z) < t.r) return 'tree';
+    for (const t of this.trees) if (Math.hypot(x - t.x, z - t.z) < t.r) return t.id || 'tree';   // R153: the Sprouting Ring blocks by name
     if (z > SPINE.z0 && z < SPINE.z1 && Math.abs(x - spineX(z)) < SPINE.halfWidth) return 'path';
     return null;
   }

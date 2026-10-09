@@ -5,7 +5,7 @@
 // Targets are the same as Strike: Moles in the wilds, snails in the garden, the Wood Giant (weak window only)
 // and its risen roots. Owned by CombatSystem; fails soft (no projectile GLB → simple sphere).
 import * as THREE from 'three';
-import { SPECIAL, GIANT, ROOT_BEAR } from '../data/combatCatalog.js?build=SAVE-R153-20261009A';
+import { SPECIAL, GIANT, ROOT_BEAR } from '../data/combatCatalog.js?build=SAVE-R154-20261009A';
 import { loadGLTF } from '../core/AssetManager.js';
 import { WildsModel } from './WildsModels.js';
 

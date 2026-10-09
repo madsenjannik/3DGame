@@ -3,7 +3,7 @@
 // locked, its seed lands in the Bag ('Tulip Seed!'). Planting it at the Sprouting Ring grows the character's sprout
 // (Pop_<id>) and opens it in the selector. State: profile.specialSeeds { id: 1 = in the Bag, 2 = planted } on the
 // shared save; the unlock itself is save.data.unlocked. Checked once a second, so goals reached earlier count too.
-import { SPECIAL_SEEDS } from '../data/economyCatalog.js?build=SAVE-R153-20261009A';
+import { SPECIAL_SEEDS } from '../data/economyCatalog.js?build=SAVE-R154-20261009A';
 
 export class SpecialSeeds {
   constructor(game) { this.g = game; this.t = 0; }

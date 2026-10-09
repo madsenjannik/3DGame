@@ -6,7 +6,7 @@ import * as THREE from 'three';
 import { loadGLTF } from '../core/AssetManager.js';
 import { POTS, MATERIALS } from '../data/wildsCatalog.js';
 import { WildsModel } from './WildsModels.js';
-import { SPECIAL_POT, dayKey, prevDay } from '../data/economyCatalog.js?build=SAVE-R153-20261009A';   // R151
+import { SPECIAL_POT, dayKey, prevDay } from '../data/economyCatalog.js?build=SAVE-R154-20261009A';   // R151
 const PLANT_CLIPS = ['Seed', 'Sprout', 'Bud', 'Bloom']; // R59.2 garden_pot_plant.glb stage loops
 
 const GH = { x: 6.5, z: -11.2 };                 // fallback only until the greenhouse attaches (R60: slots follow its placement)
@@ -192,7 +192,8 @@ export class GardenPotsSystem {
         const can = this.w.has('can'), ok = can && this.p.water > 0;
         offer({ type: 'wilds-pot', slot: i, act: 'water', distance: d, disabled: !ok, locked: !ok, label: ok ? 'Water plant' : 'Locked', reason: ok ? undefined : can ? 'Fill the Watering Can at the pond' : 'Needs a Watering Can' });   // R72: fill the can at the pond / craft a Watering Can
       } else if (this.w.threat?.chokesAt(v.g.position.x, v.g.position.z, true)) offer({ type: 'wilds-pot', slot: i, act: 'none', distance: d, disabled: true, label: 'Growth paused · weeds nearby' });
-      else offer({ type: 'wilds-pot', slot: i, act: 'none', distance: d, disabled: true, label: `Growing · ${Math.max(1, Math.ceil((s.readyAt - now) / 60000))} min` });
+      else { const st = this.p.pots.care?.[i]?.streak | 0, gold = s.special ? 'golden · ' : st > 0 && st < SPECIAL_POT.days && this.p.pots.care[i].last === dayKey() ? `golden ${st}/${SPECIAL_POT.days} · ` : '';   // R154: the golden count at the pot
+        offer({ type: 'wilds-pot', slot: i, act: 'none', distance: d, disabled: true, label: `Growing · ${gold}${Math.max(1, Math.ceil((s.readyAt - now) / 60000))} min` }); }
     });
     // Pond refill.
     if (this.w.has('can') && this.p.water < POTS.canCharges) {

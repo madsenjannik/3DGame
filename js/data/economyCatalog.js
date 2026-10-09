@@ -19,7 +19,7 @@ export const SPECIAL_SEEDS = [
   { id: 'hyacinth',  name: 'Hyacinth Seed',  how: 'Defeat the Root Bear',               met: (p) => (p.combat?.bear?.wins | 0) > 0 },
   { id: 'succulent', name: 'Succulent Seed', how: 'Catch all 5 fish species',           met: (p, g) => (g.fishing?.speciesN?.() | 0) >= 5 || ['roach', 'perch', 'bream', 'pike', 'eel'].every(k => p.fishing?.log?.[k]) },   // R153: the saved catch log counts too
   { id: 'spire',     name: 'Spire Seed',     how: 'Win gold in the Lake Race',          met: (p) => (p.lakeRun?.golds | 0) > 0 || ((p.lakeRun?.best || 0) > 0 && p.lakeRun.best <= LAKE_RUN.medals[0]) },   // R154: a gold time counts even on an unrewarded run
-  { id: 'aloe',      name: 'Aloe Seed',      how: 'Harvest a golden greenhouse plant',  met: (p) => !!p.specialHarvest },
+  { id: 'aloe',      name: 'Aloe Seed',      how: 'Water one greenhouse pot 3 days in a row, then harvest it', met: (p) => !!p.specialHarvest },
   { id: 'fern',      name: 'Fern Seed',      how: 'Hidden in the Dark Forest (coming)', met: () => false }
 ];
 

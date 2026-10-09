@@ -1619,6 +1619,7 @@ are only touched where a measured hotspot requires it, minimally.
    failure. Must pass before every push (CLAUDE.md rule 5).
 
 **B status 02/10/2026: complete (R51–R57).** On-device check (iPhone, Jannik 02/10): 60 fps steady (frame max 20–24 ms), 217 draw calls / 370k tris in the garden, 363 / 433k at the lake, mobile-high, 1 WebGL context → no perf work needed before C.
+**R154 (v0.8.154):** discoverability (first Golden Seed explained, tree + seen bosses on the map, golden count at the pot) + three R153 regressions fixed.
 **R153 (v0.8.153):** planting/growing moments (Ring beacon, padlock lift, sparks), gold milestone toasts, reduce motion in game, smart workbench tab, review round 2 fixes.
 **R152 (v0.8.152):** economy guidance (next steps, Seeds tab, tree sign, selector hint) + review fixes (one tab owns the save, Ring fallback planting, ordered tree stages, cache tags, desktop/phone UI).
 **R151 (v0.8.151):** golden greenhouse plant (same pot watered 3 days in a row) → Aloe Seed.
