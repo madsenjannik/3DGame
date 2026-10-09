@@ -720,8 +720,8 @@ try {
         g.devMenu.teleport('garden', s.x, s.z, 0); for (let i = 0; i < 30 && g.interactions.last?.interaction?.type !== 'home-swap'; i++) await w(250);
         const d = g.homePortal.gardenDoorPoint; o.offer = g.interactions.last?.interaction?.type === 'home-swap' && Math.hypot(s.x - d.x, s.z - d.z) > 2.15 && g.swapSpot.m.visible;
         /* R139: Jannik's Spirebænken: open characters show their sprout, locked ones soil with the seed; Idle runs; the stone magic brightens when you stand on it */
-        for (let i = 0; i < 40 && !g.swapSpot.model; i++) await w(250); const M = g.swapSpot.model, vis = n => M?.getObjectByName(n)?.visible;
-        for (let i = 0; i < 60 && g.swapSpot.near < .6; i++) await w(250);   // the stone brightens over a few frames (headless runs ~1 fps)
+        for (let i = 0; i < 240 && !g.swapSpot.model; i++) await w(250); const M = g.swapSpot.model, vis = n => M?.getObjectByName(n)?.visible;
+        for (let i = 0; i < 240 && (g.swapSpot.near < .6 || g.swapSpot.ring.material.opacity <= .6 || !g.swapSpot.mixer); i++) await w(250);   // the stone brightens over a few frames (headless runs ~1 fps)
         o.model = !!M && vis('Sprout_cactus') && !vis('Soil_cactus') && !vis('Sprout_tulip') && vis('Soil_tulip') && vis('Lock_tulip') && !vis('Lock_cactus') && !!g.swapSpot.mixer && g.swapSpot.near > .5 && g.swapSpot.ring.material.opacity > .6 && g.swapSpot.potColliders.filter(c => c.kind === 'ring-pot').length >= 14 && !g.world.colliders.some(c => c.kind === 'static' && Math.hypot(c.x - s.x, c.z - s.z) < 2)   /* R140: padlocks, pots solid, the bed shrubs gone */
           && Math.abs(g.character.position.y - .47) < .03 && g.world.groundHeight(s.x + 1.2, s.z) > .3 && vis('Vine_cactus') && !vis('Vine_tulip');   /* R141: you stand on the stone on top of the mound; pots + posts solid; vines = open characters */
         { const walk = (x0, z0) => { const q = { x: x0, y: 0, z: z0 }; for (let i = 0; i < 120; i++) { const dx = s.x - q.x, dz = s.z - q.z, d = Math.hypot(dx, dz); if (d < .25) break; q.x += dx / d * .07; q.z += dz / d * .07; g.world.resolveCollisions(q, .3); } return Math.hypot(q.x - s.x, q.z - s.z); };
@@ -736,10 +736,11 @@ try {
   { const ctx = await context({ viewport: { width: 1280, height: 720 } }); const { p, errors, ok } = await startGame(ctx, 'cactus', { hud: 'desktop-e' }); let r = {};
     if (ok) { r = await p.evaluate(async () => { const g = window.__tgw, w = ms => new Promise(x => setTimeout(x, ms)); g.devMenu.run('tools'); g.devMenu.run('tp:node');
         for (let i = 0; i < 40 && g.interactions.last?.interaction?.type !== 'wilds-gather'; i++) await w(250); const it = g.interactions.last?.interaction; window.__n = it?.node;
-        const M = g.swapSpot?.model?.getObjectByName('Mound'); return { pill: it?.type === 'wilds-gather' && !!document.querySelector('#action .key.mouse'), mound: !!M?.material?.vertexColors && !!M?.geometry?.attributes?.color }; });
+        const M = g.swapSpot?.model?.getObjectByName('Mound'), T = (await import('./js/ui/actionIcons.js')).isToolJob; return { pill: it?.type === 'wilds-gather' && !!document.querySelector('#action .key.mouse'), mound: !!M?.material?.vertexColors && !!M?.geometry?.attributes?.color,
+          pots: ['plant', 'water', 'harvest'].every(act => !T({ type: 'wilds-pot', act })) && T({ type: 'wilds-gather' }) }; });   /* R144: pot work stays on E */
       await p.keyboard.press('KeyE'); await p.waitForTimeout(2500); r.eNo = await p.evaluate(() => window.__n?.state === 'ready');
       await p.mouse.click(640, 400); for (let i = 0; i < 20 && !r.click; i++) { await p.waitForTimeout(500); r.click = await p.evaluate(() => window.__n?.state !== 'ready'); } }
-    check('R142 desktop: tool work is a left click (mouse on the pill), E no longer gathers; the mound wears the garden ground colours', ok && r.pill && r.eNo && r.click && r.mound && !errors.length, errors[0] || JSON.stringify(r)); await ctx.close(); }
+    check('R142 desktop: tool work is a left click (mouse on the pill), E no longer gathers, pot work stays on E (R144); the mound wears the garden ground colours', ok && r.pill && r.eNo && r.click && r.mound && r.pots && !errors.length, errors[0] || JSON.stringify(r)); await ctx.close(); }
   // 17p. R144 workshop: the bench alone at the start; building level 1 (10 wood + 5 stone) loads the L1 workshop around it (its own bench, solid posts), levels 2/3 swap the model; the panel lists the levels with the padlock placeholder
   { const ctx = await context({ viewport: { width: 1280, height: 720 } }); const { p, errors, ok } = await startGame(ctx, 'cactus', { hud: 'desktop-e' }); let r = {};
     if (ok) r = await p.evaluate(async () => { const g = window.__tgw, W = g.wilds, w = ms => new Promise(x => setTimeout(x, ms)), o = {};
