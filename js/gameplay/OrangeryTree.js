@@ -4,18 +4,43 @@
 // Golden Seeds (economyCatalog.TREE_COSTS). E at the tree feeds one seed. State: profile.tree { stage, fed } on the
 // shared save; until there is a server it is your own tree on this device. Uses OrangeryHubSystem.setStage (its
 // collision rebuild and lantern shatter at stage 6 come with it). DEV ?treeStage still wins. Fails soft.
-import { TREE_COSTS } from '../data/economyCatalog.js?build=SAVE-R151-20261009A';
+import * as THREE from 'three';
+import { TREE_COSTS, TREE_NAMES } from '../data/economyCatalog.js?build=SAVE-R152-20261009A';
 
-const NEAR = 3.2;
+const NEAR = 3.2, SIGN = 11;   // R152: the progress sign shows within 11 m
+// R152: a small in-world sign over the soil ('COMMUNITY TREE · 1/2'), drawn on top so the trunk never hides it
+function sign() {
+  const c = document.createElement('canvas'); c.width = 512; c.height = 160; const tex = new THREE.CanvasTexture(c); tex.colorSpace = THREE.SRGBColorSpace;
+  const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, transparent: true, depthWrite: false, depthTest: false })); s.renderOrder = 20;
+  s.scale.set(2.8, .88, 1); s.userData = { c, tex, text: '' }; s.name = 'COMMUNITY_TREE_SIGN'; return s;   // R153: bigger, readable on a phone
+}
+function drawSign(s, title, sub) {
+  const { c, tex } = s.userData, x = c.getContext('2d'); if (s.userData.text === title + sub) return; s.userData.text = title + sub;
+  x.clearRect(0, 0, c.width, c.height); x.fillStyle = 'rgba(25,34,22,.78)'; x.beginPath();
+  const L = 8, T = 12, W = c.width - 16, H = 136, R = 40; x.moveTo(L + R, T); x.arcTo(L + W, T, L + W, T + H, R); x.arcTo(L + W, T + H, L, T + H, R); x.arcTo(L, T + H, L, T, R); x.arcTo(L, T, L + W, T, R); x.closePath(); x.fill();   // R153: arcTo, not roundRect (Safari < 16)
+  x.strokeStyle = 'rgba(255,224,138,.55)'; x.lineWidth = 2; x.stroke(); x.textAlign = 'center'; x.textBaseline = 'middle';
+  x.fillStyle = '#ffe08a'; x.font = '800 28px Manrope, sans-serif'; x.fillText(title, c.width / 2, 54);
+  x.fillStyle = '#f4f1e8'; x.font = '700 34px Manrope, sans-serif'; x.fillText(sub, c.width / 2, 104); tex.needsUpdate = true;
+}
 export class OrangeryTree {
-  constructor(game) { this.g = game; this.applied = false; }
+  constructor(game) { this.g = game; this.applied = false; this.q = Promise.resolve(); }
+  // R153: stage loads are async; queue them so quick feeding can never leave the model on an older stage
+  show(stage, opts) { const o = this.g.orangery; this.q = this.q.then(() => o?.setStage(stage, opts)).catch(e => console.warn('[TGW] tree stage failed', e)); return this.q; }
   get t() { const p = this.g.save?.profile; if (!p) return { stage: 0, fed: 0 }; const t = p.tree ||= { stage: 0, fed: 0 }; return t; }
   max() { return TREE_COSTS.length; }
   need() { return TREE_COSTS[this.t.stage] ?? 0; }
   update() {
-    const o = this.g.orangery; if (this.applied || !o?.ready) return; this.applied = true;
+    const o = this.g.orangery; if (!o?.ready) return;
+    if (this.applied) return this.updateSign(o);
+    this.applied = true;
     if (/[?&]treeStage=/.test(location.search) && /[?&]dev=1/.test(location.search)) return;   // DEV preview stays as asked
-    if (o.stage !== this.t.stage) o.setStage(this.t.stage, { playShatter: false });
+    if (o.stage !== this.t.stage) this.show(this.t.stage, { playShatter: false });
+  }
+  updateSign(o) {
+    if (!this.sign) { this.sign = sign(); this.sign.position.set(0, 2.5, 0); o.root.add(this.sign); }
+    const c = this.g.character?.position, near = !!c && this.g.world?.space !== 'garden' && Math.hypot(c.x - o.root.position.x, c.z - o.root.position.z) < SIGN;
+    this.sign.visible = near; if (!near) return;
+    const t = this.t; drawSign(this.sign, 'COMMUNITY TREE', t.stage >= this.max() ? 'Fully grown' : `Stage ${t.stage} · ${t.fed}/${this.need()} Golden Seeds`);
   }
   interaction(pos) {
     const o = this.g.orangery; if (!o?.ready || !pos || this.g.world?.space === 'garden') return null;
@@ -28,9 +53,9 @@ export class OrangeryTree {
   feed() {
     const t = this.t, W = this.g.wilds; if (t.stage >= this.max() || !W?.pay?.({ golden_seed: 1 })) return false;
     t.fed++; let grew = false;
-    if (t.fed >= this.need()) { t.stage++; t.fed = 0; grew = true; this.g.orangery?.setStage(t.stage, { playShatter: true }); }
+    if (t.fed >= this.need()) { t.stage++; t.fed = 0; grew = true; this.show(t.stage, { playShatter: true }); }
     this.g.save.persist();
-    const name = this.g.orangery?.manifest?.stages?.[t.stage]?.name;
+    const name = TREE_NAMES[t.stage];   // R153: English names (the manifest's are Danish)
     this.g.hud?.showToast?.(grew ? `The tree grows · stage ${t.stage}${name ? ' · ' + name : ''}` : `The tree drinks the seed · ${t.fed}/${this.need()}`);
     return true;
   }

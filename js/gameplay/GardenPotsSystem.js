@@ -6,7 +6,7 @@ import * as THREE from 'three';
 import { loadGLTF } from '../core/AssetManager.js';
 import { POTS, MATERIALS } from '../data/wildsCatalog.js';
 import { WildsModel } from './WildsModels.js';
-import { SPECIAL_POT, dayKey, prevDay } from '../data/economyCatalog.js?build=SAVE-R151-20261009A';   // R151
+import { SPECIAL_POT, dayKey, prevDay } from '../data/economyCatalog.js?build=SAVE-R152-20261009A';   // R151
 const PLANT_CLIPS = ['Seed', 'Sprout', 'Bud', 'Bloom']; // R59.2 garden_pot_plant.glb stage loops
 
 const GH = { x: 6.5, z: -11.2 };                 // fallback only until the greenhouse attaches (R60: slots follow its placement)

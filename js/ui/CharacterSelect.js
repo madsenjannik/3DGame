@@ -9,14 +9,15 @@
 import * as THREE from 'three';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { loadGLTF } from '../core/AssetManager.js';
-import { SPECIAL } from '../data/combatCatalog.js?build=DAYNIGHT-R81-20261005A';
-import { unlockedIds } from '../core/SaveGame.js?build=SAVE-R151-20261009A';
+import { SPECIAL } from '../data/combatCatalog.js?build=SAVE-R152-20261009A';
+import { unlockedIds, specialSeedState } from '../core/SaveGame.js?build=SAVE-R152-20261009A';
 
 const ROSTER = globalThis.DYM_CHARACTER_ROSTER || [];
 const ORDER = ['daisy', 'cactus', 'swamp', 'aloe', 'tulip', 'hyacinth', 'succulent', 'spire', 'fern'];
 const STARTERS = new Set(['daisy', 'cactus', 'swamp']);
 const Q = new URLSearchParams(location.search), LOCKS = Q.get('locks') !== '0';
 const OPEN = (() => { try { return unlockedIds(); } catch { return STARTERS; } })();   // R138
+const SEEDS = (() => { try { return specialSeedState(); } catch { return {}; } })();   // R152: a seed waiting in the Bag says so
 const ENERGY = { daisy: 4, cactus: 3 };                                  // decision 1a: the starters are not all slow
 const GLB = { aloe: 'aloe-vera' };
 const EN = {
@@ -162,7 +163,7 @@ export function mountCharacterSelect() {
     live?.show(null); clearTimeout(render.t); render.t = setTimeout(placeLive, dir ? 340 : 0);   // after the slide settles
     $('#cs-thumbs').innerHTML = list.map((t, k) => `<button type="button" class="cs-thumb${k === i ? ' on' : ''}${t.open ? '' : ' locked'}" data-i="${k}" aria-label="${t.open ? t.name : 'Locked character'}">${t.open ? `<span style="--art:url(${art(t.id)})"></span>` : '<em>?</em>'}</button>`).join('');
     $('#cs-name').textContent = c.name; $('#cs-role').textContent = c.open ? c.role : 'Locked';
-    $('#cs-desc').textContent = c.open ? c.desc : (UNLOCK[c.id] || 'Locked');
+    $('#cs-desc').textContent = c.open ? c.desc : SEEDS[c.id] === 1 ? 'Your seed is in your Bag: plant it at the Sprouting Ring in your garden' : (UNLOCK[c.id] || 'Locked');
     $('#cs-ab-icon').style.backgroundImage = `url(./assets/combat/specials/icon_${c.special.file || c.id}.png)`;
     $('#cs-ab-name').textContent = c.special.name || 'Special'; $('#cs-ab-text').textContent = c.open ? c.ability : '';
     $('#cs-stats').innerHTML = c.open ? STATS.map((s, k) => { const v = c.personality[k]; return `<div class="cs-stat"><i class="cs-ico" style="--ico:url(./brand/icons/svg/icon-${s.icon}.svg)"></i><b>${s.key}</b><span class="cs-bar ${s.cls}"><em style="width:${v * 20}%"></em></span><small>${s.fx(v)}</small></div>`; }).join('')

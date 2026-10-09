@@ -323,7 +323,7 @@ try {
       for (let i = 0; i < 30 * 200 && L.state === 'racing'; i++) { const n = L.next, q = L.seq[n], l = f.boatWorldToLocal(B.homePos.clone().set(q.x, B.homePos.y, q.z)); B.tgt = { x: l.x, z: l.z }; step(); if (L.next > n + 1) order = false; }
       const res = L.p; o.order = order; o.state = L.state; o.pen = L.pen >= 2; o.pb = res.best > 30 && res.best < 80 && res.ghost.length > 300 && res.splits.length === L.seq.length;
       o.reward = inv('amber') > amber || inv('fiber') > 0; o.card = document.querySelector('.lakerun-result').classList.contains('show') && res.attempts === 1;
-      g.save.flush(); o.saved = g.save.profile.tree.stage === 2 && g.save.profile.tree.fed === 1 && g.save.profile === g.save.data.profiles.shared;
+      g.save.flush(); o.saved = JSON.parse(localStorage.getItem('tgw.save')).profiles.shared.lakeRun.best === res.best;
       o.t = res.best; return o;
     }) : {};
     check('lake race: hidden until the dock circle, start there, shore fishing on lake + stream, grey Locked without rod/boat (R72), countdown hold, buoys in order, log penalty, finish + medal reward, PB + ghost saved', ready && r.offer && r.shore && r.locked && r.held && r.order && r.state === 'result' && r.pen && r.pb && r.reward && r.card && r.saved && !errors.length, errors[0] || JSON.stringify(r));
@@ -803,7 +803,7 @@ try {
       inv.set('golden_seed', 4); o.offer = /Feed the tree/.test(T.interaction(g.character.position)?.label || '');
       o.grow = T.feed() && T.t.stage === 1 && T.feed() && T.t.stage === 2 && T.feed() && T.t.stage === 2 && T.t.fed === 1 && inv.get('golden_seed') === 1;
       for (let i = 0; i < 40 && g.orangery.stage !== 2; i++) await w(250); o.model = g.orangery.stage === 2;
-      g.save.flush(); o.saved = JSON.parse(localStorage.getItem('tgw.save.v1') || localStorage.getItem(Object.keys(localStorage).find(k => /tgw\.save/.test(k) && !/premerge|backup/.test(k))) || '{}')?.data?.profiles?.shared?.tree?.stage === 2 || g.save.profile.tree.stage === 2;
+      g.save.flush(); o.saved = JSON.parse(localStorage.getItem('tgw.save')).profiles.shared.tree.stage === 2 && JSON.parse(localStorage.getItem('tgw.save')).profiles.shared.tree.fed === 1;   // written to storage
       return o; });
     check('R150 Orangery tree: starts as soil, E feeds a Golden Seed, 1 + 1 seeds grow two stages, no seed = Locked with progress, saved', ok && ['soil', 'locked', 'offer', 'grow', 'model', 'saved'].every(k => r[k]) && !errors.length, errors[0] || JSON.stringify(r)); await ctx.close(); }
   // 17t. R151 golden pot (Jannik 09/10): watering the same pot on 3 days in a row turns its plant golden; a gap resets the count;
@@ -819,6 +819,29 @@ try {
       for (let i = 0; i < 40 && g.specialSeeds.s.aloe !== 1; i++) await w(250); o.aloe = g.specialSeeds.s.aloe === 1 && g.hud.gearItems().some(x => x.id === 'seed-aloe');
       return o; });
     check('R151 golden pot: 3 days in a row turns the plant golden, a gap resets, harvesting it gives the Aloe Seed', ok && ['reset', 'golden', 'kept', 'harvest', 'aloe'].every(k => r[k]) && !errors.length, errors[0] || JSON.stringify(r)); await ctx.close(); }
+  // 17u. R152 guidance + Seeds tab: a Special Seed in the Bag becomes the next step ('Plant your Tulip Seed'); Golden Seeds in hand
+  // point to the Orangery tree; the workbench Seeds tab lists the six seeds (Bag / Locked with how / Grown)
+  { const ctx = await context({ viewport: { width: 1280, height: 720 } }); const { p, errors, ok } = await startGame(ctx, 'cactus', { hud: 'desktop-e' }); let r = {};
+    if (ok) r = await p.evaluate(async () => { const g = window.__tgw, w = ms => new Promise(x => setTimeout(x, ms)), o = {}, W = g.wilds, S = g.specialSeeds; for (let i = 0; i < 60 && !W.profile; i++) await w(250);
+      S.earn('tulip'); o.goal = W.goal().title === 'Plant your Tulip Seed';
+      g.state.inventory.set('golden_seed', 2); o.tree = /Feed the community tree/.test(W.treeGoal()?.title || '') && /0\/1/.test(W.treeGoal().copy);
+      const P = g.workbenchPanel; P.show(); P.tab = 'chars'; P.render(); const items = [...P.el.querySelectorAll('.wilds-item')], txt = n => items.find(x => x.textContent.includes(n))?.textContent || '';
+      o.tab = items.length === 6 && /In your Bag/.test(txt('Tulip Seed')) && /Locked/.test(txt('Fern Seed')) && /Root Bear/.test(txt('Hyacinth Seed')) && P.el.querySelector('.wilds-item.ready') != null; P.hide();
+      for (let i = 0; i < 240 && !g.swapSpot?.model; i++) await w(250); g.swapSpot.plantSeed(); o.after = W.goal().title !== 'Plant your Tulip Seed';
+      for (let i = 0; i < 480 && !g.orangery?.ready; i++) await w(250); const c = g.orangery.root.position; g.devMenu.teleport('world', c.x + 4, c.z, 0);
+      for (let i = 0; i < 80 && !g.orangery.root.getObjectByName('COMMUNITY_TREE_SIGN')?.visible; i++) await w(250);   // headless runs ~1 fps
+      const sg = g.orangery.root.getObjectByName('COMMUNITY_TREE_SIGN'); o.sign = !!sg?.visible && /Stage 0 · 0\/1 Golden Seeds/.test(sg?.userData.text); g.devMenu.teleport('world', c.x + 30, c.z, 0); for (let i = 0; i < 80 && sg?.visible; i++) await w(250); o.signFar = !sg?.visible;
+      return o; });
+    check('R152 guidance + Seeds tab: a seed in the Bag is the next step, Golden Seeds point to the tree, the Seeds tab lists all six, the tree shows its progress sign nearby', ok && ['goal', 'tree', 'tab', 'after', 'sign', 'signFar'].every(k => r[k]) && !errors.length, errors[0] || JSON.stringify(r)); await ctx.close(); }
+  // 17v. R153 one tab owns the shared save: when another tab claims the game, this one stops saving and offers 'Play here'
+  { const ctx = await context({ viewport: { width: 1280, height: 720 } }); const { p, errors, ok } = await startGame(ctx, 'cactus', { hud: 'desktop-e' }); let r = {};
+    if (ok) r = await p.evaluate(async () => { const g = window.__tgw, w = ms => new Promise(x => setTimeout(x, ms)), o = {};
+      g.save.flush(); o.owner = !g.save.readOnly && !document.getElementById('tab-lost');
+      new BroadcastChannel('tgw-tabs').postMessage({ claim: 'another-tab' }); await w(800);
+      const before = localStorage.getItem('tgw.save'); g.save.profile.inventory.wood = 4242; g.save.flush();
+      o.stopped = g.save.readOnly === true && localStorage.getItem('tgw.save') === before && !!document.getElementById('tab-lost');
+      return o; });
+    check('R153 tab guard: another tab claiming the game stops this tab saving and shows Play here', ok && r.owner && r.stopped && !errors.length, errors[0] || JSON.stringify(r)); await ctx.close(); }
   // 17m. R134 DEV toggles (visual only, off by default): resource icons fly into their counter; the tutorial tip sits under the resource bar on phones
   { const ctx = await context({ viewport: { width: 844, height: 390 }, isMobile: true, hasTouch: true }); await ctx.addInitScript(() => { localStorage.setItem('tgw.dev.flyIcons', '1'); localStorage.setItem('tgw.dev.tipTop', '1'); });
     const { p, errors, ok } = await startGame(ctx, 'cactus', { hud: 'classic', tips: true }); let r = {};

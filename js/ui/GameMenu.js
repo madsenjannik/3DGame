@@ -2,7 +2,7 @@
 // R121 (GO 07/10): small in-game menu. Round button under the quest card (phone + desktop E) and Esc on desktop when
 // nothing else is open. Resume · Controls (shows the first-time tips again) · Choose character · Start screen.
 // No pause: the day/night clock follows real time, so the menu is only a layer over the game. Fails soft.
-import { ControlTips } from './ControlTips.js?build=SAVE-R151-20261009A';
+import { ControlTips } from './ControlTips.js?build=SAVE-R152-20261009A';
 
 const BUSY_CLASSES = ['fishing-active', 'boating-active', 'stable-talk-active', 'stable-race-active', 'lakerun-active', 'mobile-bag-open', 'choice-open', 'rotate-gated'];
 
@@ -16,7 +16,7 @@ export class GameMenu {
     el.innerHTML = '<div class="gm-card" role="dialog" aria-label="Menu"><small>The Growing Wilds</small><h2>Menu</h2>'
       + '<button type="button" data-a="resume" class="gm-primary">Resume</button><button type="button" data-a="controls">Controls</button>'
       + '<button type="button" data-a="chars">Switch character</button><button type="button" data-a="start">Start screen</button>'
-      + '<div class="gm-confirm" hidden><p>Each character has its own garden and progress. Your progress here is saved.</p>'
+      + '<div class="gm-confirm" hidden><p>All your characters share one garden and one game. Your progress is saved.</p>'
       + '<button type="button" data-a="chars-go" class="gm-primary">Switch character</button><button type="button" data-a="chars-no">Cancel</button></div>'
       + `<span class="gm-ver">v${globalThis.TGW_VERSION?.version || ''}</span></div>`;
     document.body.appendChild(el); this.btn = btn; this.el = el;

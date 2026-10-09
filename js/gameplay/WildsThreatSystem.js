@@ -5,7 +5,7 @@ import * as THREE from 'three';
 import { THREAT } from '../data/wildsCatalog.js';
 import { WildsModel } from './WildsModels.js';
 import { loadGLTF } from '../core/AssetManager.js';
-import { SNAIL } from '../data/combatCatalog.js';
+import { SNAIL } from '../data/combatCatalog.js?build=SAVE-R152-20261009A';
 const WEED_STAGES = ['Spire', 'Busk', 'Tornet']; // R59.2 garden_weeds.glb subtrees, one per stage
 
 // R60: the greenhouse position comes from GardenBuildSystem (placed transform), not a constant.

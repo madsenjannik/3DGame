@@ -166,6 +166,10 @@ function readStore(key) {
 }
 
 // R138: the characters you may play (no SaveGame instance needed: the selector and the start guard read it too)
+// R152: the Special Seeds state for the selector (id -> 1 in the Bag | 2 planted); {} when there is no save
+export function specialSeedState() {
+  try { const r = readStore(SAVE_KEY); const s = r.data?.profiles?.[SHARED_ID]?.specialSeeds; return s && typeof s === 'object' ? s : {}; } catch { return {}; }
+}
 export function unlockedIds() {
   try { const r = readStore(SAVE_KEY); return new Set(r.data ? r.data.unlocked : STARTERS); }
   catch { try { const b = readStore(BACKUP_KEY); return new Set(b.data ? b.data.unlocked : STARTERS); } catch { return new Set(STARTERS); } }
@@ -220,7 +224,7 @@ export class SaveGame {
   }
 
   flush() {
-    if (this.ephemeral) return;
+    if (this.ephemeral || this.readOnly) return;   // R153: readOnly = another tab owns the game (TabGuard)
     clearTimeout(this.timer); this.timer = null;
     try {
       // First write of the session: keep the save we loaded as the last-known-good backup.

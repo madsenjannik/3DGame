@@ -1,6 +1,6 @@
 // @ts-nocheck
 import { MATERIALS, TOOLS, HOME_UPGRADES, PERKS, POTS } from '../data/wildsCatalog.js';
-import { WORKSHOP_UPGRADES } from '../data/workshopCatalog.js?build=SAVE-R151-20261009A';   // R144
+import { WORKSHOP_UPGRADES } from '../data/workshopCatalog.js?build=SAVE-R152-20261009A';   // R144
 
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 
@@ -13,7 +13,7 @@ export class WorkbenchPanel {
       <header><div><small>YOUR HOME</small><h2 id="wilds-panel-title">Workbench</h2></div><button type="button" class="wilds-close" aria-label="Close">✕</button></header>
       <div class="wilds-trait"></div>
       <div class="wilds-goal"></div>
-      <div class="wilds-tabs" role="tablist"><button type="button" role="tab" data-tab="tools">Tools</button><button type="button" role="tab" data-tab="home">Home</button><button type="button" role="tab" data-tab="seeds">Perks</button><button type="button" role="tab" data-tab="today">Today</button></div>
+      <div class="wilds-tabs" role="tablist"><button type="button" role="tab" data-tab="tools">Tools</button><button type="button" role="tab" data-tab="home">Home</button><button type="button" role="tab" data-tab="seeds">Perks</button><button type="button" role="tab" data-tab="chars">Seeds</button><button type="button" role="tab" data-tab="today">Today</button></div>
       <div class="wilds-list"></div>
       <footer class="wilds-inv"></footer>
     </div>`;
@@ -49,7 +49,7 @@ export class WorkbenchPanel {
   render() {
     const w = this.wilds;
     const tr = w.passive; this.el.querySelector('.wilds-trait').innerHTML = tr ? `<small>YOUR TRAIT</small><b>${esc(tr.name)}</b><span>${esc(tr.text)}</span>` : '';
-    this.el.querySelector('.wilds-goal').innerHTML = `<small>NEXT GOAL</small><span>${esc(this.nextGoal())}</span>`;
+    { const gl = this.wilds.goal(); this.el.querySelector('.wilds-goal').innerHTML = `<small>NEXT GOAL</small><span><b>${esc(gl.title)}</b> · ${esc(gl.copy)}</span>`; }   // R153: the title too (the copy alone read like a fragment)
     this.el.querySelectorAll('[data-tab]').forEach(b => b.setAttribute('aria-selected', String(b.dataset.tab === this.tab)));
     let html = '';
     if (this.tab === 'tools') {
@@ -69,6 +69,15 @@ export class WorkbenchPanel {
         const owned = !!w.profile.perks[k.id], can = shrine && !owned && amber >= price;
         html += `<article class="wilds-item${owned ? ' owned' : ''}"><div class="wilds-icon">✦</div><div class="wilds-body"><b>${esc(k.name)}</b><p>${esc(k.text)}</p>${owned ? '' : `<div class="wilds-costs">${this.costHtml({ amber: price })}</div>`}</div>
           <button type="button" data-plant="${k.id}" ${can ? '' : 'disabled'}>${owned ? 'Grown' : 'Grow'}</button></article>`;
+      }
+    } else if (this.tab === 'chars') {
+      // R152: the Special Seeds, one per character: grown, waiting in your Bag, or how to earn it
+      const rows = w.specialSeeds?.journal?.() || [];
+      html += `<p class="wilds-note">Every character grows from its own seed. Plant a seed at the Sprouting Ring in your garden.</p>`;
+      for (const d of rows) {
+        const st = d.state === 'open' ? 'Grown' : d.state === 'bag' ? 'In your Bag' : 'Locked', who = d.id[0].toUpperCase() + d.id.slice(1);
+        const line = d.state === 'bag' ? '<p>Plant it at the Sprouting Ring.</p>' : d.state === 'open' ? `<p>${esc(who)} can be chosen at the Ring.</p>` : `<p class="wilds-unlock"><i class="ico-mask" style="--ico:url(./brand/icons/svg/icon-lock.svg)"></i>${esc(d.how)}</p>`;
+        html += `<article class="wilds-item${d.state === 'open' ? ' owned' : ''}${d.state === 'bag' ? ' ready' : ''}"><div class="wilds-icon">${d.state === 'locked' ? '·' : '🌱'}</div><div class="wilds-body"><b>${esc(d.name)}</b>${line}</div><span class="wilds-count">${st}</span></article>`;
       }
     } else if (this.tab === 'today') {
       const d = w.daily, view = d.view();

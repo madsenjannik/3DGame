@@ -952,7 +952,7 @@ body.stable-race-result-active .stable-race-controls,body.stable-race-result-act
 .material-chip.shell i{color:#c99a6a}
 .wilds-trait{display:grid;grid-template-columns:auto 1fr;column-gap:8px;align-items:baseline;padding:0 2px;font-size:11px;line-height:1.35;color:#5b6353}
 .wilds-trait small{grid-column:1/3}.wilds-trait b{font-size:12px;color:#30392b}
-.wilds-tabs{grid-template-columns:repeat(4,1fr)}
+.wilds-tabs{grid-template-columns:repeat(5,1fr)}   /* R153: five tabs (Seeds, R152) */
 .wilds-tabs button{font-size:11px;letter-spacing:.02em}
 .wilds-note{margin:0;padding:0 2px;font-size:11px;line-height:1.4;color:#5b6353}
 .wilds-bar{height:6px;border-radius:999px;background:rgba(48,57,43,.12);overflow:hidden}.wilds-bar i{display:block;height:100%;background:#6f9a48;border-radius:inherit}
@@ -972,7 +972,7 @@ body.stable-race-result-active .stable-race-controls,body.stable-race-result-act
   .wilds-close{width:36px;height:36px}
   .wilds-trait{grid-column:1;grid-row:2}
   .wilds-goal{grid-column:1;grid-row:3;padding:8px 10px;font-size:11px}
-  .wilds-tabs{grid-column:1;grid-row:4;align-self:start;grid-template-columns:1fr 1fr;border-radius:14px}
+  .wilds-tabs{grid-column:1;grid-row:4;align-self:start;grid-template-columns:repeat(3,1fr);border-radius:14px}   /* R153: 5 tabs in 2 rows */
   .wilds-tabs button{height:34px;border-radius:10px}
   .wilds-list{grid-column:2;grid-row:1/5;min-height:0}
   .wilds-inv{grid-column:1/3;grid-row:5;padding-top:6px;border-top:1px solid rgba(48,57,43,.1)}
@@ -5519,3 +5519,46 @@ html body.hud-desktop-e:not(.touch) #action .key{width:28px!important;height:28p
 html body.hud-desktop-e:not(.touch) #action #action-label{color:#fffdf4!important}
 /* R149: the hearts sat on top of the open Bag (R147 moved them up); they step aside while it is open */
 html body.hud-desktop-e:not(.touch):has(#gear-panel.open) .hearts{opacity:0!important;pointer-events:none!important}
+/* R152: a Special Seed waiting in the Bag stands out in the workbench Seeds tab */
+.wilds-item.ready{box-shadow:inset 0 0 0 2px rgba(226,181,82,.75)}
+.wilds-item.ready .wilds-count{color:#a87a1c;font-weight:800}
+
+/* ===== R153 · review fixes (sub-agent UI audit, GO 09/10 'gennemgå det for fejl og for at forbedre ui') ===== */
+/* desktop: cream text over the pale sky needs a real shadow to read (was ~1.3:1) */
+html body.hud-desktop-e:not(.touch){--r147-shadow:0 1px 2px rgba(20,28,14,.9),0 0 6px rgba(20,28,14,.6),0 0 14px rgba(20,28,14,.35)}
+html body.hud-desktop-e:not(.touch) #hud #objective #objective-kicker{opacity:1!important;font-size:10.5px!important}
+/* desktop: a Locked / unavailable action must not look like a live one */
+html body.hud-desktop-e:not(.touch) #action:is(.locked,.wilds-locked){background:rgba(70,70,62,.62)!important;cursor:not-allowed}
+html body.hud-desktop-e:not(.touch) #action:is(.locked,.wilds-locked) #action-label{color:rgba(255,253,244,.6)!important}
+/* desktop: first-time tips sit above the action pill instead of on it */
+html body.hud-desktop-e:not(.touch) #control-tips{bottom:calc(196px + env(safe-area-inset-bottom))}
+/* desktop: the lantern steps up while the Special button is out (they overlapped) */
+html body.hud-desktop-e:not(.touch).lantern-ready:has(.special-btn.show) #lantern-btn{bottom:calc(134px + env(safe-area-inset-bottom))}
+/* desktop: the Bag matches the 60 px slots (it touched slot 1); hints smaller on narrow screens */
+html body.hud-desktop-e:not(.touch) #hud #hud-bag.hud-fold-btn{width:60px!important;height:60px!important}
+@media (max-width:1366px){html body.hud-desktop-e:not(.touch) #desk-hints{font-size:10px}}
+html body.hud-desktop-e:not(.touch):is(.stable-talk-active,.stable-ride-active,.stable-race-active,.stable-setup-active,.stable-race-result-active,.lakerun-active,.world-map-open,.build-mode,.choice-open,.boss-active) #desk-hints{display:none}
+/* desktop: toasts and first-time tips in the same dark glass as the action pill */
+html body.hud-desktop-e:not(.touch) #toast{background:rgba(43,52,33,.86)!important;color:#fffdf4!important;box-shadow:0 6px 16px rgba(0,0,0,.25)!important}
+html body.hud-desktop-e:not(.touch) #control-tips{background:rgba(43,52,33,.88);color:#fffdf4;box-shadow:0 6px 16px rgba(0,0,0,.25)}
+html body.hud-desktop-e:not(.touch) #control-tips .ct-step{color:#ffe08a}
+html body.hud-desktop-e:not(.touch) #control-tips .ct-skip{background:rgba(255,253,244,.16);color:#fffdf4}
+/* desktop: hover + keyboard focus for mouse users */
+html body.hud-desktop-e:not(.touch) :is(#game-menu-btn,#hud-bag,#lantern-btn):hover{background:rgba(255,255,255,.6)!important}
+html body.hud-desktop-e:not(.touch) :is(#game-menu-btn,#hud-bag,#lantern-btn,#action,.desktop-hotbar-slot,.wilds-tabs button,.wilds-item button):focus-visible{outline:2px solid #e2b552;outline-offset:3px}
+html body.hud-desktop-e:not(.touch) .gear-panel .gear-item.equippable:hover{background:rgba(226,181,82,.14)}
+body:not(.touch) .wilds-tabs button:not([aria-selected=true]):hover{background:rgba(48,57,43,.12)}
+/* phone: a toast never covers the open quest card */
+html body.hud-classic.touch:has(#objective.open) #toast{left:calc((100vw - 250px) / 2)!important;max-width:calc(100vw - 290px)!important}
+/* Bag: a Special Seed's single action spans the row and reads as a hint, not a broken button */
+.bag2-acts>:only-child{grid-column:1/-1}
+.bag2-act.primary:disabled{opacity:1;background:#f3e6c8;color:#6a5321}
+/* phone Bag: smallest labels readable */
+.bag2-tag{font-size:9.5px!important}.bag2-slot small,.bag2-num{font-size:9.5px!important}
+/* workbench: locked rows keep readable text (only the icon and the button fade) */
+.wilds-item.locked{opacity:1}.wilds-item.locked .wilds-icon,.wilds-item.locked button{opacity:.45}
+@media (max-height:520px) and (orientation:landscape){.wilds-tabs button{min-height:40px}.wilds-close{min-width:44px;min-height:44px}}
+/* another tab owns the game (TabGuard) */
+#tab-lost{position:fixed;inset:0;z-index:9000;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;border:0;padding:24px;
+  background:rgba(25,31,21,.82);color:#fffdf4;font:700 15px/1.4 Manrope,system-ui,sans-serif;cursor:pointer;-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px)}
+#tab-lost b{font-size:19px}#tab-lost span{padding:10px 18px;border-radius:999px;background:#e2b552;color:#2b2a24;font-weight:800}

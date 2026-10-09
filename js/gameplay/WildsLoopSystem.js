@@ -7,13 +7,13 @@
 import * as THREE from 'three';
 import { damp, radialTexture } from '../visual/VisualKit.js';
 import { MATERIALS, NODE_KINDS, TOOLS, HOME_UPGRADES, RULES, PASSIVES, PERKS, GOLDEN_CACHES } from '../data/wildsCatalog.js';
-import { WildsThreatSystem } from './WildsThreatSystem.js?build=SAVE-R151-20261009A';
+import { WildsThreatSystem } from './WildsThreatSystem.js?build=SAVE-R152-20261009A';
 import { DailyRequests } from './DailyRequests.js';
-import { GardenPotsSystem } from './GardenPotsSystem.js?build=SAVE-R151-20261009A';
+import { GardenPotsSystem } from './GardenPotsSystem.js?build=SAVE-R152-20261009A';
 import { loadWildsModels, loadGardenModels, WildsModel } from './WildsModels.js';
-import { WORKSHOP_UPGRADES, WORKSHOP_FILES, WORKSHOP_SCALE } from '../data/workshopCatalog.js?build=SAVE-R151-20261009A';   // R144
+import { WORKSHOP_UPGRADES, WORKSHOP_FILES, WORKSHOP_SCALE } from '../data/workshopCatalog.js?build=SAVE-R152-20261009A';   // R144
 import { loadGLTF } from '../core/AssetManager.js';
-import { perkPrice } from '../data/economyCatalog.js?build=SAVE-R151-20261009A';   // R148
+import { perkPrice } from '../data/economyCatalog.js?build=SAVE-R152-20261009A';   // R148
 import { FIXED_HEDGE as HEDGE } from '../data/gardenCatalog.js';
 
 const HOME = { x: 0, z: 4.7 };
@@ -134,6 +134,7 @@ export class WildsLoopSystem {
   goal() {
     const p = this.profile, inv = id => this.state.inventory.get(id) || 0, pots = this.pots, g = (title, copy) => ({ title, copy });
     const costText = cost => Object.entries(cost || {}).map(([id,n]) => `${n} ${MATERIALS[id]?.name || id}`).join(' · ');
+    const seed = this.seedGoal?.(); if (seed) return seed;   // R152: a Special Seed in the Bag is the most useful next step (set by Game)
     if (!Object.keys(p.inventory).length && !this.has('axe')) return g('Gather natural materials', 'Outside your garden gate · Gather Wood, Stone, Clay and Fiber from the resources that glint.');
     if (!this.has('axe')) { const axe = TOOLS.find(t => t.id === 'axe'); return g('Craft your first tool', `Workbench in your garden · Requires ${costText(axe?.cost)}. Craft the Stone Axe.`); }
     if (!pots?.available()) return g('Build your greenhouse', 'At the back of your garden. Pots and plants live there.');
@@ -153,6 +154,7 @@ export class WildsLoopSystem {
     if (up) return g(`Build ${up.name}`, `Workbench in your garden · Requires ${costText(up.cost)}.`);
     if (p.homeLevel >= 2 && PERKS.some(k => !p.perks[k.id]) && inv('amber') >= this.perkPrice()) return g('Grow a perk', `At the Perk Shrine (workbench → Perks) · ${this.perkPrice()} Amber.`);
     const boat = this.boatGoal?.(); if (boat) return boat; // R58 boat economy (set by BoatEconomySystem)
+    const tree = this.treeGoal?.(); if (tree) return tree;   // R152: Golden Seeds in hand → feed the Orangery tree (set by Game)
     return g('Keep your garden growing', 'More of the wilds will open with the seasons.');
   }
 

@@ -103,7 +103,7 @@ export class CharacterSwapSpot {
     if (!this.spot || !pos || this.g.world?.space !== 'garden') return null;
     const d = Math.hypot(pos.x - this.spot.x, pos.z - this.spot.z); if (d > RADIUS) return null;
     const seed = this.g.specialSeeds?.inBag?.()[0];   // R149: a Special Seed in the Bag is planted here first
-    if (seed && this.model) return { type: 'home-plant', label: `Plant ${seed.name}`, distance: d };
+    if (seed) return { type: 'home-plant', label: `Plant ${seed.name}`, distance: d };   // R153: also on the gold-circle fallback (no model)
     return { type: 'home-swap', label: 'Switch character', distance: d };
   }
   // R149: plant the Special Seed: the character's pot grows (Pop_<id>), the padlock goes, the selector opens it
