@@ -347,7 +347,11 @@ try {
     await p.goto(B + 'game.html?char=fern', { waitUntil: 'load' });
     const ok = await p.waitForFunction(() => window.__tgw?.wilds?.gardenModels && window.__tgw.greenhouse?.entries.size === 3 && window.__tgw.wilds.threat, null, { timeout: 240000 }).then(() => true, () => false);
     let diffs = ['not loaded'];
+    if (ok) await p.waitForFunction(() => window.__tgw.swapSpot?.model, null, { timeout: 60000 }).catch(() => {});   // R140: the ring is in place first
     if (ok) { const ref = JSON.parse(fs.readFileSync(path.join(ROOT, 'tests/garden-snapshot.ref.json'), 'utf8')), now = await p.evaluate(collectGardenSnapshot); diffs = [];
+      // R140: the Sprouting Ring replaced the two bed shrubs on purpose (their collider is gone, its pots have their own); compare everything else exactly
+      const ring = await p.evaluate(() => (window.__tgw.vegetationMask?.fixed || []).filter(f => f.colliders));
+      const keep = c => c[0] !== 'ring-pot' && !ring.some(f => Math.hypot(c[1] - f.cx, c[2] - f.cz) < f.r); ref.colliders = ref.colliders.filter(keep); now.colliders = now.colliders.filter(keep);
       const walk = (a, b, k) => { if (typeof a !== 'object' || a === null || typeof b !== 'object' || b === null) { if (JSON.stringify(a) !== JSON.stringify(b)) diffs.push(k); return; } for (const x of new Set([...Object.keys(a), ...Object.keys(b)])) walk(a[x], b[x], `${k}.${x}`); };
       walk(ref, now, 'garden'); }
     check('garden migration: 0 transform differences vs pre-R60 reference', ok && !diffs.length && !errors.length, errors[0] || diffs.slice(0, 4).join(' '));
@@ -716,13 +720,13 @@ try {
         const d = g.homePortal.gardenDoorPoint; o.offer = g.interactions.last?.interaction?.type === 'home-swap' && Math.hypot(s.x - d.x, s.z - d.z) > 2.15 && g.swapSpot.m.visible;
         /* R139: Jannik's Spirebænken: open characters show their sprout, locked ones soil with the seed; Idle runs; the stone magic brightens when you stand on it */
         for (let i = 0; i < 40 && !g.swapSpot.model; i++) await w(250); const M = g.swapSpot.model, vis = n => M?.getObjectByName(n)?.visible;
-        o.model = !!M && vis('Sprout_cactus') && !vis('Soil_cactus') && !vis('Sprout_tulip') && vis('Soil_tulip') && !!g.swapSpot.mixer && g.swapSpot.near > .5 && g.swapSpot.ringOut.material.opacity > .6;
+        o.model = !!M && vis('Sprout_cactus') && !vis('Soil_cactus') && !vis('Sprout_tulip') && vis('Soil_tulip') && vis('Lock_tulip') && !vis('Lock_cactus') && !!g.swapSpot.mixer && g.swapSpot.near > .5 && g.swapSpot.ring.material.opacity > .6 && g.swapSpot.potColliders.length === 9 && !g.world.colliders.some(c => c.kind === 'static' && Math.hypot(c.x - s.x, c.z - s.z) < 2);   /* R140: padlocks, pots solid, the bed shrubs gone */
         return o; });
       await p.evaluate(() => window.__tgw.swapSpot.interact()); r.nav = await p.waitForURL(/selector\.html\?char=cactus&from=home/, { timeout: 20000 }).then(() => true, () => false);
       if (r.nav) { await p.waitForFunction(() => document.body.classList.contains('cs-ready'), null, { timeout: 60000 }).catch(() => {}); await p.click('#cs-home'); r.back = await p.waitForURL(/game\.html\?char=cactus/, { timeout: 20000 }).then(() => true, () => false); } }
     const c2 = await context({ viewport: { width: 844, height: 390 }, isMobile: true, hasTouch: true }); const q = await c2.newPage(); await q.addInitScript(() => localStorage.removeItem('tgw.devMenu'));
     await q.goto(B + 'game.html?char=tulip'); r.guard = await q.waitForURL(/selector\.html\?char=tulip/, { timeout: 30000 }).then(() => true, () => false); await c2.close();
-    check('R138/R139 switch at home: Spirebænken in the garden (sprouts = open characters, magic on the stone) opens the selector, back returns to the game; a locked character is sent to the selector', ok && r.worldNone && r.offer && r.model && r.nav && r.back && r.guard && !errors.length, errors[0] || JSON.stringify(r)); await ctx.close(); }
+    check('R138–R140 switch at home: the Sprouting Ring in the garden (sprouts = open, padlocks = locked, pots solid, shrubs gone, magic on the stone) opens the selector, back returns to the game; a locked character is sent to the selector', ok && r.worldNone && r.offer && r.model && r.nav && r.back && r.guard && !errors.length, errors[0] || JSON.stringify(r)); await ctx.close(); }
   // 17m. R134 DEV toggles (visual only, off by default): resource icons fly into their counter; the tutorial tip sits under the resource bar on phones
   { const ctx = await context({ viewport: { width: 844, height: 390 }, isMobile: true, hasTouch: true }); await ctx.addInitScript(() => { localStorage.setItem('tgw.dev.flyIcons', '1'); localStorage.setItem('tgw.dev.tipTop', '1'); });
     const { p, errors, ok } = await startGame(ctx, 'cactus', { hud: 'classic', tips: true }); let r = {};
