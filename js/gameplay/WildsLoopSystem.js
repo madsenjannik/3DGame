@@ -7,12 +7,13 @@
 import * as THREE from 'three';
 import { damp, radialTexture } from '../visual/VisualKit.js';
 import { MATERIALS, NODE_KINDS, TOOLS, HOME_UPGRADES, RULES, PASSIVES, PERKS, GOLDEN_CACHES } from '../data/wildsCatalog.js';
-import { WildsThreatSystem } from './WildsThreatSystem.js?build=SAVE-R147-20261009A';
+import { WildsThreatSystem } from './WildsThreatSystem.js?build=SAVE-R148-20261009A';
 import { DailyRequests } from './DailyRequests.js';
-import { GardenPotsSystem } from './GardenPotsSystem.js?build=SAVE-R147-20261009A';
+import { GardenPotsSystem } from './GardenPotsSystem.js?build=SAVE-R148-20261009A';
 import { loadWildsModels, loadGardenModels, WildsModel } from './WildsModels.js';
-import { WORKSHOP_UPGRADES, WORKSHOP_FILES, WORKSHOP_SCALE } from '../data/workshopCatalog.js?build=SAVE-R147-20261009A';   // R144
+import { WORKSHOP_UPGRADES, WORKSHOP_FILES, WORKSHOP_SCALE } from '../data/workshopCatalog.js?build=SAVE-R148-20261009A';   // R144
 import { loadGLTF } from '../core/AssetManager.js';
+import { perkPrice } from '../data/economyCatalog.js?build=SAVE-R148-20261009A';   // R148
 import { FIXED_HEDGE as HEDGE } from '../data/gardenCatalog.js';
 
 const HOME = { x: 0, z: 4.7 };
@@ -150,7 +151,7 @@ export class WildsLoopSystem {
       return g('Clear Thornbrush', 'Cut Thornbrush in the wilds with your Sickle to reach hidden amber caches.');
     const up = HOME_UPGRADES[p.homeLevel];
     if (up) return g(`Build ${up.name}`, `Workbench in your garden · Requires ${costText(up.cost)}.`);
-    if (inv('golden_seed') > 0 && PERKS.some(k => !p.perks[k.id])) return g('Plant your Golden Seed', 'At the Seed Shrine (workbench → Seeds).');
+    if (p.homeLevel >= 2 && PERKS.some(k => !p.perks[k.id]) && inv('amber') >= this.perkPrice()) return g('Grow a perk', `At the Perk Shrine (workbench → Perks) · ${this.perkPrice()} Amber.`);
     const boat = this.boatGoal?.(); if (boat) return boat; // R58 boat economy (set by BoatEconomySystem)
     return g('Keep your garden growing', 'More of the wilds will open with the seasons.');
   }
@@ -299,9 +300,11 @@ export class WildsLoopSystem {
     const w = this.at('workshop'), b = this.at('rain'), c = this.at('rain', -.95, 0), sh = this.at('shrine');
     return [{ x: w.x, z: w.z, r: 1.1 }, { x: b.x, z: b.z, r: .9 }, { x: c.x, z: c.z, r: .8 }, { x: sh.x, z: sh.z, r: 1 }];
   }
+  perkPrice() { return perkPrice(PERKS.filter(k => this.profile.perks[k.id]).length); }
   plantSeed(perkId) {
     const perk = PERKS.find(p => p.id === perkId);
-    if (!perk || this.profile.perks[perkId] || this.profile.homeLevel < 2 || !this.pay({ golden_seed: 1 })) return false;
+    // R148 (Jannik 09/10): perks are bought with amber at the Perk Shrine; each one costs more than the last
+    if (!perk || this.profile.perks[perkId] || this.profile.homeLevel < 2 || !this.pay({ amber: this.perkPrice() })) return false;
     this.profile.perks[perkId] = true; this.save.persist(); this.hud?.showToast(`${perk.name} takes root`); this.emit();
     if (this.shrineModel) { this.shrineModel.play(['Plant'], () => this.shrineModel.loop('Idle')); this.syncPerks(perkId); }
     return true;

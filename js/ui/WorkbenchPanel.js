@@ -1,6 +1,6 @@
 // @ts-nocheck
 import { MATERIALS, TOOLS, HOME_UPGRADES, PERKS, POTS } from '../data/wildsCatalog.js';
-import { WORKSHOP_UPGRADES } from '../data/workshopCatalog.js?build=SAVE-R147-20261009A';   // R144
+import { WORKSHOP_UPGRADES } from '../data/workshopCatalog.js?build=SAVE-R148-20261009A';   // R144
 
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 
@@ -13,7 +13,7 @@ export class WorkbenchPanel {
       <header><div><small>YOUR HOME</small><h2 id="wilds-panel-title">Workbench</h2></div><button type="button" class="wilds-close" aria-label="Close">✕</button></header>
       <div class="wilds-trait"></div>
       <div class="wilds-goal"></div>
-      <div class="wilds-tabs" role="tablist"><button type="button" role="tab" data-tab="tools">Tools</button><button type="button" role="tab" data-tab="home">Home</button><button type="button" role="tab" data-tab="seeds">Seeds</button><button type="button" role="tab" data-tab="today">Today</button></div>
+      <div class="wilds-tabs" role="tablist"><button type="button" role="tab" data-tab="tools">Tools</button><button type="button" role="tab" data-tab="home">Home</button><button type="button" role="tab" data-tab="seeds">Perks</button><button type="button" role="tab" data-tab="today">Today</button></div>
       <div class="wilds-list"></div>
       <footer class="wilds-inv"></footer>
     </div>`;
@@ -62,12 +62,13 @@ export class WorkbenchPanel {
       html += `<article class="wilds-item${full ? ' owned' : ''}"><div class="wilds-icon">🪴</div><div class="wilds-body"><b>Terracotta Pot · ${n}/${POTS.max}</b><p>${gh ? 'Goes on your greenhouse shelf. Plant Wild Seeds, water from the pond, harvest.' : 'Build your greenhouse first (back of the garden).'}</p>${full ? '' : `<div class="wilds-costs">${this.costHtml(POTS.cost)}</div>`}</div>
         <button type="button" data-pot ${canPot ? '' : 'disabled'}>${full ? 'Full' : 'Craft'}</button></article>`;
     } else if (this.tab === 'seeds') {
-      const seeds = this.state.inventory.get('golden_seed') || 0, shrine = w.profile.homeLevel >= 2;
-      html += `<p class="wilds-note">${shrine ? `You have <b>${seeds}</b> Golden Seed${seeds === 1 ? '' : 's'}. Each one grows into a permanent perk.` : 'Build the Seed Shrine (Home tab) to plant Golden Seeds. Seeds hide in some caches and reward daily streaks.'}</p>`;
+      // R148: the Perk Shrine takes amber; the next perk costs more than the last (10 / 15 / 20 / 30)
+      const amber = this.state.inventory.get('amber') || 0, shrine = w.profile.homeLevel >= 2, price = w.perkPrice();
+      html += `<p class="wilds-note">${shrine ? `Grow a permanent perk for amber. Each new perk costs more than the last. You have <b>${amber}</b> Amber.` : 'Build the Perk Shrine (Home tab) to grow perks for amber.'}</p>`;
       for (const k of PERKS) {
-        const owned = !!w.profile.perks[k.id], can = shrine && !owned && seeds > 0;
-        html += `<article class="wilds-item${owned ? ' owned' : ''}"><div class="wilds-icon">✦</div><div class="wilds-body"><b>${esc(k.name)}</b><p>${esc(k.text)}</p></div>
-          <button type="button" data-plant="${k.id}" ${can ? '' : 'disabled'}>${owned ? 'Grown' : 'Plant'}</button></article>`;
+        const owned = !!w.profile.perks[k.id], can = shrine && !owned && amber >= price;
+        html += `<article class="wilds-item${owned ? ' owned' : ''}"><div class="wilds-icon">✦</div><div class="wilds-body"><b>${esc(k.name)}</b><p>${esc(k.text)}</p>${owned ? '' : `<div class="wilds-costs">${this.costHtml({ amber: price })}</div>`}</div>
+          <button type="button" data-plant="${k.id}" ${can ? '' : 'disabled'}>${owned ? 'Grown' : 'Grow'}</button></article>`;
       }
     } else if (this.tab === 'today') {
       const d = w.daily, view = d.view();
@@ -95,7 +96,7 @@ export class WorkbenchPanel {
     // R60 step 2: garden layout. Each structure can be moved; the garden remembers it per character.
     if (this.tab === 'home' && this.onMove) {
       html += `<h3 class="wilds-sub">Garden layout</h3><p class="wilds-note">Pick a building, then walk to where it should stand. Rotate, then place.</p><div class="wilds-move">${
-        [['greenhouse', 'Greenhouse'], ['workshop', 'Workshop'], ['rain', 'Rain barrel'], ['shrine', 'Seed Shrine']].map(([id, n]) => `<button type="button" data-move="${id}">Move ${n}</button>`).join('')}</div>`;
+        [['greenhouse', 'Greenhouse'], ['workshop', 'Workshop'], ['rain', 'Rain barrel'], ['shrine', 'Perk Shrine']].map(([id, n]) => `<button type="button" data-move="${id}">Move ${n}</button>`).join('')}</div>`;
     }
     this.el.querySelector('.wilds-list').innerHTML = html;
     this.el.querySelector('.wilds-inv').innerHTML = Object.values(MATERIALS).map(m => `<span><i>${m.icon}</i>${this.state.inventory.get(m.id) || 0}</span>`).join('');

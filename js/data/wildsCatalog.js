@@ -37,8 +37,8 @@ export const TOOLS = [
 export const HOME_UPGRADES = [
   { level: 1, name: 'Rain Barrel & Compost', cost: { wood: 8, stone: 6, clay: 4, amber: 1 },
     effect: 'Wild nodes regrow 40% faster and potted plants grow 25% faster.' },
-  { level: 2, name: 'Seed Shrine', cost: { stone: 10, clay: 8, fiber: 6, amber: 4 },
-    effect: '+1 to every gather. Plant Golden Seeds here for perks.' },
+  { level: 2, name: 'Perk Shrine', cost: { stone: 10, clay: 8, fiber: 6, amber: 4 },
+    effect: '+1 to every gather. Grow perks here for amber.' },
   { level: 3, name: 'Thorn Hedge Fence', cost: { wood: 12, fiber: 10, shell: 6 },
     effect: 'Overgrowth and snails reach your garden half as often.' }
 ];
@@ -74,7 +74,7 @@ export const PASSIVES = {
   aloe:      { name: 'Soothing Sap',  text: '+1 Stone from Loose Stones and Boulders.', bonus: { stone: 1 } }
 };
 
-// Golden Seeds are planted at the Seed Shrine for one permanent perk each.
+// R148: perks are grown at the Perk Shrine for amber (prices: data/economyCatalog.js). Golden Seeds feed the Orangery tree.
 export const PERKS = [
   { id: 'swift',  name: 'Swift Growth', text: 'Everything regrows 25% faster.' },
   { id: 'roots',  name: 'Deep Roots',   text: '+1 Wood and Stone from every gather.' },

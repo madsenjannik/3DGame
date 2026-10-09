@@ -74,7 +74,7 @@ export const STRUCTURES = {
     defaultAnchor: { gx: 12, gz: 30, rot: 0 }, localOffset: { x: -0.1, z: -0.2 } // = (-6.6, 0.8)
   },
   shrine: {
-    name: 'Seed Shrine',
+    name: 'Perk Shrine',
     footprint: [-1.5, -1.5, 1.5, 1.5],            // shrine + ceremonial clearing
     access: [],
     interact: null,

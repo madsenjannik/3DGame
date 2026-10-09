@@ -767,6 +767,16 @@ try {
       o.panel = !!panel && panel.querySelectorAll('.wilds-unlock').length === 2 && /Workshop/.test(panel.textContent);
       return o; });
     check('R144 workshop: bench alone at the start, L1 bought (10 wood + 5 stone) builds the workshop with solid posts, L3 swaps the model, the panel shows the levels with the padlock placeholder', ok && r.start && r.l1 && r.l3 && r.panel && !errors.length, errors[0] || JSON.stringify(r)); await ctx.close(); }
+  // 17q. R148 Perk Shrine (Jannik 09/10): perks cost amber, each new one more (10 / 15 / 20 / 30); Golden Seeds no longer buy perks
+  { const ctx = await context({ viewport: { width: 1280, height: 720 } }); const { p, errors, ok } = await startGame(ctx, 'cactus', { hud: 'desktop-e' }); let r = {};
+    if (ok) r = await p.evaluate(async () => { const g = window.__tgw, W = g.wilds, inv = g.state.inventory, o = {}; for (let i = 0; i < 60 && !W.profile; i++) await new Promise(x => setTimeout(x, 250));
+      W.profile.homeLevel = 2; W.profile.perks = {}; inv.set('amber', 9); inv.set('golden_seed', 5);
+      o.noSeed = !W.plantSeed('swift') && !W.profile.perks.swift && inv.get('golden_seed') === 5;
+      inv.set('amber', 10); o.first = W.plantSeed('swift') && inv.get('amber') === 0 && W.perkPrice() === 15;
+      inv.set('amber', 75); o.rest = W.plantSeed('roots') && W.plantSeed('ward') && W.plantSeed('lucky') && inv.get('amber') === 10 && inv.get('golden_seed') === 5;
+      g.workbenchPanel?.show?.(); const P = g.workbenchPanel; if (P) { P.tab = 'seeds'; P.render(); o.panel = /Perks/.test(P.el.textContent) && /Perk Shrine|amber/i.test(P.el.textContent); P.hide?.(); } else o.panel = false;
+      return o; });
+    check('R148 Perk Shrine: perks cost amber (10, then 15 / 20 / 30), Golden Seeds do not buy them, the tab says Perks', ok && r.noSeed && r.first && r.rest && r.panel && !errors.length, errors[0] || JSON.stringify(r)); await ctx.close(); }
   // 17m. R134 DEV toggles (visual only, off by default): resource icons fly into their counter; the tutorial tip sits under the resource bar on phones
   { const ctx = await context({ viewport: { width: 844, height: 390 }, isMobile: true, hasTouch: true }); await ctx.addInitScript(() => { localStorage.setItem('tgw.dev.flyIcons', '1'); localStorage.setItem('tgw.dev.tipTop', '1'); });
     const { p, errors, ok } = await startGame(ctx, 'cactus', { hud: 'classic', tips: true }); let r = {};
