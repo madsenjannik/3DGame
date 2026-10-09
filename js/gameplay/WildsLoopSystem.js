@@ -7,10 +7,12 @@
 import * as THREE from 'three';
 import { damp, radialTexture } from '../visual/VisualKit.js';
 import { MATERIALS, NODE_KINDS, TOOLS, HOME_UPGRADES, RULES, PASSIVES, PERKS, GOLDEN_CACHES } from '../data/wildsCatalog.js';
-import { WildsThreatSystem } from './WildsThreatSystem.js?build=SAVE-R143-20261009A';
+import { WildsThreatSystem } from './WildsThreatSystem.js?build=SAVE-R144-20261009A';
 import { DailyRequests } from './DailyRequests.js';
-import { GardenPotsSystem } from './GardenPotsSystem.js?build=SAVE-R143-20261009A';
+import { GardenPotsSystem } from './GardenPotsSystem.js?build=SAVE-R144-20261009A';
 import { loadWildsModels, loadGardenModels, WildsModel } from './WildsModels.js';
+import { WORKSHOP_UPGRADES, WORKSHOP_FILES, WORKSHOP_SCALE } from '../data/workshopCatalog.js?build=SAVE-R144-20261009A';   // R144
+import { loadGLTF } from '../core/AssetManager.js';
 import { FIXED_HEDGE as HEDGE } from '../data/gardenCatalog.js';
 
 const HOME = { x: 0, z: 4.7 };
@@ -118,6 +120,7 @@ export class WildsLoopSystem {
     const put = (g, id) => { if (!g) return; const t = this.structureAt(id); g.position.set(t.x, 0, t.z); g.rotation.y = t.yaw; };
     put(this.workbench?.root, 'workshop'); put(this.upgradeL1, 'rain'); put(this.upgradeL2, 'shrine');
     const wb = this.at('workshop'); if (this.workbenchObstacle) { this.workbenchObstacle.x = wb.x; this.workbenchObstacle.z = wb.z; }
+    if (this.workshopModel?.root.visible) this.setWorkshopPosts(true);   // R144: the posts follow a moved workshop
     if (this.upgradeObstacles) {
       const b = this.at('rain'), c = this.at('rain', -.95, 0), sh = this.at('shrine');
       [[0, b], [1, c], [2, sh]].forEach(([i, p]) => { this.upgradeObstacles[i].x = p.x; this.upgradeObstacles[i].z = p.z; });
@@ -383,7 +386,42 @@ export class WildsLoopSystem {
     this.profile.tools[toolId] = true; this.profile.stats.crafted++;
     if (this.rack[toolId]) this.rack[toolId].visible = !this.benchModel; this.save.persist();
     this.benchModel?.play(['Craft'], () => this.benchModel.loop('Idle'));
+    if (this.workshopModel?.has('Craft')) this.workshopModel.play(['Craft'], () => this.workshopModel.loop('Idle'));   // R144
     this.hud?.showToast(`${tool.name} crafted`); this.emit();
+    return true;
+  }
+
+  // R144 (GO 09/10): the workshop grows around the bench. Level 0 = the bench alone; 1..3 load Jannik's workshop GLB for
+  // that level on demand (it brings its own bench, so the old one hides), play Build / Upgrade when bought, Idle after,
+  // Craft when a tool is made. Its six posts are solid. Fails soft: no model → the bench stays.
+  applyWorkshop(celebrate) {
+    const lvl = this.profile.workshop | 0, w = this.workbench; if (!w) return;
+    const bench = this.benchModel?.root, label = w.root.children.find(c => c.isSprite && c !== w.glow), showBench = on => { if (bench) bench.visible = on; for (const k in this.rack || {}) this.rack[k].visible = on && !this.benchModel && this.has(k); if (label) label.position.y = on ? 1.75 : 3.25; };
+    if (lvl < 1) { if (this.workshopModel) this.workshopModel.root.visible = false; showBench(true); this.setWorkshopPosts(false); return; }
+    if (this.workshopModel && this.workshopLevel === lvl) { this.workshopModel.root.visible = true; showBench(false); return; }
+    const tok = this.workshopLoad = (this.workshopLoad || 0) + 1;
+    loadGLTF(WORKSHOP_FILES[lvl]).then(gltf => {
+      if (tok !== this.workshopLoad) return;
+      if (this.workshopModel) { w.root.remove(this.workshopModel.root); this.gardenMixers = (this.gardenMixers || []).filter(m => m !== this.workshopModel); }
+      const m = this.workshopModel = new WildsModel(gltf, 'workshop', { scale: WORKSHOP_SCALE }); this.workshopLevel = lvl;
+      for (const n of ['Ruin', 'Ghost']) { const o = m.root.getObjectByName(`Workshop_L${lvl}_${n}`); if (o) o.visible = false; }
+      w.root.add(m.root); (this.gardenMixers ||= []).push(m); showBench(false);
+      const clip = lvl === 1 ? 'Build' : 'Upgrade';
+      if (celebrate && m.has(clip)) m.play([clip], () => m.loop('Idle')); else m.loop('Idle');
+      this.setWorkshopPosts(true);
+    }).catch(e => console.warn('[TGW] workshop model failed; the bench stays', e));
+  }
+  setWorkshopPosts(on) {
+    for (const o of this.workshopPosts || []) this.setObstacle(o, false); this.workshopPosts = [];
+    const m = this.workshopModel; if (!on || !m) return;
+    m.root.updateMatrixWorld(true); const v = new THREE.Vector3();
+    m.root.traverse(o => { if (/^Post_\d$/.test(o.name)) { o.getWorldPosition(v); this.workshopPosts.push(this.gardenObstacle(v.x, v.z, .13, 'workshop-post')); } });
+  }
+  upgradeWorkshop() {
+    const next = WORKSHOP_UPGRADES[this.profile.workshop | 0];
+    if (!next || !this.pay(next.cost)) return false;
+    this.profile.workshop = next.level; this.save.persist();
+    this.applyWorkshop(true); this.hud?.showToast(`${next.name} built`); this.emit();
     return true;
   }
 
@@ -483,6 +521,7 @@ export class WildsLoopSystem {
       });
     }
     this.gardenModels = models;
+    this.applyWorkshop(false);   // R144
     this.threat?.useModels?.(models); this.pots?.useModels?.(models);
     this.syncGardenModels(false);
     for (const k of PERKS) if (this.profile.perks[k.id]) this.syncPerks(null);

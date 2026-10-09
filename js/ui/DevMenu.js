@@ -54,7 +54,7 @@ export class DevMenu {
           <button data-a="cb:tp">Teleport til Mole</button><button data-a="cb:heal">Fuld liv</button><button data-a="cb:special">Fyld special-måler</button><button data-a="cb:hurt">Tag 1 hjerte skade</button><button data-a="cb:respawn">Respawn moles</button><button data-a="cb:mercy">Nulstil mercy + poser</button><button data-a="cb:arena">Teleport til Wood Giant</button><button data-a="cb:bosslow">Boss: 4 liv tilbage</button><button data-a="cb:bossreset">Boss: klar igen</button><button data-a="tid:night">Tid: nat nu</button><button data-a="tid:day">Tid: dag nu</button><button data-a="tid:clock">Tid: følg uret</button><button data-a="cb:bear">Teleport til Root Bear</button><button data-a="cb:bearawake">Root Bear: vågen nu</button><button data-a="cb:bearlow">Root Bear: 4 liv</button><button data-a="cb:bearreset">Root Bear: klar igen</button>
         </div></section>
         <section><small>HAVE-LAYOUT (R60)</small><div class="dev-grid">
-          <button data-a="move:greenhouse">Flyt drivhus</button><button data-a="move:workshop">Flyt workshop</button><button data-a="move:rain">Flyt regntønde</button><button data-a="move:shrine">Flyt shrine</button><button data-a="layout:reset">Nulstil placeringer</button>
+          <button data-a="move:greenhouse">Flyt drivhus</button><button data-a="move:workshop">Flyt workshop</button><button data-a="move:rain">Flyt regntønde</button><button data-a="move:shrine">Flyt shrine</button><button data-a="layout:reset">Nulstil placeringer</button><button data-a="ws:0">Workshop: kun bænk</button><button data-a="ws:1">Workshop L1</button><button data-a="ws:2">Workshop L2</button><button data-a="ws:3">Workshop L3</button>
         </div></section>
         <section><small>DRIVHUS (genindlæser)</small><div class="dev-grid four">
           <button data-a="gh:0">Intet</button><button data-a="gh:1">L1</button><button data-a="gh:2">L2</button><button data-a="gh:3">L3</button>
@@ -170,6 +170,7 @@ export class DevMenu {
       return;
     }
     if (a.startsWith('move:')) { if (!g.world.isGardenSpace()) return this.toast('Gå ind i din have først'); this.hide(); g.buildMode?.start(a.slice(5)); return; }
+    if (a.startsWith('ws:')) { const w = this.g.wilds; if (!w) return; w.profile.workshop = +a.slice(3); w.save?.persist?.(); w.applyWorkshop(true); w.emit?.(); this.toast(`Workshop niveau ${a.slice(3)}`); return; }   // R144
     if (a === 'layout:reset') { g.garden?.resetToDefaults(); this.toast('Haven er tilbage på standardplaceringer'); return; }
     if (a.startsWith('flag:')) {
       const k = a.slice(5), on = !this.flag(k); try { localStorage.setItem(`tgw.dev.${k}`, on ? '1' : '0'); } catch {}

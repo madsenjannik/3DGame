@@ -5441,3 +5441,7 @@ html body.hud-classic.touch.tip-top.ct-on #toast{top:calc(max(9px,env(safe-area-
 #action .key.mouse{display:inline-grid;place-items:center}
 #action .key.mouse .kh-mouse{display:block;width:11px;height:16px;border:1.5px solid currentColor;border-radius:6px;position:relative;box-sizing:border-box}
 #action .key.mouse .kh-mouse::before{content:'';position:absolute;left:0;top:0;width:50%;height:45%;background:currentColor;border-radius:5px 0 0 0}
+
+/* R144: workshop unlock placeholder (padlock) in the workbench panel */
+.wilds-unlock{display:flex;align-items:center;gap:6px;margin:4px 0 0;font-weight:700;color:#8a6a2a}
+.wilds-unlock .ico-mask{display:inline-block;width:13px;height:13px;background:#8a6a2a;-webkit-mask:var(--ico) center/contain no-repeat;mask:var(--ico) center/contain no-repeat}

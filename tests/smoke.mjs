@@ -740,6 +740,20 @@ try {
       await p.keyboard.press('KeyE'); await p.waitForTimeout(2500); r.eNo = await p.evaluate(() => window.__n?.state === 'ready');
       await p.mouse.click(640, 400); for (let i = 0; i < 20 && !r.click; i++) { await p.waitForTimeout(500); r.click = await p.evaluate(() => window.__n?.state !== 'ready'); } }
     check('R142 desktop: tool work is a left click (mouse on the pill), E no longer gathers; the mound wears the garden ground colours', ok && r.pill && r.eNo && r.click && r.mound && !errors.length, errors[0] || JSON.stringify(r)); await ctx.close(); }
+  // 17p. R144 workshop: the bench alone at the start; building level 1 (10 wood + 5 stone) loads the L1 workshop around it (its own bench, solid posts), levels 2/3 swap the model; the panel lists the levels with the padlock placeholder
+  { const ctx = await context({ viewport: { width: 1280, height: 720 } }); const { p, errors, ok } = await startGame(ctx, 'cactus', { hud: 'desktop-e' }); let r = {};
+    if (ok) r = await p.evaluate(async () => { const g = window.__tgw, W = g.wilds, w = ms => new Promise(x => setTimeout(x, ms)), o = {};
+      for (let i = 0; i < 60 && !W.benchModel; i++) await w(250);
+      o.start = (W.profile.workshop | 0) === 0 && !W.workshopModel && W.benchModel?.root.visible !== false;
+      W.state.inventory.set('wood', 12); W.state.inventory.set('stone', 6); W.emit?.();
+      const bought = W.upgradeWorkshop(); for (let i = 0; i < 60 && !W.workshopModel; i++) await w(250);
+      o.l1 = bought && W.profile.workshop === 1 && W.workshopLevel === 1 && W.benchModel.root.visible === false && (W.workshopPosts || []).length === 6 && (W.state.inventory.get('wood') | 0) === 2;
+      g.devMenu.run('ws:3'); for (let i = 0; i < 60 && W.workshopLevel !== 3; i++) await w(250);
+      o.l3 = W.workshopLevel === 3 && !!W.workshopModel.root.getObjectByName('Workshop_L3_Anvil');
+      W.onOpenWorkbench?.(); await w(300); const panel = document.querySelector('.wilds-panel.open'); panel?.querySelector('[data-tab="home"]')?.click(); await w(300);
+      o.panel = !!panel && panel.querySelectorAll('.wilds-unlock').length === 2 && /Workshop/.test(panel.textContent);
+      return o; });
+    check('R144 workshop: bench alone at the start, L1 bought (10 wood + 5 stone) builds the workshop with solid posts, L3 swaps the model, the panel shows the levels with the padlock placeholder', ok && r.start && r.l1 && r.l3 && r.panel && !errors.length, errors[0] || JSON.stringify(r)); await ctx.close(); }
   // 17m. R134 DEV toggles (visual only, off by default): resource icons fly into their counter; the tutorial tip sits under the resource bar on phones
   { const ctx = await context({ viewport: { width: 844, height: 390 }, isMobile: true, hasTouch: true }); await ctx.addInitScript(() => { localStorage.setItem('tgw.dev.flyIcons', '1'); localStorage.setItem('tgw.dev.tipTop', '1'); });
     const { p, errors, ok } = await startGame(ctx, 'cactus', { hud: 'classic', tips: true }); let r = {};

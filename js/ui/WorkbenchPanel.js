@@ -1,5 +1,6 @@
 // @ts-nocheck
 import { MATERIALS, TOOLS, HOME_UPGRADES, PERKS, POTS } from '../data/wildsCatalog.js';
+import { WORKSHOP_UPGRADES } from '../data/workshopCatalog.js?build=SAVE-R144-20261009A';   // R144
 
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 
@@ -25,6 +26,7 @@ export class WorkbenchPanel {
       const craft = e.target.closest('[data-craft]'); if (craft) { this.wilds.craft(craft.dataset.craft); return; }
       if (e.target.closest('[data-pot]')) { this.wilds.pots.craftPot(); return; }
       const plant = e.target.closest('[data-plant]'); if (plant) { this.wilds.plantSeed(plant.dataset.plant); return; }
+      if (e.target.closest('[data-workshop]')) { this.wilds.upgradeWorkshop?.(); return; }   // R144
       if (e.target.closest('[data-upgrade]')) this.wilds.upgradeHome();
       const mv = e.target.closest('[data-move]'); if (mv) { this.hide(); this.onMove?.(mv.dataset.move); }
     });
@@ -76,6 +78,14 @@ export class WorkbenchPanel {
           <div class="wilds-bar"><i style="width:${Math.round(t.have / t.goal * 100)}%"></i></div></div><span class="wilds-count">${t.have}/${t.goal}</span></article>`;
       }
     } else {
+      // R144: the workshop around the bench (L2/L3 unlocks: padlock placeholder until decided)
+      html += `<h3 class="wilds-sub">Workshop</h3>`;
+      WORKSHOP_UPGRADES.forEach((u, i) => {
+        const lvl = w.profile.workshop | 0, done = lvl > i, isNext = lvl === i, can = isNext && this.affordable(u.cost);
+        html += `<article class="wilds-item${done ? ' owned' : ''}${!done && !isNext ? ' locked' : ''}"><div class="wilds-icon">🔨</div><div class="wilds-body"><b>${esc(u.name)}</b><p>${esc(u.effect)}</p>${u.unlocks ? `<p class="wilds-unlock"><i class="ico-mask" style="--ico:url(./brand/icons/svg/icon-lock.svg)"></i>Unlocks: ${esc(u.unlocks)}</p>` : ''}${done ? '' : `<div class="wilds-costs">${this.costHtml(u.cost)}</div>`}</div>
+          ${isNext ? `<button type="button" data-workshop ${can ? '' : 'disabled'}>Build</button>` : `<button type="button" disabled>${done ? 'Built' : 'Later'}</button>`}</article>`;
+      });
+      html += `<h3 class="wilds-sub">Garden upgrades</h3>`;
       HOME_UPGRADES.forEach((u, i) => {
         const done = w.profile.homeLevel > i, isNext = w.profile.homeLevel === i, can = isNext && this.affordable(u.cost);
         html += `<article class="wilds-item${done ? ' owned' : ''}${!done && !isNext ? ' locked' : ''}"><div class="wilds-icon">${['🛢', '✦', '🌿'][i]}</div><div class="wilds-body"><b>${esc(u.name)}</b><p>${esc(u.effect)}</p>${done ? '' : `<div class="wilds-costs">${this.costHtml(u.cost)}</div>`}</div>

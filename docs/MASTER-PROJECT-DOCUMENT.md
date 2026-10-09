@@ -1619,6 +1619,7 @@ are only touched where a measured hotspot requires it, minimally.
    failure. Must pass before every push (CLAUDE.md rule 5).
 
 **B status 02/10/2026: complete (R51–R57).** On-device check (iPhone, Jannik 02/10): 60 fps steady (frame max 20–24 ms), 217 draw calls / 370k tris in the garden, 363 / 433k at the lake, mobile-high, 1 WebGL context → no perf work needed before C.
+**R144 (v0.8.144):** workshop L1–L3 around the bench (Jannik's models; L1 10 wood + 5 stone, L2 20 wood + 10 stone + 5 clay, L3 30 wood + 15 stone + 2 amber; L2/L3 unlocks: padlock placeholder); pot work back on E only.
 **R143 (v0.8.143):** grass grows back where the greenhouse stood after a move; every character holds tools like Daisy; the lantern hangs straight.
 **R142 (v0.8.142):** the Sprouting Ring's mound in the garden's own ground colours; desktop tool work on left click (E no longer does it, the pill shows a mouse).
 **R141 (v0.8.141):** Sprouting Ring v2.1: walkable raised mound (steps the only way up), pergola with lanterns and swinging sign, a vine per open character.
