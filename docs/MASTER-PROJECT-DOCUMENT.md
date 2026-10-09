@@ -1619,6 +1619,7 @@ are only touched where a measured hotspot requires it, minimally.
    failure. Must pass before every push (CLAUDE.md rule 5).
 
 **B status 02/10/2026: complete (R51–R57).** On-device check (iPhone, Jannik 02/10): 60 fps steady (frame max 20–24 ms), 217 draw calls / 370k tris in the garden, 363 / 433k at the lake, mobile-high, 1 WebGL context → no perf work needed before C.
+**R146 (v0.8.146):** the desktop Bag wears the Life Vest (boat + Lake Run reachable on desktop again).
 **R145 (v0.8.145):** no render on a lost WebGL context (R114 smoke fix); the Sprouting Ring test waits for what it checks; 17o checks pot work on E.
 **R144 (v0.8.144):** workshop L1–L3 around the bench (Jannik's models; L1 10 wood + 5 stone, L2 20 wood + 10 stone + 5 clay, L3 30 wood + 15 stone + 2 amber; L2/L3 unlocks: padlock placeholder); pot work back on E only.
 **R143 (v0.8.143):** grass grows back where the greenhouse stood after a move; every character holds tools like Daisy; the lantern hangs straight.

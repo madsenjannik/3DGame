@@ -1,5 +1,5 @@
 // @ts-nocheck
-import { actionIcon, actionIconName, isToolJob } from './actionIcons.js?build=SAVE-R145-20261009A';
+import { actionIcon, actionIconName, isToolJob } from './actionIcons.js?build=SAVE-R146-20261009A';
 export class Hud {
   constructor(state){
     this.seed=document.getElementById('seed-count');this.action=document.getElementById('action');this.toast=document.getElementById('toast');this.objective=document.getElementById('objective');this.kicker=document.getElementById('objective-kicker');this.title=document.getElementById('objective-title');this.copy=document.getElementById('objective-copy');this.hint=document.getElementById('hint');this.loading=document.getElementById('loading');this.materials=document.getElementById('materials');
@@ -98,6 +98,7 @@ export class Hud {
       e.stopPropagation();
       if(e.target.closest?.('.gear-close')){this.toggleGear(false);return;}
       if(this.bag2Mode()){this.bag2Click(e);return;}   // R124 phone Bag
+      if(e.target.closest?.('.gear-item[data-wear="1"]')){this.onVestToggle?.();this.renderGear();return;}   // R146: the desktop Bag wears the Life Vest too
       const row=e.target.closest?.('.gear-item[data-equip="1"]');if(!row)return;
       const ok=this.onGearEquip?.(row.dataset.itemId);if(ok===false)return;
       this.renderGear();if(this.touch())setTimeout(()=>this.toggleGear(false),110);
@@ -222,8 +223,8 @@ export class Hud {
       const key=it.hotbarIcon||(it.name==='Watering Can'?'watering-can':(it.icon||it.id||'')),art=toolArt.has(key)
         ?`<i class="gear-item-art" style="--gear-art:url(./brand/icons/tool3d/icon-${key}.png?v=R105-20261006)"></i>`
         :(it.icon?`<i class="ico-mask" style="--ico:url(./brand/icons/svg/icon-${it.icon}.svg)"></i>`:`<i class="gear-item-fallback">${it.name.split(/\s+/).map(x=>x[0]).join('').slice(0,2).toUpperCase()}</i>`);
-      const equip=it.id&&it.id!=='vest',on=selected===it.id;
-      return `<span class="gear-item${on?' selected':''}${equip?' equippable':''}" data-item-id="${it.id||''}" data-equip="${equip?'1':'0'}" role="${equip?'button':'listitem'}" aria-pressed="${equip?(on?'true':'false'):'false'}">${art}<span class="gear-item-copy"><em>${it.name}</em>${it.n!=null?`<small>${it.n}</small>`:''}</span></span>`;
+      const wear=it.id==='vest',equip=it.id&&!wear,on=selected===it.id||(wear&&it.worn),n=wear?(it.worn?'Worn · click to take off':'Click to wear'):it.n;
+      return `<span class="gear-item${on?' selected':''}${equip||wear?' equippable':''}" data-item-id="${it.id||''}" data-equip="${equip?'1':'0'}"${wear?' data-wear="1"':''} role="${equip||wear?'button':'listitem'}" aria-pressed="${equip||wear?(on?'true':'false'):'false'}">${art}<span class="gear-item-copy"><em>${it.name}</em>${n!=null?`<small>${n}</small>`:''}</span></span>`;
     }).join(''):'<span class="gear-empty">Nothing yet. Craft tools at your workbench.</span>';
     this.gear.innerHTML=`<div class="gear-head"><div><b class="gear-title">Bag</b><small class="gear-subtitle">Carried gear</small></div><button class="gear-close" type="button" aria-label="Close Bag">×</button></div><div class="gear-section-title">Inventory</div><div class="gear-grid">${rows}</div><div class="gear-hotbar-label"><b>Quick slots</b><span>Tap to equip · hold + drag to move</span></div>`;
     this.renderDesktopHotbar();

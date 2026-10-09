@@ -196,6 +196,17 @@ try {
       r.kept = await p.evaluate(async () => { const g = window.__tgw; for (let i = 0; i < 60 && !g.vest?.model; i++) await new Promise(x => setTimeout(x, 250)); return g.vestWorn() && !!g.vest?.model?.visible; }); }
     check('life vest R125: boat needs it on, Wear in the Bag puts it on the body, stays on after reload', ok && r.blocked && r.worn && r.onBody && r.kept && !errors.length, errors[0] || JSON.stringify(r)); await ctx.close(); }
 
+  // 2g2. R146 desktop: the Bag (B) wears the Life Vest too (it was list-only, so desktop could never board the boat or race)
+  { const ctx = await context({ viewport: { width: 1280, height: 720 } }); const { p, errors, ok } = await startGame(ctx, 'fern', { hud: 'desktop-e' }); let r = {};
+    if (ok) { await p.waitForFunction(() => window.__tgw?.fishing && window.__tgw.boatEco, null, { timeout: 240000 }).catch(() => {});
+      await p.evaluate(() => { const g = window.__tgw; g.fishing.own.vest = 1; g.boatEco?.persist?.(); g.refreshHotbar(true); });
+      await p.keyboard.press('KeyB'); await p.waitForTimeout(400);
+      r = await p.evaluate(async () => { const g = window.__tgw, w = ms => new Promise(x => setTimeout(x, ms)), gp = document.getElementById('gear-panel'), o = {};
+        const row = () => gp.querySelector('.gear-item[data-item-id="vest"]'); o.row = !!row() && row().dataset.wear === '1' && /Click to wear/.test(row().textContent);
+        row().click(); await w(100); o.worn = g.vestWorn() && /Worn/.test(row()?.textContent || '') && row()?.classList.contains('selected');
+        row().click(); await w(100); o.off = !g.vestWorn(); row().click(); await w(100); return o; });
+      r.stays = await p.evaluate(() => window.__tgw.vestWorn()); }
+    check('R146 desktop Bag: click the Life Vest to wear it, again to take it off', ok && r.row && r.worn && r.off && r.stays && !errors.length, errors[0] || JSON.stringify(r)); await ctx.close(); }
   // 2i. R126 phone thumb arc: special ring on the action button, tap = strike (keeps the full ring), hold 0.8 s = special,
   //     no separate special or lantern button; the lantern lights by itself at dusk
   { const ctx = await context({ viewport: { width: 844, height: 390 }, isMobile: true, hasTouch: true }); const { p, errors, ok } = await startGame(ctx, 'fern', { hud: 'classic' });
