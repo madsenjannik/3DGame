@@ -17,10 +17,16 @@ export const SPECIAL_SEEDS = [
   { id: 'hyacinth',  name: 'Hyacinth Seed',  how: 'Defeat the Root Bear',               met: (p) => (p.combat?.bear?.wins | 0) > 0 },
   { id: 'succulent', name: 'Succulent Seed', how: 'Catch all 5 fish species',           met: (p, g) => (g.fishing?.speciesN?.() | 0) >= 5 },
   { id: 'spire',     name: 'Spire Seed',     how: 'Win gold in the Lake Run',           met: (p) => (p.lakeRun?.golds | 0) > 0 },
-  { id: 'aloe',      name: 'Aloe Seed',      how: 'Harvest your first special plant',   met: (p) => !!p.specialHarvest },
+  { id: 'aloe',      name: 'Aloe Seed',      how: 'Harvest a golden greenhouse plant',  met: (p) => !!p.specialHarvest },
   { id: 'fern',      name: 'Fern Seed',      how: 'Hidden in the Dark Forest (coming)', met: () => false }
 ];
 
 // R150: the community tree in the Orangery starts as bare soil (stage 0) and is fed one Golden Seed at a time.
 // TREE_COSTS[s] = seeds that grow stage s into s + 1 (10 steps, 52 seeds to the last stage). Long-term on purpose.
 export const TREE_COSTS = [1, 1, 2, 3, 4, 5, 6, 8, 10, 12];
+
+// R151: water the same greenhouse pot on 3 days in a row and the plant in it turns golden ('special'); harvesting a
+// special plant the first time gives the Aloe Seed (SpecialSeeds, met = profile.specialHarvest).
+export const SPECIAL_POT = { days: 3 };
+export const dayKey = (d = new Date()) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+export const prevDay = key => { const [y, m, d] = key.split('-').map(Number); return dayKey(new Date(y, m - 1, d - 1)); };

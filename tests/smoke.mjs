@@ -806,6 +806,19 @@ try {
       g.save.flush(); o.saved = JSON.parse(localStorage.getItem('tgw.save.v1') || localStorage.getItem(Object.keys(localStorage).find(k => /tgw\.save/.test(k) && !/premerge|backup/.test(k))) || '{}')?.data?.profiles?.shared?.tree?.stage === 2 || g.save.profile.tree.stage === 2;
       return o; });
     check('R150 Orangery tree: starts as soil, E feeds a Golden Seed, 1 + 1 seeds grow two stages, no seed = Locked with progress, saved', ok && ['soil', 'locked', 'offer', 'grow', 'model', 'saved'].every(k => r[k]) && !errors.length, errors[0] || JSON.stringify(r)); await ctx.close(); }
+  // 17t. R151 golden pot (Jannik 09/10): watering the same pot on 3 days in a row turns its plant golden; a gap resets the count;
+  // harvesting a golden plant earns the Aloe Seed (into the Bag); the care streak survives a save round trip
+  { const ctx = await context({ viewport: { width: 1280, height: 720 } }); const { p, errors, ok } = await startGame(ctx, 'cactus', { hud: 'desktop-e' }); let r = {};
+    if (ok) r = await p.evaluate(async () => { const g = window.__tgw, w = ms => new Promise(x => setTimeout(x, ms)), o = {}, W = g.wilds; for (let i = 0; i < 60 && !W.pots; i++) await w(250);
+      const { dayKey, prevDay } = await import('./js/data/economyCatalog.js'), today = dayKey(), P = W.profile, pots = W.pots;
+      P.tools.can = true; P.pots.count = 1; P.water = 3; P.pots.slots[0] = { stage: 0, wet: false, readyAt: 0 };
+      P.pots.care = [{ last: '2020-01-01', streak: 5 }, {}, {}]; o.reset = pots.water(0) && P.pots.care[0].streak === 1 && !P.pots.slots[0].special;
+      P.pots.slots[0].wet = false; P.pots.care[0] = { last: prevDay(today), streak: 2 }; o.golden = pots.water(0) && P.pots.slots[0].special === true && P.pots.care[0].streak === 3;
+      g.save.flush(); const back = new g.save.constructor({ characterId: 'cactus' }).profile; o.kept = back.pots.slots[0]?.special === true && back.pots.care[0].streak === 3 && back.pots.care[0].last === today;   // a fresh load (validProfile) keeps it
+      P.pots.slots[0].stage = 3; o.harvest = pots.harvest(0) && P.specialHarvest === true;
+      for (let i = 0; i < 40 && g.specialSeeds.s.aloe !== 1; i++) await w(250); o.aloe = g.specialSeeds.s.aloe === 1 && g.hud.gearItems().some(x => x.id === 'seed-aloe');
+      return o; });
+    check('R151 golden pot: 3 days in a row turns the plant golden, a gap resets, harvesting it gives the Aloe Seed', ok && ['reset', 'golden', 'kept', 'harvest', 'aloe'].every(k => r[k]) && !errors.length, errors[0] || JSON.stringify(r)); await ctx.close(); }
   // 17m. R134 DEV toggles (visual only, off by default): resource icons fly into their counter; the tutorial tip sits under the resource bar on phones
   { const ctx = await context({ viewport: { width: 844, height: 390 }, isMobile: true, hasTouch: true }); await ctx.addInitScript(() => { localStorage.setItem('tgw.dev.flyIcons', '1'); localStorage.setItem('tgw.dev.tipTop', '1'); });
     const { p, errors, ok } = await startGame(ctx, 'cactus', { hud: 'classic', tips: true }); let r = {};

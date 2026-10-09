@@ -4,7 +4,7 @@
 // Golden Seeds (economyCatalog.TREE_COSTS). E at the tree feeds one seed. State: profile.tree { stage, fed } on the
 // shared save; until there is a server it is your own tree on this device. Uses OrangeryHubSystem.setStage (its
 // collision rebuild and lantern shatter at stage 6 come with it). DEV ?treeStage still wins. Fails soft.
-import { TREE_COSTS } from '../data/economyCatalog.js?build=SAVE-R150-20261009A';
+import { TREE_COSTS } from '../data/economyCatalog.js?build=SAVE-R151-20261009A';
 
 const NEAR = 3.2;
 export class OrangeryTree {

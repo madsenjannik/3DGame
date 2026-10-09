@@ -6,6 +6,7 @@ import * as THREE from 'three';
 import { loadGLTF } from '../core/AssetManager.js';
 import { POTS, MATERIALS } from '../data/wildsCatalog.js';
 import { WildsModel } from './WildsModels.js';
+import { SPECIAL_POT, dayKey, prevDay } from '../data/economyCatalog.js?build=SAVE-R151-20261009A';   // R151
 const PLANT_CLIPS = ['Seed', 'Sprout', 'Bud', 'Bloom']; // R59.2 garden_pot_plant.glb stage loops
 
 const GH = { x: 6.5, z: -11.2 };                 // fallback only until the greenhouse attaches (R60: slots follow its placement)
@@ -110,8 +111,14 @@ export class GardenPotsSystem {
   water(i) {
     const s = this.p.pots.slots[i];
     if (!s || s.wet || s.stage >= 3 || this.p.water < 1) return false;
-    this.p.water--; s.wet = true; s.readyAt = Date.now() + this.stageMs(); this.w.save.persist();
-    this.w.hud?.showToast(`Watered · ${this.p.water} water left in the can`); this.w.emit();
+    this.p.water--; s.wet = true; s.readyAt = Date.now() + this.stageMs();
+    // R151: watering this pot on consecutive days builds its care streak; on day 3 the plant in it turns golden
+    const care = (this.p.pots.care ||= [{}, {}, {}])[i] ||= {}, today = dayKey();
+    if (care.last !== today) { care.streak = care.last === prevDay(today) ? (care.streak | 0) + 1 : 1; care.last = today; }
+    const golden = !s.special && care.streak >= SPECIAL_POT.days; if (golden) s.special = true;
+    this.w.save.persist();
+    this.w.hud?.showToast(golden ? 'This plant glows golden · harvest it when it flowers' : s.special ? `Watered · ${this.p.water} water left in the can`
+      : `Watered · ${this.p.water} water left · this pot: day ${Math.min(care.streak, SPECIAL_POT.days)}/${SPECIAL_POT.days} for a golden plant`); this.w.emit();
     return true;
   }
   harvest(i, character) {
@@ -120,8 +127,9 @@ export class GardenPotsSystem {
     if (Math.random() < POTS.amberChance) got.amber = (got.amber || 0) + 1;
     if (Math.random() < POTS.seedBackChance) got.wild_seed = (got.wild_seed || 0) + 1;
     for (const [id, n] of Object.entries(got)) this.w.give(id, n);
+    const special = !!s.special; if (special) this.p.specialHarvest = true;   // R151: the first special harvest earns the Aloe Seed (SpecialSeeds)
     this.p.pots.slots[i] = null; this.w.save.persist(); character?.flash();
-    this.w.hud?.showToast(`Harvest  ${Object.entries(got).map(([id, n]) => `${MATERIALS[id].name} +${n}`).join('  ')}`);
+    this.w.hud?.showToast(`${special ? 'Golden harvest!' : 'Harvest'}  ${Object.entries(got).map(([id, n]) => `${MATERIALS[id].name} +${n}`).join('  ')}`);
     this.w.track('harvest', 1); this.w.emit();
     return true;
   }
@@ -174,6 +182,8 @@ export class GardenPotsSystem {
       const thirsty = !!s && !s.wet && s.stage < 3;
       v.drop.visible = thirsty; if (thirsty) { v.drop.position.y = .62 + Math.sin(time * 3 + i) * .04; v.drop.rotation.y += dt; }
       v.plant.rotation.z = Math.sin(time * 1.4 + i) * .03;
+      if (s?.special && !v.halo) { v.halo = new THREE.Mesh(new THREE.SphereGeometry(.16, 14, 10), new THREE.MeshBasicMaterial({ color: 0xffd86b, transparent: true, opacity: .3, depthWrite: false, blending: THREE.AdditiveBlending })); v.halo.position.y = .36; v.g.add(v.halo); }   // R151 golden plant
+      if (v.halo) { v.halo.visible = !!s?.special; if (v.halo.visible) { const k = 1 + Math.sin(time * 2.2 + i) * .12; v.halo.scale.setScalar(k); v.halo.material.opacity = .22 + Math.sin(time * 2.2 + i) * .08; } }
       const d = Math.hypot(px - v.g.position.x, pz - v.g.position.z);
       if (d > 1.25) return;
       if (!s) { const has = this.w.inv().get('wild_seed') > 0; offer({ type: 'wilds-pot', slot: i, act: 'plant', distance: d, disabled: !has, locked: !has, label: has ? 'Plant Wild Seed' : 'Locked', reason: has ? undefined : 'Needs a Wild Seed' }); }   // R72: Wild Seeds come from Wild Grass

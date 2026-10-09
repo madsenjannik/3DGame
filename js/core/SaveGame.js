@@ -35,7 +35,7 @@ function blankProfile() {
     specialSeeds: {},     // R149: character id -> 1 (in the Bag) | 2 (planted at the Sprouting Ring)
     specialHarvest: false, // R151: harvested a special (glowing) pot plant once -> Aloe Seed
     tree: { stage: 0, fed: 0 }, // R150: the Orangery's community tree (stage 0..10, seeds fed toward the next)
-    pots: { count: 0, slots: [null, null, null] }, // greenhouse pots: slot -> { stage, wet, readyAt }
+    pots: { count: 0, slots: [null, null, null], care: [{}, {}, {}] }, // greenhouse pots: slot -> { stage, wet, readyAt, special }; R151 care[i] = { last day watered, streak }
     water: 0,             // watering-can charges
     nodes: {},            // node id -> epoch ms when it has regrown
     thorns: {},           // thornbrush id -> 'cleared' | 'looted'
@@ -90,7 +90,8 @@ function validProfile(p) {
   out.specialHarvest = p.specialHarvest === true;   // R151
   out.tree = { stage: Math.max(0, Math.min(10, p.tree?.stage | 0)), fed: Math.max(0, Math.min(99, p.tree?.fed | 0)) };   // R150
   out.pots.count = Math.max(0, Math.min(3, p.pots?.count | 0));
-  if (Array.isArray(p.pots?.slots)) out.pots.slots = [0, 1, 2].map(i => { const s = p.pots.slots[i]; return s && Number.isInteger(s.stage) ? { stage: Math.max(0, Math.min(3, s.stage)), wet: s.wet === true, readyAt: Number.isFinite(s.readyAt) ? s.readyAt : 0 } : null; });
+  if (Array.isArray(p.pots?.slots)) out.pots.slots = [0, 1, 2].map(i => { const s = p.pots.slots[i]; return s && Number.isInteger(s.stage) ? { stage: Math.max(0, Math.min(3, s.stage)), wet: s.wet === true, readyAt: Number.isFinite(s.readyAt) ? s.readyAt : 0, ...(s.special === true ? { special: true } : {}) } : null; });
+  if (Array.isArray(p.pots?.care)) out.pots.care = [0, 1, 2].map(i => { const c = p.pots.care[i]; return c && typeof c.last === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(c.last) ? { last: c.last, streak: Math.max(0, Math.min(99, c.streak | 0)) } : {}; });   // R151
   out.water = Math.max(0, Math.min(9, p.water | 0));
   for (const [k, v] of Object.entries(p.nodes || {})) if (Number.isFinite(v)) out.nodes[k] = v;
   for (const [k, v] of Object.entries(p.thorns || {})) if (v === 'seen' || v === 'cleared' || v === 'looted') out.thorns[k] = v;

@@ -7,13 +7,13 @@
 import * as THREE from 'three';
 import { damp, radialTexture } from '../visual/VisualKit.js';
 import { MATERIALS, NODE_KINDS, TOOLS, HOME_UPGRADES, RULES, PASSIVES, PERKS, GOLDEN_CACHES } from '../data/wildsCatalog.js';
-import { WildsThreatSystem } from './WildsThreatSystem.js?build=SAVE-R150-20261009A';
+import { WildsThreatSystem } from './WildsThreatSystem.js?build=SAVE-R151-20261009A';
 import { DailyRequests } from './DailyRequests.js';
-import { GardenPotsSystem } from './GardenPotsSystem.js?build=SAVE-R150-20261009A';
+import { GardenPotsSystem } from './GardenPotsSystem.js?build=SAVE-R151-20261009A';
 import { loadWildsModels, loadGardenModels, WildsModel } from './WildsModels.js';
-import { WORKSHOP_UPGRADES, WORKSHOP_FILES, WORKSHOP_SCALE } from '../data/workshopCatalog.js?build=SAVE-R150-20261009A';   // R144
+import { WORKSHOP_UPGRADES, WORKSHOP_FILES, WORKSHOP_SCALE } from '../data/workshopCatalog.js?build=SAVE-R151-20261009A';   // R144
 import { loadGLTF } from '../core/AssetManager.js';
-import { perkPrice } from '../data/economyCatalog.js?build=SAVE-R150-20261009A';   // R148
+import { perkPrice } from '../data/economyCatalog.js?build=SAVE-R151-20261009A';   // R148
 import { FIXED_HEDGE as HEDGE } from '../data/gardenCatalog.js';
 
 const HOME = { x: 0, z: 4.7 };
