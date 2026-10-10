@@ -7,13 +7,13 @@
 import * as THREE from 'three';
 import { damp, radialTexture } from '../visual/VisualKit.js';
 import { MATERIALS, NODE_KINDS, TOOLS, HOME_UPGRADES, RULES, PASSIVES, PERKS, GOLDEN_CACHES } from '../data/wildsCatalog.js';
-import { WildsThreatSystem } from './WildsThreatSystem.js?build=SAVE-R155-20261009A';
+import { WildsThreatSystem } from './WildsThreatSystem.js?build=SAVE-R156-20261010A';
 import { DailyRequests } from './DailyRequests.js';
-import { GardenPotsSystem } from './GardenPotsSystem.js?build=SAVE-R155-20261009A';
+import { GardenPotsSystem } from './GardenPotsSystem.js?build=SAVE-R156-20261010A';
 import { loadWildsModels, loadGardenModels, WildsModel } from './WildsModels.js';
-import { WORKSHOP_UPGRADES, WORKSHOP_FILES, WORKSHOP_SCALE } from '../data/workshopCatalog.js?build=SAVE-R155-20261009A';   // R144
+import { WORKSHOP_UPGRADES, WORKSHOP_FILES, WORKSHOP_SCALE } from '../data/workshopCatalog.js?build=SAVE-R156-20261010A';   // R144
 import { loadGLTF } from '../core/AssetManager.js';
-import { perkPrice } from '../data/economyCatalog.js?build=SAVE-R155-20261009A';   // R148
+import { perkPrice } from '../data/economyCatalog.js?build=SAVE-R156-20261010A';   // R148
 import { FIXED_HEDGE as HEDGE } from '../data/gardenCatalog.js';
 
 const HOME = { x: 0, z: 4.7 };
@@ -135,7 +135,7 @@ export class WildsLoopSystem {
     const p = this.profile, inv = id => this.state.inventory.get(id) || 0, pots = this.pots, g = (title, copy) => ({ title, copy });
     const costText = cost => Object.entries(cost || {}).map(([id,n]) => `${n} ${MATERIALS[id]?.name || id}`).join(' · ');
     const seed = this.seedGoal?.(); if (seed) return seed;   // R152: a Special Seed in the Bag is the most useful next step (set by Game)
-    if (!Object.keys(p.inventory).length && !this.has('axe')) return g('Gather natural materials', 'Outside your garden gate · Gather Wood, Stone, Clay and Fiber from the resources that glint.');
+    if (!Object.keys(p.inventory).length && !this.has('axe')) return g('Gather natural materials', 'Out in the wilds · Gather Wood, Stone and Fiber from the things that glint.');   // R156: the axe needs no Clay
     if (!this.has('axe')) { const axe = TOOLS.find(t => t.id === 'axe'); return g('Craft your first tool', `Workbench in your garden · Requires ${costText(axe?.cost)}. Craft the Stone Axe.`); }
     if (!pots?.available()) return g('Build your greenhouse', 'At the back of your garden. Pots and plants live there.');
     if (pots.owned() < 1) return g('Craft a pot', 'Workbench → Tools → Terracotta Pot. It goes straight onto the greenhouse shelf.');

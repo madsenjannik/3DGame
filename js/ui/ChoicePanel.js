@@ -2,7 +2,7 @@
 export class ChoicePanel {
   constructor(state) {
     this.state = state;
-    this.root = document.getElementById('choice-panel');
+    this.root = document.getElementById('choice-panel'); if (this.root) this.root.inert = !this.root.classList.contains('show');   // R156
     this.plant = document.getElementById('choice-plant');
     this.donate = document.getElementById('choice-donate');
 
@@ -24,11 +24,13 @@ export class ChoicePanel {
   }
 
   open() {
+    this.root.inert = false;   // R156: closed = not focusable
     this.root.classList.add('show');
     document.body.classList.add('choice-open');
   }
 
   close() {
+    this.root.inert = true;
     this.root.classList.remove('show');
     document.body.classList.remove('choice-open');
   }

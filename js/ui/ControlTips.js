@@ -6,6 +6,8 @@ const KEY = 'tgw.controlTips.v1';
 // character; the toast steps down under it while a tip shows (body.tip-top / body.ct-on, styles.css).
 const tipTop = () => { try { return localStorage.getItem('tgw.devMenu') === '1' && localStorage.getItem('tgw.dev.tipTop') === '1'; } catch { return false; } };
 const done = () => { try { return localStorage.getItem(KEY) === '1'; } catch { return false; } };
+const STEP = 'tgw.controlTips.step';   // R156: the step survives a reload
+const savedStep = () => { try { return Math.max(0, localStorage.getItem(STEP) | 0); } catch { return 0; } };
 
 const TOUCH = [
   { text: 'Drag on the left side to walk', when: g => g.input.moveMagnitude > .3 },
@@ -27,7 +29,7 @@ export class ControlTips {
     document.body.classList.toggle('tip-top', tipTop());
     this.g = game; this.i = 0; this.t = { look: false, action: false, hop: false }; this.showAt = performance.now() + 2500; this.shownAt = 0;   // real time: frame dt is clamped, so slow devices would wait far longer
     if (done()) { this.off = true; return; }
-    this.steps = game.input.isTouch ? TOUCH : DESKTOP;
+    this.steps = game.input.isTouch ? TOUCH : DESKTOP; this.i = Math.min(savedStep(), this.steps.length - 1);
     const el = document.createElement('div'); el.id = 'control-tips'; el.setAttribute('role', 'status');
     el.innerHTML = '<span class="ct-step"></span><b class="ct-text"></b><button type="button" class="ct-skip">Skip</button>';
     document.body.appendChild(el); this.el = el; this.textEl = el.querySelector('.ct-text'); this.stepEl = el.querySelector('.ct-step');
@@ -45,7 +47,7 @@ export class ControlTips {
   }
   render() { const s = this.steps[this.i]; this.textEl.textContent = s.text; this.stepEl.textContent = `${this.i + 1}/${this.steps.length}`; this.shownAt = performance.now(); }
   vis(on) { this.el?.classList.toggle('show', on); document.body.classList.toggle('ct-on', on); }
-  next() { this.i++; this.t.look = this.t.action = this.t.hop = false; if (this.i >= this.steps.length) return this.finish(); this.vis(false); this.showAt = performance.now() + 600; }
+  next() { this.i++; try { localStorage.setItem(STEP, String(this.i)); } catch {} this.t.look = this.t.action = this.t.hop = false; if (this.i >= this.steps.length) return this.finish(); this.vis(false); this.showAt = performance.now() + 600; }
   finish() {
     this.off = true; try { localStorage.setItem(KEY, '1'); } catch {}
     removeEventListener('pointerdown', this.onDown, true); removeEventListener('keydown', this.onKey, true);
@@ -59,5 +61,6 @@ export class ControlTips {
     if (blocked) { if (showing) this.vis(false); this.showAt = Math.max(this.showAt, now + 600); return; }
     if (!showing) { if (now >= this.showAt) { this.render(); this.vis(true); } return; }
     if (now - this.shownAt > 800 && this.steps[this.i].when(this.g, this.t)) this.next();
+    else if (now - this.shownAt > 20000) this.next();   // R156: a tip never waits forever (e.g. Hop)
   }
 }

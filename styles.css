@@ -5590,3 +5590,21 @@ html body.hud-desktop-e:not(.touch) #game-menu-btn i{background:#3f6324!importan
 html body.touch.world-map-open #hud,html body.touch.world-map-open #objective,html body.touch.world-map-open #game-menu-btn{visibility:hidden!important}
 /* desktop Bag: the item name stays on one line, the hint wraps under it */
 .gear-item-copy em{white-space:nowrap}
+
+/* ===== R156 · desktop keyboard + panel QA fixes (sub-agent at 1280 / 1440 / 1920) ===== */
+/* the Lake Race result card is not focusable while hidden (CSS only; the race itself is untouched) */
+.lakerun-result:not(.show){visibility:hidden}
+/* the workbench is visible the moment it opens, so focus can land in it */
+.wilds-panel.open{transition:opacity .2s ease,visibility 0s}
+/* toasts sit above panels and the menu */
+html body #toast{z-index:61!important}
+/* desktop: the open Bag stays above the hearts; the workbench keeps one height so tabs never jump */
+html body.hud-desktop-e:not(.touch) #gear-panel.gear-panel{bottom:calc(132px + env(safe-area-inset-bottom))!important}
+@media (min-height:600px){body:not(.touch) .wilds-card{height:min(780px,100%)}}
+/* focus rings for the panel close button, the menu buttons and Bag rows */
+html body:not(.touch) :is(.wilds-close,#game-menu button,.gear-panel .gear-item[tabindex]):focus-visible{outline:2px solid #e2b552;outline-offset:3px}
+/* R156: the workbench card the current goal asks for */
+.wilds-item.goal{box-shadow:inset 0 0 0 2px rgba(111,157,69,.75)}
+/* R156: a lit lantern reads (gold on dark glass, not gold on pale glass); the workbench list fills the fixed-height card */
+html body.hud-desktop-e:not(.touch).lantern-ready #lantern-btn.on{background:rgba(43,52,33,.84)!important;color:#ffd27a!important}
+body:not(.touch) .wilds-card .wilds-list{flex:1 1 auto}

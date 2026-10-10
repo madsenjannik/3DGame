@@ -1619,6 +1619,7 @@ are only touched where a measured hotspot requires it, minimally.
    failure. Must pass before every push (CLAUDE.md rule 5).
 
 **B status 02/10/2026: complete (R51–R57).** On-device check (iPhone, Jannik 02/10): 60 fps steady (frame max 20–24 ms), 217 draw calls / 370k tris in the garden, 363 / 433k at the lake, mobile-high, 1 WebGL context → no perf work needed before C.
+**R156 (v0.8.156):** desktop keyboard (Enter/Space, Esc, Tab traps, inert hidden panels, focus) + first-session guidance fixes.
 **R155 (v0.8.155):** visual QA fixes (phone resource counts readable, workbench rows/padlocks/scroll fade, map hides HUD, desktop menu contrast, Bag buttons).
 **R154 (v0.8.154):** discoverability (first Golden Seed explained, tree + seen bosses on the map, golden count at the pot) + three R153 regressions fixed.
 **R153 (v0.8.153):** planting/growing moments (Ring beacon, padlock lift, sparks), gold milestone toasts, reduce motion in game, smart workbench tab, review round 2 fixes.

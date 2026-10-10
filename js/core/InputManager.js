@@ -19,6 +19,8 @@ export class InputManager {
     this.lookAccum = {x:0,y:0}; this.lookGesture = 'pending';
 
     addEventListener('keydown', e=>{
+      // R156: Enter / Space on a focused button inside an open panel or the menu press that button (keyboard players)
+      if((e.code==='Enter'||e.code==='Space')&&e.target?.closest?.('.wilds-panel.open button,.wilds-panel.open [role=tab],#game-menu.open button,.gear-panel.open [role=button],.gear-panel.open button,#tab-lost'))return;
       this.keys[e.code]=true;
       if(e.code==='Space'){if(!e.repeat)this.hopPressed=true;e.preventDefault();}
       else if(['KeyE','Enter'].includes(e.code)){if(!e.repeat)this.actionPressed=true;e.preventDefault();}

@@ -2,7 +2,7 @@
 // R121 (GO 07/10): small in-game menu. Round button under the quest card (phone + desktop E) and Esc on desktop when
 // nothing else is open. Resume · Controls (shows the first-time tips again) · Choose character · Start screen.
 // No pause: the day/night clock follows real time, so the menu is only a layer over the game. Fails soft.
-import { ControlTips } from './ControlTips.js?build=SAVE-R155-20261009A';
+import { ControlTips } from './ControlTips.js?build=SAVE-R156-20261010A';
 
 const BUSY_CLASSES = ['fishing-active', 'boating-active', 'stable-talk-active', 'stable-race-active', 'lakerun-active', 'mobile-bag-open', 'choice-open', 'rotate-gated'];
 
@@ -19,7 +19,7 @@ export class GameMenu {
       + '<div class="gm-confirm" hidden><p>All your characters share one garden and one game. Your progress is saved.</p>'
       + '<button type="button" data-a="chars-go" class="gm-primary">Switch character</button><button type="button" data-a="chars-no">Cancel</button></div>'
       + `<span class="gm-ver">v${globalThis.TGW_VERSION?.version || ''}</span></div>`;
-    document.body.appendChild(el); this.btn = btn; this.el = el;
+    document.body.appendChild(el); this.btn = btn; this.el = el; el.inert = true;   // R156: closed = not focusable
     for (const n of [btn, el]) for (const t of ['pointerdown', 'pointerup', 'pointermove']) n.addEventListener(t, e => e.stopPropagation());   // never moves or strikes
     // Act on pointerup, and only when the press also started on the same element: the click a browser sends after a
     // tap must never close the menu that tap just opened. Keyboard clicks (no pointer) still work.
@@ -34,6 +34,11 @@ export class GameMenu {
     el.addEventListener('click', e => { if (keyboardOnly(e)) onEl(e); });
     // Capture phase: decide on the state before other Esc handlers (fishing, talks) close their own screens.
     addEventListener('keydown', e => {
+      // R156: while the menu is open only Esc / Tab / Enter / Space reach the page (B, M and 1-0 opened things under it);
+      // Tab stays inside the menu; Esc with the Bag open closes the Bag first
+      if (this.open && e.key === 'Tab') { const f = [...this.el.querySelectorAll('button:not([hidden]):not(:disabled)')].filter(b => b.offsetParent !== null); if (f.length) { const i = f.indexOf(document.activeElement), n = e.shiftKey ? (i <= 0 ? f.length - 1 : i - 1) : (i + 1) % f.length; e.preventDefault(); f[n].focus(); } return; }
+      if (this.open && !['Escape', 'Enter', ' ', 'Tab'].includes(e.key)) { e.stopImmediatePropagation(); return; }
+      if (e.key === 'Escape' && !e.repeat && !this.open && document.querySelector('.gear-panel.open')) { e.preventDefault(); e.stopPropagation(); this.g.hud?.toggleGear?.(false); return; }
       if (e.key !== 'Escape' || e.repeat) return;
       if (this.open) { e.preventDefault(); e.stopPropagation(); this.toggle(false); return; }
       if (!this.g.input?.isTouch && this.canOpen()) { e.preventDefault(); this.toggle(true); }
@@ -47,7 +52,7 @@ export class GameMenu {
   }
   toggle(on) {
     if (on && !this.canOpen()) return;
-    this.open = !!on; if (!this.open) this.confirm(false); this.el.classList.toggle('open', this.open); document.body.classList.toggle('game-menu-open', this.open);
+    this.open = !!on; if (!this.open) this.confirm(false); this.el.inert = !this.open; this.el.classList.toggle('open', this.open); document.body.classList.toggle('game-menu-open', this.open);
     if (this.open) { const i = this.g.input; i?.resetTouchPointers?.(); if (i) { i.actionPressed = i.hopPressed = i.strikePressed = false; for (const k in i.keys) i.keys[k] = false; }
       this.el.querySelector('.gm-primary')?.focus?.({ preventScroll: true }); }
   }

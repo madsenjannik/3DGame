@@ -1,5 +1,5 @@
 // @ts-nocheck
-import { actionIcon, actionIconName, isToolJob } from './actionIcons.js?build=SAVE-R155-20261009A';
+import { actionIcon, actionIconName, isToolJob } from './actionIcons.js?build=SAVE-R156-20261010A';
 export class Hud {
   constructor(state){
     this.seed=document.getElementById('seed-count');this.action=document.getElementById('action');this.toast=document.getElementById('toast');this.objective=document.getElementById('objective');this.kicker=document.getElementById('objective-kicker');this.title=document.getElementById('objective-title');this.copy=document.getElementById('objective-copy');this.hint=document.getElementById('hint');this.loading=document.getElementById('loading');this.materials=document.getElementById('materials');
@@ -94,6 +94,7 @@ export class Hud {
   // R101: Bag stays the carried-item list; desktop hotbar has its own persistent slot order.
   buildGear(){
     const p=document.createElement('div');p.id='gear-panel';p.className='gear-panel';p.setAttribute('aria-label','Bag');document.body.appendChild(p);this.gear=p;
+    p.addEventListener('keydown',e=>{if((e.key==='Enter'||e.key===' ')&&e.target?.matches?.('[role=button][tabindex]')){e.preventDefault();e.target.click();}});   // R156: keyboard on Bag rows
     p.addEventListener('click',e=>{
       e.stopPropagation();
       if(e.target.closest?.('.gear-close')){this.toggleGear(false);return;}
@@ -152,6 +153,7 @@ export class Hud {
       if(e.code==='KeyB'){if(this.hotbarEnabled?.()===false)return;e.preventDefault();this.toggleGear();return;}
       let i=-1;if(/^Digit[1-9]$/.test(e.code))i=Number(e.code.slice(5))-1;else if(e.code==='Digit0')i=9;else if(/^Numpad[1-9]$/.test(e.code))i=Number(e.code.slice(6))-1;else if(e.code==='Numpad0')i=9;
       if(i<0||this.hotbarEnabled?.()===false)return;e.preventDefault();this.onHotbarSelect?.(i);
+      { const it=(this.hotbarItems?.()||[])[i];if(it&&this.selectedGearId?.()===it.id&&it.id!=='vest')this.showToast(it.name); }   // R156: say what you now hold
     };
     addEventListener('keydown',this._hotbarKey);
     const w=document.createElement('div');w.id='desktop-world-status';w.className='desktop-world-status';
@@ -229,7 +231,7 @@ export class Hud {
         ?`<i class="gear-item-art" style="--gear-art:url(./brand/icons/tool3d/icon-${key}.png?v=R105-20261006)"></i>`
         :(it.icon?`<i class="ico-mask" style="--ico:url(./brand/icons/svg/icon-${it.icon}.svg)"></i>`:`<i class="gear-item-fallback">${it.name.split(/\s+/).map(x=>x[0]).join('').slice(0,2).toUpperCase()}</i>`);
       const wear=it.id==='vest',equip=it.id&&!wear&&!it.bagOnly,on=selected===it.id||(wear&&it.worn),n=wear?(it.worn?'Worn · click to take off':'Click to wear'):it.bagOnly?'Plant at the Sprouting Ring':it.n;
-      return `<span class="gear-item${on?' selected':''}${equip||wear?' equippable':''}" data-item-id="${it.id||''}" data-equip="${equip?'1':'0'}"${wear?' data-wear="1"':''} role="${equip||wear?'button':'listitem'}" aria-pressed="${equip||wear?(on?'true':'false'):'false'}">${art}<span class="gear-item-copy"><em>${it.name}</em>${n!=null?`<small>${n}</small>`:''}</span></span>`;
+      return `<span class="gear-item${on?' selected':''}${equip||wear?' equippable':''}" data-item-id="${it.id||''}" data-equip="${equip?'1':'0'}"${wear?' data-wear="1"':''}${equip||wear?' tabindex="0"':''} role="${equip||wear?'button':'listitem'}" aria-pressed="${equip||wear?(on?'true':'false'):'false'}">${art}<span class="gear-item-copy"><em>${it.name}</em>${n!=null?`<small>${n}</small>`:''}</span></span>`;
     }).join(''):'<span class="gear-empty">Nothing yet. Craft tools at your workbench.</span>';
     this.gear.innerHTML=`<div class="gear-head"><div><b class="gear-title">Bag</b><small class="gear-subtitle">Carried gear</small></div><button class="gear-close" type="button" aria-label="Close Bag">×</button></div><div class="gear-section-title">Inventory</div><div class="gear-grid">${rows}</div><div class="gear-hotbar-label"><b>Quick slots</b><span>Tap to equip · hold + drag to move</span></div>`;
     this.renderDesktopHotbar();

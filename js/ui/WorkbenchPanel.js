@@ -1,6 +1,6 @@
 // @ts-nocheck
 import { MATERIALS, TOOLS, HOME_UPGRADES, PERKS, POTS } from '../data/wildsCatalog.js';
-import { WORKSHOP_UPGRADES } from '../data/workshopCatalog.js?build=SAVE-R155-20261009A';   // R144
+import { WORKSHOP_UPGRADES } from '../data/workshopCatalog.js?build=SAVE-R156-20261010A';   // R144
 
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 
@@ -13,7 +13,7 @@ export class WorkbenchPanel {
       <header><div><small>YOUR HOME</small><h2 id="wilds-panel-title">Workbench</h2></div><button type="button" class="wilds-close" aria-label="Close">✕</button></header>
       <div class="wilds-trait"></div>
       <div class="wilds-goal"></div>
-      <div class="wilds-tabs" role="tablist"><button type="button" role="tab" data-tab="tools">Tools</button><button type="button" role="tab" data-tab="home">Home</button><button type="button" role="tab" data-tab="seeds">Perks</button><button type="button" role="tab" data-tab="chars">Seeds</button><button type="button" role="tab" data-tab="today">Today</button></div>
+      <div class="wilds-tabs" role="tablist"><button type="button" role="tab" data-tab="tools">Tools</button><button type="button" role="tab" data-tab="home">Home</button><button type="button" role="tab" data-tab="seeds">Perks</button><button type="button" role="tab" data-tab="chars">Characters</button><button type="button" role="tab" data-tab="today">Today</button></div>
       <div class="wilds-list"></div>
       <footer class="wilds-inv"></footer>
     </div>`;
@@ -22,7 +22,7 @@ export class WorkbenchPanel {
     for (const t of ['pointerdown', 'pointermove', 'pointerup']) el.addEventListener(t, e => e.stopPropagation());
     el.addEventListener('click', e => {
       if (e.target === el || e.target.closest('.wilds-close')) return this.hide();
-      const tab = e.target.closest('[data-tab]'); if (tab) { this.tab = tab.dataset.tab; return this.render(); }
+      const tab = e.target.closest('[data-tab]'); if (tab) { this.tab = tab.dataset.tab; this.render(); return tab.focus?.({ preventScroll: true }); }
       const craft = e.target.closest('[data-craft]'); if (craft) { this.wilds.craft(craft.dataset.craft); return; }
       if (e.target.closest('[data-pot]')) { this.wilds.pots.craftPot(); return; }
       const plant = e.target.closest('[data-plant]'); if (plant) { this.wilds.plantSeed(plant.dataset.plant); return; }
@@ -31,13 +31,19 @@ export class WorkbenchPanel {
       const mv = e.target.closest('[data-move]'); if (mv) { this.hide(); this.onMove?.(mv.dataset.move); }
     });
     addEventListener('keydown', e => { if (this.open && (e.key === 'Escape' || e.code === 'KeyE' && !e.repeat)) { e.stopImmediatePropagation(); e.preventDefault(); this.hide(); } }, true);
+    // R156: Tab stays inside the open panel; arrow keys move between tabs
+    addEventListener('keydown', e => {
+      if (!this.open) return;
+      if (e.key === 'Tab') { const f = [...this.el.querySelectorAll('button:not(:disabled)')].filter(b => b.offsetParent !== null); if (!f.length) return; const i = f.indexOf(document.activeElement), n = e.shiftKey ? (i <= 0 ? f.length - 1 : i - 1) : (i + 1) % f.length; e.preventDefault(); f[n].focus(); return; }
+      if ((e.key === 'ArrowRight' || e.key === 'ArrowLeft') && e.target?.closest?.('[data-tab]')) { const t = [...this.el.querySelectorAll('[data-tab]')], i = t.indexOf(e.target), n = t[(i + (e.key === 'ArrowRight' ? 1 : t.length - 1)) % t.length]; e.preventDefault(); this.tab = n.dataset.tab; this.render(); n.focus(); }
+    }, true);
     wilds.onChange(() => { if (this.open) this.render(); });
   }
 
   // R154: open on the tab with something waiting (a Special Seed → Seeds, an affordable perk → Perks), else the last one used
   pickTab() { const w = this.wilds; try { if (w.specialSeeds?.inBag?.().length) return 'chars'; if (w.profile.homeLevel >= 2 && PERKS.some(k => !w.profile.perks[k.id]) && (this.state.inventory.get('amber') || 0) >= w.perkPrice()) return 'seeds'; } catch {} return this.tab; }
   dots() { const w = this.wilds, d = {}; try { d.chars = !!w.specialSeeds?.inBag?.().length; d.seeds = w.profile.homeLevel >= 2 && PERKS.some(k => !w.profile.perks[k.id]) && (this.state.inventory.get('amber') || 0) >= w.perkPrice(); } catch {} return d; }
-  show() { this.open = true; this.tab = this.pickTab(); this.render(); this.el.classList.add('open'); this.el.querySelector('.wilds-close').focus({ preventScroll: true }); }
+  show() { this.open = true; this.tab = this.pickTab(); this.render(); this.el.classList.add('open'); requestAnimationFrame(() => this.el.querySelector('.wilds-close')?.focus({ preventScroll: true })); }   // R156: focus once visible
   hide() { this.open = false; this.el.classList.remove('open'); }
 
   costHtml(cost) {
@@ -111,6 +117,11 @@ export class WorkbenchPanel {
         [['greenhouse', 'Greenhouse'], ['workshop', 'Workshop'], ['rain', 'Rain barrel'], ['shrine', 'Perk Shrine']].map(([id, n]) => `<button type="button" data-move="${id}">Move ${n}</button>`).join('')}</div>`;
     }
     this.el.querySelector('.wilds-list').innerHTML = html;
+    // R156: the card the current goal asks for (e.g. 'Craft a pot') is scrolled into view and marked
+    try { const t = (this.wilds.goal().title || '').toLowerCase().replace('your first tool', 'stone axe'), list = this.el.querySelector('.wilds-list');
+      const name = a => a.querySelector('.wilds-body b')?.textContent.toLowerCase().replace(/ ·.*$/, '').replace(/^terracotta /, '') || '';
+      const hit = [...list.querySelectorAll('.wilds-item')].sort((a, b) => name(b).length - name(a).length).find(a => name(a).length > 2 && t.includes(name(a)));   // longest name first (pickaxe before axe)
+      if (hit) { hit.classList.add('goal'); requestAnimationFrame(() => hit.scrollIntoView({ block: 'nearest' })); } } catch {}
     this.el.querySelector('.wilds-inv').innerHTML = Object.values(MATERIALS).map(m => `<span title="${esc(m.name)}" aria-label="${esc(m.name)}"><i>${m.icon}</i>${this.state.inventory.get(m.id) || 0}</span>`).join('');   // R155: names on hover / for screen readers
   }
 }

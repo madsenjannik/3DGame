@@ -834,7 +834,7 @@ try {
       for (let i = 0; i < 80 && !g.orangery.root.getObjectByName('COMMUNITY_TREE_SIGN')?.visible; i++) await w(250);   // headless runs ~1 fps
       const sg = g.orangery.root.getObjectByName('COMMUNITY_TREE_SIGN'); o.sign = !!sg?.visible && /Stage 0 · 0\/1 Golden Seeds/.test(sg?.userData.text); g.devMenu.teleport('world', c.x + 30, c.z, 0); for (let i = 0; i < 80 && sg?.visible; i++) await w(250); o.signFar = !sg?.visible;
       return o; });
-    check('R152 guidance + Seeds tab: a seed in the Bag is the next step, Golden Seeds point to the tree, the Seeds tab lists all six, the tree shows its progress sign nearby', ok && ['goal', 'tree', 'tab', 'after', 'sign', 'signFar'].every(k => r[k]) && !errors.length, errors[0] || JSON.stringify(r)); await ctx.close(); }
+    check('R152 guidance + Seeds tab: a seed in the Bag is the next step, Golden Seeds point to the tree, the Characters tab lists all six, the tree shows its progress sign nearby', ok && ['goal', 'tree', 'tab', 'after', 'sign', 'signFar'].every(k => r[k]) && !errors.length, errors[0] || JSON.stringify(r)); await ctx.close(); }
   // 17v. R153 one tab owns the shared save: when another tab claims the game, this one stops saving and offers 'Play here'
   { const ctx = await context({ viewport: { width: 1280, height: 720 } }); const { p, errors, ok } = await startGame(ctx, 'cactus', { hud: 'desktop-e' }); let r = {};
     if (ok) r = await p.evaluate(async () => { const g = window.__tgw, w = ms => new Promise(x => setTimeout(x, ms)), o = {};
@@ -885,6 +885,32 @@ try {
       g.worldMap.open(); await w(600); o.map = getComputedStyle(document.getElementById('hud')).visibility === 'hidden'; g.worldMap.close(); await w(300); o.mapBack = getComputedStyle(document.getElementById('hud')).visibility === 'visible';
       return o; });
     check('R155 visual QA (phone): cream resource counts, padlocks in the Seeds tab, owned rows not faded, the map hides the HUD', ok && ['cream', 'lock', 'owned', 'map', 'mapBack'].every(k => r[k]) && !errors.length, errors[0] || JSON.stringify(r)); await ctx.close(); }
+  // 17z. R156 desktop keyboard: Esc closes the Bag first, B does nothing under the open menu, Tab stays in the menu, Enter presses
+  // the focused Resume, the workbench closes the Bag and takes focus, hidden panels are not focusable
+  { const ctx = await context({ viewport: { width: 1440, height: 810 } }); const { p, errors, ok } = await startGame(ctx, 'cactus', { hud: 'desktop-e' }); let r = {};
+    if (ok) { const ev = f => p.evaluate(f), open = () => ev(() => !!document.querySelector('#gear-panel.open')), menu = () => ev(() => document.getElementById('game-menu').classList.contains('open'));
+      await p.mouse.click(700, 300); await p.keyboard.press('KeyB'); await p.waitForTimeout(400); r.bag = await open();
+      await p.keyboard.press('Escape'); await p.waitForTimeout(400); r.escBag = !(await open()) && !(await menu());
+      await p.keyboard.press('Escape'); await p.waitForTimeout(500); r.menu = await menu();
+      await p.keyboard.press('KeyB'); await p.waitForTimeout(400); r.noBag = !(await open());
+      for (let i = 0; i < 6; i++) await p.keyboard.press('Tab'); r.trap = await ev(() => !!document.activeElement?.closest('#game-menu'));
+      await ev(() => document.querySelector('#game-menu [data-a="resume"]')?.focus()); await p.keyboard.press('Enter'); await p.waitForTimeout(500); r.enter = !(await menu());
+      r.inert = await ev(() => document.getElementById('game-menu').inert === true && document.getElementById('choice-panel').inert === true);
+      await p.keyboard.press('KeyB'); await p.waitForTimeout(400); await ev(() => window.__tgw.wilds.onOpenWorkbench()); await p.waitForTimeout(800);
+      r.wb = await ev(() => !document.querySelector('#gear-panel.open') && window.__tgw.workbenchPanel.open && !!document.activeElement?.closest('.wilds-panel'));
+      await p.keyboard.press('Escape'); await p.waitForTimeout(300); }
+    check('R156 desktop keyboard: Esc closes the Bag, keys blocked under the menu, Tab trapped, Enter presses Resume, hidden panels inert, the workbench closes the Bag and takes focus', ok && ['bag', 'escBag', 'menu', 'noBag', 'trap', 'enter', 'inert', 'wb'].every(k => r[k]) && !errors.length, errors[0] || JSON.stringify(r)); await ctx.close(); }
+  // 17aa. R156 first session (phone): in the garden before the seed wakes the card shows 'Find the Golden Seed' again, the workbench
+  // marks the card the goal asks for, the first-time tips remember their step, the workbench tab is called Characters
+  { const ctx = await context({ viewport: { width: 844, height: 390 }, isMobile: true, hasTouch: true }); const { p, errors, ok } = await startGame(ctx, 'daisy', { hud: 'classic', tips: true }); let r = {};
+    if (ok) r = await p.evaluate(async () => { const g = window.__tgw, w = ms => new Promise(x => setTimeout(x, ms)), o = {}; for (let i = 0; i < 80 && !g.collectible; i++) await w(250);
+      g.hud.setObjective('NEXT STEP', { title: 'Craft your first tool', copy: 'x' }); g.devMenu.teleport('garden', 0, 2, 0); for (let i = 0; i < 20 && document.getElementById('objective-title').textContent !== 'Find the Golden Seed'; i++) await w(250);
+      o.story = g.collectible?.status !== 'available' || document.getElementById('objective-title').textContent === 'Find the Golden Seed';
+      g.devMenu.run('mats'); const P = g.workbenchPanel; P.show(); P.tab = 'tools'; P.render(); await w(300); o.goalCard = /Stone Axe/.test(P.el.querySelector('.wilds-item.goal')?.textContent || '');
+      o.tab = P.el.querySelector('[data-tab="chars"]').textContent === 'Characters'; P.hide();
+      const ct = document.getElementById('control-tips'); for (let i = 0; i < 40 && !ct?.classList.contains('show'); i++) await w(250); ct?.click(); await w(300); o.tips = localStorage.getItem('tgw.controlTips.step') === '1';
+      return o; });
+    check('R156 first session: the garden card returns to Find the Golden Seed, the workbench marks the goal card, tips remember their step, tab Characters', ok && ['story', 'goalCard', 'tab', 'tips'].every(k => r[k]) && !errors.length, errors[0] || JSON.stringify(r)); await ctx.close(); }
   // 17m. R134 DEV toggles (visual only, off by default): resource icons fly into their counter; the tutorial tip sits under the resource bar on phones
   { const ctx = await context({ viewport: { width: 844, height: 390 }, isMobile: true, hasTouch: true }); await ctx.addInitScript(() => { localStorage.setItem('tgw.dev.flyIcons', '1'); localStorage.setItem('tgw.dev.tipTop', '1'); });
     const { p, errors, ok } = await startGame(ctx, 'cactus', { hud: 'classic', tips: true }); let r = {};

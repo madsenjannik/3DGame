@@ -5,7 +5,7 @@
 // shared save; until there is a server it is your own tree on this device. Uses OrangeryHubSystem.setStage (its
 // collision rebuild and lantern shatter at stage 6 come with it). DEV ?treeStage still wins. Fails soft.
 import * as THREE from 'three';
-import { TREE_COSTS, TREE_NAMES } from '../data/economyCatalog.js?build=SAVE-R155-20261009A';
+import { TREE_COSTS, TREE_NAMES } from '../data/economyCatalog.js?build=SAVE-R156-20261010A';
 
 const NEAR = 3.2, SIGN = 11;   // R152: the progress sign shows within 11 m
 // R152: a small in-world sign over the soil ('COMMUNITY TREE · 1/2'), drawn on top so the trunk never hides it
