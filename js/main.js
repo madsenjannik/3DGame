@@ -1,14 +1,14 @@
 // @ts-nocheck
-import { Game } from './core/Game.js?build=SAVE-R156-20261010A';
+import { Game } from './core/Game.js?build=SAVE-R157A-20261011A';
 import { characterCatalog } from './data/assetCatalog.js';
-import { unlockedIds } from './core/SaveGame.js?build=SAVE-R156-20261010A';
-import { devMenuEnabled } from './ui/DevMenu.js?build=SAVE-R156-20261010A';
+import { unlockedIds } from './core/SaveGame.js?build=SAVE-R157A-20261011A';
+import { devMenuEnabled } from './ui/DevMenu.js?build=SAVE-R157A-20261011A';
 
 async function start() {
   // R78.2: the HTML shell can be browser-cached while main.js is already fresh (it carries a per-run query).
   // Refresh the stylesheet URL from JS so Test HUD D never runs with an older cached styles.css.
   const css=document.querySelector('link[rel="stylesheet"][href*="styles.css"]');
-  if(css){const u=new URL(css.getAttribute('href'),location.href);u.searchParams.set('v','SAVE-R156-20261010A');css.href=u.pathname.split('/').pop()+u.search;}
+  if(css){const u=new URL(css.getAttribute('href'),location.href);u.searchParams.set('v','SAVE-R157A-20261011A');css.href=u.pathname.split('/').pop()+u.search;}
   const params=new URLSearchParams(location.search);
   const selectedCharacter=params.get('char');
   if(!selectedCharacter||!characterCatalog[selectedCharacter]){ location.replace('./'); return; }

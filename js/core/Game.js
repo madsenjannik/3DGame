@@ -3,55 +3,55 @@ import * as THREE from 'three';
 import { AssetRegistry } from './AssetRegistry.js';
 import { CharacterController } from './CharacterController.js?build=MOBILE-GESTURE-R34B-20260930A';
 import { GameState } from './GameState.js';
-import { InputManager } from './InputManager.js?build=SAVE-R156-20261010A';
+import { InputManager } from './InputManager.js?build=SAVE-R157A-20261011A';
 import { ThirdPersonCamera } from './ThirdPersonCamera.js?build=MOBILE-GESTURE-R34B-20260930A';
 import { CameraOcclusionSystem } from './CameraOcclusionSystem.js?build=NORTH-STABLE-R23O-20260929A';
 import { StructureVisibilitySystem } from '../visual/StructureVisibilitySystem.js?build=NORTH-STABLE-R23O-20260929A';
 import { characterCatalog, resourceCatalog, buildingCatalog } from '../data/assetCatalog.js';
-import { CollectibleSystem } from '../gameplay/CollectibleSystem.js?build=SAVE-R156-20261010A';
-import { MeaningfulChoiceSystem } from '../gameplay/MeaningfulChoiceSystem.js?build=SAVE-R156-20261010A';
-import { GreenhouseProgressionSystem } from '../gameplay/GreenhouseProgressionSystem.js?build=SAVE-R156-20261010A';
+import { CollectibleSystem } from '../gameplay/CollectibleSystem.js?build=SAVE-R157A-20261011A';
+import { MeaningfulChoiceSystem } from '../gameplay/MeaningfulChoiceSystem.js?build=SAVE-R157A-20261011A';
+import { GreenhouseProgressionSystem } from '../gameplay/GreenhouseProgressionSystem.js?build=SAVE-R157A-20261011A';
 import { OrangeryHubSystem } from '../gameplay/OrangeryHubSystem.js?build=CAMERA-CUTAWAY-CONTEXT-R21D-20260928E';
 import { FishingV1System } from '../gameplay/FishingV1System.js?build=BAG-NIGHT-R84-20261006A';
 import { ChoicePanel } from '../ui/ChoicePanel.js';
-import { Hud } from '../ui/Hud.js?build=SAVE-R156-20261010A';
+import { Hud } from '../ui/Hud.js?build=SAVE-R157A-20261011A';
 import { WorldMap } from '../ui/WorldMap.js?build=WORLD-MAP-R35B-20260930B';
 import { GardenEnvironment } from '../world/GardenEnvironment.js?build=WATER-VEG-R103-20261006A';
 import { WildlifeSystem } from '../world/WildlifeSystem.js?build=CAMERA-CUTAWAY-CONTEXT-R21D-20260928E';
-import { PlayerHomePortalSystem } from '../world/PlayerHomePortalSystem.js?build=SAVE-R156-20261010A';
-import { NorthStableSystem } from '../world/NorthStableSystem.js?build=SAVE-R156-20261010A';
-import { SaveGame, pickWinner } from './SaveGame.js?build=SAVE-R156-20261010A';
-import { SpecialSeeds } from '../gameplay/SpecialSeeds.js?build=SAVE-R156-20261010A';   // R149
-import { OrangeryTree } from '../gameplay/OrangeryTree.js?build=SAVE-R156-20261010A';   // R150
-import { installTabGuard } from './TabGuard.js?build=SAVE-R156-20261010A';   // R153
-import { Discovery } from '../gameplay/Discovery.js?build=SAVE-R156-20261010A';   // R154
-import { WildsLoopSystem } from '../gameplay/WildsLoopSystem.js?build=SAVE-R156-20261010A';
-import { WorkbenchPanel } from '../ui/WorkbenchPanel.js?build=SAVE-R156-20261010A';
-import { DevMenu, devMenuEnabled } from '../ui/DevMenu.js?build=SAVE-R156-20261010A';
+import { PlayerHomePortalSystem } from '../world/PlayerHomePortalSystem.js?build=SAVE-R157A-20261011A';
+import { NorthStableSystem } from '../world/NorthStableSystem.js?build=SAVE-R157A-20261011A';
+import { SaveGame, pickWinner } from './SaveGame.js?build=SAVE-R157A-20261011A';
+import { SpecialSeeds } from '../gameplay/SpecialSeeds.js?build=SAVE-R157A-20261011A';   // R149
+import { OrangeryTree } from '../gameplay/OrangeryTree.js?build=SAVE-R157A-20261011A';   // R150
+import { installTabGuard } from './TabGuard.js?build=SAVE-R157A-20261011A';   // R153
+import { Discovery } from '../gameplay/Discovery.js?build=SAVE-R157A-20261011A';   // R154
+import { WildsLoopSystem } from '../gameplay/WildsLoopSystem.js?build=SAVE-R157A-20261011A';
+import { WorkbenchPanel } from '../ui/WorkbenchPanel.js?build=SAVE-R157A-20261011A';
+import { DevMenu, devMenuEnabled } from '../ui/DevMenu.js?build=SAVE-R157A-20261011A';
 import { applyControlProfile, defaultProfile } from './ControlProfiles.js';
 import { PerfHud } from '../dev/PerfHud.js';
-import { QualityManager, QUALITY } from './Quality.js?build=SAVE-R156-20261010A';
-import { InteractionResolver } from './InteractionResolver.js?build=SAVE-R156-20261010A';
+import { QualityManager, QUALITY } from './Quality.js?build=SAVE-R157A-20261011A';
+import { InteractionResolver } from './InteractionResolver.js?build=SAVE-R157A-20261011A';
 import { log, warn } from '../dev/Log.js';
 import { LookPass } from '../visual/LookPass.js?build=BAG-NIGHT-R84-20261006A';
 import { DayNight } from '../visual/DayNight.js?build=BAG-NIGHT-R84-20261006A';   // R81
 import { TOOLS } from '../data/wildsCatalog.js';   // R124 Bag texts (the Workbench's own effect lines)
-import { WEAPONS } from '../data/combatCatalog.js?build=SAVE-R156-20261010A';   // R124 strike values
-import { VestVisual } from '../gameplay/VestVisual.js?build=SAVE-R156-20261010A';   // R125
-import { SpecialHold } from '../ui/SpecialHold.js?build=SAVE-R156-20261010A';   // R126
-import { GameMenu } from '../ui/GameMenu.js?build=SAVE-R156-20261010A';   // R121
-import { ControlTips } from '../ui/ControlTips.js?build=SAVE-R156-20261010A';   // R120
-import { Lantern } from '../gameplay/Lantern.js?build=SAVE-R156-20261010A';     // R81/R101
-import { BoatEconomySystem } from '../gameplay/BoatEconomySystem.js';
+import { WEAPONS } from '../data/combatCatalog.js?build=SAVE-R157A-20261011A';   // R124 strike values
+import { VestVisual } from '../gameplay/VestVisual.js?build=SAVE-R157A-20261011A';   // R125
+import { SpecialHold } from '../ui/SpecialHold.js?build=SAVE-R157A-20261011A';   // R126
+import { GameMenu } from '../ui/GameMenu.js?build=SAVE-R157A-20261011A';   // R121
+import { ControlTips } from '../ui/ControlTips.js?build=SAVE-R157A-20261011A';   // R120
+import { Lantern } from '../gameplay/Lantern.js?build=SAVE-R157A-20261011A';     // R81/R101
+import { BoatEconomySystem } from '../gameplay/BoatEconomySystem.js?build=SAVE-R157A-20261011A';
 import { LakeRunSystem } from '../gameplay/LakeRunSystem.js';
 import { GardenBuildSystem } from '../gameplay/GardenBuildSystem.js';
 import { GardenBuildMode } from '../ui/GardenBuildMode.js';
-import { GardenVegetationMask } from '../world/GardenVegetationMask.js?build=SAVE-R156-20261010A';
-import { CombatSystem } from '../gameplay/CombatSystem.js?build=SAVE-R156-20261010A';
-import { isToolJob } from '../ui/actionIcons.js?build=SAVE-R156-20261010A';   // R142
-import { CharacterSwapSpot } from '../gameplay/CharacterSwapSpot.js?build=SAVE-R156-20261010A';   // R138
-import { ImpactFx } from '../gameplay/ImpactFx.js?build=SAVE-R156-20261010A';   // R129 FX layer
-import { EquippedToolVisual } from '../gameplay/EquippedToolVisual.js?build=SAVE-R156-20261010A';
+import { GardenVegetationMask } from '../world/GardenVegetationMask.js?build=SAVE-R157A-20261011A';
+import { CombatSystem } from '../gameplay/CombatSystem.js?build=SAVE-R157A-20261011A';
+import { isToolJob } from '../ui/actionIcons.js?build=SAVE-R157A-20261011A';   // R142
+import { CharacterSwapSpot } from '../gameplay/CharacterSwapSpot.js?build=SAVE-R157A-20261011A';   // R138
+import { ImpactFx } from '../gameplay/ImpactFx.js?build=SAVE-R157A-20261011A';   // R129 FX layer
+import { EquippedToolVisual } from '../gameplay/EquippedToolVisual.js?build=SAVE-R157A-20261011A';
 
 export class Game {
   async init({characterId='succulent',devMode=false}={}){
@@ -234,10 +234,10 @@ this.workbenchPanel.show();this.input.resetTouchPointers?.();};
     // Attach background systems as they arrive (each is optional; null when it failed).
     const attach=(promise,fn)=>promise.then(v=>{if(v)fn(v);return v;});
     const background=Promise.all([
-      attach(stablePromise,s=>{this.stable=s;this.world.stableCollisionResolver=(p,r)=>s.resolveCollisions(p,r);s.bindRuntime({character:this.character,renderer:this.renderer});s.bindRuntime({input:this.input,hud:this.hud,followCamera:this.followCamera});this.cameraOcclusion.stable=s;this.structureVisibility.stable=s;}),
+      attach(stablePromise,s=>{this.stable=s;this.tabGuard?.guardSaveMethod(s,'save');this.world.stableCollisionResolver=(p,r)=>s.resolveCollisions(p,r);s.bindRuntime({character:this.character,renderer:this.renderer});s.bindRuntime({input:this.input,hud:this.hud,followCamera:this.followCamera});this.cameraOcclusion.stable=s;this.structureVisibility.stable=s;}),
       attach(collectiblePromise,c=>{this.collectible=c;this.restoreSeedStory();}),
       attach(choicePromise,c=>{this.choiceWorld=c;this.restoreSeedStory();}),
-      attach(greenhousePromise,g=>{const gt=this.garden.transformOf('greenhouse');g.setPlacement(gt.x,gt.z,gt.rot);this.greenhouse=g;this.wilds.setGreenhouse(g);this.cameraOcclusion.greenhouse=g;this.structureVisibility.greenhouse=g;}),
+      attach(greenhousePromise,g=>{const gt=this.garden.transformOf('greenhouse');g.setPlacement(gt.x,gt.z,gt.rot);this.greenhouse=g;this.tabGuard?.guardSaveMethod(g,'persist');this.wilds.setGreenhouse(g);this.cameraOcclusion.greenhouse=g;this.structureVisibility.greenhouse=g;}),
       attach(orangeryPromise,o=>{this.orangery=o;this.cameraOcclusion.orangery=o;this.structureVisibility.orangery=o;}),
       attach(fishingPromise,f=>{this.fishing=f;if(this.vestWorn())this.vest?.set(true);this.refreshHotbar?.(true);try{this.boatEco=new BoatEconomySystem({fishing:f,wilds:this.wilds,hud:this.hud}).init();}catch(e){warn('BOAT','economy disabled',e);this.failed.push('boat');}try{this.lakeRun=new LakeRunSystem(this,f);}catch(e){warn('LAKERUN','lake run disabled',e);this.failed.push('lakerun');}})
     ]).then(()=>{mark('allSystemsReadyMs');this.vegetationMask?.apply();log('LOAD','background systems ready',this.startupMetrics);if(this.failed.length)this.hud.showToast?.(`Some parts could not load: ${this.failed.join(', ')}`);});
@@ -372,6 +372,7 @@ this.workbenchPanel.show();this.input.resetTouchPointers?.();};
     this.perfHud?.tick();
   }
   frameStep(){
+    if (this.tabGuard && !this.tabGuard.canWrite()) { this.tabGuard.lose(); return; } // R157A: no progression in losing tab
     const rawDt=this.clock.getDelta();this.quality?.sample(rawDt);const dt=Math.min(rawDt,1/20)*(this.run('fxstop',()=>this.fx?.timeScale(rawDt))??1);   /* R129 hit-stop */this.time+=dt;this.uTime.value=this.time;this.input.update();
     if(this.input.moved&&!this.lastMoved){this.lastMoved=true;this.hud.markMoved();}
 

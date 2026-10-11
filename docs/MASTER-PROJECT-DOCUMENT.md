@@ -1,7 +1,7 @@
 # THE GROWING WILDS — MASTER PROJECT DOCUMENT
 
 **Status:** Canonical project guardrails + current baseline + backlog  
-**Date:** 01/10/2026  
+**Date:** 11/10/2026  
 **Purpose:** One durable project document for the active The Growing Wilds build chat. This document consolidates the current handover, locked systems, project rules, deferred work, current priorities, and the external technical review.
 
 > **Important:** This document is not permission to build. It is the source of truth for *how* the project must be handled.
@@ -9,7 +9,7 @@
 ---
 
 
-## CURRENT WORKING STATUS — 02/10/2026
+## CURRENT WORKING STATUS — 11/10/2026
 
 - **Active baseline: GitHub HEAD** of `madsenjannik/3DGame`, branch `claude/magical-lovelace-nuka97`, live at
   `https://madsenjannik.github.io/3DGame/`. `version.js` holds the version/build label. ZIP packages are no longer produced.
@@ -17,8 +17,16 @@
 - Previous lock: **R50.3 (v0.5.30, `CAMERA-R50.3-20261002A`)** (Jannik's plan, 02/10/2026):
   R46.2 start/splash, offline cleanup, wilds core loop (R47–R49), dev menu (R50), free camera everywhere (R50.3).
 - **R45 is historical** — a rollback reference only. New builds do **not** start from R45.
-- **Current build: v0.8.84 · R84 bag/resources + garden night + lantern reach (`BAG-NIGHT-R84-20261006A`, CANDIDATE, GO 06/10)** on top of Jannik's R83 mobile HUD; R81 day/night, R80 fishing grip, R79/R79.1 Root Bear before it: second boss in its own grove, see §16. HUD baseline = Test HUD D · Klassisk (R78–R78.3, Jannik 05/10: 'baseline nu', still to be polished).
+- **Current default/live:** v0.8.156 (R156, `SAVE-R156-20261010A`) on `claude/magical-lovelace-nuka97`. **R157A candidate:** v0.8.157 (`SAVE-R157A-20261011A`) on `fix/r157a-save-progression`; unmerged and awaiting device/browser approval. R67.1 remains locked.
 - **In progress: gameplay C (section 31)**: Boat economy (R58) → combat foundation + Mole (R61) → snail (R62) → Wood Giant (R63) → Lake Run (R64) done → Thora next.
+### R157A — Save and progression candidate (11/10/2026)
+
+- Jannik approved GO R157A. Isolated candidate; live/default remains R156.
+- Daily Requests: `profile.daily.selection` pins three shared task IDs per date. Midday R156 upgrades retain recorded completed/in-progress IDs; streak cannot increment twice in one day. Existing `done`, `progress`, `lastDate`, and `streak` remain intact.
+- Boat: additive `profile.boat.rented` persisted after payment, restored on reload and cleared when docking or buying. No FishingV1/camera modifications.
+- Tabs: localStorage single-owner lease with renewal; explicit handoff flushes the previous shared save before new owner reload. Losing tabs cannot write `tgw.save` or externally guarded `Stable.save()` / `Greenhouse.persist()`, and stop frame progression. Neither locked subsystem is modified. Browser storage remains local and may still be cleared by the OS/user.
+- QA: `tests/r157a-save.mjs` is imported by `tests/smoke.mjs` and exercises migration, persistence, rental and two-tab handoff/sidecar guards. Full Playwright/Chromium and physical desktop/iPhone QA still required before release.
+
 - Rules: no build without **GO**; every build updates HANDOVER + MASTER in the same commit (§1.7); never change the three greenhouse levels;
   building happens in the private garden.
 

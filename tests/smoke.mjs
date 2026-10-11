@@ -6,6 +6,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { createRequire } from 'node:module';
 import { SNAPSHOT_SAVE, collectGardenSnapshot } from './garden-snapshot.mjs';
+import './r157a-save.mjs'; // R157A deterministic save/progression tests before browser smoke
 
 const ROOT = path.resolve(path.dirname(new URL(import.meta.url).pathname), '..');
 const require = createRequire(import.meta.url);
