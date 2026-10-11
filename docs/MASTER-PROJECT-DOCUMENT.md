@@ -17,8 +17,16 @@
 - Previous lock: **R50.3 (v0.5.30, `CAMERA-R50.3-20261002A`)** (Jannik's plan, 02/10/2026):
   R46.2 start/splash, offline cleanup, wilds core loop (R47–R49), dev menu (R50), free camera everywhere (R50.3).
 - **R45 is historical** — a rollback reference only. New builds do **not** start from R45.
-- **Verified R157A:** v0.8.157 (`SAVE-R157A-20261011A`) was published to the default branch and passed 6/6 iPhone QA scenarios (Jannik, 11/10/2026), with no reported errors. **R157B candidate:** v0.8.158 (`GAMEPLAY-R157B-20261011A`) on `fix/r157b-interactions-camera-map`. Its scope is garden-pot priority, Sigurd cabin camera obstruction and world-map text collisions. The locked R67.1 models and baseline remain unchanged.
+- **Verified R157A:** v0.8.157 (`SAVE-R157A-20261011A`) was published to the default branch and passed 6/6 iPhone QA scenarios (Jannik, 11/10/2026), with no reported errors. **R157B.1 candidate:** v0.8.159 (`UX-R157B1-20261011A`) on `fix/r157b1-workbench-dialog-map`, based on deployed v0.8.158. The iPhone test of R157B found three issues (accidental greenhouse upgrade while planting, hidden Sigurd answers, map touch moving the player); map label placement was accepted. R157B.1 directly fixes these; locked models/controls outside the map stay unchanged.
 - **In progress: gameplay C (section 31)**: Boat economy (R58) → combat foundation + Mole (R61) → snail (R62) → Wood Giant (R63) → Lake Run (R64) done → Thora next.
+### R157B.1 — Workbench Hub, Sigurd phone conversation and map input (11/10/2026)
+
+- **GO:** Jannik explicitly approved `GO R157B.1` following a failed R157B iPhone test. It authorizes the three UX corrections below; no new prices/assets/gameplay balance.
+- **Workbench:** The existing `WorkbenchPanel` Home tab is now the sole UI entry for `GreenhouseProgressionSystem.startUpgrade()`. The three existing levels, their `Unlock` animations, greenhouse sidecar storage, and zero material cost are preserved. The panel binds a late-resolving greenhouse getter and listens for start/level-changed events. The original greenhouse's in-world upgrade interaction is no longer offered by `Game` (prevents accidental upgrade when targeting a pot); pots remain plant/water/harvest-only. Goal and Tools hint now direct players to Workbench → Home.
+- **Sigurd:** `FishingV1System.say()` sends each answer to a persistent text-only reply container while preserving the desktop's timed speech bubble. The dialog option list has its own element and remains accessible. On iPhone landscape, a compact two-column panel presents reply and options concurrently. The reply remains until replaced by another line or the dialogue is closed. No dialogue logic or 3D camera changes.
+- **World map:** The existing semi-transparent phone map graphics and R157B labels are retained. When opened, the map container captures touch input on the entire screen, joystick/look handlers refuse map gestures, the game stops character movement and contextual actions, and the HUD touch controls are hidden. Map pans/pinches and the 'ME' button still work. Closing the map restores existing controls.
+- **QA:** new `tests/r157b1-ui.mjs` imported by smoke; full Playwright and physical iPhone landscape review required before visual lock. R157B iPhone review did **not** pass; its three issues are recorded rather than claiming success.
+
 ### R157B — Interaction and camera/map corrections (11/10/2026)
 
 - **GO:** Jannik explicitly approved GO R157B after R157A iPhone QA 6/6 without errors.

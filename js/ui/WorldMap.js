@@ -127,13 +127,13 @@ export class WorldMap{
   _layout(){const s=this.o.size==='auto'?(this.mobile?110:176):this.o.size,m=this.mobile;this._ms=s;
     this.mini.style.width=this.mini.style.height=s+'px';this.mc.width=this.mc.height=s*this.dpr;this.mc.style.width=this.mc.style.height=s+'px';
     this._tag.style.display=m?'none':'block';this._tag.style.right=(16+s-20)+'px';this._tag.style.top=`calc(${16+s-20}px + env(safe-area-inset-top))`;
-    const ov=this.overlayMode;this.full.style.background=ov?'rgba(14,16,12,.35)':'#14160f';this.fc.style.opacity=ov?'.9':'1';this.full.style.pointerEvents=ov?'none':'auto';this.fc.style.pointerEvents='auto';
+    const ov=this.overlayMode;this.full.style.background=ov?'rgba(14,16,12,.35)':'#14160f';this.fc.style.opacity=ov?'.9':'1';this.full.style.pointerEvents='auto';this.fc.style.pointerEvents='auto'; /* R157B.1: map owns gestures even when transparent */
     this.lg.style.display=m?'none':'flex';}
   _buildDom(){const top='calc(16px + env(safe-area-inset-top))',btn=`border:0;border-radius:12px;background:${INK};color:${CREAM};font:700 13px/1 ${FONT};cursor:pointer;pointer-events:auto;`;
     const mini=this.mini=document.createElement('div');mini.style.cssText=`position:absolute;top:${top};right:16px;border-radius:50%;overflow:hidden;background:transparent;border:0;box-shadow:none;cursor:pointer;z-index:20;touch-action:manipulation;`;
     this.mc=document.createElement('canvas');this.mc.style.display='block';mini.appendChild(this.mc);mini.addEventListener('click',()=>this.open());
     const tag=this._tag=document.createElement('div');tag.textContent='M';tag.style.cssText=`position:absolute;width:24px;height:24px;border-radius:7px;background:${INK};color:${CREAM};font:700 11px/24px ${FONT};text-align:center;z-index:21;pointer-events:none;`;
-    const full=this.full=document.createElement('div');full.style.cssText=`position:absolute;inset:0;display:none;z-index:40;touch-action:none;`;
+    const full=this.full=document.createElement('div');full.style.cssText=`position:absolute;inset:0;display:none;z-index:80;touch-action:none;`; /* R157B.1: above game controls */
     this.fc=document.createElement('canvas');this.fc.style.cssText='position:absolute;inset:0;width:100%;height:100%;cursor:grab;touch-action:none;';full.appendChild(this.fc);
     const bar=document.createElement('div');bar.style.cssText=`position:absolute;left:16px;top:${top};display:flex;align-items:center;height:44px;padding:0 14px;border-radius:12px;background:${INK};color:${CREAM};font:700 13px/1 ${FONT};letter-spacing:.12em;text-transform:uppercase;pointer-events:none;`;bar.textContent='World map';full.appendChild(bar);
     const x=document.createElement('button');x.textContent='✕';x.setAttribute('aria-label','Close map');x.style.cssText=`position:absolute;right:16px;top:${top};width:44px;height:44px;font-size:16px;${btn}`;x.onclick=()=>this.close();full.appendChild(x);
@@ -144,7 +144,7 @@ export class WorldMap{
     this._fv={x:0,z:0,s:2};const pts=new Map();let G=null;
     const gest=()=>{const a=[...pts.values()];if(!a.length)return null;const mx=a.reduce((t,p)=>t+p.x,0)/a.length,my=a.reduce((t,p)=>t+p.y,0)/a.length,d=a.length>1?Math.hypot(a[0].x-a[1].x,a[0].y-a[1].y):0;return{mx,my,d,n:a.length};};
     const startG=()=>{const g=gest();G=g&&{...g,vx:this._fv.x,vz:this._fv.z,s:this._fv.s};};
-    this.fc.addEventListener('pointerdown',e=>{if(this.overlayMode&&this.mobile&&e.clientX<innerWidth*.48)return;this.fc.setPointerCapture(e.pointerId);pts.set(e.pointerId,{x:e.clientX,y:e.clientY});startG();this.follow=false;this.fc.style.cursor='grabbing';});
+    this.fc.addEventListener('pointerdown',e=>{this.fc.setPointerCapture(e.pointerId); /* R157B.1: pan from either screen half */pts.set(e.pointerId,{x:e.clientX,y:e.clientY});startG();this.follow=false;this.fc.style.cursor='grabbing';});
     this.fc.addEventListener('pointermove',e=>{if(!pts.has(e.pointerId)||!G)return;pts.set(e.pointerId,{x:e.clientX,y:e.clientY});const g=gest(),f=this._fv;
       if(g.n>1&&G.d>0){const r=this.fc.getBoundingClientRect(),ox=G.mx-r.left-r.width/2,oy=G.my-r.top-r.height/2,wx=G.vx+ox/G.s,wz=G.vz+oy/G.s;f.s=this._clampS(G.s*g.d/G.d);f.x=wx-(g.mx-r.left-r.width/2)/f.s;f.z=wz-(g.my-r.top-r.height/2)/f.s;}
       else{f.x=G.vx-(g.mx-G.mx)/f.s;f.z=G.vz-(g.my-G.my)/f.s;}this._clampView();});

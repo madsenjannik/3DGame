@@ -137,7 +137,7 @@ export class WildsLoopSystem {
     const seed = this.seedGoal?.(); if (seed) return seed;   // R152: a Special Seed in the Bag is the most useful next step (set by Game)
     if (!Object.keys(p.inventory).length && !this.has('axe')) return g('Gather natural materials', 'Out in the wilds · Gather Wood, Stone and Fiber from the things that glint.');   // R156: the axe needs no Clay
     if (!this.has('axe')) { const axe = TOOLS.find(t => t.id === 'axe'); return g('Craft your first tool', `Workbench in your garden · Requires ${costText(axe?.cost)}. Craft the Stone Axe.`); }
-    if (!pots?.available()) return g('Build your greenhouse', 'At the back of your garden. Pots and plants live there.');
+    if (!pots?.available()) return g('Build your greenhouse', 'Workbench → Home → Greenhouse. Build it there; plant and water directly at the pots.');
     if (pots.owned() < 1) return g('Craft a pot', 'Workbench → Tools → Terracotta Pot. It goes straight onto the greenhouse shelf.');
     if (!this.has('can')) { const can = TOOLS.find(t => t.id === 'can'); return g('Craft a Watering Can', `Workbench in your garden · Requires ${costText(can?.cost)}. Fill it at the garden pond.`); }
     const slots = p.pots.slots;

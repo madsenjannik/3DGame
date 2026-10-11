@@ -1,9 +1,10 @@
-# THE GROWING WILDS — HANDOVER — 2026-10-11 — R157B (gameplay candidate)
+# THE GROWING WILDS — HANDOVER — 2026-10-11 — R157B.1 (workbench / phone dialogue / map)
 
 ## Start here
 - **Repo:** `madsenjannik/3DGame`, branch `claude/magical-lovelace-nuka97` (GitHub replaces ZIP packages).
 - **Live test build:** `https://madsenjannik.github.io/3DGame/` (version shown bottom-left on the start screen).
-- **R157B implementation:** v0.8.158 (`GAMEPLAY-R157B-20261011A`) on `fix/r157b-interactions-camera-map`, based on R157A; targeted regression suite passes; full Playwright + on-device visual verification still needed before final visual lock. On promotion, the existing GitHub Pages site serves this version (no second host).
+- **R157B.1 candidate:** v0.8.159 (`UX-R157B1-20261011A`) on `fix/r157b1-workbench-dialog-map` (11/10/2026 GO). Greenhouse build/upgrade is Workbench → Home ONLY, with the three existing free levels and animation/persistence intact. On iPhone Sigurd's replies stay visible next to the option list; when the world map is open it captures all touch gestures and blocks player input. Await device/visual QA; no extra hosting.
+- **R157B feedback:** v0.8.158 is on the existing GitHub Pages branch but FAILED iPhone acceptance: tapping to plant could upgrade the greenhouse; Sigurd replies could not be seen beside choices; map panning operated the player behind it. Map labels WERE approved. R157B.1 addresses these without changing other R157B fixes.
 - **R157A baseline:** v0.8.157 (`SAVE-R157A-20261011A`) passed GitHub Pages deployment and Jannik's six iPhone scenarios with no errors on 11/10/2026. No change to saved progression.
 - **Previous R156:** desktop keyboard play works (Enter/Space, Esc, Tab, focus) and the first session guides better (garden card, workbench goal card, tips, English settings).
 - **LOCKED baseline:** **v0.8.21 (R67.1, `LANDSCAPE-R67.1-20261003A`)**, locked by Jannik 03/10/2026 ('lås (v0.8.21). Det virker!'). Everything up to and including R67.1 (boat economy, combat + Mole + snail, Wood Giant + arena, Lake Run, specials, phone HUD, landscape-only) is the baseline; changes need a GO for that exact scope. Previous lock: R50.3 (v0.5.30). R45 is historical rollback reference only.
@@ -16,7 +17,8 @@
 ## What changed since R45 (all CANDIDATE)
 | Build | What |
 |---|---|
-| R157B · v0.8.158 (candidate) | Corrected garden-pot plant/water/harvest interaction priority without changing greenhouse levels; Sigurd authored camera now uses existing obstruction raycast and cuts instead of panning through walls on shop/exit transitions; full world map places quest/boss labels before lower-priority POIs without text overlap. New `tests/r157b-gameplay.mjs` in smoke. | 
+| R157B.1 · v0.8.159 (iPhone candidate) | Workbench → Home builds/upgrades greenhouse levels 0–3 only on explicit tap; direct greenhouse upgrade interaction removed, pot actions retained. Sigurd's response and choices share a two-column landscape panel, response does not time out. World map takes all touch/drag/pinch input; disables movement and actions until closed. No save schema, prices or 3D assets changed. `tests/r157b1-ui.mjs` integrated into smoke. |
+| R157B · v0.8.158 (iPhone reported 3 issues) | Corrected garden-pot plant/water/harvest interaction priority without changing greenhouse levels; Sigurd authored camera now uses existing obstruction raycast and cuts instead of panning through walls on shop/exit transitions; full world map places quest/boss labels before lower-priority POIs without text overlap. New `tests/r157b-gameplay.mjs` in smoke. | 
 | R157A · v0.8.157 (iPhone QA 6/6) | One daily selection per shared save (old progress preserved); rental survives reload until docking; tab ownership handoff flushes before reload, guards all sidecar saves without editing locked subsystems; targeted tests in smoke. |
 | R46.2 · v0.4.00 | Claude Start/Splash presentation (unapproved). |
 | Cleanup · v0.4.01 | Runs fully offline (vendored three.js addons + React/Babel for the selector), duplicates removed, single version source, docs in `docs/`. |

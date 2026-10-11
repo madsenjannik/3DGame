@@ -5,12 +5,12 @@ import { WORKSHOP_UPGRADES } from '../data/workshopCatalog.js?build=SAVE-R156-20
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 
 export class WorkbenchPanel {
-  constructor({ wilds, state }) {
-    this.wilds = wilds; this.state = state; this.open = false;
+  constructor({ wilds, state, getGreenhouse = () => null }) {
+    this.wilds = wilds; this.state = state; this.getGreenhouse = getGreenhouse; this.open = false;
     const el = document.createElement('div');
     el.className = 'wilds-panel'; el.setAttribute('role', 'dialog'); el.setAttribute('aria-modal', 'true'); el.setAttribute('aria-labelledby', 'wilds-panel-title');
     el.innerHTML = `<div class="wilds-card">
-      <header><div><small>YOUR HOME</small><h2 id="wilds-panel-title">Workbench</h2></div><button type="button" class="wilds-close" aria-label="Close">✕</button></header>
+      <header><div><small>BUILD · UNLOCK · UPGRADE</small><h2 id="wilds-panel-title">Workbench</h2></div><button type="button" class="wilds-close" aria-label="Close">✕</button></header>
       <div class="wilds-trait"></div>
       <div class="wilds-goal"></div>
       <div class="wilds-tabs" role="tablist"><button type="button" role="tab" data-tab="tools">Tools</button><button type="button" role="tab" data-tab="home">Home</button><button type="button" role="tab" data-tab="seeds">Perks</button><button type="button" role="tab" data-tab="chars">Characters</button><button type="button" role="tab" data-tab="today">Today</button></div>
@@ -25,6 +25,12 @@ export class WorkbenchPanel {
       const tab = e.target.closest('[data-tab]'); if (tab) { this.tab = tab.dataset.tab; this.render(); return tab.focus?.({ preventScroll: true }); }
       const craft = e.target.closest('[data-craft]'); if (craft) { this.wilds.craft(craft.dataset.craft); return; }
       if (e.target.closest('[data-pot]')) { this.wilds.pots.craftPot(); return; }
+      // R157B.1: explicit tap here is the only way to build/upgrade the greenhouse.
+      if (e.target.closest('[data-greenhouse-upgrade]')) {
+        const gh=this.getGreenhouse?.();
+        if (gh && !gh.anim && gh.level < 3 && gh.startUpgrade?.()) this.render();
+        return;
+      }
       const plant = e.target.closest('[data-plant]'); if (plant) { this.wilds.plantSeed(plant.dataset.plant); return; }
       if (e.target.closest('[data-workshop]')) { this.wilds.upgradeWorkshop?.(); return; }   // R144
       if (e.target.closest('[data-upgrade]')) this.wilds.upgradeHome();
@@ -38,6 +44,8 @@ export class WorkbenchPanel {
       if ((e.key === 'ArrowRight' || e.key === 'ArrowLeft') && e.target?.closest?.('[data-tab]')) { const t = [...this.el.querySelectorAll('[data-tab]')], i = t.indexOf(e.target), n = t[(i + (e.key === 'ArrowRight' ? 1 : t.length - 1)) % t.length]; e.preventDefault(); this.tab = n.dataset.tab; this.render(); n.focus(); }
     }, true);
     wilds.onChange(() => { if (this.open) this.render(); });
+    // The established greenhouse animation signals start/finish. Keep the hub current.
+    for(const event of ['greenhouse:upgrade-started','greenhouse:level-changed']) this.state.events?.on?.(event,()=>{if(this.open)this.render();});
   }
 
   // R154: open on the tab with something waiting (a Special Seed → Seeds, an affordable perk → Perks), else the last one used
@@ -68,7 +76,7 @@ export class WorkbenchPanel {
           <button type="button" data-craft="${t.id}" ${can ? '' : 'disabled'}>${owned ? 'Owned' : 'Craft'}</button></article>`;
       }
       const pots = w.pots, n = pots.owned(), full = n >= POTS.max, gh = pots.available(), canPot = gh && !full && this.affordable(POTS.cost);
-      html += `<article class="wilds-item${full ? ' owned' : ''}"><div class="wilds-icon">🪴</div><div class="wilds-body"><b>Terracotta Pot · ${n}/${POTS.max}</b><p>${gh ? 'Goes on your greenhouse shelf. Plant Wild Seeds, water from the pond, harvest.' : 'Build your greenhouse first (back of the garden).'}</p>${full ? '' : `<div class="wilds-costs">${this.costHtml(POTS.cost)}</div>`}</div>
+      html += `<article class="wilds-item${full ? ' owned' : ''}"><div class="wilds-icon">🪴</div><div class="wilds-body"><b>Terracotta Pot · ${n}/${POTS.max}</b><p>${gh ? 'Goes on your greenhouse shelf. Plant Wild Seeds, water from the pond, harvest.' : 'Build your greenhouse first (Workbench → Home).'}</p>${full ? '' : `<div class="wilds-costs">${this.costHtml(POTS.cost)}</div>`}</div>
         <button type="button" data-pot ${canPot ? '' : 'disabled'}>${full ? 'Full' : 'Craft'}</button></article>`;
     } else if (this.tab === 'seeds') {
       // R148: the Perk Shrine takes amber; the next perk costs more than the last (10 / 15 / 20 / 30)
@@ -97,6 +105,12 @@ export class WorkbenchPanel {
           <div class="wilds-bar"><i style="width:${Math.round(t.have / t.goal * 100)}%"></i></div></div><span class="wilds-count">${t.have}/${t.goal}</span></article>`;
       }
     } else {
+      // R157B.1: use existing free greenhouse level progression from the Workbench.
+      const gh=this.getGreenhouse?.(), lvl=gh?.level??0, busy=!!gh?.anim, max=lvl>=3;
+      const ghStatus=!gh?'Loading greenhouse…':busy?`Building level ${gh.anim.to}/3`:(lvl===0?'Not built':`Level ${lvl}/3`);
+      const ghDetail=max?'All three existing levels are complete.':busy?'Greenhouse animation in progress.':lvl===0?'Build the first greenhouse here. Then craft pots under Tools.':'Unlock the next greenhouse level here. Your plants and saves stay intact.';
+      html += `<h3 class="wilds-sub">Greenhouse</h3><article class="wilds-item${max?' owned':''}"><div class="wilds-icon">🏡</div><div class="wilds-body"><b>Greenhouse · ${ghStatus}</b><p>${ghDetail}</p><p>No material cost · existing greenhouse progression</p></div>
+      <button type="button" data-greenhouse-upgrade ${!gh||busy||max?'disabled':''}>${!gh?'Loading':busy?'Building…':max?'Complete':lvl===0?'Build':'Upgrade'}</button></article>`;
       // R144: the workshop around the bench (L2/L3 unlocks: padlock placeholder until decided)
       html += `<h3 class="wilds-sub">Workshop</h3>`;
       WORKSHOP_UPGRADES.forEach((u, i) => {
