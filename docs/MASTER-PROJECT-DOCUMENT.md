@@ -17,11 +17,19 @@
 - Previous lock: **R50.3 (v0.5.30, `CAMERA-R50.3-20261002A`)** (Jannik's plan, 02/10/2026):
   R46.2 start/splash, offline cleanup, wilds core loop (R47–R49), dev menu (R50), free camera everywhere (R50.3).
 - **R45 is historical** — a rollback reference only. New builds do **not** start from R45.
-- **Current default/live:** v0.8.156 (R156, `SAVE-R156-20261010A`) on `claude/magical-lovelace-nuka97`. **R157A candidate:** v0.8.157 (`SAVE-R157A-20261011A`) on `fix/r157a-save-progression`; unmerged and awaiting device/browser approval. R67.1 remains locked.
+- **Verified R157A:** v0.8.157 (`SAVE-R157A-20261011A`) was published to the default branch and passed 6/6 iPhone QA scenarios (Jannik, 11/10/2026), with no reported errors. **R157B candidate:** v0.8.158 (`GAMEPLAY-R157B-20261011A`) on `fix/r157b-interactions-camera-map`. Its scope is garden-pot priority, Sigurd cabin camera obstruction and world-map text collisions. The locked R67.1 models and baseline remain unchanged.
 - **In progress: gameplay C (section 31)**: Boat economy (R58) → combat foundation + Mole (R61) → snail (R62) → Wood Giant (R63) → Lake Run (R64) done → Thora next.
-### R157A — Save and progression candidate (11/10/2026)
+### R157B — Interaction and camera/map corrections (11/10/2026)
 
-- Jannik approved GO R157A. Isolated candidate; live/default remains R156.
+- **GO:** Jannik explicitly approved GO R157B after R157A iPhone QA 6/6 without errors.
+- **Garden:** `InteractionResolver.gardenInteractionSource` maps only **enabled** `wilds-pot` plant/water/harvest actions to a priority of 36, just above the existing greenhouse build/upgrade priority 35. A growing/paused pot remains wilds priority 10; home and other interactions keep their existing precedence. No greenhouse level, mesh, collision or placement edits.
+- **Sigurd:** `FishingV1System.applyCamera` now calls its existing line-of-sight raycast `correctGreetCamera` before rendering the authored greeting view. Unobstructed views retain the exact exported camera quaternion; obstructed ones move behind the occluding wall and look at the existing target. Shop/exit fallback shots cut directly instead of interpolating through the cabin. Fishing progression, boat movement and NPC models untouched.
+- **World map:** `MapLabelLayout.js` deterministically places quest labels first, boss labels second, and other location labels afterward. Labels can shift or be suppressed in crowded maps; map icons and landmark coordinates stay fixed. No general HUD or minimap art changes.
+- **QA:** `tests/r157b-gameplay.mjs` imported by `tests/smoke.mjs`. It exercises pot precedence, dense label placement in phone/desktop sizes, and authored vs obstructed Sigurd camera. Still requires full browser smoke and physical iPhone visual review before final lock.
+
+### R157A — Save and progression (11/10/2026; iPhone QA accepted)
+
+- Jannik approved GO R157A. It was fast-forwarded to the live GitHub Pages branch and passed all six iPhone QA scenarios on 11/10/2026.
 - Daily Requests: `profile.daily.selection` pins three shared task IDs per date. Midday R156 upgrades retain recorded completed/in-progress IDs; streak cannot increment twice in one day. Existing `done`, `progress`, `lastDate`, and `streak` remain intact.
 - Boat: additive `profile.boat.rented` persisted after payment, restored on reload and cleared when docking or buying. No FishingV1/camera modifications.
 - Tabs: localStorage single-owner lease with renewal; explicit handoff flushes the previous shared save before new owner reload. Losing tabs cannot write `tgw.save` or externally guarded `Stable.save()` / `Greenhouse.persist()`, and stop frame progression. Neither locked subsystem is modified. Browser storage remains local and may still be cleared by the OS/user.

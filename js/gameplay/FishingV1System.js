@@ -137,7 +137,10 @@ export class FishingV1System{
     root.updateMatrixWorld(true);
     this.buildShopAnchors();
     const cabinRoot=this.land.cabinAsset?.root;
-    this._greetOccluders=['Cabin_Wall_Tar','Cabin_Interior_Emissive'].map(n=>cabinRoot?.getObjectByName(n)).filter(Boolean);
+    // R157B: the hatch cuts the source Tar wall into a new facade mesh.
+    // It MUST be included in LOS, otherwise the authored greeting raycast misses
+    // exactly the panels that can cover Sigurd on the iPhone.
+    this._greetOccluders=['Cabin_Wall_Tar','Cabin_Interior_Emissive','Fishing_Hatch_Facade_R13'].map(n=>cabinRoot?.getObjectByName(n)).filter(Boolean);
 
     // Claude's exported point light is intentionally not part of the GLB. Recreate only
     // that light inside the admitted shop overlay, at the exact authored local position.
@@ -668,7 +671,9 @@ export class FishingV1System{
       this._dPos.copy(center).addScaledVector(front,dist);
     }
     else if(boardExit){this._dPos.copy(followCamera.position);this._dTgt.copy(followCamera.look);fov=camera.aspect<.8?58:48;}
-    else if(inShop){this.updateShopAnchors();this._dPos.copy(LOCAL.SHOP_POS);this._dTgt.copy(LOCAL.SHOP_TGT);const c=this.shopCenters[this.shopIndex];if(c)this._dTgt.lerp(c,portrait ? .25 : .5);this.overlayRoot.localToWorld(this._dPos);this.overlayRoot.localToWorld(this._dTgt);fov=portrait?74:52;}
+    else if(inShop){this.updateShopAnchors();this._dPos.copy(LOCAL.SHOP_POS);this._dTgt.copy(LOCAL.SHOP_TGT);const c=this.shopCenters[this.shopIndex];if(c)this._dTgt.lerp(c,portrait ? .25 : .5);this.overlayRoot.localToWorld(this._dPos);this.overlayRoot.localToWorld(this._dTgt);fov=portrait?74:52;
+      if(this.T<.12){this._camPos.copy(this._dPos);this._camTgt.copy(this._dTgt);} // R157B: cut into shop, not through its wall
+    }
     else if(atOut){
       // R13: keep Claude Design's exported camera node as the source of truth. The
       // integration GLB is parented under the canonical cabin transform, so this world
@@ -681,7 +686,16 @@ export class FishingV1System{
         const landFov=Number.isFinite(extras.fovDegLandscape)?extras.fovDegLandscape:(viewCam.fov||42);
         const portraitFov=Number.isFinite(extras.fovDegPortrait)?extras.fovDegPortrait:60;
         fov=camera.aspect<portraitCut?portraitFov:landFov;
-        camera.position.copy(this._dPos);camera.quaternion.copy(this._tmpQ);camera.fov=fov;
+        // R157B: preserve the authored shot whenever its sightline is clear. If the
+        // cabin wall sits between its camera node and Sigurd, place the camera just
+        // past the last obstructing surface and re-aim at the SAME authored target.
+        // This avoids the wall shot without changing the camera asset or NPC position.
+        const authoredPos=this._tmpC.copy(this._dPos);
+        this.correctGreetCamera(this._dPos,this._dTgt);
+        const occluded=authoredPos.distanceToSquared(this._dPos)>.0004;
+        camera.position.copy(this._dPos);
+        if(occluded)camera.lookAt(this._dTgt);else camera.quaternion.copy(this._tmpQ);
+        camera.fov=fov;
         camera.near=Number.isFinite(extras.near)?extras.near:(viewCam.near||.08);
         camera.far=Number.isFinite(extras.far)?extras.far:(viewCam.far||200);
         camera.updateProjectionMatrix();camera.updateMatrixWorld(true);
@@ -691,6 +705,12 @@ export class FishingV1System{
       // Defensive fallback only if the integration GLB is unavailable.
       this._dPos.copy(LOCAL.OUT_POS);this._dTgt.copy(LOCAL.OUT_TGT);
       this.overlayRoot.localToWorld(this._dPos);this.overlayRoot.localToWorld(this._dTgt);fov=portrait?60:42;
+      this.correctGreetCamera(this._dPos,this._dTgt);
+      // Hard-cut to the fallback shot: never interpolate through the cabin wall.
+      this._camPos.copy(this._dPos);this._camTgt.copy(this._dTgt);
+    }
+    else if(this.mode==='exit'){this._dPos.copy(followCamera.position);this._dTgt.copy(followCamera.look);fov=camera.aspect<.8?58:48;
+      this._camPos.copy(this._dPos);this._camTgt.copy(this._dTgt); // R157B: never fly back through the cabin on exit
     }
     else if(boating){this._dTgt.copy(followCamera.look);this._dPos.copy(followCamera.position).sub(followCamera.look).multiplyScalar(portrait?1.35:1.55).add(followCamera.look);fov=portrait?58:48;}
     else if(fishing){const c=this.castDir,pp=new V3(-c.z,0,c.x),p=this.character.position,b=this.bobber.position,mid=this._tmpB.copy(p).lerp(b,.5);let spd=3.2;

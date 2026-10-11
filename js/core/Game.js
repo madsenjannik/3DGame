@@ -3,55 +3,55 @@ import * as THREE from 'three';
 import { AssetRegistry } from './AssetRegistry.js';
 import { CharacterController } from './CharacterController.js?build=MOBILE-GESTURE-R34B-20260930A';
 import { GameState } from './GameState.js';
-import { InputManager } from './InputManager.js?build=SAVE-R157A-20261011A';
+import { InputManager } from './InputManager.js?build=GAMEPLAY-R157B-20261011A';
 import { ThirdPersonCamera } from './ThirdPersonCamera.js?build=MOBILE-GESTURE-R34B-20260930A';
 import { CameraOcclusionSystem } from './CameraOcclusionSystem.js?build=NORTH-STABLE-R23O-20260929A';
 import { StructureVisibilitySystem } from '../visual/StructureVisibilitySystem.js?build=NORTH-STABLE-R23O-20260929A';
 import { characterCatalog, resourceCatalog, buildingCatalog } from '../data/assetCatalog.js';
-import { CollectibleSystem } from '../gameplay/CollectibleSystem.js?build=SAVE-R157A-20261011A';
-import { MeaningfulChoiceSystem } from '../gameplay/MeaningfulChoiceSystem.js?build=SAVE-R157A-20261011A';
-import { GreenhouseProgressionSystem } from '../gameplay/GreenhouseProgressionSystem.js?build=SAVE-R157A-20261011A';
+import { CollectibleSystem } from '../gameplay/CollectibleSystem.js?build=GAMEPLAY-R157B-20261011A';
+import { MeaningfulChoiceSystem } from '../gameplay/MeaningfulChoiceSystem.js?build=GAMEPLAY-R157B-20261011A';
+import { GreenhouseProgressionSystem } from '../gameplay/GreenhouseProgressionSystem.js?build=GAMEPLAY-R157B-20261011A';
 import { OrangeryHubSystem } from '../gameplay/OrangeryHubSystem.js?build=CAMERA-CUTAWAY-CONTEXT-R21D-20260928E';
-import { FishingV1System } from '../gameplay/FishingV1System.js?build=BAG-NIGHT-R84-20261006A';
+import { FishingV1System } from '../gameplay/FishingV1System.js?build=GAMEPLAY-R157B-20261011A';
 import { ChoicePanel } from '../ui/ChoicePanel.js';
-import { Hud } from '../ui/Hud.js?build=SAVE-R157A-20261011A';
-import { WorldMap } from '../ui/WorldMap.js?build=WORLD-MAP-R35B-20260930B';
+import { Hud } from '../ui/Hud.js?build=GAMEPLAY-R157B-20261011A';
+import { WorldMap } from '../ui/WorldMap.js?build=GAMEPLAY-R157B-20261011A';
 import { GardenEnvironment } from '../world/GardenEnvironment.js?build=WATER-VEG-R103-20261006A';
 import { WildlifeSystem } from '../world/WildlifeSystem.js?build=CAMERA-CUTAWAY-CONTEXT-R21D-20260928E';
-import { PlayerHomePortalSystem } from '../world/PlayerHomePortalSystem.js?build=SAVE-R157A-20261011A';
-import { NorthStableSystem } from '../world/NorthStableSystem.js?build=SAVE-R157A-20261011A';
-import { SaveGame, pickWinner } from './SaveGame.js?build=SAVE-R157A-20261011A';
-import { SpecialSeeds } from '../gameplay/SpecialSeeds.js?build=SAVE-R157A-20261011A';   // R149
-import { OrangeryTree } from '../gameplay/OrangeryTree.js?build=SAVE-R157A-20261011A';   // R150
-import { installTabGuard } from './TabGuard.js?build=SAVE-R157A-20261011A';   // R153
-import { Discovery } from '../gameplay/Discovery.js?build=SAVE-R157A-20261011A';   // R154
-import { WildsLoopSystem } from '../gameplay/WildsLoopSystem.js?build=SAVE-R157A-20261011A';
-import { WorkbenchPanel } from '../ui/WorkbenchPanel.js?build=SAVE-R157A-20261011A';
-import { DevMenu, devMenuEnabled } from '../ui/DevMenu.js?build=SAVE-R157A-20261011A';
+import { PlayerHomePortalSystem } from '../world/PlayerHomePortalSystem.js?build=GAMEPLAY-R157B-20261011A';
+import { NorthStableSystem } from '../world/NorthStableSystem.js?build=GAMEPLAY-R157B-20261011A';
+import { SaveGame, pickWinner } from './SaveGame.js?build=GAMEPLAY-R157B-20261011A';
+import { SpecialSeeds } from '../gameplay/SpecialSeeds.js?build=GAMEPLAY-R157B-20261011A';   // R149
+import { OrangeryTree } from '../gameplay/OrangeryTree.js?build=GAMEPLAY-R157B-20261011A';   // R150
+import { installTabGuard } from './TabGuard.js?build=GAMEPLAY-R157B-20261011A';   // R153
+import { Discovery } from '../gameplay/Discovery.js?build=GAMEPLAY-R157B-20261011A';   // R154
+import { WildsLoopSystem } from '../gameplay/WildsLoopSystem.js?build=GAMEPLAY-R157B-20261011A';
+import { WorkbenchPanel } from '../ui/WorkbenchPanel.js?build=GAMEPLAY-R157B-20261011A';
+import { DevMenu, devMenuEnabled } from '../ui/DevMenu.js?build=GAMEPLAY-R157B-20261011A';
 import { applyControlProfile, defaultProfile } from './ControlProfiles.js';
 import { PerfHud } from '../dev/PerfHud.js';
-import { QualityManager, QUALITY } from './Quality.js?build=SAVE-R157A-20261011A';
-import { InteractionResolver } from './InteractionResolver.js?build=SAVE-R157A-20261011A';
+import { QualityManager, QUALITY } from './Quality.js?build=GAMEPLAY-R157B-20261011A';
+import { InteractionResolver, gardenInteractionSource } from './InteractionResolver.js?build=GAMEPLAY-R157B-20261011A';
 import { log, warn } from '../dev/Log.js';
 import { LookPass } from '../visual/LookPass.js?build=BAG-NIGHT-R84-20261006A';
 import { DayNight } from '../visual/DayNight.js?build=BAG-NIGHT-R84-20261006A';   // R81
 import { TOOLS } from '../data/wildsCatalog.js';   // R124 Bag texts (the Workbench's own effect lines)
-import { WEAPONS } from '../data/combatCatalog.js?build=SAVE-R157A-20261011A';   // R124 strike values
-import { VestVisual } from '../gameplay/VestVisual.js?build=SAVE-R157A-20261011A';   // R125
-import { SpecialHold } from '../ui/SpecialHold.js?build=SAVE-R157A-20261011A';   // R126
-import { GameMenu } from '../ui/GameMenu.js?build=SAVE-R157A-20261011A';   // R121
-import { ControlTips } from '../ui/ControlTips.js?build=SAVE-R157A-20261011A';   // R120
-import { Lantern } from '../gameplay/Lantern.js?build=SAVE-R157A-20261011A';     // R81/R101
-import { BoatEconomySystem } from '../gameplay/BoatEconomySystem.js?build=SAVE-R157A-20261011A';
+import { WEAPONS } from '../data/combatCatalog.js?build=GAMEPLAY-R157B-20261011A';   // R124 strike values
+import { VestVisual } from '../gameplay/VestVisual.js?build=GAMEPLAY-R157B-20261011A';   // R125
+import { SpecialHold } from '../ui/SpecialHold.js?build=GAMEPLAY-R157B-20261011A';   // R126
+import { GameMenu } from '../ui/GameMenu.js?build=GAMEPLAY-R157B-20261011A';   // R121
+import { ControlTips } from '../ui/ControlTips.js?build=GAMEPLAY-R157B-20261011A';   // R120
+import { Lantern } from '../gameplay/Lantern.js?build=GAMEPLAY-R157B-20261011A';     // R81/R101
+import { BoatEconomySystem } from '../gameplay/BoatEconomySystem.js?build=GAMEPLAY-R157B-20261011A';
 import { LakeRunSystem } from '../gameplay/LakeRunSystem.js';
 import { GardenBuildSystem } from '../gameplay/GardenBuildSystem.js';
 import { GardenBuildMode } from '../ui/GardenBuildMode.js';
-import { GardenVegetationMask } from '../world/GardenVegetationMask.js?build=SAVE-R157A-20261011A';
-import { CombatSystem } from '../gameplay/CombatSystem.js?build=SAVE-R157A-20261011A';
-import { isToolJob } from '../ui/actionIcons.js?build=SAVE-R157A-20261011A';   // R142
-import { CharacterSwapSpot } from '../gameplay/CharacterSwapSpot.js?build=SAVE-R157A-20261011A';   // R138
-import { ImpactFx } from '../gameplay/ImpactFx.js?build=SAVE-R157A-20261011A';   // R129 FX layer
-import { EquippedToolVisual } from '../gameplay/EquippedToolVisual.js?build=SAVE-R157A-20261011A';
+import { GardenVegetationMask } from '../world/GardenVegetationMask.js?build=GAMEPLAY-R157B-20261011A';
+import { CombatSystem } from '../gameplay/CombatSystem.js?build=GAMEPLAY-R157B-20261011A';
+import { isToolJob } from '../ui/actionIcons.js?build=GAMEPLAY-R157B-20261011A';   // R142
+import { CharacterSwapSpot } from '../gameplay/CharacterSwapSpot.js?build=GAMEPLAY-R157B-20261011A';   // R138
+import { ImpactFx } from '../gameplay/ImpactFx.js?build=GAMEPLAY-R157B-20261011A';   // R129 FX layer
+import { EquippedToolVisual } from '../gameplay/EquippedToolVisual.js?build=GAMEPLAY-R157B-20261011A';
 
 export class Game {
   async init({characterId='succulent',devMode=false}={}){
@@ -429,7 +429,8 @@ this.workbenchPanel.show();this.input.resetTouchPointers?.();};
     if(!this.state.choice.open&&!portalBusy&&!wildsPanel){
       if(gardenSpace){
         // Build mode: the garden keeps living, but nothing else can be used until Place/Cancel.
-        const gi=this.wilds?.update(dt,this.time,this.character,'garden').interaction;if(!building)R.offer('wilds',gi);
+        const gi=this.wilds?.update(dt,this.time,this.character,'garden').interaction;
+        if(!building)R.offer(gardenInteractionSource(gi),gi); // R157B: plant/water/harvest beats greenhouse upgrade only within pot reach
         if(seed.near&&!building)R.offer('first-seed',{type:'first-seed',label:'Collect Golden Seed'});
         if(!building)R.offer('greenhouse',greenhouse.interaction);
         if(!building&&!specialBusy)R.offer('home',this.swapSpot?.interaction?.(this.character.position));   // R138: gold SWITCH circle by the shed

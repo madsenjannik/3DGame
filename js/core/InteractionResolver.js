@@ -8,12 +8,19 @@ export const PRIORITY = {
   fishing: 60,     // FishingV1 incl. boat board/dock
   stable: 50,      // Stable doors, Thora, RIDE/JUMP
   home: 45,        // shed door / back to the world
+  'garden-pot': 36, // R157B: pot actions take precedence only while actively within pot reach
   greenhouse: 35,  // build / upgrade greenhouse
   'first-seed': 30,// first Golden Seed
   orangery: 30,    // R150: feed the community tree a Golden Seed
   wilds: 10,       // nodes, thornbrush, workbench, pots, weeds, snails
   shorefish: 9     // R71: 'Fish' anywhere along the lake/stream shore; anything else nearby wins
 };
+
+// R157B: this is deliberately restricted to gardening actions. Growing/paused
+// pots, weeds, nodes and the workbench retain their established precedence.
+export function gardenInteractionSource(hit) {
+  return hit?.type === 'wilds-pot' && !hit.disabled && ['plant', 'water', 'harvest'].includes(hit.act) ? 'garden-pot' : 'wilds';
+}
 
 export class InteractionResolver {
   constructor() { this.list = []; this.last = null; }

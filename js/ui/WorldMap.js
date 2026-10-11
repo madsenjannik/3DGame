@@ -1,3 +1,4 @@
+import { layoutMapLabels } from './MapLabelLayout.js?build=GAMEPLAY-R157B-20261011A';
 // worldmap.js — in-game minimap + fullscreen world map (M). No dependencies.
 // World coords = SharedLandscape.js coords (x right/east, z down/south, metres). Heading h: forward = (sin h, cos h) = three.js rotation.y.
 let W0={x:60,z:-40},WL=-.9,HALF=250,WR=188;
@@ -192,8 +193,16 @@ export class WorldMap{
     const toS=(x,z)=>[W/2+(x-f.x)*k,H/2+(z-f.z)*k],[ex,ey]=toS(W0.x,W0.z);this._fog(g,ex,ey,k,W,H);
     g.strokeStyle='rgba(244,241,232,.18)';g.setLineDash([6*s,6*s]);g.lineWidth=1.5*s;g.beginPath();g.arc(ex,ey,WR*k,0,6.283);g.stroke();g.setLineDash([]);
     const names=f.s>=(this.mobile?2.4:1.9);
-    for(const[n,L]of LANDMARKS()){const[x,y]=toS(L.x,L.z);g.fillStyle=CREAM;g.strokeStyle=INK;g.lineWidth=2*s;g.beginPath();g.arc(x,y,3.5*s,0,6.283);g.fill();g.stroke();if(names)pill(g,n,x,y-17*s,s);}
-    for(const m of this.markers){const[x,y]=toS(m.x,m.z);drawMarker(g,m,x,y,s*1.3);if(m.label&&m.type!=='enemy'&&(names||m.type==='boss'||m.type==='quest'))pill(g,m.label,x,y+20*s,s,m.type==='quest'?GOLD:RED,INK);}
-    const[px,py]=toS(p.x,p.z);g.fillStyle='rgba(244,241,232,.3)';g.beginPath();g.arc(px,py,17*s,0,6.283);g.fill();drawArrow(g,px,py,Math.atan2(Math.cos(p.heading||0),Math.sin(p.heading||0)),s*1.2);}
+    // R157B: all icons stay anchored. Measure the labels once and lay them out as a
+    // group so quest/boss labels take precedence over lower-priority place names.
+    const labels=[],obstacles=[],dot=(x,y,r)=>obstacles.push({left:x-r,top:y-r,right:x+r,bottom:y+r});
+    for(const[n,L]of LANDMARKS()){const[x,y]=toS(L.x,L.z);g.fillStyle=CREAM;g.strokeStyle=INK;g.lineWidth=2*s;g.beginPath();g.arc(x,y,3.5*s,0,6.283);g.fill();g.stroke();
+      dot(x,y,5*s);if(names)labels.push({text:n,x,y,preferred:'above',priority:0,bg:INK,fg:CREAM});}
+    for(const m of this.markers){const[x,y]=toS(m.x,m.z);drawMarker(g,m,x,y,s*1.3);dot(x,y,12*s);
+      if(m.label&&m.type!=='enemy'&&(names||m.type==='boss'||m.type==='quest'))labels.push({text:m.label,x,y,preferred:'below',priority:m.type==='quest'?3:m.type==='boss'?2:1,bg:m.type==='quest'?GOLD:RED,fg:INK});}
+    const[px,py]=toS(p.x,p.z);dot(px,py,19*s);
+    g.font=`700 ${12*s}px ${FONT}`;
+    for(const l of layoutMapLabels(labels,W,H,s,text=>g.measureText(text).width,obstacles))pill(g,l.text,l.x,l.y,s,l.bg,l.fg);
+    g.fillStyle='rgba(244,241,232,.3)';g.beginPath();g.arc(px,py,17*s,0,6.283);g.fill();drawArrow(g,px,py,Math.atan2(Math.cos(p.heading||0),Math.sin(p.heading||0)),s*1.2);}
   dispose(){document.body.classList.remove('world-map-open');removeEventListener('keydown',this._key);removeEventListener('resize',this._rs);this.mini.remove();this._tag.remove();this.full.remove();}
 }
