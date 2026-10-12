@@ -1,5 +1,15 @@
 # THE GROWING WILDS — HANDOVER — 2026-10-12 — R158A (Core Workbench / Bag UI + real GLB previews)
 
+
+## R157C.1 — safe tab ownership and real Chromium regression (12/10/2026; GO "Så fix! GO")
+- **Bug:** Real Chromium R157C two-tab handoff failed repeatedly on R158A.1 PR #2: an acknowledged waiting tab remained read-only while the old tab regained writer status. See issue #3; browser diagnostics retained in GitHub Actions. The exact internal event-order root cause is not fully proven.
+- **Candidate fix:** Dedicated PR #4 (`fix/r157c-safe-takeover-race`) prevents automatic lease theft on a 12-second heartbeat stall. A blocked writer stops WebGL animation and cannot restart it in `syncRun`; the existing synchronous flush + matching ACK + rehydrating reload remain mandatory for normal takeover.
+- **Crash recovery:** An apparently abandoned lease requires at least 120 seconds since heartbeat and an **explicit second tap** by the waiting player; this is not a silent claim. The original writer is fenced by the ownership ID check before further saves. Unsaved changes in a truly abandoned old tab cannot be guaranteed after force recovery.
+- **Regression:** New tests model a live 25-second heartbeat stall (no premature lease theft) and explicit 120-second recovery; original 65-second real Chromium takeover deadline is kept. Existing R157A save, R157B gameplay, R157B.1 UI and R158A contracts run before the browser handoff. QA history in PR #4 and its GitHub Actions; no claim of physical iPhone Safari testing.
+- **Integration:** PR #5 checks the same fix against R158A.1 v0.8.162 and separately runs the real desktop/iPhone-landscape GLB/Workbench/Bag QA. PR #2 stays visually unapproved until user signs off on device.
+- **Scope:** No edits to `SaveGame.js`, Stable/Greenhouse persistence internals, character movement, camera, build progression, GLBs or crafting economy. The unrelated older full-smoke Bag/quickslot test failure predated this fix and is not considered resolved here.
+
+
 ## R158A candidate — 12/10/2026 (GO R158A)
 - **Candidate:** v0.8.161 `CORE-R158A-20261012A`, branch `feature/r158a-core-ui-glb-preview`, based on verified v0.8.160. No production promotion until desktop and phone UI QA passes.
 - **Workbench:** Replaces narrow desktop/phone panel with a responsive widescreen destination: left five-category nav (Tools, Buildings/Home, Perks, Characters, Daily Requests), center existing crafting/building items, right real building or item details. Existing material prices, greenhouse `data-greenhouse-upgrade`, workshop `data-workshop`, gardening, progression and save handlers preserved. Unlocked items are never purchased by selecting their preview.

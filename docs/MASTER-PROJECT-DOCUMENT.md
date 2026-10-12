@@ -1,5 +1,15 @@
 # THE GROWING WILDS — MASTER PROJECT DOCUMENT
 
+
+## R157C.1 — single-writer handoff under delayed WebGL execution (12/10/2026)
+- **Authorisation:** GO 12/10/2026 to fix the reproducible R157C handoff bug (issue #3). Dedicated fix PR #4; independent R158A.1 integration PR #5; no direct edits to production until gated QA.
+- **Symptom:** Two-tab Chromium check on PR #2 failed twice; the waiting tab briefly observed a transferred lease, reloaded with a new ID, and remained blocked while the initial writer held the active lease. Exact scheduling mechanism is not proven from logs alone.
+- **Mitigation:** `TabGuard` no longer interprets a stalled 12-second heartbeat as licence to take a live tab's save; a blocked tab's WebGL loop is paused and cannot be restarted by `Game.syncRun`; regular transfer still flushes the old snapshot synchronously and matches its ACK before reload/rehydration. The save-authority test remains `canWrite()` on every guarded save.
+- **Recovery and tradeoff:** A silent/crashed old tab can be recovered only after 120 seconds of owner inactivity and a deliberate second player click. Forced recovery cannot guarantee unflushed data from an abandoned tab. Never auto-reclaim merely because of throttled background timers.
+- **QA:** Original 65-second Chromium handoff deadline preserved (not relaxed); targeted simulated 3.1/24-second event delays, 25-second heartbeat stall, 120-second recovery; legacy R157A/B/B.1/R158A contracts. Check PR #4 and PR #5 for verified CI outcomes. Chromium emulation is not physical Safari verification.
+- **Protected:** no save migration format, Stable/Greenhouse internals, GLBs, existing movement/camera, economy or R158A.1 Workbench/Bag layout changes.
+
+
 **Status:** Canonical project guardrails + current baseline + backlog  
 **Date:** 12/10/2026  
 **Purpose:** One durable project document for the active The Growing Wilds build chat. This document consolidates the current handover, locked systems, project rules, deferred work, current priorities, and the external technical review.
