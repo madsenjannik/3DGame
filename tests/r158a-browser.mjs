@@ -25,6 +25,11 @@ async function start(mobile,width,height){
   page=await context.newPage();const errors=[];page.on('pageerror',e=>errors.push(e.message));
   await page.goto(origin+'game.html?char=cactus&dev=1&devSpawn=privateGarden',{waitUntil:'load'});
   await page.waitForFunction(()=>!!window.__tgw?.workbenchPanel&&!!window.__tgw?.hud?.gear,null,{timeout:150000});
+  // DEV builds deliberately skip the player HUD profile; emulate the real device profile.
+  await page.evaluate(mobile=>{
+    document.body.classList.toggle('hud-classic',mobile);
+    document.body.classList.toggle('hud-desktop-e',!mobile);
+  },mobile);
   return errors;
 }
 async function screenshot(name){await page.screenshot({path:path.join(OUT,name)});}
@@ -53,7 +58,8 @@ try{
   await screenshot('Workbench_Tools_DESKTOP.png');
   await page.evaluate(()=>{window.__tgw.workbenchPanel.hide();window.__tgw.wilds.profile.tools.axe=true;window.__tgw.hud.toggleGear(true);});
   const bag=await page.locator('#gear-panel').boundingBox();
-  check(bag&&bag.width>700&&bag.x+bag.width<1441,'desktop Bag is still a small dropdown');
+  const bagLayout=await page.evaluate(()=>{const p=document.querySelector('#gear-panel'),b=p?.getBoundingClientRect();return {body:document.body.className,width:b?.width,left:b?.left,top:b?.top,layout:getComputedStyle(p).display,details:!!p.querySelector('.r158a-bag')};});
+  check(bag&&bag.width>700&&bag.x>=0&&bag.x+bag.width<1441&&bagLayout.details,'desktop Bag not full inventory: '+JSON.stringify(bagLayout));
   check(await page.locator('#gear-panel .bag2-slot').count()===10,'desktop quick slots changed');
   await page.locator('[data-bag-filter="resources"]').evaluate(el=>{if(!el.getBoundingClientRect().width)throw Error('Invisible control');el.click();});
   check(await page.locator('.r158a-resource-grid .r158a-material').count()===7,'resource category');

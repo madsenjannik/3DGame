@@ -191,7 +191,7 @@ export class Hud {
   }
   // R124 (GO 07/10, phones): the Bag is a grid of tools on the left, a detail card on the right (big art, name, kind,
   // strike, the game's own text, actions) and the 3 quick slots below. Tap = select; Hold / Add to slot / Wear / Light.
-  bag2Mode(){return (this.touch()&&document.body.classList.contains('hud-classic'))||(!this.touch()&&document.body.classList.contains('hud-desktop-e'));}
+  bag2Mode(){return !this.touch()||(this.touch()&&document.body.classList.contains('hud-classic'));} // R158A: desktop inventory is unified in both player and DEV HUD profiles
   toolArt(it){
     const key=it.hotbarIcon||(it.name==='Watering Can'?'watering-can':(it.icon||it.id||''));
     if(['axe','pickaxe','sickle','watering-can','rod','lantern'].includes(key))return `<i class="bag2-art" style="--art:url(./brand/icons/tool3d/icon-${key}.png?v=R124)"></i>`;
