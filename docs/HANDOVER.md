@@ -1,6 +1,7 @@
 # THE GROWING WILDS — HANDOVER — 2026-10-11 — R157B.1 (workbench / phone dialogue / map)
 
 ## R157C QA infrastructure — 12/10/2026
+- **CI review 12/10:** Initial full run (Actions #38212000935): 59/60 browser checks passed. The only failure was a QA setup error: second tab used `?dev=1` (ephemeral save; no TabGuard). Corrected to a normal save-owning tab and added a fast focused browser test. No gameplay/runtime files changed. Corrected results pending CI completion.
 - **GO:** User authorised moving on to R157C, primarily testing on desktop with iPhone available.
 - **Scope:** Full Chromium browser smoke in GitHub Actions and corrected R153 tab ownership regression to R157A safe two-tab handoff. No gameplay/runtime changes. Run results must be checked before acceptance; GitHub Pages success is not a smoke pass.
 - **Known limits:** CI Chromium emulates touch viewports but does not reproduce Safari/WebKit or physical iPhone. Current suite has 58 declared checks and may take a long time; see Actions for real status.

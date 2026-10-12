@@ -844,7 +844,7 @@ try {
     if (ok) {
       r.owner = await p.evaluate(() => !!window.__tgw?.tabGuard?.canWrite() && !window.__tgw.save.readOnly);
       const q = await ctx.newPage(); const qErrors = []; q.on('pageerror', e => qErrors.push(e.message));
-      await q.goto(B + 'game.html?char=cactus&dev=1', { waitUntil:'load' });
+      await q.goto(B + 'game.html?char=cactus', { waitUntil:'load' }); // R157C: real save-owning tab; dev=1 is ephemeral and has no TabGuard
       const qReady = await q.waitForFunction(() => !!window.__tgw?.tabGuard && !!document.getElementById('tab-lost'), null, { timeout:240000 }).then(() => true, () => false);
       r.blocked = qReady && await q.evaluate(() => window.__tgw.save.readOnly && !window.__tgw.tabGuard.canWrite());
       if (qReady) {
