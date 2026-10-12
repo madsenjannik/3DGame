@@ -33,11 +33,20 @@ async function start(mobile,width,height){
   return errors;
 }
 async function screenshot(name){await page.screenshot({path:path.join(OUT,name)});}
+async function rect(selector){
+  // Avoid locator.boundingBox's actionability/stability wait during a live WebGL frame.
+  return page.evaluate(sel=>{
+    const el=document.querySelector(sel);
+    if(!el)throw Error('Missing UI element: '+sel);
+    const r=el.getBoundingClientRect();
+    return {x:r.x,y:r.y,width:r.width,height:r.height};
+  },selector);
+}
 try{
   browser=await chromium.launch({args:['--use-gl=swiftshader','--enable-unsafe-swiftshader','--disable-dev-shm-usage']});
   const errDesktop=await start(false,1440,900);
   await page.evaluate(()=>window.__tgw.workbenchPanel.show());
-  const wb=await page.locator('.r158a-card').boundingBox();
+  const wb=await rect('.r158a-card');
   check(wb&&wb.width>900&&wb.x>=0&&wb.x+wb.width<=1441,'desktop Workbench bounds');
   console.log('R158A browser: opening Home tab on desktop');
   await page.locator('.wilds-tabs [data-tab="home"]').evaluate(el=>{if(!el.getBoundingClientRect().width)throw Error('Invisible control');el.click();});
@@ -78,7 +87,7 @@ try{
   check((await page.locator('.r158a-detail-copy').innerText()).includes('Stone Pickaxe'),'tool detail selection');
   await screenshot('Workbench_Tools_DESKTOP.png');
   await page.evaluate(()=>{window.__tgw.workbenchPanel.hide();window.__tgw.wilds.profile.tools.axe=true;window.__tgw.hud.toggleGear(true);});
-  const bag=await page.locator('#gear-panel').boundingBox();
+  const bag=await rect('#gear-panel');
   const bagLayout=await page.evaluate(()=>{const p=document.querySelector('#gear-panel'),b=p?.getBoundingClientRect();return {body:document.body.className,width:b?.width,left:b?.left,top:b?.top,layout:getComputedStyle(p).display,details:!!p.querySelector('.r158a-bag')};});
   check(bag&&bag.width>700&&bag.x>=0&&bag.x+bag.width<1441&&bagLayout.details,'desktop Bag not full inventory: '+JSON.stringify(bagLayout));
   check(await page.locator('#gear-panel .bag2-slot').count()===10,'desktop quick slots changed');
@@ -102,13 +111,13 @@ try{
 
   const errPhone=await start(true,844,390);
   await page.evaluate(()=>window.__tgw.workbenchPanel.show());
-  const phoneWb=await page.locator('.r158a-card').boundingBox();
+  const phoneWb=await rect('.r158a-card');
   check(phoneWb&&phoneWb.x>=-1&&phoneWb.x+phoneWb.width<=845&&phoneWb.y+phoneWb.height<=391,'iPhone landscape Workbench overflow');
   await page.locator('.wilds-tabs [data-tab="home"]').evaluate(el=>{if(!el.getBoundingClientRect().width)throw Error('Invisible control');el.click();});
   await page.waitForFunction(()=>window.__tgw.workbenchPanel.preview?.loadedKey?.endsWith('greenhouse-l1.glb'),null,{timeout:90000});
   await screenshot('Workbench_iPHONE.png');
   await page.evaluate(()=>{window.__tgw.workbenchPanel.hide();window.__tgw.wilds.profile.tools.axe=true;window.__tgw.hud.toggleGear(true);});
-  const phoneBag=await page.locator('#gear-panel').boundingBox();
+  const phoneBag=await rect('#gear-panel');
   check(phoneBag&&phoneBag.x>=-1&&phoneBag.x+phoneBag.width<=845&&phoneBag.y+phoneBag.height<=391,'iPhone landscape Bag overflow');
   check(await page.locator('#gear-panel .bag2-slot').count()===10,'iPhone Bag quick slots');
   await screenshot('Bag_iPHONE.png');
