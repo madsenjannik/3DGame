@@ -1,5 +1,11 @@
 # THE GROWING WILDS — MASTER PROJECT DOCUMENT
 
+## R158A.1 — separate physical iPhone Safari preview (12/10/2026)
+- User confirmed successful live R157C.1 two-tab handoff on physical iPhone Safari, then requested the next step ("Videre"). Source baseline is live `83790499`, approved R158A.1 candidate is `7c803748` (PR #2), still **unmerged**.
+- Preview route `/3DGame/qa/r158a1/` contains the candidate source as a nested static Git tree; root production files are not replaced. Its first-page local/session storage sandbox copies selected existing progress **read-only once** and writes only to QA-prefixed keys; never copies the live ownership lease. A storage-override failure prevents gameplay startup. No source gameplay, save schema, input, model or camera changes.
+- Physical iPhone review must cover Workbench/Bag real GLB previews, icons, layout, text and controls. Old full-smoke R124 slot/vest assertions remain unresolved (issue #6), requiring separate follow-up. Do not visual-lock or merge PR #2 without approval.
+
+
 
 ## R157C.1 — single-writer handoff under delayed WebGL execution (12/10/2026)
 - **Authorisation:** GO 12/10/2026 to fix the reproducible R157C handoff bug (issue #3). Dedicated fix PR #4; independent R158A.1 integration PR #5; no direct edits to production until gated QA.

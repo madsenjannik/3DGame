@@ -1,5 +1,12 @@
 # THE GROWING WILDS — HANDOVER — 2026-10-12 — R158A (Core Workbench / Bag UI + real GLB previews)
 
+## R158A.1 physical Safari QA preview (12/10/2026)
+- Authorised as the next step after user passed R157C.1 physical iPhone Safari two-tab handoff ("Det virker!! Videre"). The main live game stays R157C.1; R158A.1 PR #2 remains draft and unmerged.
+- A full read-only-source snapshot of the verified R158A.1 candidate is published at `/3DGame/qa/r158a1/` **under its own URL path**, with an early page-level browser storage sandbox and QA-only storage namespaces. Normal saves are read only once as a local starting snapshot; all QA writes go to separately prefixed local/session storage keys. The live writer lease is never imported. If storage interception fails, QA fails closed rather than touching live saves.
+- QA targets: iPhone landscape Workbench navigation and owned/selected states, Greenhouse/Workshop L1-L3 relative GLB preview size, approved tool icons, Bag filters/10 slots/resources, crafting/equip, readability and close/return. Report actual Safari visual issues before UI lock.
+- A previously failing old full-smoke Bag quickslot/vest assertion remains independently tracked as GitHub issue #6, not fixed by preview publishing. Do not merge R158A.1 before visual approval.
+
+
 
 ## R157C.1 — safe tab ownership and real Chromium regression (12/10/2026; GO "Så fix! GO")
 - **Bug:** Real Chromium R157C two-tab handoff failed repeatedly on R158A.1 PR #2: an acknowledged waiting tab remained read-only while the old tab regained writer status. See issue #3; browser diagnostics retained in GitHub Actions. The exact internal event-order root cause is not fully proven.
