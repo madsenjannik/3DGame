@@ -1,7 +1,7 @@
 # THE GROWING WILDS — MASTER PROJECT DOCUMENT
 
 **Status:** Canonical project guardrails + current baseline + backlog  
-**Date:** 11/10/2026  
+**Date:** 12/10/2026  
 **Purpose:** One durable project document for the active The Growing Wilds build chat. This document consolidates the current handover, locked systems, project rules, deferred work, current priorities, and the external technical review.
 
 > **Important:** This document is not permission to build. It is the source of truth for *how* the project must be handled.
@@ -11,6 +11,10 @@
 
 ## R157C QA — 12/10/2026
 
+- **Verified root cause + scoped runtime fix:** Chromium browser trace proved that the old tab flushed/relinquished the save lease but a 2-second timeout had already cleared the waiting tab's pending request before its matching ACK arrived roughly 4.5 seconds after the click. Extend the pending window to 20 seconds and check matching ACK upon lease notification; never grant write permission before reload. Both actual Chromium takeover and deterministic delayed notification tests passed (Actions 38219969521).
+- **Release planned/committed:** v0.8.160 (`GUARD-R157C-20261012A`), game/main entry and TabGuard import cache bust, no alteration to other gameplay, camera, 3D assets or save schema. Full browser smoke must still pass after release; original R157C run 59/60 with the handoff bug.
+- **R157B.1 accepted on iPhone:** v0.8.159 passed 3/3 iPhone QA scenarios on 12/10/2026. Do not re-open approved UX scope as part of R157C.
+
 - **Focused run follow-up:** waiting tab guard was observed on Chromium, but Playwright's locator.click on #tab-lost timed out (the runtime root cause was not demonstrated). The test now checks visibility and dispatches the button's click event synchronously to assert the actual handoff protocol, then verifies old tab cannot flush a save. QA-only test change, no runtime mutation.
 
 - **First CI result:** 59/60 full smoke checks passed (Actions #38212000935). One failed because the test's second tab used `?dev=1`, an ephemeral save that bypasses TabGuard by design. Corrected to a normal tab and added a focused Chromium two-tab test. The first failure does not establish a gameplay bug; QA rerun remains necessary.
@@ -18,7 +22,7 @@
 - **Approved scope:** QA automation on desktop first and phone emulation. No gameplay changes authorised. Introduce GitHub Actions Node 22 / Playwright Chromium full suite; replace stale R153 claim-message test with real two-tab lease/takeover test. Run remains unverified until GitHub Actions completes. Retain live v0.8.159 unchanged except QA files.
 - **Protection:** Do not claim iPhone Safari validation from Chromium emulation. Preserve R157B.1 user-accepted gameplay baseline, save schema, three greenhouse models and world controls.
 
-## CURRENT WORKING STATUS — 11/10/2026
+## CURRENT WORKING STATUS — 12/10/2026
 
 - **Active baseline: GitHub HEAD** of `madsenjannik/3DGame`, branch `claude/magical-lovelace-nuka97`, live at
   `https://madsenjannik.github.io/3DGame/`. `version.js` holds the version/build label. ZIP packages are no longer produced.

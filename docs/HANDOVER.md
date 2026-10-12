@@ -1,6 +1,8 @@
-# THE GROWING WILDS — HANDOVER — 2026-10-11 — R157B.1 (workbench / phone dialogue / map)
+# THE GROWING WILDS — HANDOVER — 2026-10-12 — R157C (TabGuard handoff fix + regression automation)
 
 ## R157C QA infrastructure — 12/10/2026
+- **R157C verified targeted:** Commit `889dc011ea22ffcd738eb6e7a35ea90bf9406c1f` passed actual two-tab Chromium takeover AND deterministic 3.1s-request/1.35s-ACK regression (Actions run 38219969521). The old 2s timeout discarded the waiting request before a ~4.5s delayed acknowledgement arrived. New `TabGuard` waits up to 20s for an ACK, accepts a matching delayed ACK or storage fallback, retains one-writer and no-stale-write safeguards.
+- **Release:** v0.8.160 (`GUARD-R157C-20261012A`) promotes the surgical TabGuard fix. The live 3D game/menus/saves/assets remain functionally unchanged. A new full Chromium desktop/mobile smoke on production is pending CI after release; 59/60 of the original pre-fix suite passed.
 - **Focused test follow-up:** First focused Chromium check confirmed the waiting tab was blocked correctly but Playwright locator.click timed out on the handoff button. QA now asserts the button has a visible actionable rectangle and invokes its click event synchronously, then verifies safe takeover and stale save guard. Result pending new CI run; no save or game code changed.
 - **CI review 12/10:** Initial full run (Actions #38212000935): 59/60 browser checks passed. The only failure was a QA setup error: second tab used `?dev=1` (ephemeral save; no TabGuard). Corrected to a normal save-owning tab and added a fast focused browser test. No gameplay/runtime files changed. Corrected results pending CI completion.
 - **GO:** User authorised moving on to R157C, primarily testing on desktop with iPhone available.
@@ -10,7 +12,7 @@
 ## Start here
 - **Repo:** `madsenjannik/3DGame`, branch `claude/magical-lovelace-nuka97` (GitHub replaces ZIP packages).
 - **Live test build:** `https://madsenjannik.github.io/3DGame/` (version shown bottom-left on the start screen).
-- **R157B.1 candidate:** v0.8.159 (`UX-R157B1-20261011A`) on `fix/r157b1-workbench-dialog-map` (11/10/2026 GO). Greenhouse build/upgrade is Workbench → Home ONLY, with the three existing free levels and animation/persistence intact. On iPhone Sigurd's replies stay visible next to the option list; when the world map is open it captures all touch gestures and blocks player input. Await device/visual QA; no extra hosting.
+- **R157B.1 accepted:** v0.8.159 (`UX-R157B1-20261011A`) deployed on GitHub Pages and iPhone QA 3/3 passed on 12/10/2026: Workbench greenhouse actions, Sigurd dialogue and map touch. This stays the protected gameplay/UI baseline; R157C only hardens TabGuard and QA automation.
 - **R157B feedback:** v0.8.158 is on the existing GitHub Pages branch but FAILED iPhone acceptance: tapping to plant could upgrade the greenhouse; Sigurd replies could not be seen beside choices; map panning operated the player behind it. Map labels WERE approved. R157B.1 addresses these without changing other R157B fixes.
 - **R157A baseline:** v0.8.157 (`SAVE-R157A-20261011A`) passed GitHub Pages deployment and Jannik's six iPhone scenarios with no errors on 11/10/2026. No change to saved progression.
 - **Previous R156:** desktop keyboard play works (Enter/Space, Esc, Tab, focus) and the first session guides better (garden card, workbench goal card, tips, English settings).
