@@ -21,7 +21,7 @@ const escapeText = s=>String(s??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').r
 export function approvedItemArt(item,cssClass='bag2-art'){
   const key = typeof item==='string'?item:item?.id||'';
   const path = APPROVED_ITEM_ART[key];
-  if(path)return '<img class="'+escapeText(cssClass)+' r158a1-item-image" src="'+path+'" alt="" draggable="false" loading="lazy">';
+  if(path)return '<img class="'+escapeText(cssClass)+' r158a1-item-image" src="'+path+'" alt="" draggable="false" loading="eager" decoding="async">';
   const short = key.startsWith('seed-') ? 'SEED' : 'ITEM';
   return '<span class="'+escapeText(cssClass)+' r158a1-art-label" aria-hidden="true">'+short+'</span>';
 }

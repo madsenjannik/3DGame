@@ -51,10 +51,15 @@ try{
     return {size:[size.x,size.y,size.z],scale:preview.model.scale.x,key:preview.loadedKey};
   });
   const greenhouseL1=await bounds3D();
+  await page.locator('[data-preview-level="2"]').evaluate(el=>{if(!el.getBoundingClientRect().width)throw Error('Invisible level button');el.click();});
+  await page.waitForFunction(()=>window.__tgw.workbenchPanel.preview?.loadedKey?.endsWith('greenhouse-l2.glb'),null,{timeout:90000});
+  const greenhouseL2=await bounds3D();
   const before=await page.evaluate(()=>window.__tgw.greenhouse.level);
   await page.locator('[data-preview-level="3"]').evaluate(el=>{if(!el.getBoundingClientRect().width)throw Error('Invisible control');el.click();});
   await page.waitForFunction(()=>window.__tgw.workbenchPanel.preview?.loadedKey?.endsWith('greenhouse-l3.glb'),null,{timeout:90000});
   const greenhouseL3=await bounds3D();
+  check(Math.max(...greenhouseL3.size)>Math.max(...greenhouseL2.size)*1.05,
+    'Greenhouse L3 must be physically larger than L2: '+JSON.stringify({greenhouseL2,greenhouseL3}));
   check(Math.abs(greenhouseL1.scale-greenhouseL3.scale)<1e-7,
     'greenhouse levels were independently normalized: '+JSON.stringify({greenhouseL1,greenhouseL3}));
   check((await page.evaluate(()=>window.__tgw.greenhouse.level))===before,'preview changed actual greenhouse progression');
@@ -66,7 +71,7 @@ try{
   const workshopL2=await bounds3D();
   check(Math.abs(workshopL1.scale-workshopL2.scale)<1e-7,
     'workshop levels were independently normalized: '+JSON.stringify({workshopL1,workshopL2}));
-  console.log('R158A.1 actual 3D dimensions',JSON.stringify({greenhouseL1,greenhouseL3,workshopL1,workshopL2}));
+  console.log('R158A.1 actual 3D dimensions',JSON.stringify({greenhouseL1,greenhouseL2,greenhouseL3,workshopL1,workshopL2}));
   await screenshot('Workbench_DESKTOP.png');
   await page.locator('.wilds-tabs [data-tab="tools"]').evaluate(el=>{if(!el.getBoundingClientRect().width)throw Error('Invisible control');el.click();});
   await page.locator('[data-focus-tool="pickaxe"]').evaluate(el=>{if(!el.getBoundingClientRect().width)throw Error('Invisible control');el.click();});
@@ -80,7 +85,13 @@ try{
   await page.locator('[data-bag-filter="resources"]').evaluate(el=>{if(!el.getBoundingClientRect().width)throw Error('Invisible control');el.click();});
   check(await page.locator('.r158a-resource-grid .r158a-material').count()===7,'resource category');
   await page.locator('[data-bag-filter="all"]').evaluate(el=>{if(!el.getBoundingClientRect().width)throw Error('Invisible control');el.click();});
-  const brokenArt=await page.locator('#gear-panel img.r158a1-item-image').evaluateAll(imgs=>imgs.filter(i=>!i.complete||i.naturalWidth===0).map(i=>i.src));
+  // The whitelist files are verified in CI; ensure eager images have actually loaded
+  // before checking naturalWidth or capturing their visual appearance.
+  await page.waitForFunction(()=>{
+    const imgs=[...document.querySelectorAll('#gear-panel img.r158a1-item-image')];
+    return imgs.length>0 && imgs.every(i=>i.complete);
+  },null,{timeout:25000});
+  const brokenArt=await page.locator('#gear-panel img.r158a1-item-image').evaluateAll(imgs=>imgs.filter(i=>i.naturalWidth===0).map(i=>i.src));
   check(!brokenArt.length,'inventory contains missing/non-approved art: '+brokenArt.join(', '));
   await screenshot('Bag_DESKTOP.png');
   await page.keyboard.press('Escape');
