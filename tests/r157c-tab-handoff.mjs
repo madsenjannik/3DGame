@@ -37,11 +37,25 @@ try{
   await q.goto(B+'game.html?char=cactus',{waitUntil:'load'});
   const blocked=await q.waitForFunction(()=>!!window.__tgw?.tabGuard && window.__tgw.save.readOnly && !window.__tgw.tabGuard.canWrite() && !!document.getElementById('tab-lost'),{},{timeout:90000}).then(()=>true,()=>false);
   if(!blocked)fail('second tab was not blocked by active owner',{first:await p.evaluate(()=>({owner:window.__tgw?.tabGuard?.canWrite(),readonly:window.__tgw?.save.readOnly})),second:await q.evaluate(()=>({guard:!!window.__tgw?.tabGuard,readonly:window.__tgw?.save?.readOnly,blocked:!!document.getElementById('tab-lost')})),errors});
+  // Observe actual cross-tab browser events without modifying the runtime.
+  for (const page of [p,q]) await page.evaluate(()=>{
+    window.__r157cEvents=[];
+    window.addEventListener('storage',e=>{if(e.key?.startsWith('tgw.'))window.__r157cEvents.push(['storage',e.key,e.newValue,Date.now()]);});
+    const ch=new BroadcastChannel('tgw-tabs');ch.addEventListener('message',e=>window.__r157cEvents.push(['broadcast',e.data,Date.now()]));
+    window.__r157cProbeChannel=ch;
+  });
+  const snapshot=page=>page.evaluate(()=>{
+    const g=window.__tgw, ls=k=>localStorage.getItem(k);
+    return {lease:ls('tgw.activeTab'),request:ls('tgw.tabHandoff'),ack:ls('tgw.tabHandoffAck'),
+      id:g?.tabGuard?.id,owner:g?.tabGuard?.canWrite(),readOnly:g?.save?.readOnly,ephemeral:g?.save?.ephemeral,
+      blocked:!!document.getElementById('tab-lost'),events:(window.__r157cEvents||[]).slice(-15)};
+  });
+  const before={old:await snapshot(p),new:await snapshot(q)};
   const buttonVisible=await q.evaluate(()=>{const b=document.getElementById('tab-lost'); const rect=b?.getBoundingClientRect(); const style=b&&getComputedStyle(b); const shown=!!b&&style.display!=='none'&&style.visibility!=='hidden'&&rect.width>=44&&rect.height>=44; if(shown)b.click(); return shown;});
   if(!buttonVisible)fail('handoff control not visibly available',{errors});
-  const takeover=await q.waitForFunction(()=>!!window.__tgw?.tabGuard?.canWrite()&&!window.__tgw?.save.readOnly,{},{timeout:90000}).then(()=>true,()=>false);
+  const takeover=await q.waitForFunction(()=>!!window.__tgw?.tabGuard?.canWrite()&&!window.__tgw?.save.readOnly,{},{timeout:12000}).then(()=>true,()=>false);
   const oldReadOnly=await p.evaluate(()=>!!window.__tgw?.save?.readOnly && !window.__tgw?.tabGuard?.canWrite() && !!document.getElementById('tab-lost'));
-  if(!takeover||!oldReadOnly)fail('ownership transfer incomplete',{takeover,oldReadOnly,errors});
+  if(!takeover||!oldReadOnly)fail('ownership transfer incomplete',{takeover,oldReadOnly,before,after:{old:await snapshot(p),new:await snapshot(q)},errors});
   const noStaleWrite=await p.evaluate(()=>{const g=window.__tgw,before=localStorage.getItem('tgw.save');g.save.profile.inventory.wood=4242;g.save.flush();return before===localStorage.getItem('tgw.save');});
   if(!noStaleWrite||errors.length)fail('stale tab wrote progress or page exception occurred',{noStaleWrite,errors});
   console.log('PASS R157C real Chromium: first owner -> blocked second tab -> safe takeover -> old tab read-only -> stale save protected');

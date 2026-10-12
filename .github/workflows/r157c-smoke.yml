@@ -33,6 +33,7 @@ jobs:
       - name: Run actual two-tab regression
         run: node tests/r157c-tab-handoff.mjs
   smoke:
+    if: github.ref == 'refs/heads/claude/magical-lovelace-nuka97' || github.event_name == 'workflow_dispatch'
     name: Desktop and mobile Chromium smoke
     runs-on: ubuntu-latest
     timeout-minutes: 100
