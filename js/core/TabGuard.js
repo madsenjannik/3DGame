@@ -70,7 +70,17 @@ export function installTabGuard(game) {
     write(ACK, ack); ch?.postMessage({ ack });
   };
   function requestTakeover() {
-    if (active || pending) return;
+    if (active) return;
+    if (pending) {
+      // Do not discard the original request during slow WebGL/background tabs.
+      // Re-send the SAME request when the waiting player explicitly taps again;
+      // the old writer flushes exactly once, and stale ACKs cannot grant ownership.
+      handleAck(read(ACK));
+      if (!pending) return;
+      if (!fresh(owner()) && reserveReload()) { pending = null; return; }
+      write(REQUEST, pending); ch?.postMessage({ request: pending });
+      return;
+    }
     const current = owner();
     if (!fresh(current) || current.id === id) {
       reserveReload();
@@ -84,10 +94,12 @@ export function installTabGuard(game) {
       // Only accept the precise matching ACK after the prior writer released our lease.
       handleAck(read(ACK));
       if (!pending) return;
-      if (!fresh(owner()) && reserveReload()) { pending = null; return; }
-      pending = null;
+      // Never time out or steal ownership while the previous writer may still
+      // be flushing. In WebGL-heavy Chromium, a valid ACK can arrive >20s late.
+      // Keep 'pending' alive for that ACK; only an explicit retry may resend or
+      // safely recover an expired lease, and never writes the stale game snapshot.
       const hint = document.getElementById('tab-lost')?.querySelector('span');
-      if (hint) hint.textContent = 'Close the other tab, then tap here to try again.';
+      if (hint) hint.textContent = 'Still waiting for the other tab. Tap here to retry safely.';
     }, HANDOFF_WAIT_MS);
   }
   ch?.addEventListener('message', e => {

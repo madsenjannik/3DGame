@@ -53,7 +53,7 @@ try{
   const before={old:await snapshot(p),new:await snapshot(q)};
   const buttonVisible=await q.evaluate(()=>{const b=document.getElementById('tab-lost'); const rect=b?.getBoundingClientRect(); const style=b&&getComputedStyle(b); const shown=!!b&&style.display!=='none'&&style.visibility!=='hidden'&&rect.width>=44&&rect.height>=44; if(shown)b.click(); return shown;});
   if(!buttonVisible)fail('handoff control not visibly available',{errors});
-  const takeover=await q.waitForFunction(()=>!!window.__tgw?.tabGuard?.canWrite()&&!window.__tgw?.save.readOnly,{},{timeout:12000}).then(()=>true,()=>false);
+  const takeover=await q.waitForFunction(()=>!!window.__tgw?.tabGuard?.canWrite()&&!window.__tgw?.save.readOnly,{},{timeout:65000}).then(()=>true,()=>false); // heavy WebGL background tabs can delay browser events well beyond 20s
   const oldReadOnly=await p.evaluate(()=>!!window.__tgw?.save?.readOnly && !window.__tgw?.tabGuard?.canWrite() && !!document.getElementById('tab-lost'));
   if(!takeover||!oldReadOnly)fail('ownership transfer incomplete',{takeover,oldReadOnly,before,after:{old:await snapshot(p),new:await snapshot(q)},errors});
   const noStaleWrite=await p.evaluate(()=>{const g=window.__tgw,before=localStorage.getItem('tgw.save');g.save.profile.inventory.wood=4242;g.save.flush();return before===localStorage.getItem('tgw.save');});

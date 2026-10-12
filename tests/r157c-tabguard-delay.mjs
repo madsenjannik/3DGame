@@ -20,11 +20,12 @@ const advance=target=>{
   now=target;
 };
 const shared=new Map(),tabs=[],channels=[];
+let requestDelay=3100,ackDelay=1350;
 class Channel{
   constructor(){this.closed=false;channels.push(this);}
   addEventListener(_,cb){this.handler=cb;}
   postMessage(data){for(const peer of channels)if(peer!==this&&!peer.closed)
-    schedule(()=>peer.handler?.({data}),data?.request?3100:1350);
+    schedule(()=>peer.handler?.({data}),data?.request?requestDelay:ackDelay);
   }
   close(){this.closed=true;}
 }
@@ -33,8 +34,8 @@ function tab(){
   const obj={handlers:{storage:[],pagehide:[]},reloads:0};
   const session=new Map(),elements=new Map();
   const deliver=(key,value)=>{
-    const delay=key==='tgw.tabHandoff'?3100:
-      key==='tgw.tabHandoffAck'||key==='tgw.activeTab'?1350:0;
+    const delay=key==='tgw.tabHandoff'?requestDelay:
+      key==='tgw.tabHandoffAck'||key==='tgw.activeTab'?ackDelay:0;
     for(const other of tabs)if(other!==obj)for(const fn of other.handlers.storage)
       schedule(()=>fn({key,newValue:value}),delay);
   };
@@ -81,3 +82,20 @@ advance(35000); // late timeout must not undo completed handoff
 assert.equal(waiter.reloads,1,'completed handoff must not trigger a second reload');
 assert(!owner.guard.canWrite(),'old owner remains read-only after grace timeout');
 console.log('PASS  R157C delayed handoff: 3.1s request + 1.35s ACK -> one flush, one safe reload, no duplicate writer');
+
+// A very busy rendering tab may process the request AFTER the old 20-second
+// grace period. We must not auto-take ownership or drop the pending request.
+timers.length=0;tabs.length=0;channels.length=0;shared.clear();now=40000;
+requestDelay=24000;ackDelay=1300;
+const slowOwner=tab(),slowWaiter=tab();
+slowWaiter.guard.requestTakeover();
+advance(61000);
+assert.equal(slowWaiter.reloads,0,'do not reload without owner flush/ack');
+assert(slowOwner.guard.canWrite(),'delayed owner still controls the save before handoff');
+assert.equal(JSON.parse(shared.get('tgw.activeTab')).id,slowOwner.guard.id,'no premature lease takeover after 20s');
+advance(70000);
+assert.equal(slowOwner.game.save.flushed,1,'very late request must still flush old progress');
+assert(slowOwner.game.save.readOnly&&!slowOwner.guard.canWrite(),'very late old owner must become read-only');
+assert.equal(slowWaiter.reloads,1,'ACK after >20s must still be accepted');
+assert(!slowWaiter.guard.canWrite(),'fresh reload is required before new writer activates');
+console.log('PASS  R157C very late handoff: 24s request + 1.3s ACK -> no timeout theft, safe takeover after ACK');

@@ -11,6 +11,8 @@
 
 ## R157C QA — 12/10/2026
 
+- **Late ACK hardening:** Second candidate run showed a genuine ACK can arrive >20 seconds late in headless Chromium with heavy GLB loading, so R157C must retain the pending handoff until a matching ACK or explicit safe retry. The 20-second timer only changes the user-facing hint, never abandons the request or steals another tab's save. The deterministic regression now includes a 24-second request delay. Final browser verification pending.
+
 - **Verified root cause + scoped runtime fix:** Chromium browser trace proved that the old tab flushed/relinquished the save lease but a 2-second timeout had already cleared the waiting tab's pending request before its matching ACK arrived roughly 4.5 seconds after the click. Extend the pending window to 20 seconds and check matching ACK upon lease notification; never grant write permission before reload. Both actual Chromium takeover and deterministic delayed notification tests passed (Actions 38219969521).
 - **Release planned/committed:** v0.8.160 (`GUARD-R157C-20261012A`), game/main entry and TabGuard import cache bust, no alteration to other gameplay, camera, 3D assets or save schema. Full browser smoke must still pass after release; original R157C run 59/60 with the handoff bug.
 - **R157B.1 accepted on iPhone:** v0.8.159 passed 3/3 iPhone QA scenarios on 12/10/2026. Do not re-open approved UX scope as part of R157C.
