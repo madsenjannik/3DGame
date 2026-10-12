@@ -24,7 +24,7 @@ export class WorkbenchPanel {
         <div class="r158a-section-head"><small>YOUR COLLECTION</small><h3 class="r158a-section-title">Tools & Crafting</h3></div>
         <div class="wilds-list"></div></div>
         <aside class="r158a-detail" aria-label="Selected Workbench item details">
-          <div class="r158a-preview" aria-label="Animated preview of actual game building"><canvas class="r158a-preview-canvas" aria-label="Live 3D GLB building preview"></canvas><div class="r158a-preview-status" role="status" hidden></div><span class="r158a-preview-caption">ACTUAL IN-GAME MODEL</span></div>
+          <div class="r158a-preview" aria-label="Animated preview of actual game building"><canvas class="r158a-preview-canvas" aria-label="Live 3D GLB building preview"></canvas><div class="r158a-preview-status" role="status" hidden></div><span class="r158a-preview-caption">BUILDING PREVIEW</span></div>
           <div class="r158a-detail-copy"></div>
         </aside></div>
       <footer class="wilds-inv"></footer>
@@ -187,13 +187,13 @@ export class WorkbenchPanel {
       const level=Math.min(3,Math.max(1,this.previewLevel||current||1)),next=kind==='greenhouse'?null:WORKSHOP_UPGRADES[current],busy=!!gh?.anim&&kind==='greenhouse';
       const done=current>=3,can=kind==='greenhouse'?!!gh&&!busy&&!done:!!next&&this.affordable(next.cost);
       const nextText=kind==='greenhouse'?(current===0?'Build Greenhouse':`Upgrade Greenhouse · Level ${current+1}`):current===0?'Build Workshop':`Upgrade Workshop · Level ${current+1}`;
-      const hint=kind==='greenhouse'?'Greenhouse levels retain their original plants, animations and save state.':'Levels 2 and 3 include their original models; new gameplay unlocks are coming soon.';
+      const hint=kind==='greenhouse'?'Preview each level of your greenhouse.':'Explore all three workshop levels. More gameplay unlocks are coming soon.';
       detail.innerHTML=`<small class="r158a-kicker">YOUR BUILDING · LEVEL ${current} OF 3</small><h3>${kind==='greenhouse'?'Greenhouse':'Workshop'}</h3>
         <p>${esc(hint)}</p><div class="r158a-levels" role="group" aria-label="Preview levels">${[1,2,3].map(n=>`<button type="button" data-preview-level="${n}" aria-pressed="${level===n}" aria-label="Preview level ${n}">L${n}${n<=current?' ✓':''}</button>`).join('')}</div>
-        <small class="r158a-preview-notice">Showing actual Level ${level} GLB · Preview only</small>
+        <small class="r158a-preview-notice">Preview · Level ${level}</small>
         ${done?'<p class="r158a-state">✓ All three levels complete</p>':`<div class="r158a-build-goal"><strong>${esc(nextText)}</strong>${kind==='workshop'?`<div class="r158a-detail-costs">${this.costHtml(next?.cost||{})}</div>`:'<p>No material cost</p>'}</div>
         <button type="button" ${kind==='greenhouse'?'data-greenhouse-upgrade':'data-workshop'} ${can?'':'disabled'}>${busy?'Building…':can?esc(nextText):kind==='greenhouse'?'Unavailable':'Not enough resources'}</button>`}
-        <p class="r158a-detail-note">Preview rotation does not alter the building or placement.</p>`;
+        <p class="r158a-detail-note">Choose a level above to inspect it.</p>`;
       const canvas=this.el.querySelector('.r158a-preview canvas');
       if(this.open&&canvas?.tagName==='CANVAS'&&typeof requestAnimationFrame==='function')requestAnimationFrame(()=>this.refreshPreview());
     }else{

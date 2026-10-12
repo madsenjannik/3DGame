@@ -39,8 +39,10 @@
 }
 .r158a-panel .wilds-item.owned{opacity:1!important}
 .r158a-panel .wilds-item.locked .wilds-body{opacity:.7}
-.r158a-panel .wilds-list:has(.r158a-tool-card){grid-auto-rows:minmax(153px,auto);gap:10px}
-.r158a-panel .r158a-tool-card{min-height:153px;cursor:pointer;position:relative;gap:7px!important;overflow:hidden;transition:transform .15s ease,box-shadow .15s ease,border-color .15s ease!important}
+.r158a-panel .wilds-list:has(.r158a-tool-card){grid-auto-rows:max-content;gap:10px}
+.r158a-panel .r158a-tool-card{min-height:190px;cursor:pointer;position:relative;gap:7px!important;overflow:hidden;transition:transform .15s ease,box-shadow .15s ease,border-color .15s ease!important}
+.r158a-panel .r158a-tool-card>*{flex-shrink:0}
+.r158a-panel .r158a1-item-icon{display:block;width:22px;height:22px;background:#536d43;-webkit-mask:var(--ico) center/contain no-repeat;mask:var(--ico) center/contain no-repeat}
 .r158a-panel .r158a-tool-card:before{content:"";position:absolute;inset:0 0 auto;height:3px;background:linear-gradient(90deg,transparent,#a7af8655,transparent);pointer-events:none}
 .r158a-panel .r158a-tool-card:hover{transform:translateY(-2px);box-shadow:0 9px 18px #45502a28,inset 0 1px #ffffffc9!important;border-color:#c6a76f!important}
 .r158a-panel .r158a-tool-card.r158a-selected{
@@ -143,8 +145,8 @@ body .r158a-gear .r158a1-bag-hero .r158a1-art-label{background:#455a43;color:#e4
   .r158a-panel .r158a1-brand-mark{width:20px;height:20px}
   .r158a-panel .wilds-tabs button{min-height:39px!important;height:auto!important;padding:5px 1px!important}
   .r158a-panel .r158a-tab-ico{width:23px;height:23px;flex-basis:23px;-webkit-mask-size:20px 20px;mask-size:20px 20px}
-  .r158a-panel .wilds-list:has(.r158a-tool-card){grid-auto-rows:minmax(106px,auto);gap:5px}
-  .r158a-panel .r158a-tool-card{min-height:105px;padding:5px!important}
+  .r158a-panel .wilds-list:has(.r158a-tool-card){grid-auto-rows:max-content;gap:5px}
+  .r158a-panel .r158a-tool-card{min-height:120px!important;padding:5px!important}
   .r158a-panel .r158a-tool-card .wilds-icon.r158a1-card-art{width:44px;height:44px}
   .r158a-panel .r158a-tool-card .r158a1-tool-image{width:44px;height:44px}
   .r158a-panel .r158a-tool-card .wilds-body b{font-size:9px!important}
@@ -154,8 +156,8 @@ body .r158a-gear .r158a1-bag-hero .r158a1-art-label{background:#455a43;color:#e4
   .r158a-panel .r158a-preview{flex-basis:clamp(86px,31vh,131px)}
   .r158a-panel .r158a-detail-copy h3{font-size:15px}
   .r158a-panel .r158a-detail-copy p{font-size:9px}
-  .r158a-panel .wilds-inv small{display:none!important}
-  .r158a-panel .wilds-inv span{padding:2px 5px}
+  .r158a-panel .wilds-inv small{display:inline!important;font-size:8px!important}
+  .r158a-panel .wilds-inv span{padding:2px 5px;gap:3px}
   .r158a-panel .wilds-inv strong{font-size:9px}
   html body #gear-panel.r158a-gear .gear-title{font-size:17px!important}
   body .r158a-gear .bag2-grid{grid-auto-rows:63px!important;gap:5px!important;padding:5px!important}

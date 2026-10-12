@@ -42,12 +42,34 @@ async function rect(selector){
     return {x:r.x,y:r.y,width:r.width,height:r.height};
   },selector);
 }
+async function checkWorkbenchVisuals(){
+  const faults=await page.evaluate(()=>{
+    const bad=[];
+    for(const card of document.querySelectorAll('.r158a-tool-card')){
+      const box=card.getBoundingClientRect();
+      for(const child of card.children){
+        const r=child.getBoundingClientRect();
+        if(r.width&&r.height&&(r.bottom>box.bottom-1||r.top<box.top))bad.push('clipped '+card.dataset.focusTool);
+      }
+    }
+    for(const icon of document.querySelectorAll('.r158a1-item-icon')){
+      const r=icon.getBoundingClientRect(),s=getComputedStyle(icon);
+      if(r.width<12||r.height<12||s.maskImage==='none'||s.backgroundColor==='rgba(0, 0, 0, 0)')bad.push('empty category icon');
+    }
+    for(const label of document.querySelectorAll('.wilds-inv small')){
+      if(!label.getBoundingClientRect().width)bad.push('resource name hidden');
+    }
+    return bad;
+  });
+  check(!faults.length,'Workbench visual regression: '+faults.join(', '));
+}
 try{
   browser=await chromium.launch({args:['--use-gl=swiftshader','--enable-unsafe-swiftshader','--disable-dev-shm-usage']});
   const errDesktop=await start(false,1440,900);
   await page.evaluate(()=>window.__tgw.workbenchPanel.show());
   const wb=await rect('.r158a-card');
   check(wb&&wb.width>900&&wb.x>=0&&wb.x+wb.width<=1441,'desktop Workbench bounds');
+  await checkWorkbenchVisuals();
   console.log('R158A browser: opening Home tab on desktop');
   await page.locator('.wilds-tabs [data-tab="home"]').evaluate(el=>{if(!el.getBoundingClientRect().width)throw Error('Invisible control');el.click();});
   console.log('R158A browser: waiting for actual Greenhouse L1');
@@ -63,10 +85,13 @@ try{
   await page.locator('[data-preview-level="2"]').evaluate(el=>{if(!el.getBoundingClientRect().width)throw Error('Invisible level button');el.click();});
   await page.waitForFunction(()=>window.__tgw.workbenchPanel.preview?.loadedKey?.endsWith('greenhouse-l2.glb'),null,{timeout:90000});
   const greenhouseL2=await bounds3D();
+  await screenshot('Greenhouse_L2_DESKTOP.png');
   const before=await page.evaluate(()=>window.__tgw.greenhouse.level);
   await page.locator('[data-preview-level="3"]').evaluate(el=>{if(!el.getBoundingClientRect().width)throw Error('Invisible control');el.click();});
   await page.waitForFunction(()=>window.__tgw.workbenchPanel.preview?.loadedKey?.endsWith('greenhouse-l3.glb'),null,{timeout:90000});
   const greenhouseL3=await bounds3D();
+  await screenshot('Greenhouse_L3_DESKTOP.png');
+  await checkWorkbenchVisuals();
   check(Math.max(...greenhouseL3.size)>Math.max(...greenhouseL2.size)*1.05,
     'Greenhouse L3 must be physically larger than L2: '+JSON.stringify({greenhouseL2,greenhouseL3}));
   check(Math.abs(greenhouseL1.scale-greenhouseL3.scale)<1e-7,
@@ -80,6 +105,10 @@ try{
   const workshopL2=await bounds3D();
   check(Math.abs(workshopL1.scale-workshopL2.scale)<1e-7,
     'workshop levels were independently normalized: '+JSON.stringify({workshopL1,workshopL2}));
+  await page.locator('[data-preview-level="3"]').evaluate(el=>el.click());
+  await page.waitForFunction(()=>window.__tgw.workbenchPanel.preview?.loadedKey?.endsWith('workshop_l3.glb'),null,{timeout:90000});
+  const workshopL3=await bounds3D();
+  check(Math.abs(workshopL1.scale-workshopL3.scale)<1e-7,'Workshop L3 scale differs from L1');
   console.log('R158A.1 actual 3D dimensions',JSON.stringify({greenhouseL1,greenhouseL2,greenhouseL3,workshopL1,workshopL2}));
   await screenshot('Workbench_DESKTOP.png');
   await page.locator('.wilds-tabs [data-tab="tools"]').evaluate(el=>{if(!el.getBoundingClientRect().width)throw Error('Invisible control');el.click();});
@@ -113,9 +142,15 @@ try{
   await page.evaluate(()=>window.__tgw.workbenchPanel.show());
   const phoneWb=await rect('.r158a-card');
   check(phoneWb&&phoneWb.x>=-1&&phoneWb.x+phoneWb.width<=845&&phoneWb.y+phoneWb.height<=391,'iPhone landscape Workbench overflow');
+  await checkWorkbenchVisuals();
+  await screenshot('Workbench_Tools_iPHONE.png');
   await page.locator('.wilds-tabs [data-tab="home"]').evaluate(el=>{if(!el.getBoundingClientRect().width)throw Error('Invisible control');el.click();});
   await page.waitForFunction(()=>window.__tgw.workbenchPanel.preview?.loadedKey?.endsWith('greenhouse-l1.glb'),null,{timeout:90000});
+  await checkWorkbenchVisuals();
   await screenshot('Workbench_iPHONE.png');
+  await page.locator('[data-preview-level="3"]').evaluate(el=>el.click());
+  await page.waitForFunction(()=>window.__tgw.workbenchPanel.preview?.loadedKey?.endsWith('greenhouse-l3.glb'),null,{timeout:90000});
+  await screenshot('Greenhouse_L3_iPHONE.png');
   await page.evaluate(()=>{window.__tgw.workbenchPanel.hide();window.__tgw.wilds.profile.tools.axe=true;window.__tgw.hud.toggleGear(true);});
   const phoneBag=await rect('#gear-panel');
   check(phoneBag&&phoneBag.x>=-1&&phoneBag.x+phoneBag.width<=845&&phoneBag.y+phoneBag.height<=391,'iPhone landscape Bag overflow');
