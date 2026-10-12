@@ -31,6 +31,9 @@ export function installTabGuard(game) {
   const lose = () => {
     if (!active && game.save.readOnly && document.getElementById('tab-lost')) return;
     active = false; stop(); game.save.readOnly = true;
+    // The blocked tab must not consume a second WebGL render loop while
+    // another tab starts (or while it is flushing its final save).
+    game.renderer?.setAnimationLoop?.(null);
     if (document.getElementById('tab-lost')) return;
     const b = document.createElement('button'); b.id = 'tab-lost'; b.type = 'button';
     b.innerHTML = '<b>The Growing Wilds is open in another tab</b><span>Your progress stays in the active tab. Tap here to switch safely.</span>';
