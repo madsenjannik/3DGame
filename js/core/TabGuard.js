@@ -3,7 +3,10 @@
 // First live tab owns. A handoff flushes old progress before the new tab reloads.
 // Do not modify the locked Stable or Greenhouse internals.
 const KEY = 'tgw.activeTab', REQUEST = 'tgw.tabHandoff', ACK = 'tgw.tabHandoffAck';
-const LEASE_MS = 12000, HEARTBEAT_MS = 2000;
+// A rendering/background tab can miss heartbeats for >12 s without closing.
+// Do not auto-steal its save lease. Explicit crash recovery is available only
+// after an extended silence and a second player action.
+const RECOVERY_AGE_MS = 120000, HEARTBEAT_MS = 2000;
 // R157C: handoff ACK can take several seconds behind heavy WebGL startup.
 // Do not abandon a pending request after only 2 seconds; that strands the new tab.
 const HANDOFF_WAIT_MS = 20000;
@@ -21,7 +24,7 @@ export function installTabGuard(game) {
   let active = false, heartbeat = null, pending = null, ch = null;
   try { ch = new BroadcastChannel('tgw-tabs'); } catch {}
   const owner = () => read(KEY);
-  const fresh = v => !!(v && typeof v.id === 'string' && Number.isFinite(v.at) && Date.now() - v.at < LEASE_MS);
+  const abandoned = v => !!(v && typeof v.id === 'string' && Number.isFinite(v.at) && Date.now() - v.at >= RECOVERY_AGE_MS);
   const canWrite = () => active && owner()?.id === id;
   game.save.canWrite = canWrite;
   const stop = () => { if (heartbeat !== null) clearInterval(heartbeat); heartbeat = null; };
@@ -35,7 +38,9 @@ export function installTabGuard(game) {
   };
   const claim = () => {
     const existing = owner();
-    if (fresh(existing) && existing.id !== id) return false;
+    // An expired heartbeat is NOT proof of a closed game; WebGL/background
+    // throttling may freeze a live writer for much longer than 12 seconds.
+    if (existing && existing.id !== id) return false;
     if (!write(KEY, { id, at: Date.now() })) return false;
     active = true; game.save.readOnly = false; stop();
     heartbeat = setInterval(() => {
@@ -53,9 +58,19 @@ export function installTabGuard(game) {
   // from flushing stale progress over the previous owner's newer snapshot.
   const reserveReload = () => {
     const existing = owner();
-    if (fresh(existing) && existing.id !== id) return false;
+    if (existing && existing.id !== id) return false;
     if (!write(KEY, { id, at: Date.now() })) return false;
     reloadWithGrant(); return true;
+  };
+  // Recovery for a crashed tab is an EXPLICIT second tap, never automatic.
+  // A live tab gets the cooperative request/flush/ACK path even if its
+  // heartbeat is temporarily stale. Stale writers fail canWrite() on resume.
+  const recoverAbandoned = () => {
+    const existing = owner();
+    if (!existing || existing.id === id) return reserveReload();
+    if (!abandoned(existing)) return false;
+    if (!write(KEY, { id, at: Date.now() })) return false;
+    pending = null; reloadWithGrant(); return true;
   };
   const handleAck = ack => {
     if (!pending || ack?.from !== id || ack?.at !== pending.at || owner()?.id !== id) return;
@@ -77,12 +92,12 @@ export function installTabGuard(game) {
       // the old writer flushes exactly once, and stale ACKs cannot grant ownership.
       handleAck(read(ACK));
       if (!pending) return;
-      if (!fresh(owner()) && reserveReload()) { pending = null; return; }
+      if (recoverAbandoned()) { pending = null; return; }
       write(REQUEST, pending); ch?.postMessage({ request: pending });
       return;
     }
     const current = owner();
-    if (!fresh(current) || current.id === id) {
+    if (!current || current.id === id) {
       reserveReload();
       return;
     }
@@ -99,7 +114,9 @@ export function installTabGuard(game) {
       // Keep 'pending' alive for that ACK; only an explicit retry may resend or
       // safely recover an expired lease, and never writes the stale game snapshot.
       const hint = document.getElementById('tab-lost')?.querySelector('span');
-      if (hint) hint.textContent = 'Still waiting for the other tab. Tap here to retry safely.';
+      if (hint) hint.textContent = abandoned(owner())
+        ? 'Other tab has been inactive for 2+ minutes. Tap to recover; unsaved changes there may be lost.'
+        : 'Still waiting for the other tab. Tap here to retry safely.';
     }, HANDOFF_WAIT_MS);
   }
   ch?.addEventListener('message', e => {
