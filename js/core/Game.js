@@ -23,7 +23,7 @@ import { NorthStableSystem } from '../world/NorthStableSystem.js?build=UX-R157B1
 import { SaveGame, pickWinner } from './SaveGame.js?build=UX-R157B1-20261011A';
 import { SpecialSeeds } from '../gameplay/SpecialSeeds.js?build=UX-R157B1-20261011A';   // R149
 import { OrangeryTree } from '../gameplay/OrangeryTree.js?build=UX-R157B1-20261011A';   // R150
-import { installTabGuard } from './TabGuard.js?build=GUARD-R157C-20261012A';   // R153
+import { installTabGuard } from './TabGuard.js?build=GUARD-R157C1-20261012B';   // R153
 import { Discovery } from '../gameplay/Discovery.js?build=UX-R157B1-20261011A';   // R154
 import { WildsLoopSystem } from '../gameplay/WildsLoopSystem.js?build=UX-R157B1-20261011A';
 import { WorkbenchPanel } from '../ui/WorkbenchPanel.js?build=POLISH-R158A1-20261012A';
@@ -219,7 +219,7 @@ this.workbenchPanel.show();this.input.resetTouchPointers?.();};
     this.cameraOcclusion.setFreeRules(this.followCamera.profileId==='free'); // profile was applied before occlusion existed
     this.structureVisibility=new StructureVisibilitySystem({world:this.world,greenhouse:this.greenhouse,orangery:this.orangery,stable:this.stable,cameraOcclusion:this.cameraOcclusion});
     this.clock=new THREE.Clock();this.time=0;this.lastMoved=false;
-    addEventListener('resize',()=>this.resize());visualViewport?.addEventListener('resize',()=>this.resize());addEventListener('orientationchange',()=>setTimeout(()=>this.resize(),250));this.resize();this.homePortal?.prepareMoveInCamera?.(this.camera,this.character);this.renderer.setAnimationLoop(()=>this.frame());
+    addEventListener('resize',()=>this.resize());visualViewport?.addEventListener('resize',()=>this.resize());addEventListener('orientationchange',()=>setTimeout(()=>this.resize(),250));this.resize();this.homePortal?.prepareMoveInCamera?.(this.camera,this.character);if(!this.tabGuard||this.tabGuard.canWrite())this.renderer.setAnimationLoop(()=>this.frame());
     this.quality=new QualityManager(this,this.input.isTouch);
     // R55 lifecycle contract: hidden page → stop rendering + flush save; visible again → resume
     // without a delta-time jump (timestamp-based systems catch up on their own).
@@ -354,7 +354,7 @@ this.workbenchPanel.show();this.input.resetTouchPointers?.();};
   }
   // One place decides whether the frame loop runs: page visible and not gated by portrait.
   syncRun(why){
-    if(document.hidden||this.gated){this.renderer.setAnimationLoop(null);log('LIFE',`paused (${why})`);return;}
+    if(document.hidden||this.gated||(this.tabGuard&&!this.tabGuard.canWrite())){this.renderer.setAnimationLoop(null);log('LIFE',`paused (${why})`);return;}
     this.clock.getDelta();this.resize();this.renderer.setAnimationLoop(()=>this.frame());log('LIFE',`resumed (${why})`);
   }
   // R66: size from the fixed #app box and let CSS stretch the canvas (inset:0), not window.innerHeight px: iOS home-screen
