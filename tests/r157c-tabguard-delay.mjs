@@ -1,0 +1,83 @@
+// R157C: delayed real-world BroadcastChannel/storage handoff regression.
+// Simulates browser event-loop lag: request arrives after 3.1 s, ACK after another
+// 1.35 s. The old 2 s timeout stranded the waiting tab. Never enable both writers.
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import path from 'node:path';
+const ROOT=path.resolve(path.dirname(new URL(import.meta.url).pathname),'..');
+const source=fs.readFileSync(path.join(ROOT,'js/core/TabGuard.js'),'utf8').replace(/^export /gm,'');
+
+let now=10000;
+const timers=[],schedule=(fn,ms=0)=>{timers.push({at:now+ms,fn});return timers.length};
+const advance=target=>{
+  let n=0;
+  while(true){
+    timers.sort((a,b)=>a.at-b.at);
+    if(!timers.length||timers[0].at>target)break;
+    if(++n>1000)throw Error('runaway timers');
+    const t=timers.shift();now=t.at;t.fn();
+  }
+  now=target;
+};
+const shared=new Map(),tabs=[],channels=[];
+class Channel{
+  constructor(){this.closed=false;channels.push(this);}
+  addEventListener(_,cb){this.handler=cb;}
+  postMessage(data){for(const peer of channels)if(peer!==this&&!peer.closed)
+    schedule(()=>peer.handler?.({data}),data?.request?3100:1350);
+  }
+  close(){this.closed=true;}
+}
+const date={now:()=>now};
+function tab(){
+  const obj={handlers:{storage:[],pagehide:[]},reloads:0};
+  const session=new Map(),elements=new Map();
+  const deliver=(key,value)=>{
+    const delay=key==='tgw.tabHandoff'?3100:
+      key==='tgw.tabHandoffAck'||key==='tgw.activeTab'?1350:0;
+    for(const other of tabs)if(other!==obj)for(const fn of other.handlers.storage)
+      schedule(()=>fn({key,newValue:value}),delay);
+  };
+  const localStorage={
+    getItem:k=>shared.get(k)??null,
+    setItem(k,value){shared.set(k,String(value));deliver(k,String(value));},
+    removeItem(k){shared.delete(k);deliver(k,null);}
+  };
+  const sessionStorage={
+    getItem:k=>session.get(k)??null,
+    setItem:(k,v)=>session.set(k,String(v)),
+    removeItem:k=>session.delete(k)
+  };
+  const document={
+    getElementById:k=>elements.get(k)||null,
+    createElement:()=>({listeners:{},addEventListener(k,fn){this.listeners[k]=fn;},querySelector(){return null;}}),
+    body:{appendChild(el){elements.set(el.id,el);}}
+  };
+  const create=new Function('localStorage','sessionStorage','document',
+    'BroadcastChannel','addEventListener','location','setInterval','clearInterval',
+    'setTimeout','Date',source+'\nreturn installTabGuard;')(
+    localStorage,sessionStorage,document,Channel,
+    (type,cb)=>obj.handlers[type]?.push(cb),
+    {reload(){obj.reloads++;}},
+    ()=>1,()=>{},schedule,date
+  );
+  obj.game={save:{readOnly:false,flushed:0,flush(){this.flushed++;}}};
+  tabs.push(obj);obj.guard=create(obj.game);return obj;
+}
+const owner=tab(),waiter=tab();
+assert(owner.guard.canWrite()&&!waiter.guard.canWrite(),'only first tab may write');
+assert(waiter.game.save.readOnly,'waiting tab remains read-only');
+waiter.guard.requestTakeover();
+advance(12500); // old 2-second handler would have abandoned the pending ACK
+assert.equal(waiter.reloads,0,'delayed request must not cause premature reload');
+assert(owner.guard.canWrite(),'owner must remain writer until it flushes/relinquishes');
+advance(16500); // request delivered and ACK delivered >4.45 sec after click
+assert.equal(owner.game.save.flushed,1,'original owner flushes before handoff');
+assert(!owner.guard.canWrite()&&owner.game.save.readOnly,'old owner loses write permission');
+assert.equal(waiter.reloads,1,'waiting tab reloads on matching delayed acknowledgement');
+assert(!waiter.guard.canWrite(),'new tab may not write until fresh reload/rehydration');
+assert.equal(JSON.parse(shared.get('tgw.activeTab')).id,waiter.guard.id,'lease assigned only to new tab');
+advance(35000); // late timeout must not undo completed handoff
+assert.equal(waiter.reloads,1,'completed handoff must not trigger a second reload');
+assert(!owner.guard.canWrite(),'old owner remains read-only after grace timeout');
+console.log('PASS  R157C delayed handoff: 3.1s request + 1.35s ACK -> one flush, one safe reload, no duplicate writer');

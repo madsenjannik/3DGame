@@ -40,7 +40,7 @@ try{
   // Observe actual cross-tab browser events without modifying the runtime.
   for (const page of [p,q]) await page.evaluate(()=>{
     window.__r157cEvents=[];
-    window.addEventListener('storage',e=>{if(e.key?.startsWith('tgw.'))window.__r157cEvents.push(['storage',e.key,e.newValue,Date.now()]);});
+    window.addEventListener('storage',e=>{if(['tgw.activeTab','tgw.tabHandoff','tgw.tabHandoffAck'].includes(e.key))window.__r157cEvents.push(['storage',e.key,e.newValue,Date.now()]);});
     const ch=new BroadcastChannel('tgw-tabs');ch.addEventListener('message',e=>window.__r157cEvents.push(['broadcast',e.data,Date.now()]));
     window.__r157cProbeChannel=ch;
   });

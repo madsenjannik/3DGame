@@ -4,6 +4,9 @@
 // Do not modify the locked Stable or Greenhouse internals.
 const KEY = 'tgw.activeTab', REQUEST = 'tgw.tabHandoff', ACK = 'tgw.tabHandoffAck';
 const LEASE_MS = 12000, HEARTBEAT_MS = 2000;
+// R157C: handoff ACK can take several seconds behind heavy WebGL startup.
+// Do not abandon a pending request after only 2 seconds; that strands the new tab.
+const HANDOFF_WAIT_MS = 20000;
 const read = k => { try { return JSON.parse(localStorage.getItem(k) || 'null'); } catch { return null; } };
 const write = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); return true; } catch { return false; } };
 
@@ -77,11 +80,15 @@ export function installTabGuard(game) {
     write(REQUEST, pending); ch?.postMessage({ request: pending });
     setTimeout(() => {
       if (!pending) return;
+      // A handoff may have finished while browser task scheduling delayed the ACK event.
+      // Only accept the precise matching ACK after the prior writer released our lease.
+      handleAck(read(ACK));
+      if (!pending) return;
       if (!fresh(owner()) && reserveReload()) { pending = null; return; }
       pending = null;
       const hint = document.getElementById('tab-lost')?.querySelector('span');
       if (hint) hint.textContent = 'Close the other tab, then tap here to try again.';
-    }, 2000);
+    }, HANDOFF_WAIT_MS);
   }
   ch?.addEventListener('message', e => {
     if (e.data?.request) handleRequest(e.data.request);
@@ -90,7 +97,12 @@ export function installTabGuard(game) {
   addEventListener('storage', e => {
     if (e.key === REQUEST && e.newValue) { try { handleRequest(JSON.parse(e.newValue)); } catch {} }
     if (e.key === ACK && e.newValue) { try { handleAck(JSON.parse(e.newValue)); } catch {} }
-    if (e.key === KEY && active && !canWrite()) lose();
+    if (e.key === KEY) {
+      if (active && !canWrite()) lose();
+      // KEY may arrive before the ACK event; accept it only after a matching ACK
+      // exists and the previous tab has relinquished the lease.
+      else if (pending && owner()?.id === id) handleAck(read(ACK));
+    }
   });
   addEventListener('pagehide', () => {
     if (canWrite()) {
