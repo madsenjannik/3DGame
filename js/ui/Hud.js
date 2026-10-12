@@ -2,6 +2,7 @@
 import { actionIcon, actionIconName, isToolJob } from './actionIcons.js?build=SAVE-R156-20261010A';
 export class Hud {
   constructor(state){
+    this.state=state;this._bagFilter='all';
     this.seed=document.getElementById('seed-count');this.action=document.getElementById('action');this.toast=document.getElementById('toast');this.objective=document.getElementById('objective');this.kicker=document.getElementById('objective-kicker');this.title=document.getElementById('objective-title');this.copy=document.getElementById('objective-copy');this.hint=document.getElementById('hint');this.loading=document.getElementById('loading');this.materials=document.getElementById('materials');
     this.materialIds=['wood','stone','clay','fiber','amber','shell','wild_seed'];
     this.setObjectiveIcon(this.title?.textContent);
@@ -93,8 +94,10 @@ export class Hud {
   }
   // R101: Bag stays the carried-item list; desktop hotbar has its own persistent slot order.
   buildGear(){
-    const p=document.createElement('div');p.id='gear-panel';p.className='gear-panel';p.setAttribute('aria-label','Bag');document.body.appendChild(p);this.gear=p;
-    p.addEventListener('keydown',e=>{if((e.key==='Enter'||e.key===' ')&&e.target?.matches?.('[role=button][tabindex]')){e.preventDefault();e.target.click();}});   // R156: keyboard on Bag rows
+    const p=document.createElement('div');p.id='gear-panel';p.className='gear-panel r158a-gear';p.setAttribute('aria-label','Bag');document.body.appendChild(p);this.gear=p;
+    for(const type of ['pointerdown','pointermove','pointerup'])p.addEventListener(type,e=>e.stopPropagation());
+    addEventListener('keydown',e=>{if(e.key==='Escape'&&this.gear?.classList.contains('open')){e.preventDefault();e.stopImmediatePropagation();this.toggleGear(false);}},true);
+    p.addEventListener('keydown',e=>{if(e.key==='Escape'&&this.gear?.classList.contains('open')){e.preventDefault();e.stopImmediatePropagation();this.toggleGear(false);return;}if((e.key==='Enter'||e.key===' ')&&e.target?.matches?.('[role=button][tabindex]')){e.preventDefault();e.target.click();}});   // R156: keyboard on Bag rows
     p.addEventListener('click',e=>{
       e.stopPropagation();
       if(e.target.closest?.('.gear-close')){this.toggleGear(false);return;}
@@ -175,17 +178,20 @@ export class Hud {
         Object.assign(this.gear.style,{left:'0',right:'0',top:'0',bottom:'0',transform:'none'});
       }else{
         const desktopE=document.body.classList.contains('hud-desktop-e')&&!this.touch(),r=this.bag?.getBoundingClientRect();
-        if(desktopE){this.gear.style.left='50%';this.gear.style.right='auto';this.gear.style.top='auto';this.gear.style.bottom='92px';this.gear.style.transform='translateX(-50%)';}
+        if(desktopE){this.gear.style.left='50%';this.gear.style.right='auto';this.gear.style.top='50%';this.gear.style.bottom='auto';this.gear.style.transform='translate(-50%,-50%)';}
         else if(r){this.gear.style.right='auto';this.gear.style.bottom='';this.gear.style.transform='';this.gear.style.left=`${Math.round(r.left)}px`;this.gear.style.top=`${Math.round(r.bottom+10)}px`;}
       }
     }
     this.gear.classList.toggle('open',on);this.bag?.classList.toggle('active',on);
     document.body.classList.toggle('mobile-bag-open',!!on&&mobile);
+    document.body.classList.toggle('r158a-bag-open',!!on);
     this.onGearOpenChange?.(!!on&&mobile);
+    if(on)requestAnimationFrame(()=>this.gear.querySelector('.gear-close')?.focus({preventScroll:true}));
+    else this.bag?.focus?.({preventScroll:true});
   }
   // R124 (GO 07/10, phones): the Bag is a grid of tools on the left, a detail card on the right (big art, name, kind,
   // strike, the game's own text, actions) and the 3 quick slots below. Tap = select; Hold / Add to slot / Wear / Light.
-  bag2Mode(){return this.touch()&&document.body.classList.contains('hud-classic');}
+  bag2Mode(){return (this.touch()&&document.body.classList.contains('hud-classic'))||(!this.touch()&&document.body.classList.contains('hud-desktop-e'));}
   toolArt(it){
     const key=it.hotbarIcon||(it.name==='Watering Can'?'watering-can':(it.icon||it.id||''));
     if(['axe','pickaxe','sickle','watering-can','rod','lantern'].includes(key))return `<i class="bag2-art" style="--art:url(./brand/icons/tool3d/icon-${key}.png?v=R124)"></i>`;
@@ -193,29 +199,38 @@ export class Hud {
     return it.icon?`<i class="bag2-art mask" style="--ico:url(./brand/icons/svg/icon-${it.icon}.svg)"></i>`:`<i class="bag2-art"></i>`;
   }
   renderBag2(){
-    const items=this.gearItems?.()||[],held=this.selectedGearId?.()||null,slots=(this.hotbarItems?.()||[]).slice(0,3);
-    if(!items.some(it=>it.id===this._bagSel))this._bagSel=items[0]?.id||null;
+    const all=this.gearItems?.()||[],held=this.selectedGearId?.()||null,slots=(this.hotbarItems?.()||[]).slice(0,10);
+    const filter=this._bagFilter||'all',items=all.filter(x=>filter==='all'||(filter==='tools'&&['Tool','Fishing','Night'].includes(x.kind))||(filter==='gear'&&x.kind==='Wear')||(filter==='special'&&x.kind==='Special Seed'));
+    if(!items.some(x=>x.id===this._bagSel))this._bagSel=items[0]?.id||null;
     const it=items.find(x=>x.id===this._bagSel)||null,pick=!!this._bagPick&&!!it;
     const tag=x=>x.id===held?'<span class="bag2-tag">HELD</span>':(x.worn?'<span class="bag2-tag">WORN</span>':'');
-    const tiles=items.map(x=>`<button type="button" class="bag2-tile${x.id===this._bagSel?' sel':''}" data-item-id="${x.id}" aria-label="${x.name}">${this.toolArt(x)}${tag(x)}${x.count!=null?`<span class="bag2-num">${x.count}</span>`:''}</button>`).join('')
+    const tiles=items.map(x=>`<button type="button" class="bag2-tile${x.id===this._bagSel?' sel':''}" data-item-id="${x.id}" aria-label="${x.name}" aria-pressed="${x.id===this._bagSel}">${this.toolArt(x)}${tag(x)}${x.count!=null?`<span class="bag2-num">${x.count}</span>`:''}<span class="r158a-tile-name">${x.name}</span></button>`).join('')
       +'<span class="bag2-tile empty" aria-hidden="true"></span>'.repeat(Math.max(0,8-items.length));
-    let detail='<p class="bag2-empty">Nothing yet. Craft tools at your workbench.</p>';
+    const counts=this.materialIds.map(id=>{const name={wood:'Wood',stone:'Stone',clay:'Clay',fiber:'Fiber',amber:'Amber',shell:'Shell',wild_seed:'Wild Seed'}[id];
+      const icons={wood:'▰',stone:'◆',clay:'●',fiber:'≋',amber:'⬣',shell:'◎',wild_seed:'❀'};
+      return `<span class="r158a-material"><i>${icons[id]}</i><span>${name}</span><strong>${this.state.inventory.get(id)||0}</strong></span>`;}).join('');
+    let detail='<div class="r158a-bag-empty">Choose an item to see its abilities and controls.</div>';
     if(it){
       const chips=[`<span class="bag2-chip moss">${it.kind||'Gear'}</span>`];if(it.strike)chips.push(`<span class="bag2-chip">${it.strike}</span>`);
-      let a1,a2=`<button type="button" class="bag2-act" data-act="slot"${slots.some(s=>s?.id===it.id)?' disabled':''}>${slots.some(s=>s?.id===it.id)?'In a slot':'Add to slot'}</button>`;
-      if(it.bagOnly){a1='<button type="button" class="bag2-act primary" disabled>Plant at the Ring</button>';a2='';}   // R149 Special Seeds
+      let a1,a2=`<button type="button" class="bag2-act" data-act="slot"${slots.some(s=>s?.id===it.id)?' disabled':''}>${slots.some(s=>s?.id===it.id)?'In quick slots':'Add to slot'}</button>`;
+      if(it.bagOnly){a1='<button type="button" class="bag2-act primary" disabled>Plant at Sprouting Ring</button>';a2='';}
       else if(it.id==='vest'){a1=`<button type="button" class="bag2-act primary" data-act="wear">${it.worn?'Take off':'Wear'}</button>`;a2='<button type="button" class="bag2-act" disabled>Worn, not held</button>';}
       else if(it.id==='lantern'){const night=document.body.classList.contains('lantern-ready');a1=`<button type="button" class="bag2-act primary" data-act="light"${night?'':' disabled'}>${night?(document.body.classList.contains('lantern-lit')?'Put away':'Light it'):'Night only'}</button>`;a2='<button type="button" class="bag2-act" disabled>Own button</button>';}
       else a1=`<button type="button" class="bag2-act primary" data-act="hold">${held===it.id?'Put away':'Hold'}</button>`;
       detail=`<div class="bag2-big">${this.toolArt(it)}</div><h3>${it.name}</h3><div class="bag2-chips">${chips.join('')}</div>${it.desc?`<p>${it.desc}</p>`:''}<div class="bag2-acts">${a1}${a2}</div>`;
-    }
-    const sl=[0,1,2].map(q=>{const s=slots[q];return `<button type="button" class="bag2-slot${s&&s.id===held?' on':''}${pick?' target':''}" data-q="${q}" aria-label="Slot ${q+1}${s?': '+s.name:': empty'}">${s?this.toolArt(s):''}<small>${q+1}</small></button>`;}).join('');
-    this.gear.innerHTML=`<div class="bag2"><div class="bag2-head"><div><b class="gear-title">Bag</b><small class="gear-subtitle">Your tools and gear</small></div><button class="gear-close" type="button" aria-label="Close Bag">×</button></div>`
-      +`<div class="bag2-grid">${tiles}</div><div class="bag2-detail">${detail}</div>`
-      +`<div class="bag2-slots"><span class="bag2-lbl">Quick<br>slots</span>${sl}<span class="bag2-hint">${pick?`Tap a slot for ${it.name}.`:'Tap an item, then “Add to slot”.'}</span></div></div>`;
+    }else if(filter==='resources'){detail='<small class="r158a-bag-kicker">GATHER & BUILD</small><h3>Materials</h3><p>Materials are used by existing Workbench upgrades and crafting recipes. Open Workbench to spend them.</p>';}
+    const allSlots=Array.from({length:10},(_,q)=>{const item=slots[q];return `<button type="button" class="bag2-slot${item&&item.id===held?' on':''}${pick?' target':''}" data-q="${q}" aria-label="Quick slot ${q===9?0:q+1}${item?': '+item.name:': empty'}">${item?this.toolArt(item):''}<small>${q===9?0:q+1}</small></button>`;}).join('');
+    const tabs=[['all','All'],['tools','Tools'],['gear','Wear'],['special','Special'],['resources','Resources']].map(([k,n])=>`<button type="button" data-bag-filter="${k}" aria-pressed="${filter===k}">${n}</button>`).join('');
+    this.gear.innerHTML=`<div class="bag2 r158a-bag">
+      <div class="bag2-head"><div><b class="gear-title">Bag</b><small class="gear-subtitle">Your carried gear & gathered materials</small></div><button class="gear-close" type="button" aria-label="Close Bag">×</button></div>
+      <nav class="r158a-bag-filters" aria-label="Inventory filters">${tabs}</nav>
+      <div class="bag2-grid">${filter==='resources'?`<div class="r158a-resource-grid">${counts}</div>`:tiles}</div><div class="bag2-detail">${detail}</div>
+      <div class="r158a-bag-material-strip">${counts}</div>
+      <div class="bag2-slots"><span class="bag2-lbl">QUICK SLOTS</span>${allSlots}<span class="bag2-hint">${pick?`Select a slot for ${it.name}.`:'Click an item to equip or assign a slot.'}</span></div></div>`;
   }
   bag2Click(e){
-    const t=e.target.closest?.('[data-item-id],[data-act],[data-q]');if(!t)return;
+    const t=e.target.closest?.('[data-item-id],[data-bag-filter],[data-act],[data-q]');if(!t)return;
+    if(t.dataset.bagFilter){this._bagFilter=t.dataset.bagFilter;this._bagPick=false;this.renderBag2();return;}
     if(t.classList.contains('bag2-tile')){this._bagSel=t.dataset.itemId;this._bagPick=false;}
     else if(t.dataset.q!=null){const q=+t.dataset.q;if(this._bagPick&&this._bagSel){this.onBagPlace?.(this._bagSel,q);this._bagPick=false;}else this.onHotbarSelect?.(q);}
     else if(t.dataset.act==='hold'){if(this.selectedGearId?.()===this._bagSel)this.onGearPutAway?.();else this.onGearEquip?.(this._bagSel);}

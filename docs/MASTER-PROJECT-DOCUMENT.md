@@ -9,6 +9,13 @@
 ---
 
 
+## R158A — Workbench & Bag UI implementation (12/10/2026)
+
+- **GO:** User approved `GO R158A`: implement the visually approved workbench and Bag direction, including genuine floating 3D previews of the existing building GLBs. Workshop L1–L3 walkable interiors explicitly deferred to R158B.
+- **Version candidate:** v0.8.161 `CORE-R158A-20261012A` on `feature/r158a-core-ui-glb-preview`, based on production v0.8.160 (until QA). Desktop first, iPhone landscape responsive.
+- **UI:** Workbench shows the existing five functional tabs, legitimate costs and unchanged buttons, one selected item/building detail; Home adds explicit independent model preview selectors. Bag uses existing gear, vest, lantern and seed equip data plus ten existing saved hotbar slots; material resource views are read-only. No fictional game inventory, no new gameplay economy.
+- **3D:** `WorkbenchPreview3D.js` lazy-loads exactly six in-repository `.glb` assets; one GPU renderer/model only, no mutations to game world, level geometry or save states. Idle floating and slow yaw, pausing and disposing while hidden, fail-soft if WebGL unavailable. Only a GLB showcase, never a building unlock.
+- **Regression strategy:** static/isolated R158A UI contract + full R157B.1 UI contract, actual Chromium game startup at 1440x900 and 844x390 (iPhone simulation), GLB load checks, screenshot artifacts; physical iPhone Safari sign-off still needed before UI lock. No changes to locked camera, movement or asset geometry.
 ## R157C QA — 12/10/2026
 
 - **Late ACK hardening:** Second candidate run showed a genuine ACK can arrive >20 seconds late in headless Chromium with heavy GLB loading, so R157C must retain the pending handoff until a matching ACK or explicit safe retry. The 20-second timer only changes the user-facing hint, never abandons the request or steals another tab's save. The deterministic regression now includes a 24-second request delay. Final browser verification pending.
