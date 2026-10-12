@@ -10,8 +10,8 @@ const clean=s=>s.replace(/^import[^\n]*\n/gm,'').replace(/\bexport (?=(class|con
 
 const wb=read('js/ui/WorkbenchPanel.js'),viewer=read('js/ui/WorkbenchPreview3D.js'),hud=read('js/ui/Hud.js'),
   game=read('js/core/Game.js'),page=read('game.html'),css=read('styles-r158a.css');
-assert(page.includes('styles-r158a.css')&&game.includes('Hud.js?build=CORE-R158A'));
-assert(game.includes('WorkbenchPanel.js?build=CORE-R158A'));
+assert(page.includes('styles-r158a.css')&&game.includes('Hud.js?build=POLISH-R158A1'));
+assert(game.includes('WorkbenchPanel.js?build=POLISH-R158A1'));
 assert(game.includes("this.hud?.gear?.classList.contains('open')"));
 assert(wb.includes("this.getGreenhouse?.()")&&wb.includes("this.wilds.upgradeWorkshop?.()"),
   'old greenhouse + Workshop action handlers preserved');
@@ -30,7 +30,7 @@ assert(!game.includes("R.offer('greenhouse',greenhouse.interaction)"),'no one-ta
 // All 10 persisted slots remain visible; no fake "drop" or crafting buttons.
 const from=hud.indexOf('  renderBag2(){'),to=hud.indexOf('  bag2Click(e){',from);
 assert(from>=0&&to>from,'Bag renderer extracted');
-const Bag=new Function('return class Bag { '+hud.slice(from,to)+' }')();
+const Bag=new Function('approvedMaterialText','return class Bag { '+hud.slice(from,to)+' }')(id=>({wood:'Wood',stone:'Stone',clay:'Clay',fiber:'Fiber',amber:'Amber',shell:'Shell',wild_seed:'Wild Seed'})[id]||id);
 const bag=new Bag();bag.gear={innerHTML:''};bag.materialIds=['wood','stone','clay','fiber','amber','shell','wild_seed'];
 bag.state={inventory:new Map([['wood',106],['stone',160],['clay',200],['fiber',253],['amber',18]])};
 bag.gearItems=()=>[{id:'axe',name:'Stone Axe',kind:'Tool',desc:'Chop wood'}, {id:'seed-tulip',name:'Tulip Seed',kind:'Special Seed',desc:'At Sprouting Ring',bagOnly:true}];

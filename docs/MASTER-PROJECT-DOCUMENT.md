@@ -1,6 +1,5 @@
 # THE GROWING WILDS — MASTER PROJECT DOCUMENT
 
-
 ## R157C.1 — single-writer handoff under delayed WebGL execution (12/10/2026)
 - **Authorisation:** GO 12/10/2026 to fix the reproducible R157C handoff bug (issue #3). Dedicated fix PR #4; independent R158A.1 integration PR #5; no direct edits to production until gated QA.
 - **Symptom:** Two-tab Chromium check on PR #2 failed twice; the waiting tab briefly observed a transferred lease, reloaded with a new ID, and remained blocked while the initial writer held the active lease. Exact scheduling mechanism is not proven from logs alone.
@@ -18,6 +17,26 @@
 
 ---
 
+
+**Status:** Canonical project guardrails + current baseline + backlog  
+**Date:** 12/10/2026  
+**Purpose:** One durable project document for the active The Growing Wilds build chat. This document consolidates the current handover, locked systems, project rules, deferred work, current priorities, and the external technical review.
+
+> **Important:** This document is not permission to build. It is the source of truth for *how* the project must be handled.
+
+---
+
+
+## R158A.1 — premium UI and relative 3D scaling corrections (12/10/2026)
+- **QA-only follow-up:** Chromium head `9f64c451` reached the Desktop Bag with ten slots and a visible Resources filter but failed at a stale zero-width Playwright target (screenshot artifact in Actions run 38291011300). The test now reacquires a visible connected filter before click, with finite retries and unchanged assertions. No UI/game/runtime modifications; validation pending.
+- **GO:** User replied "2. GO!" to the proposed direct implementation plan. Implement only scoped visuals, icons and GLB previews, no new gameplay.
+- **Baseline:** R158A v0.8.161 is live; user desktop QA found visual failures Workbench, GLB size, Bag art. Crafting and Bag actions work; iPhone untested.
+- **Candidate:** v0.8.162 `POLISH-R158A1-20261012A` on `fix/r158a1-ui-icon-scale`, pending browser and visual QA.
+- **Viewer:** reference L3 native GLB bounds once per family, use same multiplier and framing for all L1/L2/L3 without editing GLBs; model selection never upgrades actual buildings.
+- **UI art:** only seven original approved tool3d item PNGs; iconless Special Seeds get a neutral SEED text label until separate art approval. Original in-repository SVGs used in navigation; material names/counts replace Unicode stand-ins.
+- **UI polish:** CSS overlay modifies owned/full statuses, cards, nav, inventory tiles, item previews and quick slots for desktop; mobile landscape overrides retain current functional responsive layout.
+- **Guardrails:** no modifications to `SaveGame`, `WildsLoopSystem`, `GreenhouseProgressionSystem`, combat, movement, camera, GLB files, economy/catalogs or hotbar logic. R158B workshop entrances deferred.
+- **QA:** regression tests plus real Chromium desktop/iPhone layout and GLB checks must pass before any merge. User visual approval required before visual lock.
 
 ## R158A — Workbench & Bag UI implementation (12/10/2026)
 
