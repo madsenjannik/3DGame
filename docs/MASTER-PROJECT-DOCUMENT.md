@@ -9,6 +9,16 @@
 ---
 
 
+## R158A.1 — premium UI and relative 3D scaling corrections (12/10/2026)
+- **GO:** User replied "2. GO!" to the proposed direct implementation plan. Implement only scoped visuals, icons and GLB previews, no new gameplay.
+- **Baseline:** R158A v0.8.161 is live; user desktop QA found visual failures Workbench, GLB size, Bag art. Crafting and Bag actions work; iPhone untested.
+- **Candidate:** v0.8.162 `POLISH-R158A1-20261012A` on `fix/r158a1-ui-icon-scale`, pending browser and visual QA.
+- **Viewer:** reference L3 native GLB bounds once per family, use same multiplier and framing for all L1/L2/L3 without editing GLBs; model selection never upgrades actual buildings.
+- **UI art:** only seven original approved tool3d item PNGs; iconless Special Seeds get a neutral SEED text label until separate art approval. Original in-repository SVGs used in navigation; material names/counts replace Unicode stand-ins.
+- **UI polish:** CSS overlay modifies owned/full statuses, cards, nav, inventory tiles, item previews and quick slots for desktop; mobile landscape overrides retain current functional responsive layout.
+- **Guardrails:** no modifications to `SaveGame`, `WildsLoopSystem`, `GreenhouseProgressionSystem`, combat, movement, camera, GLB files, economy/catalogs or hotbar logic. R158B workshop entrances deferred.
+- **QA:** regression tests plus real Chromium desktop/iPhone layout and GLB checks must pass before any merge. User visual approval required before visual lock.
+
 ## R158A — Workbench & Bag UI implementation (12/10/2026)
 
 - **GO:** User approved `GO R158A`: implement the visually approved workbench and Bag direction, including genuine floating 3D previews of the existing building GLBs. Workshop L1–L3 walkable interiors explicitly deferred to R158B.

@@ -23,6 +23,7 @@ export class WorkbenchPreview3D {
     this.canvas=canvas; this.status=statusElement; this.visible=false; this.token=0;
     this.loader=new GLTFLoader();this.renderer=null;this.model=null;this.mixer=null;
     this.loadedKey='';this.frame=0;this.last=0;this.startAt=0;this.failed=false;
+    this.familyScale=new Map();this.familyScaleLoad=new Map();this.modelSourceBounds=null;
     this.scene=new THREE.Scene();
     this.camera=new THREE.PerspectiveCamera(33,1,.05,100);
     this.camera.position.set(4.5,2.9,7.1);this.camera.lookAt(0,.92,0);
@@ -51,6 +52,29 @@ export class WorkbenchPreview3D {
     if(!this.status)return;this.status.textContent=message||'';
     this.status.hidden=!message;
   }
+  // Each family's largest authored level (L3) sets a single stable preview scale.
+  // Earlier levels use exactly that same multiplier. Only translate their footprints
+  // to the center/ground: NO per-level normalization or hidden apparent-size changes.
+  async scaleForFamily(kind,level,selectedGltf){
+    if(this.familyScale.has(kind))return this.familyScale.get(kind);
+    if(this.familyScaleLoad.has(kind))return this.familyScaleLoad.get(kind);
+    const p=(async()=>{
+      const reference=level===3?selectedGltf:await this.loader.loadAsync(PREVIEW_ASSETS[kind][2]);
+      const root=reference.scene;
+      if(kind==='workshop')for(const suffix of ['Ruin','Ghost']){
+        const part=root.getObjectByName('Workshop_L3_'+suffix);if(part)part.visible=false;
+      }
+      const box=new THREE.Box3().setFromObject(root);
+      if(box.isEmpty())throw Error('Missing L3 reference bounds for '+kind);
+      const size=box.getSize(new THREE.Vector3());
+      const fixed=Math.min(3.05/Math.max(.1,size.x,size.z),2.5/Math.max(.1,size.y));
+      this.familyScale.set(kind,fixed);
+      if(reference!==selectedGltf)this.release(root);
+      return fixed;
+    })();
+    this.familyScaleLoad.set(kind,p);
+    try{return await p;}finally{this.familyScaleLoad.delete(kind);}
+  }
   async select(kind,level){
     if(!PREVIEW_ASSETS[kind])return;
     level=clampLevel(level);const file=PREVIEW_ASSETS[kind][level-1];
@@ -72,8 +96,10 @@ export class WorkbenchPreview3D {
       if(kind==='workshop')for(const suffix of ['Ruin','Ghost']){const part=root.getObjectByName('Workshop_L'+level+'_'+suffix);if(part)part.visible=false;}
       const box=new THREE.Box3().setFromObject(root);
       if(box.isEmpty())throw Error('Empty GLB model');
-      const size=box.getSize(new THREE.Vector3()),center=box.getCenter(new THREE.Vector3());
-      const scale=Math.min(3.05/Math.max(.1,size.x,size.z),2.5/Math.max(.1,size.y));
+      const center=box.getCenter(new THREE.Vector3());
+      const scale=await this.scaleForFamily(kind,level,gltf);
+      if(token!==this.token||!this.visible){this.release(root);return;}
+      this.modelSourceBounds=box.clone();
       root.scale.setScalar(scale);root.position.set(-center.x*scale,-box.min.y*scale,-center.z*scale);
       // Use the asset's existing culling/materials; do not alter the authored GLB.
       this.scene.add(root);this.model=root;this.baseY=root.position.y;this.loadedKey=file;this.requestedKey='';
@@ -103,7 +129,7 @@ export class WorkbenchPreview3D {
   hide(){
     this.visible=false;this.token++;this.requestedKey='';this.stop();
     // Release GPU allocations while a potentially long session continues elsewhere.
-    if(this.model){this.scene.remove(this.model);this.release(this.model);this.model=null;this.mixer=null;this.loadedKey='';}
+    if(this.model){this.scene.remove(this.model);this.release(this.model);this.model=null;this.mixer=null;this.loadedKey='';this.modelSourceBounds=null;}
     this.setStatus('');
   }
   start(){

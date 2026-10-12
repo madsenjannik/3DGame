@@ -1,7 +1,16 @@
-# THE GROWING WILDS — HANDOVER — 2026-10-12 — R158A (Core Workbench / Bag UI + real GLB previews)
+# THE GROWING WILDS — HANDOVER — 2026-10-12 — R158A.1 (premium UI polish, approved art & GLB relative scale)
+
+## R158A.1 candidate — 12/10/2026 (GO R158A.1)
+- **Baseline:** live v0.8.161 R158A user desktop QA reported failures in Workbench appearance, GLB level size and Bag visuals/icons; crafting/upgrades and Bag functions passed. iPhone was not tested by user.
+- **Candidate:** v0.8.162 `POLISH-R158A1-20261012A` on `fix/r158a1-ui-icon-scale`. Preserve R158A functions; do not merge until desktop/mobile browser QA and visual feedback.
+- **Building preview:** use the native bounds of authored L3 as ONE fixed scale reference for all L1–L3 of each family; consistent camera and bottom-centered translation, not six independent size normalizations. GLBs, levels, animations and save data unchanged.
+- **Bag:** `ApprovedItemArt.js` white-lists the seven pre-existing tool3d PNGs (axe, pickaxe, sickle, can, rod, vest, lantern), used consistently in grid, detail and hotbar; no guessed image filenames. No approved per-character Special Seed art exists here: label as SEED rather than fabricate another icon. Material names replace misleading pseudo-glyphs.
+- **Visuals:** overlay stylesheet `styles-r158a1.css`: crafted cards, readable text, states (Owned/Full vs actions), stronger scene/art hierarchy and coherent inventory slots. Original UI logic and saved quickslot layout remain intact.
+- **QA:** prior R157B.1 and R158A contracts, new `tests/r158a1-polish.mjs`, real Chromium GLB scale/asset availability checks and screenshots in GitHub Actions `r158a1-ui.yml`. Do not claim physical Safari acceptance from emulated Chromium.
+- **Deferred:** physical access to workshop levels 1–3 is a separate R158B, not this UI pass.
 
 ## R158A candidate — 12/10/2026 (GO R158A)
-- **Candidate:** v0.8.161 `CORE-R158A-20261012A`, branch `feature/r158a-core-ui-glb-preview`, based on verified v0.8.160. No production promotion until desktop and phone UI QA passes.
+- **Candidate:** v0.8.161 `CORE-R158A-20261012A`, branch `feature/r158a-core-ui-glb-preview`, based on verified v0.8.160. The R158A functionality was merged via PR #1 and went live as v0.8.161; subsequent user visual QA failed parts of its UI, triggering R158A.1.
 - **Workbench:** Replaces narrow desktop/phone panel with a responsive widescreen destination: left five-category nav (Tools, Buildings/Home, Perks, Characters, Daily Requests), center existing crafting/building items, right real building or item details. Existing material prices, greenhouse `data-greenhouse-upgrade`, workshop `data-workshop`, gardening, progression and save handlers preserved. Unlocked items are never purchased by selecting their preview.
 - **GLB preview:** New lazily imported `js/ui/WorkbenchPreview3D.js`, exactly six authored models `assets/greenhouses/greenhouse-l{1,2,3}.glb` and `assets/garden/workshop_l{1,2,3}.glb`. A single small optional WebGL renderer, one visible model at a time, genuine Idle clip where available, subtle bob/rotation, GPU cap 24fps desktop /18fps phone; pausing/disposal on close or tab switch. Fails soft if WebGL unavailable. No changes to in-world models, L1–L3, collider, movement or the chase camera.
 - **Bag:** Keeps the actual existing `Hud.gearItems`/hotbar/equip APIs but replaces the main desktop dropdown with a proper inventory grid/detail window, reuses the phone grid with dynamic filters, real material quantities and all 10 persisted quickslots. `Escape` and B close, and while open player movement/actions are paused.

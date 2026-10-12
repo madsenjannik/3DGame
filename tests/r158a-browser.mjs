@@ -43,14 +43,30 @@ try{
   await page.locator('.wilds-tabs [data-tab="home"]').evaluate(el=>{if(!el.getBoundingClientRect().width)throw Error('Invisible control');el.click();});
   console.log('R158A browser: waiting for actual Greenhouse L1');
   await page.waitForFunction(()=>window.__tgw.workbenchPanel.preview?.loadedKey?.endsWith('greenhouse-l1.glb'),null,{timeout:90000});
+  const bounds3D=async()=>page.evaluate(async()=>{
+    const THREE=await import('./vendor/three.module.js');
+    const preview=window.__tgw.workbenchPanel.preview;
+    if(!preview?.model)return null;
+    const bb=new THREE.Box3().setFromObject(preview.model),size=bb.getSize(new THREE.Vector3());
+    return {size:[size.x,size.y,size.z],scale:preview.model.scale.x,key:preview.loadedKey};
+  });
+  const greenhouseL1=await bounds3D();
   const before=await page.evaluate(()=>window.__tgw.greenhouse.level);
   await page.locator('[data-preview-level="3"]').evaluate(el=>{if(!el.getBoundingClientRect().width)throw Error('Invisible control');el.click();});
   await page.waitForFunction(()=>window.__tgw.workbenchPanel.preview?.loadedKey?.endsWith('greenhouse-l3.glb'),null,{timeout:90000});
+  const greenhouseL3=await bounds3D();
+  check(Math.abs(greenhouseL1.scale-greenhouseL3.scale)<1e-7,
+    'greenhouse levels were independently normalized: '+JSON.stringify({greenhouseL1,greenhouseL3}));
   check((await page.evaluate(()=>window.__tgw.greenhouse.level))===before,'preview changed actual greenhouse progression');
   await page.locator('[data-focus-building="workshop"]').evaluate(el=>{if(!el.getBoundingClientRect().width)throw Error('Invisible control');el.click();});
   await page.waitForFunction(()=>window.__tgw.workbenchPanel.preview?.loadedKey?.endsWith('workshop_l1.glb'),null,{timeout:90000});
+  const workshopL1=await bounds3D();
   await page.locator('[data-preview-level="2"]').evaluate(el=>{if(!el.getBoundingClientRect().width)throw Error('Invisible control');el.click();});
   await page.waitForFunction(()=>window.__tgw.workbenchPanel.preview?.loadedKey?.endsWith('workshop_l2.glb'),null,{timeout:90000});
+  const workshopL2=await bounds3D();
+  check(Math.abs(workshopL1.scale-workshopL2.scale)<1e-7,
+    'workshop levels were independently normalized: '+JSON.stringify({workshopL1,workshopL2}));
+  console.log('R158A.1 actual 3D dimensions',JSON.stringify({greenhouseL1,greenhouseL3,workshopL1,workshopL2}));
   await screenshot('Workbench_DESKTOP.png');
   await page.locator('.wilds-tabs [data-tab="tools"]').evaluate(el=>{if(!el.getBoundingClientRect().width)throw Error('Invisible control');el.click();});
   await page.locator('[data-focus-tool="pickaxe"]').evaluate(el=>{if(!el.getBoundingClientRect().width)throw Error('Invisible control');el.click();});
@@ -64,6 +80,8 @@ try{
   await page.locator('[data-bag-filter="resources"]').evaluate(el=>{if(!el.getBoundingClientRect().width)throw Error('Invisible control');el.click();});
   check(await page.locator('.r158a-resource-grid .r158a-material').count()===7,'resource category');
   await page.locator('[data-bag-filter="all"]').evaluate(el=>{if(!el.getBoundingClientRect().width)throw Error('Invisible control');el.click();});
+  const brokenArt=await page.locator('#gear-panel img.r158a1-item-image').evaluateAll(imgs=>imgs.filter(i=>!i.complete||i.naturalWidth===0).map(i=>i.src));
+  check(!brokenArt.length,'inventory contains missing/non-approved art: '+brokenArt.join(', '));
   await screenshot('Bag_DESKTOP.png');
   await page.keyboard.press('Escape');
   check(!await page.evaluate(()=>window.__tgw.hud.gear.classList.contains('open')),'desktop Bag Escape');

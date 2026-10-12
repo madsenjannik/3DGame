@@ -1,0 +1,47 @@
+name: R158A.1 premium UI and relative GLB validation
+on:
+  push:
+    branches:
+      - 'fix/r158a1-*'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: r158a1-ui-test
+  cancel-in-progress: true
+
+jobs:
+  browser:
+    name: Desktop + phone landscape, icons and actual GLBs
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install pinned Playwright
+        run: npm install --no-save --ignore-scripts --no-audit --no-fund playwright@1.56.1
+      - name: Install Chromium dependencies
+        run: npx playwright install --with-deps chromium
+      - name: Verify prior R157B.1 and R158A contracts
+        run: node tests/r157b1-ui.mjs && node tests/r158a-ui-contract.mjs
+      - name: Validate approved item art and shared GLB scaling
+        run: node tests/r158a1-polish.mjs
+      - name: Run real desktop and phone browser
+        shell: bash
+        run: set -o pipefail; node tests/r158a-browser.mjs 2>&1 | tee r158a1-browser.log
+        env:
+          NODE_OPTIONS: '--unhandled-rejections=strict'
+      - name: Upload desktop and phone screenshots and log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: r158a1-actual-browser-screenshots
+          path: |
+            r158a-qa/*.png
+            r158a1-browser.log
+          if-no-files-found: warn
+          retention-days: 14

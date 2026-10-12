@@ -1,0 +1,175 @@
+/* R158A.1 · Growing Wilds premium core UI refinement.
+ * Cosmetic CSS layered after R158A. No changed gameplay interaction, saves or model files.
+ * Desktop is the primary composition; phone keeps the already tested landscape grid.
+ */
+.r158a-panel .r158a-card{
+  background:linear-gradient(135deg,#f1e7d0,#e3d6ba 53%,#d8c9aa 100%)!important;
+  border:1px solid rgba(222,188,116,.67)!important;
+  box-shadow:0 0 0 1px rgba(45,61,34,.52),0 34px 100px rgba(10,19,10,.56),inset 0 2px rgba(255,252,228,.72),inset 0 -7px rgba(104,86,57,.085)!important;
+}
+.r158a-panel .r158a-card>header{border-bottom-color:rgba(99,85,54,.23);padding-bottom:12px}
+.r158a-panel .r158a-card header h2{font-size:clamp(26px,2.2vw,34px)!important;color:#233323;letter-spacing:-.042em!important}
+.r158a-panel .r158a-card header small{font-size:10px!important;color:#777c5c!important;letter-spacing:.15em!important}
+.r158a-panel .r158a-brand-icon{background:linear-gradient(140deg,#45613c,#233d2d)!important;border:1px solid rgba(217,186,99,.48);box-shadow:0 5px 14px #263b2a38,inset 0 1px #ffffff18}
+.r158a1-brand-mark{display:block;width:26px;height:26px;background:#f3d78e;-webkit-mask:url(./brand/icons/svg/icon-hammer.svg) center/contain no-repeat;mask:url(./brand/icons/svg/icon-hammer.svg) center/contain no-repeat}
+.r158a-panel .r158a-wb-level{font-size:12px;font-weight:700;color:#667356}
+.r158a-panel .wilds-close{border-radius:12px!important;box-shadow:inset 0 1px #fff9dc,0 3px 6px #40381c20}
+.r158a-panel .wilds-trait{padding:10px 13px;background:linear-gradient(115deg,#ebe1c7,#e4d8b9);box-shadow:inset 0 0 0 1px #92835835}
+.r158a-panel .wilds-trait b{font-size:12px;line-height:1.3}
+.r158a-panel .wilds-trait span{font-size:10px;white-space:normal;line-height:1.25}
+.r158a-panel .wilds-goal{padding:10px 16px;border-left:3px solid #ad873d!important;background:linear-gradient(105deg,#e5d7b3,#d9c898)!important;box-shadow:inset 0 1px rgba(255,255,255,.55)}
+.r158a-panel .wilds-goal span{font-weight:750;font-size:12px;color:#3e472e}
+.r158a-panel .wilds-goal b{font-weight:850}
+.r158a-panel .wilds-tabs{background:linear-gradient(160deg,#2d442e,#203524 70%,#192a20)!important;box-shadow:inset 0 1px #ffffff21,inset -2px 0 #00000018,0 5px 13px #11200f15!important;border:1px solid rgba(200,179,117,.35);gap:7px!important;padding:11px 8px!important}
+.r158a-panel .wilds-tabs button{min-height:49px!important;font-size:13px!important;color:#e2e5d4!important;border:1px solid transparent!important;letter-spacing:.01em!important}
+.r158a-panel .wilds-tabs button[aria-selected=true]{background:linear-gradient(103deg,#698556,#39523a)!important;border:1px solid rgba(237,199,113,.38)!important;box-shadow:inset 4px 0 #edc47a,0 4px 10px #0b210b29!important;color:#fff5d7!important}
+.r158a-panel .wilds-tabs button:focus-visible{outline:2px solid #f1ca80!important;outline-offset:2px}
+.r158a-panel .r158a-tab-ico{display:block;width:24px;height:24px;flex:0 0 24px;background:#d7dcbc;-webkit-mask:var(--r158a-nav-art) center/21px 21px no-repeat;mask:var(--r158a-nav-art) center/21px 21px no-repeat}
+.r158a-panel .wilds-tabs button[aria-selected=true] .r158a-tab-ico{background:#ffe5a0}
+.r158a-panel .r158a-section-head small{font-size:10px;color:#747b5e}
+.r158a-panel .r158a-section-head h3{font-size:21px;font-weight:850;color:#293c2a;letter-spacing:-.02em}
+.r158a-panel .wilds-list{padding:3px 6px 9px 3px;-webkit-mask-image:none;mask-image:none}
+.r158a-panel .r158a-workspace{grid-template-columns:minmax(0,1.18fr) minmax(275px,1fr);gap:15px}
+.r158a-panel .wilds-item{
+  background:linear-gradient(126deg,#fbf4df,#ecdfc4)!important;
+  border:1px solid #9da28265!important;
+  border-bottom:2px solid #6d785043!important;
+  box-shadow:0 5px 11px #4f583317,inset 0 1px #ffffffbb!important;
+  border-radius:11px!important;
+}
+.r158a-panel .wilds-item.owned{opacity:1!important}
+.r158a-panel .wilds-item.locked .wilds-body{opacity:.7}
+.r158a-panel .wilds-list:has(.r158a-tool-card){grid-auto-rows:minmax(153px,auto);gap:10px}
+.r158a-panel .r158a-tool-card{min-height:153px;cursor:pointer;position:relative;gap:7px!important;overflow:hidden;transition:transform .15s ease,box-shadow .15s ease,border-color .15s ease!important}
+.r158a-panel .r158a-tool-card:before{content:"";position:absolute;inset:0 0 auto;height:3px;background:linear-gradient(90deg,transparent,#a7af8655,transparent);pointer-events:none}
+.r158a-panel .r158a-tool-card:hover{transform:translateY(-2px);box-shadow:0 9px 18px #45502a28,inset 0 1px #ffffffc9!important;border-color:#c6a76f!important}
+.r158a-panel .r158a-tool-card.r158a-selected{
+  outline:0!important;background:linear-gradient(135deg,#fff8e1,#ede0c3)!important;
+  border:2px solid #bf9651!important;
+  box-shadow:0 0 0 2px #e5be7473,0 8px 18px #4a462723,inset 0 1px #fff6e7!important;
+}
+.r158a-panel .r158a-tool-card .wilds-icon.r158a1-card-art{
+  width:76px;height:76px;margin:0 auto;display:grid;place-items:center;
+  background:radial-gradient(ellipse,#ded2af55,transparent 72%)!important
+}
+.r158a-panel .r158a-tool-card .r158a1-tool-image{width:72px;height:72px;max-width:100%;max-height:100%;object-fit:contain;filter:drop-shadow(0 8px 4px #22271133)}
+.r158a-panel .r158a-tool-card .wilds-body b{font-size:13px!important;font-weight:850;letter-spacing:-.01em;line-height:1.2;color:#2b392a}
+.r158a-panel .r158a-tool-card .wilds-body p{display:none}
+.r158a-panel .r158a-tool-card button{margin-top:auto!important;width:100%;min-height:31px!important;height:auto!important;font-weight:850!important;letter-spacing:.035em!important}
+.r158a1-card-state{display:flex;justify-content:center;align-items:center;margin-top:auto;min-height:31px;width:100%;gap:5px;font:850 10px/1.3 Manrope,system-ui,sans-serif;letter-spacing:.09em;border-radius:7px;background:#dfe8d3;color:#4c6b46;border:1px solid #a7bb92}
+.r158a1-card-state.is-owned{background:#e1e9d7;border-color:#b6c59f;color:#345935}
+.r158a-panel .wilds-costs{display:flex;flex-wrap:wrap;gap:4px}
+.r158a-panel .wilds-cost{display:inline-flex;gap:6px;align-items:center;background:#e7e5d1;border:1px solid #a7ac885c;border-radius:7px;padding:4px 6px;font-size:10px;color:#394932}
+.r158a-panel .wilds-cost.short{color:#8e5033;background:#f5e4cf}
+.r158a-panel .r158a1-cost-name{font-weight:750;color:inherit}
+.r158a-panel .wilds-cost strong{font-size:10px;color:inherit}
+.r158a-panel .r158a-detail{
+  background:radial-gradient(ellipse at 49% 8%,#66785568,transparent 55%),linear-gradient(152deg,#344833,#1a3026 65%,#12251c)!important;
+  border:1px solid rgba(224,193,125,.53)!important;box-shadow:inset 0 1px #ffffff17,0 8px 19px #243c232b;gap:11px;
+}
+.r158a-panel .r158a-detail:before{content:"";height:2px;flex:0 0 2px;background:linear-gradient(90deg,transparent,#d5b878b0,transparent);order:-1}
+.r158a-panel .r158a-detail-copy h3{font-size:clamp(22px,2.2vw,28px);color:#fff2cb;font-weight:850;letter-spacing:-.024em}
+.r158a-panel .r158a-detail-copy p{font-size:12px;line-height:1.52;color:#e4e4d5}
+.r158a-panel .r158a-kicker{color:#e5c77f;font-size:10px;letter-spacing:.13em}
+.r158a-panel .r158a-detail-art{height:190px;flex:0 0 190px;position:relative;
+  background:radial-gradient(ellipse at center,#8d985d37,transparent 66%),linear-gradient(145deg,#30483226,#162d2144);border:1px solid #b4b89329}
+.r158a-panel .r158a-detail-art:after,.r158a1-bag-hero:after{content:"";position:absolute;z-index:0;bottom:15px;left:25%;right:25%;height:12px;border-radius:50%;background:#030d065c;filter:blur(9px)}
+.r158a-panel .r158a1-detail-item-image{position:relative;z-index:1;display:block;width:min(80%,185px);height:170px;object-fit:contain;filter:drop-shadow(0 12px 8px #09190865)}
+.r158a-panel .r158a-state{font-size:12px;color:#c7e3a7}
+.r158a-panel .r158a-detail-copy>button:not(:disabled){min-height:44px;background:linear-gradient(170deg,#77945a,#41633c 80%)!important;border:1px solid #e7c07e75!important;box-shadow:inset 0 1px #ffffff3b,0 5px 10px #00140645;font-size:12px!important;letter-spacing:.015em}
+.r158a1-detail-ownership{border-radius:9px;border:1px solid #88a57a88;background:#91ac7540;padding:11px 14px;font-size:12px;font-weight:800;color:#e0f4c7}
+.r158a-panel .r158a-preview{flex-basis:clamp(235px,31vh,275px);background:radial-gradient(ellipse at 50% 58%,#677d5c88,#273b3033 65%),linear-gradient(145deg,#475845,#1c3027)}
+.r158a-panel .r158a-preview-caption{font-size:9px;color:#e9d2a2}
+.r158a-panel .r158a-levels button{min-height:34px;font-weight:800;border-color:#849777}
+.r158a-panel .r158a-levels button[aria-pressed=true]{background:linear-gradient(#f0d396,#d4ab68)!important}
+.r158a-panel .wilds-inv{justify-content:flex-start;gap:7px;padding-top:9px!important;border-top-color:#977d4f6b!important}
+.r158a-panel .wilds-inv span{background:#e7e4cc;border:1px solid #969c7a46;padding:5px 9px;border-radius:8px;gap:10px}
+.r158a-panel .wilds-inv small{display:inline!important;font-size:10px!important;color:#5d6653!important;font-weight:750}
+.r158a-panel .wilds-inv strong{font-size:12px;color:#2e432f}
+.r158a1-art-label{display:grid;place-items:center;min-width:55px;min-height:50px;border-radius:9px;background:#e0d1a7;color:#536747;border:1px solid #b2b78f;font-weight:900;font-size:11px;letter-spacing:.1em}
+.r158a-panel .r158a1-pot-label{min-width:70px;min-height:70px;font-size:14px}
+/* Bag is a quick interaction, but the item presentation is crafted rather than dashboard cards. */
+html body:not(.touch) #gear-panel.r158a-gear.open{background:linear-gradient(132deg,#e7dac0,#dbcaa9)!important;
+  border:1px solid #e9d29c!important;box-shadow:0 0 0 2px #233620,0 40px 110px #091706a9,inset 0 2px #fff9e1d1!important}
+html body #gear-panel.r158a-gear .bag2-head{position:relative!important;left:auto!important;right:auto!important;top:auto!important;bottom:auto!important;
+  transform:none!important;margin:0!important;width:auto!important;height:auto!important;min-height:0!important;padding:0 4px 9px!important;border-bottom:1px solid #a58d6055}
+html body #gear-panel.r158a-gear .gear-title{font-size:27px!important;letter-spacing:-.035em!important;line-height:1.15;color:#213926!important}
+html body #gear-panel.r158a-gear .gear-subtitle{color:#657358;font-size:11px!important;letter-spacing:.01em}
+body .r158a-gear .r158a-bag-filters button{font-weight:800;font-size:12px;border:1px solid transparent}
+body .r158a-gear .r158a-bag-filters button[aria-pressed=true]{background:#345738;border-color:#e2bd7d88;box-shadow:0 3px 6px #213d224a}
+body .r158a-gear .bag2-grid{background:linear-gradient(145deg,#d5c9a8,#cbbd9d)!important;border:1px solid #a38d5e8c!important;padding:10px!important;grid-auto-rows:99px!important;gap:9px!important;box-shadow:inset 0 3px 10px #6e603333}
+body .r158a-gear .bag2-tile{overflow:hidden;position:relative;background:linear-gradient(140deg,#f1e6cc,#dcd1ae)!important;border:1px solid #7d825667!important;
+  border-bottom:3px solid #8087626d!important;border-radius:11px!important;box-shadow:0 3px 8px #33392226,inset 0 1px #ffffe5a6!important;transition:border-color .12s,transform .12s}
+body .r158a-gear .bag2-tile.sel{outline:2px solid #c19c4d!important;outline-offset:-2px;background:linear-gradient(130deg,#fcf1d1,#e6d5a9)!important;box-shadow:0 0 0 2px #dbba787a,0 6px 11px #483d2333!important}
+body .r158a-gear .bag2-tile:not(.empty):hover{transform:translateY(-2px);border-color:#b79658!important}
+body .r158a-gear .bag2-tile.empty{background:linear-gradient(130deg,#d5cfb8,#e0d4b9)!important;border:1px solid #958d7260!important;box-shadow:inset 0 3px 5px #7066471e!important}
+body .r158a-gear .bag2-tile.empty:after{content:"";width:40px;height:40px;border:1px solid #9d9b7942;border-radius:50%;box-shadow:inset 0 2px 6px #676c4a1b}
+body .r158a-gear .r158a1-tile-visual{height:68px;flex:0 0 68px;width:100%;display:grid;place-items:center}
+body .r158a-gear .bag2-tile .bag2-art{display:block;flex:none!important;width:67px!important;height:64px!important}
+body .r158a-gear .r158a1-item-image{object-fit:contain;filter:drop-shadow(0 6px 3px #2a281c43)}
+body .r158a-gear .r158a-tile-name{font-size:11px!important;font-weight:850;color:#283e2e}
+body .r158a-gear .bag2-tag{z-index:2;top:4px;right:4px;background:#43623f;color:#ffefd0;border:1px solid #b9ca9b7a;font-size:8px;padding:3px 5px}
+body .r158a-gear .bag2-detail{position:relative;background:radial-gradient(ellipse at 50% 0,#7c94575d,transparent 63%),linear-gradient(145deg,#304732,#172d25)!important;
+  border:1px solid #d3b9767d!important;box-shadow:inset 0 2px #ffffff1b,0 5px 15px #26392124!important;padding:14px!important;gap:9px!important}
+body .r158a-gear .r158a1-bag-hero{position:relative;flex:0 0 173px;width:100%;height:173px;margin:0 auto;border:1px solid #adbc875a;
+  background:radial-gradient(ellipse at center,#7e975c45,transparent 69%),linear-gradient(#243d2926,#0d261839)}
+body .r158a-gear .r158a1-bag-hero .bag2-art{z-index:1;position:relative;display:block;flex:none;width:168px!important;height:150px!important;max-width:100%;object-fit:contain;filter:drop-shadow(0 11px 9px #040d0965)}
+body .r158a-gear .r158a1-item-header{text-align:center;display:flex;flex-direction:column;gap:4px}
+body .r158a-gear .r158a1-kicker{font-size:10px;letter-spacing:.15em;color:#d6c78b;font-weight:850}
+body .r158a-gear .r158a1-item-header h3{font-size:24px!important;line-height:1.1;color:#fff0c6}
+body .r158a-gear .bag2-chips{display:flex;align-items:center;gap:6px}
+body .r158a-gear .bag2-chip{font-size:10px!important;font-weight:850;color:#e8e9cf!important;background:#475f42!important;border:1px solid #b8c99677!important}
+body .r158a-gear .bag2-chip.moss{background:#507947!important;color:#f6efd7!important}
+body .r158a-gear .bag2-detail p{font-size:12px!important;line-height:1.45}
+body .r158a-gear .bag2-acts{margin-top:auto}
+body .r158a-gear .bag2-act.primary{border:1px solid #edcc8973;background:linear-gradient(#769556,#40623b)!important;box-shadow:inset 0 1px #ffffff2d,0 4px 7px #0000002b;font-size:12px;font-weight:850}
+body .r158a-gear .bag2-act:not(.primary){background:#e4e2c8;color:#405640}
+body .r158a-gear .r158a-bag-material-strip{justify-content:space-between;gap:5px}
+body .r158a-gear .r158a-material{padding:5px 7px;border:1px solid #9d986d4a;background:#eee7cc!important;gap:6px;font-size:10px}
+body .r158a-gear .r158a-material strong{font-weight:850;font-size:11px}
+body .r158a-gear .r158a1-material-name{font-weight:750}
+body .r158a-gear .bag2-slots{border-top-color:#a7a07b6d;padding-top:10px}
+body .r158a-gear .bag2-lbl{font-size:10px;font-weight:850;color:#365138}
+body .r158a-gear .bag2-slot{border:1px solid #a3986c77;background:linear-gradient(#ece0be,#d7c7a3)!important;box-shadow:inset 0 1px #fffff4,0 3px 6px #514d2738}
+body .r158a-gear .bag2-slot.on{outline:2px solid #cfab5e!important;background:#fff3d0!important}
+body .r158a-gear .bag2-slot .bag2-art{width:39px!important;height:38px!important;object-fit:contain}
+body .r158a-gear .r158a1-quick-empty{width:19px;height:19px;border-radius:50%;border:1px solid #aaa4805a;opacity:.6}
+body .r158a-gear .r158a1-art-label{background:#dbd4b6;color:#4b6647;display:grid;place-items:center;font-size:10px;letter-spacing:.06em}
+body .r158a-gear .r158a1-bag-hero .r158a1-art-label{background:#455a43;color:#e4e5c6;border-color:#7b9368;font-size:17px}
+/* Reduced-height / phone landscape: preserve the existing layout and touch targets. */
+@media (max-height:560px) and (orientation:landscape){
+  .r158a-panel .r158a-card{box-shadow:0 0 0 1px #40533a,0 18px 37px #0a190991!important}
+  .r158a-panel .r158a-brand-icon{width:34px;height:34px;flex-basis:34px}
+  .r158a-panel .r158a1-brand-mark{width:20px;height:20px}
+  .r158a-panel .wilds-tabs button{min-height:39px!important;height:auto!important;padding:5px 1px!important}
+  .r158a-panel .r158a-tab-ico{width:23px;height:23px;flex-basis:23px;-webkit-mask-size:20px 20px;mask-size:20px 20px}
+  .r158a-panel .wilds-list:has(.r158a-tool-card){grid-auto-rows:minmax(106px,auto);gap:5px}
+  .r158a-panel .r158a-tool-card{min-height:105px;padding:5px!important}
+  .r158a-panel .r158a-tool-card .wilds-icon.r158a1-card-art{width:44px;height:44px}
+  .r158a-panel .r158a-tool-card .r158a1-tool-image{width:44px;height:44px}
+  .r158a-panel .r158a-tool-card .wilds-body b{font-size:9px!important}
+  .r158a-panel .r158a1-card-state{min-height:23px;font-size:8px}
+  .r158a-panel .r158a-detail-art{height:78px;flex-basis:78px}
+  .r158a-panel .r158a1-detail-item-image{height:78px}
+  .r158a-panel .r158a-preview{flex-basis:clamp(86px,31vh,131px)}
+  .r158a-panel .r158a-detail-copy h3{font-size:15px}
+  .r158a-panel .r158a-detail-copy p{font-size:9px}
+  .r158a-panel .wilds-inv small{display:none!important}
+  .r158a-panel .wilds-inv span{padding:2px 5px}
+  .r158a-panel .wilds-inv strong{font-size:9px}
+  html body #gear-panel.r158a-gear .gear-title{font-size:17px!important}
+  body .r158a-gear .bag2-grid{grid-auto-rows:63px!important;gap:5px!important;padding:5px!important}
+  body .r158a-gear .r158a1-tile-visual{height:39px;flex-basis:39px}
+  body .r158a-gear .bag2-tile .bag2-art{height:38px!important;width:38px!important}
+  body .r158a-gear .r158a-tile-name{font-size:7px!important}
+  body .r158a-gear .r158a1-bag-hero{height:60px!important;flex-basis:60px}
+  body .r158a-gear .r158a1-bag-hero .bag2-art{height:56px!important;width:60px!important}
+  body .r158a-gear .r158a1-item-header h3{font-size:14px!important}
+  body .r158a-gear .bag2-chip{font-size:8px!important}
+  body .r158a-gear .bag2-detail p{font-size:9px!important}
+  body .r158a-gear .r158a-bag-material-strip{display:none}
+  body .r158a-gear .bag2-slot .bag2-art{width:27px!important;height:28px!important}
+}
+@media(prefers-reduced-motion:reduce){
+  .r158a-panel .r158a-tool-card,body .r158a-gear .bag2-tile{transition:none!important;transform:none!important}
+}
