@@ -99,3 +99,41 @@ assert(slowOwner.game.save.readOnly&&!slowOwner.guard.canWrite(),'very late old 
 assert.equal(slowWaiter.reloads,1,'ACK after >20s must still be accepted');
 assert(!slowWaiter.guard.canWrite(),'fresh reload is required before new writer activates');
 console.log('PASS  R157C very late handoff: 24s request + 1.3s ACK -> no timeout theft, safe takeover after ACK');
+
+// R157C.1 regression: a live WebGL tab can miss 25s of heartbeats.
+// A newly opened tab must NEVER take its save without the live owner's
+// synchronous flush/ACK, even though the old 12s lease has timed out.
+timers.length=0;tabs.length=0;channels.length=0;shared.clear();now=80000;
+requestDelay=3100;ackDelay=1350;
+const frozenOwner=tab();
+now+=25000;timers.length=0; // freeze scheduled heartbeats, not the owner's save
+const newPlayer=tab();
+assert(frozenOwner.guard.canWrite(),'a throttled tab must retain ownership until it cooperates');
+assert(!newPlayer.guard.canWrite()&&newPlayer.game.save.readOnly,'stale timestamp cannot auto-grant save access');
+assert.equal(JSON.parse(shared.get('tgw.activeTab')).id,frozenOwner.guard.id,'lease stays with frozen owner');
+newPlayer.guard.requestTakeover();
+newPlayer.guard.requestTakeover(); // explicit early retry must also NOT steal
+assert.equal(newPlayer.reloads,0,'no reload before the previous save is flushed');
+assert.equal(JSON.parse(shared.get('tgw.activeTab')).id,frozenOwner.guard.id,'retry cannot steal a 25s stale lease');
+advance(now+6000);
+assert.equal(frozenOwner.game.save.flushed,1,'frozen writer flushes exactly once');
+assert(!frozenOwner.guard.canWrite()&&frozenOwner.game.save.readOnly,'previous owner stops writing');
+assert.equal(newPlayer.reloads,1,'matching ACK makes the waiting tab reload once');
+assert.equal(JSON.parse(shared.get('tgw.activeTab')).id,newPlayer.guard.id,'handoff reserves only the approved ID');
+console.log('PASS  R157C.1: 25s blocked heartbeat does not steal a live save; one safe flush/ACK');
+
+// Abandoned/crashed tab recovery requires an explicit second tap after 2+min.
+// The original in-memory writer must become fenced from the shared save.
+timers.length=0;tabs.length=0;channels.length=0;shared.clear();now=200000;
+requestDelay=240000;ackDelay=350;
+const deadOwner=tab();
+now+=121000;timers.length=0;
+const recoverPlayer=tab();
+assert(!recoverPlayer.guard.canWrite()&&recoverPlayer.game.save.readOnly,'long-stale writer is never auto-claimed');
+recoverPlayer.guard.requestTakeover();
+assert.equal(recoverPlayer.reloads,0,'first click requests voluntary handoff, even after 2min');
+recoverPlayer.guard.requestTakeover();
+assert.equal(recoverPlayer.reloads,1,'explicit second click recovers a crashed writer');
+assert(!deadOwner.guard.canWrite(),'old writer is fenced immediately by owner-id mismatch');
+assert.equal(JSON.parse(shared.get('tgw.activeTab')).id,recoverPlayer.guard.id,'recovered lease reserves new owner ID');
+console.log('PASS  R157C.1: 2min abandoned lease recovery is explicit and the old save is fenced');
