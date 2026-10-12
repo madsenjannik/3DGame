@@ -10,6 +10,7 @@ import './r157a-save.mjs'; // R157A deterministic save/progression tests before 
 import './r157b-gameplay.mjs'; // R157B targeted pot, authored camera and label-placement regression tests
 import './r157b1-ui.mjs'; // R157B.1: Workbench, Sigurd mobile replies and full-map input regressions
 import './r157c-tabguard-delay.mjs'; // R157C: delayed real-browser handoff regression
+import './r158a-ui-contract.mjs'; // R158A: asset and UI action contracts
 
 const ROOT = path.resolve(path.dirname(new URL(import.meta.url).pathname), '..');
 const require = createRequire(import.meta.url);

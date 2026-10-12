@@ -14,7 +14,7 @@ import { GreenhouseProgressionSystem } from '../gameplay/GreenhouseProgressionSy
 import { OrangeryHubSystem } from '../gameplay/OrangeryHubSystem.js?build=CAMERA-CUTAWAY-CONTEXT-R21D-20260928E';
 import { FishingV1System } from '../gameplay/FishingV1System.js?build=UX-R157B1-20261011A';
 import { ChoicePanel } from '../ui/ChoicePanel.js';
-import { Hud } from '../ui/Hud.js?build=UX-R157B1-20261011A';
+import { Hud } from '../ui/Hud.js?build=CORE-R158A-20261012A';
 import { WorldMap } from '../ui/WorldMap.js?build=UX-R157B1-20261011A';
 import { GardenEnvironment } from '../world/GardenEnvironment.js?build=WATER-VEG-R103-20261006A';
 import { WildlifeSystem } from '../world/WildlifeSystem.js?build=CAMERA-CUTAWAY-CONTEXT-R21D-20260928E';
@@ -26,7 +26,7 @@ import { OrangeryTree } from '../gameplay/OrangeryTree.js?build=UX-R157B1-202610
 import { installTabGuard } from './TabGuard.js?build=GUARD-R157C-20261012A';   // R153
 import { Discovery } from '../gameplay/Discovery.js?build=UX-R157B1-20261011A';   // R154
 import { WildsLoopSystem } from '../gameplay/WildsLoopSystem.js?build=UX-R157B1-20261011A';
-import { WorkbenchPanel } from '../ui/WorkbenchPanel.js?build=UX-R157B1-20261011A';
+import { WorkbenchPanel } from '../ui/WorkbenchPanel.js?build=CORE-R158A-20261012A';
 import { DevMenu, devMenuEnabled } from '../ui/DevMenu.js?build=UX-R157B1-20261011A';
 import { applyControlProfile, defaultProfile } from './ControlProfiles.js';
 import { PerfHud } from '../dev/PerfHud.js';
@@ -203,7 +203,7 @@ this.workbenchPanel.show();this.input.resetTouchPointers?.();};
       w.vest=!w.vest;this.save.persist();
       this.vest?.set(w.vest);this.hud.showToast?.(w.vest?'Life Vest on':'Life Vest off');};
     this.hud.onGearOpenChange=open=>{
-      if(!this.input?.isTouch)return;
+      // R158A: Bag on desktop also captures gameplay input until it closes.
       if(open){
         this.input.resetTouchPointers?.();
         this.input.actionPressed=false;this.input.hopPressed=false;this.input.strikePressed=false;
@@ -393,7 +393,7 @@ this.workbenchPanel.show();this.input.resetTouchPointers?.();};
     const fishingBusy=!gardenSpace&&(this.fishing?.isBusy?.()||false);
     const stableBusy=!gardenSpace&&(this.stable?.isBusy?.()||false);
     const specialBusy=fishingBusy||stableBusy;
-    const wildsPanel=(this.workbenchPanel?.open||this.devMenu?.open||this.menu?.open)||false;   // R121: the menu blocks movement and actions too
+    const wildsPanel=(this.workbenchPanel?.open||this.devMenu?.open||this.menu?.open||this.hud?.gear?.classList.contains('open'))||false; // R158A: Bag owns UI input while open   // R121: the menu blocks movement and actions too
     const building=!!this.buildMode?.active;
     const mapOpen=this.worldMap?.isOpen||false,mapOverlay=mapOpen&&(this.worldMap?.overlayMode||false);
     const touchLook=this.input.isTouch?this.input.consumeLook?.():null;

@@ -1,6 +1,6 @@
 {
   "name": "the-growing-wilds-qa",
-  "version": "0.8.160",
+  "version": "0.8.161",
   "private": true,
   "description": "QA-only tooling for existing static ES-module game",
   "scripts": {
