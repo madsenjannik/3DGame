@@ -37,7 +37,8 @@ try{
   await q.goto(B+'game.html?char=cactus',{waitUntil:'load'});
   const blocked=await q.waitForFunction(()=>!!window.__tgw?.tabGuard && window.__tgw.save.readOnly && !window.__tgw.tabGuard.canWrite() && !!document.getElementById('tab-lost'),{},{timeout:90000}).then(()=>true,()=>false);
   if(!blocked)fail('second tab was not blocked by active owner',{first:await p.evaluate(()=>({owner:window.__tgw?.tabGuard?.canWrite(),readonly:window.__tgw?.save.readOnly})),second:await q.evaluate(()=>({guard:!!window.__tgw?.tabGuard,readonly:window.__tgw?.save?.readOnly,blocked:!!document.getElementById('tab-lost')})),errors});
-  await q.click('#tab-lost',{force:true});
+  const buttonVisible=await q.evaluate(()=>{const b=document.getElementById('tab-lost'); const rect=b?.getBoundingClientRect(); const style=b&&getComputedStyle(b); const shown=!!b&&style.display!=='none'&&style.visibility!=='hidden'&&rect.width>=44&&rect.height>=44; if(shown)b.click(); return shown;});
+  if(!buttonVisible)fail('handoff control not visibly available',{errors});
   const takeover=await q.waitForFunction(()=>!!window.__tgw?.tabGuard?.canWrite()&&!window.__tgw?.save.readOnly,{},{timeout:90000}).then(()=>true,()=>false);
   const oldReadOnly=await p.evaluate(()=>!!window.__tgw?.save?.readOnly && !window.__tgw?.tabGuard?.canWrite() && !!document.getElementById('tab-lost'));
   if(!takeover||!oldReadOnly)fail('ownership transfer incomplete',{takeover,oldReadOnly,errors});

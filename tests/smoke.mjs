@@ -848,7 +848,8 @@ try {
       const qReady = await q.waitForFunction(() => !!window.__tgw?.tabGuard && !!document.getElementById('tab-lost'), null, { timeout:240000 }).then(() => true, () => false);
       r.blocked = qReady && await q.evaluate(() => window.__tgw.save.readOnly && !window.__tgw.tabGuard.canWrite());
       if (qReady) {
-        await q.click('#tab-lost', {force:true});
+        r.buttonVisible = await q.evaluate(() => { const b=document.getElementById('tab-lost'); const rect=b?.getBoundingClientRect(); const style=b&&getComputedStyle(b); const shown=!!b&&style.display!=='none'&&style.visibility!=='hidden'&&rect.width>=44&&rect.height>=44; if(shown)b.click(); return shown; });
+        // R157C: use the real DOM click event; Playwright locator.click can outwait a synchronous takeover/reload.
         r.handoff = await q.waitForFunction(() => !!window.__tgw?.tabGuard?.canWrite() && !window.__tgw.save.readOnly, null, {timeout:240000}).then(() => true, () => false);
         r.previousStopped = await p.evaluate(() => window.__tgw.save.readOnly && !window.__tgw.tabGuard.canWrite() && !!document.getElementById('tab-lost'));
         if (r.handoff && r.previousStopped) {
@@ -858,7 +859,7 @@ try {
       r.noErrors=!qErrors.length;
       await q.close();
     }
-    check('R157C actual two-tab handoff: owner, blocked tab, safe takeover, old tab read-only, no stale writes', ok && ['owner','blocked','handoff','previousStopped','noStaleWrites','noErrors'].every(k=>r[k]) && !errors.length, errors[0] || JSON.stringify(r)); await ctx.close(); }
+    check('R157C actual two-tab handoff: owner, blocked tab, safe takeover, old tab read-only, no stale writes', ok && ['owner','blocked','buttonVisible','handoff','previousStopped','noStaleWrites','noErrors'].every(k=>r[k]) && !errors.length, errors[0] || JSON.stringify(r)); await ctx.close(); }
   // 17w. R153 review fixes: reduce motion (no hit-stop/shake), the workbench opens on the tab that matters with a dot, the
   // workshop posts stand where the posts are (not stacked at the bench), nothing builds on the Ring, the vest stays on while
   // boating, a gold Lake Race time counts for the Spire Seed
