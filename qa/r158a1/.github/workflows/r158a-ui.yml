@@ -1,0 +1,41 @@
+name: R158A UI & GLB preview validation
+on:
+  push:
+    branches:
+      - 'feature/r158a-*'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: r158a-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  browser:
+    name: Desktop & iPhone landscape with authored GLBs
+    runs-on: ubuntu-latest
+    timeout-minutes: 28
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install Playwright
+        run: npm install --no-save --ignore-scripts --no-audit --no-fund playwright@1.56.1
+      - name: Install Chromium and dependencies
+        run: npx playwright install --with-deps chromium
+      - name: Run old and new UI regression contracts
+        run: node tests/r157b1-ui.mjs && node tests/r158a-ui-contract.mjs
+      - name: Render real GLB previews and validate UI on desktop and phone
+        run: set -o pipefail; node tests/r158a-browser.mjs 2>&1 | tee r158a-browser.log
+        env:
+          NODE_OPTIONS: '--unhandled-rejections=strict'
+      - name: Upload real desktop and iPhone screenshots and logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: r158a-browser-captures
+          path: |
+            r158a-qa/*.png
+            r158a-browser.log
+          if-no-files-found: warn
+          retention-days: 14

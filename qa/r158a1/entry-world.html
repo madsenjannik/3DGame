@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<style>
+html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#dfe6d6}
+#app,#app canvas{position:fixed;inset:0;display:block;width:100%;height:100%}
+#vignette{position:fixed;inset:0;pointer-events:none;background:radial-gradient(ellipse 80% 75% at 50% 45%,rgba(0,0,0,0) 48%,rgba(26,34,20,.26) 100%)}
+#fade{position:fixed;inset:0;background:#dfe6d6;opacity:1;transition:opacity 1.25s ease;pointer-events:none}#fade.out{opacity:0}
+</style>
+<script type="importmap">{"imports":{"three":"./vendor/three.module.js","three/addons/":"./vendor/"}}</script>
+</head>
+<body>
+<div id="app"></div><div id="vignette"></div><div id="fade"></div>
+<script type="module">
+import * as THREE from 'three';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { SharedLandscape } from './js/world/SharedLandscape.js?build=ENTRY-R29-20260929A';
+import { buildStable } from './js/world/StableV2R23G.js?build=NORTH-STABLE-R23O-20260929A';
+import { seededRandom, createSkyMaterial } from './js/visual/VisualKit.js';
+
+const isTouch=matchMedia('(pointer: coarse)').matches||('ontouchstart' in window);
+const renderer=new THREE.WebGLRenderer({antialias:true,powerPreference:'high-performance',preserveDrawingBuffer:false});
+renderer.setPixelRatio(Math.min(devicePixelRatio,isTouch?1.25:1.75));renderer.setSize(innerWidth,innerHeight);renderer.outputColorSpace=THREE.SRGBColorSpace;
+renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.02;renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;
+document.getElementById('app').appendChild(renderer.domElement);
+
+const scene=new THREE.Scene(),HORIZON=0xdde5d3;scene.background=new THREE.Color(HORIZON);scene.fog=new THREE.Fog(HORIZON,30,250);
+const camera=new THREE.PerspectiveCamera(48,innerWidth/innerHeight,.1,450),clock=new THREE.Clock(),uTime={value:0};
+const sunDir=new THREE.Vector3(-.62,.70,.36).normalize();const sky=new THREE.Mesh(new THREE.SphereGeometry(300,32,16),createSkyMaterial(HORIZON,sunDir));sky.frustumCulled=false;scene.add(sky);
+const hemi=new THREE.HemisphereLight(0xd6e5e8,0x5e6a3c,.95);scene.add(hemi);
+const sun=new THREE.DirectionalLight(0xfff0d8,2.7);sun.position.copy(sunDir).multiplyScalar(40);sun.target.position.set(0,0,-1);sun.castShadow=true;sun.shadow.mapSize.set(isTouch?1024:1536,isTouch?1024:1536);
+Object.assign(sun.shadow.camera,{left:-21,right:21,top:21,bottom:-21,near:5,far:90});sun.shadow.bias=-.0004;sun.shadow.normalBias=.03;sun.shadow.radius=3;scene.add(sun,sun.target);
+
+// Presentation-only current world: use the same SharedLandscape as gameplay, but do not
+// build the hidden Private Garden or initialize gameplay-heavy Stable/Orangery/Wildlife systems.
+const entryWorld={hostScene:scene,scene,rand:seededRandom(20260924),uTime,isTouch,addObstacle(){},addWaterBody(){}};
+const shared=new SharedLandscape(entryWorld);entryWorld.sharedLandscape=shared;entryWorld.groundHeight=(x,z)=>shared.groundHeight(x,z);
+const loader=new GLTFLoader(),mixers=[];
+function setShadows(root){root.traverse(o=>{if(o.isMesh){o.castShadow=true;o.receiveShadow=true;}});}
+
+async function loadHome(){
+  const g=await loader.loadAsync('./assets/homes/shed_daisy.glb');const root=g.scene;root.name='ENTRY_CURRENT_DAISY_HOME';root.position.set(0,0,4.70);setShadows(root);shared.root.add(root);
+  const idle=g.animations.find(c=>c.name==='Idle');if(idle){const m=new THREE.AnimationMixer(root);m.clipAction(idle).play();mixers.push(m);}return root;
+}
+async function loadOrangeryShell(){
+  const g=await loader.loadAsync('./assets/hubs/orangeri/building/orangeri_A_building.glb');const root=new THREE.Group();root.name='ENTRY_CURRENT_ORANGERY';
+  root.position.set(60,shared.groundHeight(60,-40),-40);root.rotation.y=THREE.MathUtils.degToRad(49.7636416907);setShadows(g.scene);root.add(g.scene);scene.add(root);return root;
+}
+function addStableShell(){
+  const data=buildStable(),root=new THREE.Group();root.name='ENTRY_CURRENT_NORTH_STABLE';root.position.set(70,0,-155);root.rotation.y=Math.PI;
+  data.root.getObjectByName('Stable_Grass')?.removeFromParent();root.add(data.root);scene.add(root);return root;
+}
+addStableShell();
+
+// Current visible home + Orangery + authored Cabin asset must be present before entry is revealed.
+await Promise.all([loadHome(),loadOrangeryShell(),shared.cabinReady||Promise.resolve()]);
+
+// R26-style calm camera behaviour, now over the current world map.
+const idlePos=[
+  new THREE.Vector3(18,92,96),new THREE.Vector3(70,88,64),new THREE.Vector3(92,72,-18),
+  new THREE.Vector3(72,68,-104),new THREE.Vector3(20,64,-18),new THREE.Vector3(8,54,48)
+];
+const idleLook=[
+  new THREE.Vector3(38,0,20),new THREE.Vector3(86,0,18),new THREE.Vector3(78,0,-46),
+  new THREE.Vector3(70,0,-136),new THREE.Vector3(28,0,0),new THREE.Vector3(2,2,5)
+];
+const posCurve=new THREE.CatmullRomCurve3(idlePos,true,'catmullrom',.34),lookCurve=new THREE.CatmullRomCurve3(idleLook,true,'catmullrom',.34);
+let reduced=false,fly=null,arrived=false,landed=false,entryT=0,paused=false,disposed=false;
+const look=new THREE.Vector3(),targetPos=new THREE.Vector3(),targetLook=new THREE.Vector3();
+const flyEndPos=new THREE.Vector3(1.8,8.1,20.5),flyEndLook=new THREE.Vector3(1.2,.8,2.0);
+const ease=t=>t*t*(3-2*t);
+function applyLoop(){const u=(.055+entryT*.0085)%1;posCurve.getPointAt(u,targetPos);lookCurve.getPointAt(u,targetLook);camera.position.lerp(targetPos,.025);look.lerp(targetLook,.035);camera.lookAt(look);}
+function updateCamera(dt){
+  if(fly){fly.t=Math.min(fly.d,fly.t+dt);const e=ease(fly.t/fly.d);camera.position.lerpVectors(fly.sp,fly.ep,e);look.lerpVectors(fly.sl,fly.el,e);camera.lookAt(look);if(!arrived&&fly.t>=fly.d){fly=null;landed=true;arrived=true;camera.position.copy(flyEndPos);look.copy(flyEndLook);camera.lookAt(look);parent.postMessage({type:'dym-entry-arrived'},'*');}return;}
+  if(landed||reduced){camera.position.lerp(flyEndPos,landed?1:.035);look.lerp(flyEndLook,landed?1:.04);camera.lookAt(look);return;}
+  applyLoop();
+}
+function beginFly(){if(fly||landed||disposed)return;arrived=false;fly={t:0,d:reduced?.35:2.75,sp:camera.position.clone(),sl:(look.lengthSq()?look:idleLook[0]).clone(),ep:flyEndPos.clone(),el:flyEndLook.clone()};}
+function renderFrame(){if(paused||disposed)return;const dt=Math.min(.05,clock.getDelta());entryT+=dt;uTime.value+=dt;updateCamera(dt);for(const m of mixers)m.update(dt);shared.update?.(dt,uTime.value,look);renderer.render(scene,camera);}
+renderer.setAnimationLoop(renderFrame);
+
+function dispose(){if(disposed)return;disposed=true;paused=true;renderer.setAnimationLoop(null);for(const m of mixers)m.stopAllAction();scene.traverse(o=>{if(!o.isMesh)return;o.geometry?.dispose?.();for(const mat of [].concat(o.material||[])){if(!mat)continue;for(const k of Object.keys(mat)){const v=mat[k];if(v?.isTexture)v.dispose?.();}mat.dispose?.();}});renderer.dispose();}
+addEventListener('message',e=>{if(e.data?.type==='dym-entry-motion')reduced=!!e.data.reduced;if(e.data?.type==='dym-entry-fly')beginFly();if(e.data?.type==='dym-entry-pause')paused=true;if(e.data?.type==='dym-entry-resume'){paused=false;clock.getDelta();}if(e.data?.type==='dym-entry-dispose')dispose();});
+addEventListener('resize',()=>{renderer.setSize(innerWidth,innerHeight);camera.aspect=innerWidth/innerHeight;camera.fov=camera.aspect<.8?58:48;camera.updateProjectionMatrix();});
+addEventListener('visibilitychange',()=>{paused=document.hidden;if(!paused)clock.getDelta();});
+
+camera.position.copy(idlePos[0]);look.copy(idleLook[0]);camera.lookAt(look);renderer.render(scene,camera);
+document.getElementById('fade').classList.add('out');parent.postMessage({type:'dym-entry-ready'},'*');
+</script>
+</body>
+</html>
