@@ -9,6 +9,11 @@
 ---
 
 
+## R157C QA — 12/10/2026
+
+- **Approved scope:** QA automation on desktop first and phone emulation. No gameplay changes authorised. Introduce GitHub Actions Node 22 / Playwright Chromium full suite; replace stale R153 claim-message test with real two-tab lease/takeover test. Run remains unverified until GitHub Actions completes. Retain live v0.8.159 unchanged except QA files.
+- **Protection:** Do not claim iPhone Safari validation from Chromium emulation. Preserve R157B.1 user-accepted gameplay baseline, save schema, three greenhouse models and world controls.
+
 ## CURRENT WORKING STATUS — 11/10/2026
 
 - **Active baseline: GitHub HEAD** of `madsenjannik/3DGame`, branch `claude/magical-lovelace-nuka97`, live at

@@ -1,0 +1,13 @@
+{
+  "name": "the-growing-wilds-qa",
+  "version": "0.8.159",
+  "private": true,
+  "description": "QA-only tooling for existing static ES-module game",
+  "scripts": {
+    "test": "node tests/smoke.mjs",
+    "test:unit": "node tests/r157a-save.mjs && node tests/r157b-gameplay.mjs && node tests/r157b1-ui.mjs"
+  },
+  "devDependencies": {
+    "playwright": "1.56.1"
+  }
+}

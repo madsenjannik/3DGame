@@ -1,0 +1,47 @@
+name: R157C browser regression
+on:
+  push:
+    branches:
+      - claude/magical-lovelace-nuka97
+      - 'qa/**'
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: r157c-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  smoke:
+    name: Desktop and mobile Chromium smoke
+    runs-on: ubuntu-latest
+    timeout-minutes: 100
+    env:
+      CI: 'true'
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+      - name: Use Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install locked Playwright version
+        run: npm install --no-save --ignore-scripts --no-audit --no-fund playwright@1.56.1
+      - name: Provision Chromium dependencies
+        run: npx playwright install --with-deps chromium
+      - name: Run full desktop + mobile smoke tests
+        run: node tests/smoke.mjs 2>&1 | tee r157c-smoke.log
+        shell: bash
+        env:
+          NODE_OPTIONS: '--unhandled-rejections=strict'
+      - name: Upload smoke logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: r157c-smoke-${{ github.run_attempt }}
+          path: r157c-smoke.log
+          if-no-files-found: warn
+          retention-days: 14
