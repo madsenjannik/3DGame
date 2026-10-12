@@ -10,6 +10,7 @@
 
 
 ## R158A.1 candidate — 12/10/2026 (GO R158A.1)
+- **QA stabilization 12/10:** One later real Chromium run reached a visible Desktop Bag `Resources` filter but Playwright evaluated a zero-width control during UI rerender. Screenshot showed the filter itself visible. The browser QA now waits for a *fresh connected visible* DOM element and retries a bounded number of times; it does not bypass the visibility assertion or modify the Bag. Re-test pending.
 - **Baseline:** live v0.8.161 R158A user desktop QA reported failures in Workbench appearance, GLB level size and Bag visuals/icons; crafting/upgrades and Bag functions passed. iPhone was not tested by user.
 - **Candidate:** v0.8.162 `POLISH-R158A1-20261012A` on `fix/r158a1-ui-icon-scale`. Preserve R158A functions; do not merge until desktop/mobile browser QA and visual feedback.
 - **Building preview:** use the native bounds of authored L3 as ONE fixed scale reference for all L1–L3 of each family; consistent camera and bottom-centered translation, not six independent size normalizations. GLBs, levels, animations and save data unchanged.

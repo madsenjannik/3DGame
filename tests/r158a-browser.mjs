@@ -42,6 +42,27 @@ async function rect(selector){
     return {x:r.x,y:r.y,width:r.width,height:r.height};
   },selector);
 }
+// UI panels can re-render during heavy GLB frames: locators may refer to
+// detached nodes whose bounding box is temporarily zero. Query the current
+// live node, require a visible rectangle, and retry a bounded number of times.
+async function clickVisibleFilter(filter){
+  const selector='[data-bag-filter="'+filter+'"]';
+  await page.waitForFunction(sel=>{
+    const el=document.querySelector(sel);if(!el||!el.isConnected)return false;
+    const b=el.getBoundingClientRect(),s=getComputedStyle(el);
+    return b.width>=1&&b.height>=1&&s.display!=='none'&&s.visibility!=='hidden';
+  },selector,{timeout:20000});
+  for(let attempt=0;attempt<4;attempt++){
+    const clicked=await page.evaluate(sel=>{
+      const el=document.querySelector(sel),r=el?.getBoundingClientRect();
+      if(!el?.isConnected||!r?.width||!r?.height)return false;
+      el.click();return true;
+    },selector);
+    if(clicked)return;
+    await page.waitForTimeout(150);
+  }
+  throw Error('Bag filter not actionable after retries: '+filter);
+}
 async function checkWorkbenchVisuals(){
   const faults=await page.evaluate(()=>{
     const bad=[];
@@ -120,9 +141,9 @@ try{
   const bagLayout=await page.evaluate(()=>{const p=document.querySelector('#gear-panel'),b=p?.getBoundingClientRect();return {body:document.body.className,width:b?.width,left:b?.left,top:b?.top,layout:getComputedStyle(p).display,details:!!p.querySelector('.r158a-bag')};});
   check(bag&&bag.width>700&&bag.x>=0&&bag.x+bag.width<1441&&bagLayout.details,'desktop Bag not full inventory: '+JSON.stringify(bagLayout));
   check(await page.locator('#gear-panel .bag2-slot').count()===10,'desktop quick slots changed');
-  await page.locator('[data-bag-filter="resources"]').evaluate(el=>{if(!el.getBoundingClientRect().width)throw Error('Invisible control');el.click();});
+  await clickVisibleFilter('resources');
   check(await page.locator('.r158a-resource-grid .r158a-material').count()===7,'resource category');
-  await page.locator('[data-bag-filter="all"]').evaluate(el=>{if(!el.getBoundingClientRect().width)throw Error('Invisible control');el.click();});
+  await clickVisibleFilter('all');
   // The whitelist files are verified in CI; ensure eager images have actually loaded
   // before checking naturalWidth or capturing their visual appearance.
   await page.waitForFunction(()=>{

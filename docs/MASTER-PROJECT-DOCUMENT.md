@@ -28,6 +28,7 @@
 
 
 ## R158A.1 — premium UI and relative 3D scaling corrections (12/10/2026)
+- **QA-only follow-up:** Chromium head `9f64c451` reached the Desktop Bag with ten slots and a visible Resources filter but failed at a stale zero-width Playwright target (screenshot artifact in Actions run 38291011300). The test now reacquires a visible connected filter before click, with finite retries and unchanged assertions. No UI/game/runtime modifications; validation pending.
 - **GO:** User replied "2. GO!" to the proposed direct implementation plan. Implement only scoped visuals, icons and GLB previews, no new gameplay.
 - **Baseline:** R158A v0.8.161 is live; user desktop QA found visual failures Workbench, GLB size, Bag art. Crafting and Bag actions work; iPhone untested.
 - **Candidate:** v0.8.162 `POLISH-R158A1-20261012A` on `fix/r158a1-ui-icon-scale`, pending browser and visual QA.
