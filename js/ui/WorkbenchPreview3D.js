@@ -68,6 +68,8 @@ export class WorkbenchPreview3D {
         this.release(gltf.scene);return; // stale GLB can never replace the newer selection
       }
       const root=gltf.scene;
+      // Workshop GLBs carry design-time ghost/ruin meshes; the game hides these too.
+      if(kind==='workshop')for(const suffix of ['Ruin','Ghost']){const part=root.getObjectByName('Workshop_L'+level+'_'+suffix);if(part)part.visible=false;}
       const box=new THREE.Box3().setFromObject(root);
       if(box.isEmpty())throw Error('Empty GLB model');
       const size=box.getSize(new THREE.Vector3()),center=box.getCenter(new THREE.Vector3());
@@ -128,9 +130,9 @@ export class WorkbenchPreview3D {
       if(this.model){
         if(!this.reduced){
           const t=(time-this.startAt)/1000;
+          this.mixer?.update(dt);
           this.model.position.y=this.baseY+.09+Math.sin(t*1.25)*.045;
           this.model.rotation.y=.28+Math.sin(t*.35)*.17;
-          this.mixer?.update(dt);
         }
         this.renderer.render(this.scene,this.camera);
       }else{

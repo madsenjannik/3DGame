@@ -26,7 +26,7 @@ jobs:
       - name: Run old and new UI regression contracts
         run: node tests/r157b1-ui.mjs && node tests/r158a-ui-contract.mjs
       - name: Render real GLB previews and validate UI on desktop and phone
-        run: node tests/r158a-browser.mjs 2>&1 | tee r158a-browser.log
+        run: set -o pipefail; node tests/r158a-browser.mjs 2>&1 | tee r158a-browser.log
         env:
           NODE_OPTIONS: '--unhandled-rejections=strict'
       - name: Upload real desktop and iPhone screenshots and logs

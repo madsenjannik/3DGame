@@ -33,7 +33,7 @@ try{
   const errDesktop=await start(false,1440,900);
   await page.evaluate(()=>window.__tgw.workbenchPanel.show());
   const wb=await page.locator('.r158a-card').boundingBox();
-  check(wb&&wb.width>900&&wb.x>=0&&wb.right<=1441,'desktop Workbench bounds');
+  check(wb&&wb.width>900&&wb.x>=0&&wb.x+wb.width<=1441,'desktop Workbench bounds');
   await page.locator('.wilds-tabs [data-tab="home"]').click();
   await page.waitForFunction(()=>window.__tgw.workbenchPanel.preview?.loadedKey?.endsWith('greenhouse-l1.glb'),null,{timeout:90000});
   const before=await page.evaluate(()=>window.__tgw.greenhouse.level);
@@ -51,7 +51,7 @@ try{
   await screenshot('Workbench_Tools_DESKTOP.png');
   await page.evaluate(()=>{window.__tgw.workbenchPanel.hide();window.__tgw.wilds.profile.tools.axe=true;window.__tgw.hud.toggleGear(true);});
   const bag=await page.locator('#gear-panel').boundingBox();
-  check(bag&&bag.width>700&&bag.right<1441,'desktop Bag is still a small dropdown');
+  check(bag&&bag.width>700&&bag.x+bag.width<1441,'desktop Bag is still a small dropdown');
   check(await page.locator('#gear-panel .bag2-slot').count()===10,'desktop quick slots changed');
   await page.locator('[data-bag-filter="resources"]').click();
   check(await page.locator('.r158a-resource-grid .r158a-material').count()===7,'resource category');
@@ -66,13 +66,13 @@ try{
   const errPhone=await start(true,844,390);
   await page.evaluate(()=>window.__tgw.workbenchPanel.show());
   const phoneWb=await page.locator('.r158a-card').boundingBox();
-  check(phoneWb&&phoneWb.x>=-1&&phoneWb.right<=845&&phoneWb.bottom<=391,'iPhone landscape Workbench overflow');
+  check(phoneWb&&phoneWb.x>=-1&&phoneWb.x+phoneWb.width<=845&&phoneWb.y+phoneWb.height<=391,'iPhone landscape Workbench overflow');
   await page.locator('.wilds-tabs [data-tab="home"]').click();
   await page.waitForFunction(()=>window.__tgw.workbenchPanel.preview?.loadedKey?.endsWith('greenhouse-l1.glb'),null,{timeout:90000});
   await screenshot('Workbench_iPHONE.png');
   await page.evaluate(()=>{window.__tgw.workbenchPanel.hide();window.__tgw.wilds.profile.tools.axe=true;window.__tgw.hud.toggleGear(true);});
   const phoneBag=await page.locator('#gear-panel').boundingBox();
-  check(phoneBag&&phoneBag.x>=-1&&phoneBag.right<=845&&phoneBag.bottom<=391,'iPhone landscape Bag overflow');
+  check(phoneBag&&phoneBag.x>=-1&&phoneBag.x+phoneBag.width<=845&&phoneBag.y+phoneBag.height<=391,'iPhone landscape Bag overflow');
   check(await page.locator('#gear-panel .bag2-slot').count()===10,'iPhone Bag quick slots');
   await screenshot('Bag_iPHONE.png');
   check(!errPhone.length,'phone JS errors '+errPhone.join('|'));
