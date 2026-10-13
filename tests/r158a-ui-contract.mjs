@@ -10,7 +10,7 @@ const clean=s=>s.replace(/^import[^\n]*\n/gm,'').replace(/\bexport (?=(class|con
 
 const wb=read('js/ui/WorkbenchPanel.js'),viewer=read('js/ui/WorkbenchPreview3D.js'),hud=read('js/ui/Hud.js'),
   game=read('js/core/Game.js'),page=read('game.html'),css=read('styles-r158a.css');
-assert(page.includes('styles-r158a.css')&&game.includes('Hud.js?build=POLISH-R158A1'));
+assert(page.includes('styles-r158a.css')&&(game.includes('Hud.js?build=POLISH-R158A1')||game.includes('Hud.js?build=BAG-R158A2')),'R158A UI must import one of the approved cache-busted Bag renderers');
 assert(game.includes('WorkbenchPanel.js?build=POLISH-R158A1'));
 assert(game.includes("this.hud?.gear?.classList.contains('open')"));
 assert(wb.includes("this.getGreenhouse?.()")&&wb.includes("this.wilds.upgradeWorkshop?.()"),
