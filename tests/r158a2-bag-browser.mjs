@@ -19,8 +19,20 @@ await new Promise(ok=>server.listen(0,'127.0.0.1',ok));
 const origin='http://127.0.0.1:'+server.address().port+'/';
 let browser,context,page;
 async function visibleClick(sel){
- await page.waitForFunction(selector=>{const el=document.querySelector(selector);return !!el?.isConnected&&el.getBoundingClientRect().width>0;},sel,{timeout:20000});
- await page.evaluate(selector=>document.querySelector(selector)?.click(),sel);
+  // Use a current DOM reference in one synchronous page evaluation. WebGL can
+  // starve Playwright's default requestAnimationFrame waitForFunction polling.
+  let last=null;
+  for(let n=0;n<7;n++){
+    last=await page.evaluate(selector=>{
+      const el=document.querySelector(selector),box=el?.getBoundingClientRect();
+      const ok=!!el?.isConnected&&!!box&&box.width>=1&&box.height>=1;
+      if(ok)el.click();
+      return {clicked:ok,found:!!el,box:box?{x:box.x,y:box.y,width:box.width,height:box.height}:null,open:document.querySelector('#gear-panel')?.classList.contains('open')};
+    },sel);
+    if(last.clicked)return;
+    await page.waitForTimeout(200);
+  }
+  throw Error('Bag control is not visible: '+sel+' '+JSON.stringify(last));
 }
 async function start(mobile,width,height){
  context=await browser.newContext({viewport:{width,height},screen:{width,height},hasTouch:mobile,isMobile:mobile,deviceScaleFactor:mobile?2:1});
