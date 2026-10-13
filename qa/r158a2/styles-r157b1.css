@@ -1,0 +1,28 @@
+/* R157B.1: focused mobile dialog and map input corrections; canonical styles unchanged. */
+.fishing-dialog-options{display:flex;flex-direction:column;gap:6px;min-width:0}
+.fishing-dialog-reply{display:none}
+.fishing-dialog-reply p{margin:6px 0 0;white-space:normal;overflow-wrap:break-word}
+.fishing-dialog-reply b{display:block;letter-spacing:.12em;text-transform:uppercase;font-size:10px}
+body.touch.world-map-open :is(#joy-rest,#joy,#action,#hop-btn,#hud-bag,#game-menu-btn,#lantern-btn,.special-btn,.desktop-hotbar-e,.hearts,#key-hints,#control-tips){opacity:0!important;pointer-events:none!important}
+@media (max-height:560px) and (orientation:landscape) {
+  body.touch #fishing-v1.greet .fishing-dialog{
+    left:50%;bottom:max(8px,env(safe-area-inset-bottom));top:auto;
+    width:min(770px,calc(100vw - 24px));
+    max-height:calc(100dvh - 70px - env(safe-area-inset-top) - env(safe-area-inset-bottom));
+    min-height:0;display:grid;grid-template-columns:minmax(145px,.90fr) minmax(190px,1.10fr);
+    align-items:stretch;gap:9px;padding:9px;overflow:hidden;box-sizing:border-box;
+  }
+  body.touch #fishing-v1.greet .fishing-dialog-reply{
+    display:block;min-height:0;min-width:0;overflow-y:auto;overscroll-behavior:contain;
+    padding:10px 12px;border-radius:12px;background:rgba(34,40,28,.88);color:#f4f1e8;
+    font:600 13px/1.4 Manrope,system-ui,sans-serif;-webkit-overflow-scrolling:touch;
+  }
+  body.touch #fishing-v1.greet .fishing-dialog-reply b{color:#f0c463}
+  body.touch #fishing-v1.greet .fishing-dialog-options{
+    min-height:0;max-height:calc(100dvh - 91px - env(safe-area-inset-top) - env(safe-area-inset-bottom));
+    overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;gap:5px;
+  }
+  body.touch #fishing-v1.greet .fishing-opt{min-height:38px;padding:6px 10px;font-size:12px;gap:8px;flex-shrink:0}
+  body.touch #fishing-v1.greet .fishing-opt .n{width:20px;height:20px;line-height:20px;font-size:10px}
+  body.touch #fishing-v1.greet .fishing-bubble{display:none!important}
+}

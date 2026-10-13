@@ -1,5 +1,10 @@
 # THE GROWING WILDS — MASTER PROJECT DOCUMENT
 
+## R158A.2 — iPhone Safari real-art Bag QA (13/10/2026)
+- User GO and clarified that AI-generated 3D/environment images in old Bag mockups are not real game assets. Feature PR #8 uses in-repository item/tool and material sprites, authentic game renderer, and a one-time image render of original `assets/props/life-vest.glb`, not fabricated artwork. R158A.2 visual candidate remains unmerged.
+- A separate QA tree at `/3DGame/qa/r158a2/` is staged with source candidate `ed8b005` and independent local/sessionStorage namespace `__tgw_preview_r158a2__`, based on the previously verified R158A.1 isolation mechanism. Allowed game-progress data is copied read-only once from live; live writer lease is never copied; all QA writes are namespaced; unsupported browsers fail closed.
+- New dedicated browser isolation test `tests/qa-r158a2-isolation.mjs` must pass before QA preview merges. The root live gameplay/Workbench/save schema and 3D assets stay untouched. PR #2 remains draft; physical iPhone Safari visual approval required before locking R158A.2. Legacy issue #6 stays independently open until full Bag/Wear smoke is reconciled.
+
 ## R158A.1 — separate physical iPhone Safari preview (12/10/2026)
 - User confirmed successful live R157C.1 two-tab handoff on physical iPhone Safari, then requested the next step ("Videre"). Source baseline is live `83790499`, approved R158A.1 candidate is `7c803748` (PR #2), still **unmerged**.
 - Preview route `/3DGame/qa/r158a1/` contains the candidate source as a nested static Git tree; root production files are not replaced. Its first-page local/session storage sandbox copies selected existing progress **read-only once** and writes only to QA-prefixed keys; never copies the live ownership lease. A storage-override failure prevents gameplay startup. No source gameplay, save schema, input, model or camera changes.
