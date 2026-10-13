@@ -1,0 +1,194 @@
+/* R158A.2 — Real-asset Bag. No generated environment/hero art, no gameplay changes.
+   Keep every selector scoped to the existing #gear-panel Bag; Workbench unaffected. */
+body.r158a-bag-open::before{background:rgba(9,21,14,.35)!important;backdrop-filter:blur(2px)!important;-webkit-backdrop-filter:blur(2px)!important}
+html body #gear-panel.gear-panel.r158a-gear.open{
+  width:min(1130px,calc(100vw - 28px))!important;height:min(700px,calc(100dvh - 24px))!important;
+  max-height:calc(100dvh - 24px)!important;padding:7px!important;overflow:hidden!important;
+  border:1px solid rgba(226,192,120,.58)!important;border-radius:15px!important;
+  background:rgba(23,38,27,.91)!important;
+  box-shadow:0 26px 80px rgba(4,15,8,.68),inset 0 1px rgba(251,232,182,.22)!important}
+html body #gear-panel .bag2.r158a-bag.gw2-bag{
+  position:relative!important;inset:auto!important;transform:none!important;
+  display:grid!important;grid-template-columns:minmax(0,1fr)!important;
+  grid-template-rows:58px minmax(0,1fr) 79px!important;gap:9px!important;
+  width:100%!important;height:100%!important;min-width:0!important;min-height:0!important;
+  padding:9px!important;overflow:hidden!important;border:1px solid rgba(216,183,107,.37)!important;
+  border-radius:11px!important;background:linear-gradient(145deg,rgba(33,53,37,.98),rgba(20,33,26,.97))!important;
+  box-shadow:inset 0 1px rgba(252,224,163,.12)!important;color:#f2e9d3!important;
+  font-family:Manrope,system-ui,sans-serif!important}
+#gear-panel .gw2-head.bag2-head{
+  grid-column:1!important;grid-row:1!important;position:relative!important;
+  display:flex!important;align-items:center!important;justify-content:space-between!important;gap:13px!important;
+  min-width:0!important;min-height:0!important;width:auto!important;height:auto!important;
+  padding:0 4px 7px!important;margin:0!important;border-bottom:1px solid rgba(235,211,152,.24)!important}
+#gear-panel .gw2-brand{display:flex;align-items:center;gap:9px;min-width:0;flex:none}
+#gear-panel .gw2-brand>img{width:39px;height:39px;object-fit:contain}
+#gear-panel .gw2-brand h2{margin:0;font:800 27px/1 Manrope,system-ui,sans-serif;color:#f8edcc;letter-spacing:-.035em}
+#gear-panel .gw2-brand small{display:block;margin-top:3px;font:700 9px/1.3 Manrope,system-ui,sans-serif;letter-spacing:.09em;color:#c9c49e}
+#gear-panel .gw2-filters.r158a-bag-filters{
+  flex:1;grid-column:auto!important;grid-row:auto!important;min-width:0!important;
+  display:flex!important;align-items:center;justify-content:flex-start;gap:6px!important;
+  overflow-x:auto;overflow-y:hidden;scrollbar-width:none}
+#gear-panel .gw2-filters button{
+  flex:none!important;min-height:37px!important;padding:5px 16px!important;
+  font:800 12px/1.2 Manrope,system-ui,sans-serif!important;color:#4a5237!important;
+  border:1px solid rgba(210,186,129,.65)!important;border-radius:8px!important;
+  background:linear-gradient(160deg,#f5ebd4,#d9c9a9)!important;box-shadow:inset 0 1px #fff9e8b9!important}
+#gear-panel .gw2-filters button[aria-pressed=true]{background:linear-gradient(160deg,#4c7347,#29462e)!important;color:#fff1c8!important;border-color:#d6b76d!important;box-shadow:0 0 0 1px #d6b76d44,inset 0 1px #ffffff33!important}
+#gear-panel .gw2-close.gear-close{display:grid!important;place-items:center!important;width:40px!important;height:40px!important;flex:0 0 40px!important;background:#f0e3c2!important;border:1px solid #d2b477!important;border-radius:50%!important;color:#263827!important;font-size:24px!important;font-weight:800}
+#gear-panel .gw2-body{
+  grid-column:1!important;grid-row:2!important;display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,.9fr);gap:9px;min-width:0;min-height:0;overflow:hidden}
+#gear-panel .gw2-inventory{display:flex;flex-direction:column;min-width:0;min-height:0;overflow:hidden;border:1px solid #d6c39c;border-radius:11px;background:rgba(241,232,207,.96);box-shadow:inset 0 1px #fff9e8}
+#gear-panel .gw2-inventory-label{display:flex;flex:0 0 36px;align-items:center;justify-content:space-between;gap:8px;padding:0 13px;border-bottom:1px solid #b7a77a7a;color:#374936}
+#gear-panel .gw2-inventory-label strong{font-size:13px}
+#gear-panel .gw2-inventory-label span{font-size:10px;color:#77806a}
+#gear-panel .gw2-tiles.bag2-grid{
+  grid-column:auto!important;grid-row:auto!important;position:relative!important;
+  display:grid!important;grid-template-columns:repeat(5,minmax(0,1fr))!important;grid-auto-rows:105px!important;
+  align-content:start!important;gap:8px!important;min-width:0!important;min-height:0!important;
+  padding:10px!important;overflow-y:auto!important;overflow-x:hidden!important;scrollbar-width:thin;
+  background:transparent!important;border:0!important;border-radius:0!important;box-shadow:none!important}
+#gear-panel .gw2-tile.bag2-tile{position:relative!important;display:flex!important;flex-direction:column!important;justify-content:center!important;align-items:center!important;gap:3px!important;
+  box-sizing:border-box;width:100%!important;height:100%!important;min-height:0!important;min-width:0!important;
+  padding:6px 4px!important;background:linear-gradient(150deg,#fff7e5,#e4d8b8)!important;
+  border:1px solid #b3a77f!important;border-radius:8px!important;
+  box-shadow:inset 0 1px #fffcf0,0 2px 5px #35452a20!important;color:#30412e!important;cursor:pointer}
+#gear-panel .gw2-tile.bag2-tile.selected{border:2px solid #bd8b32!important;background:linear-gradient(150deg,#fff5d5,#eddfae)!important;box-shadow:0 0 0 2px #eac46a88,inset 0 1px #fff9dd!important}
+#gear-panel .gw2-tile-art{display:grid;place-items:center;min-width:0;min-height:0;flex:1;width:100%;overflow:hidden}
+#gear-panel .gw2-tile-art img.r158a1-item-image,#gear-panel .gw2-tile-art img.gw2-resource-art{
+  display:block;width:min(80%,67px)!important;height:min(85%,64px)!important;max-height:64px!important;
+  object-fit:contain;filter:drop-shadow(0 3px 3px #14261738)}
+#gear-panel .gw2-tile-name{display:block;flex:none;min-width:0;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#29392d;font:800 10px/1.25 Manrope,system-ui,sans-serif;text-align:center}
+#gear-panel .gw2-tile-tag{position:absolute;z-index:2;left:3px;top:3px;padding:2px 5px;border-radius:5px;font:900 8px/1.2 Manrope,system-ui,sans-serif;color:#f9eed0;background:#426b46;border:1px solid #d4d7a099}
+#gear-panel .gw2-index,#gear-panel .gw2-amount{position:absolute;z-index:2;right:3px;top:3px;padding:1px 4px;border-radius:4px;font:900 10px/1.3 Manrope,system-ui,sans-serif;background:#e5d5aa;color:#354c38}
+#gear-panel .gw2-amount{right:4px;top:auto;bottom:22px;box-shadow:0 0 1px #17261730}
+#gear-panel .gw2-tile-empty{min-height:105px;border:1px dashed #7c8d7245;border-radius:8px;background:#a7aa8c13}
+#gear-panel .gw2-resource-grid{display:contents!important}
+#gear-panel .gw2-resource-grid .r158a-material,#gear-panel .gw2-material-tile{display:block!important;min-width:0!important;min-height:0!important;padding:0!important;margin:0!important;background:transparent!important;border:0!important;box-shadow:none!important}
+#gear-panel .gw2-detail.bag2-detail{
+  grid-column:auto!important;grid-row:auto!important;position:relative!important;
+  display:grid!important;grid-template-columns:minmax(0,.43fr) minmax(0,.57fr)!important;
+  gap:12px!important;min-width:0!important;min-height:0!important;
+  overflow:hidden!important;margin:0!important;padding:14px!important;
+  border:1px solid rgba(211,179,107,.53)!important;border-radius:11px!important;
+  background:radial-gradient(ellipse at 26% 55%,rgba(120,151,82,.33),transparent 49%),linear-gradient(130deg,rgba(54,81,57,.78),rgba(20,38,29,.92))!important;
+  box-shadow:inset 0 1px #fff9de1f!important}
+#gear-panel .gw2-hero{display:grid;place-items:center;min-width:0;min-height:0;overflow:hidden;position:relative}
+#gear-panel .gw2-hero:after{content:'';position:absolute;bottom:17%;left:23%;width:56%;height:12%;border-radius:50%;background:#03190c48;filter:blur(14px);pointer-events:none}
+#gear-panel .gw2-hero-art{display:grid;place-items:center;width:100%;height:100%;min-height:0;overflow:hidden}
+#gear-panel .gw2-hero-art img.r158a1-item-image,#gear-panel .gw2-hero-art img.gw2-resource-art{position:relative;z-index:1;
+  width:min(100%,215px)!important;height:min(90%,220px)!important;max-height:220px!important;object-fit:contain;filter:drop-shadow(0 12px 10px #05160986)}
+#gear-panel .gw2-info{display:flex;flex-direction:column;gap:7px;min-width:0;min-height:0;overflow-y:auto;scrollbar-width:thin;color:#f3ecd5}
+#gear-panel .gw2-eyebrow{font:800 10px/1.2 Manrope,system-ui,sans-serif;letter-spacing:.12em;color:#e2bb71;text-transform:uppercase}
+#gear-panel .gw2-info h3{margin:0!important;color:#fff0cc!important;font:850 clamp(20px,2.2vw,29px)/1.1 Manrope,system-ui,sans-serif!important;text-align:left!important}
+#gear-panel .gw2-states{display:flex;flex-wrap:wrap;gap:5px}
+#gear-panel .gw2-pill{display:inline-flex;align-items:center;min-height:23px;gap:3px;padding:3px 7px;background:#eadfbe20;border:1px solid #b0bf856b;border-radius:6px;color:#efedd8;font-size:10px;font-weight:750}
+#gear-panel .gw2-pill.active{background:#456a3a;border-color:#c8d497;color:#faffeb}
+#gear-panel .gw2-description{margin:0!important;font:500 12px/1.45 Manrope,system-ui,sans-serif!important;text-align:left!important;color:#eee4ca!important}
+#gear-panel .gw2-note,#gear-panel .gw2-choose{font:750 11px/1.35 Manrope,system-ui,sans-serif!important;color:#ded5b7!important;margin:0!important}
+#gear-panel .gw2-choose{color:#ffe4a8!important}
+#gear-panel .gw2-resource-total{display:flex;justify-content:space-between;align-items:center;gap:5px;font-size:12px!important;color:#e8dab1!important;text-align:left!important}
+#gear-panel .gw2-resource-total strong{font-size:18px}
+#gear-panel .gw2-actions{display:flex;align-items:stretch;gap:6px;margin-top:auto;min-width:0}
+#gear-panel .gw2-action{flex:1 1 0;min-height:44px!important;padding:6px 8px;border-radius:8px;border:1px solid #cab57b!important;font:800 12px/1.25 Manrope,system-ui,sans-serif!important;cursor:pointer}
+#gear-panel .gw2-action.main{color:#fff2cb!important;background:linear-gradient(180deg,#618350,#355736)!important;box-shadow:inset 0 1px #ffffff33!important}
+#gear-panel .gw2-action.alt{color:#324632!important;background:linear-gradient(180deg,#f0e7cd,#d8cca9)!important}
+#gear-panel .gw2-action:disabled{opacity:.55;cursor:default}
+#gear-panel .gw2-footer.bag2-slots{
+  grid-column:1!important;grid-row:3!important;display:flex!important;align-items:center!important;gap:11px!important;
+  box-sizing:border-box;min-width:0!important;min-height:0!important;width:100%!important;height:auto!important;
+  margin:0!important;padding:9px 6px 0!important;border-top:1px solid rgba(226,190,113,.35)!important;
+  overflow:hidden!important;position:relative!important;transform:none!important}
+#gear-panel .gw2-footer-title{display:flex;flex:0 0 102px;flex-direction:column;gap:3px;color:#f0e1bb}
+#gear-panel .gw2-footer-title b{font:800 13px/1.2 Manrope,system-ui,sans-serif}
+#gear-panel .gw2-footer-title small{font-size:9px;color:#bdbb9c}
+#gear-panel .gw2-hotbar{display:flex;align-items:center;justify-content:center;gap:5px;min-width:0;flex:1}
+#gear-panel .gw2-slot.bag2-slot{position:relative!important;display:grid!important;place-items:center!important;
+  flex:1 1 0!important;min-width:35px!important;max-width:63px!important;width:auto!important;
+  height:58px!important;min-height:58px!important;margin:0!important;padding:4px!important;
+  border:1px solid #d4c49e!important;border-radius:8px!important;background:linear-gradient(155deg,#f4e8ce,#dbc8a1)!important;box-shadow:inset 0 1px #fffbe9!important}
+#gear-panel .gw2-slot.bag2-slot.on{border:2px solid #ecc46c!important;background:linear-gradient(155deg,#557749,#2c5034)!important;outline:1px solid #f1c76a!important;outline-offset:0}
+#gear-panel .gw2-slot.bag2-slot.target{outline:2px dashed #f5d17c!important}
+#gear-panel .gw2-slot small{position:absolute!important;left:5px!important;top:3px!important;color:#495843!important;font-size:10px!important;font-weight:900!important}
+#gear-panel .gw2-slot.on small{color:#fff5cb!important}
+#gear-panel .gw2-slot .bag2-art.r158a1-item-image{width:min(78%,45px)!important;height:44px!important;object-fit:contain}
+#gear-panel .gw2-plus{font:750 23px/1 Manrope,system-ui,sans-serif;color:#8b9471}
+#gear-panel .gw2-blank{margin:10px!important;color:#eee4c9!important;font-size:12px!important}
+#gear-panel button:focus-visible{outline:2px solid #f1c975!important;outline-offset:1px!important}
+/* iPhone landscape — own layout, no tiny scaled desktop view. */
+@media (max-height:560px) and (orientation:landscape){
+ html body.hud-classic.touch.mobile-bag-open #gear-panel.gear-panel.r158a-gear.open{
+   inset:0!important;left:0!important;top:0!important;right:0!important;bottom:0!important;
+   transform:none!important;width:100vw!important;height:100dvh!important;max-height:none!important;
+   margin:0!important;border:0!important;border-radius:0!important;
+   padding: max(5px,env(safe-area-inset-top)) max(6px,env(safe-area-inset-right)) max(5px,env(safe-area-inset-bottom)) max(6px,env(safe-area-inset-left))!important;
+   background:rgba(11,23,16,.88)!important}
+ html body.hud-classic.touch.mobile-bag-open #gear-panel .bag2.r158a-bag.gw2-bag{
+   grid-template-columns:minmax(0,1fr)!important;grid-template-rows:42px minmax(0,1fr) 56px!important;
+   gap:5px!important;padding:5px!important;border-radius:9px!important}
+ #gear-panel .gw2-head.bag2-head{height:auto!important;padding:0 2px 4px!important;gap:7px!important}
+ #gear-panel .gw2-brand{gap:5px}
+ #gear-panel .gw2-brand>img{width:28px;height:28px}
+ #gear-panel .gw2-brand h2{font-size:20px}
+ #gear-panel .gw2-brand small{font-size:6.9px;letter-spacing:.02em}
+ #gear-panel .gw2-filters.r158a-bag-filters{gap:4px!important}
+ #gear-panel .gw2-filters button{min-height:31px!important;padding:5px 9px!important;font-size:10.7px!important}
+ #gear-panel .gw2-close.gear-close{width:34px!important;height:34px!important;flex-basis:34px!important;font-size:21px!important}
+ #gear-panel .gw2-body{grid-template-columns:minmax(0,1.08fr) minmax(0,.92fr)!important;gap:5px!important;min-height:0}
+ #gear-panel .gw2-inventory{border-radius:8px}
+ #gear-panel .gw2-inventory-label{flex-basis:24px!important;padding:0 6px}
+ #gear-panel .gw2-inventory-label strong{font-size:11px}
+ #gear-panel .gw2-inventory-label span{font-size:9px}
+ #gear-panel .gw2-tiles.bag2-grid{
+   grid-column:auto!important;grid-row:auto!important;
+   grid-template-columns:repeat(5,minmax(0,1fr))!important;grid-auto-rows:79px!important;
+   gap:4px!important;padding:5px!important;min-height:0!important;overflow-y:auto!important}
+ #gear-panel .gw2-tile.bag2-tile{padding:3px 2px!important;min-height:0!important;gap:2px!important;border-radius:6px!important}
+ #gear-panel .gw2-tile-art img.r158a1-item-image,#gear-panel .gw2-tile-art img.gw2-resource-art{width:min(90%,43px)!important;height:min(85%,42px)!important;max-height:42px!important}
+ #gear-panel .gw2-tile-name{font-size:8.5px!important}
+ #gear-panel .gw2-tile-tag{font-size:7px;padding:1px 3px}
+ #gear-panel .gw2-index,#gear-panel .gw2-amount{font-size:8px}
+ #gear-panel .gw2-amount{bottom:15px}
+ #gear-panel .gw2-tile-empty{min-height:79px}
+ #gear-panel .gw2-detail.bag2-detail{
+   grid-column:auto!important;grid-row:auto!important;grid-template-columns:minmax(0,.38fr) minmax(0,.62fr)!important;
+   gap:6px!important;padding:7px!important;border-radius:8px!important;overflow:hidden!important}
+ #gear-panel .gw2-hero-art img.r158a1-item-image,#gear-panel .gw2-hero-art img.gw2-resource-art{
+   width:min(100%,102px)!important;height:min(100%,120px)!important;max-height:120px!important}
+ #gear-panel .gw2-info{gap:4px;min-height:0}
+ #gear-panel .gw2-eyebrow{font-size:8px!important;letter-spacing:.04em}
+ #gear-panel .gw2-info h3{font-size:17px!important;line-height:1.1!important}
+ #gear-panel .gw2-pill{min-height:17px;padding:1px 4px;font-size:8px}
+ #gear-panel .gw2-states{gap:3px}
+ #gear-panel .gw2-description{font-size:10px!important;line-height:1.25!important}
+ #gear-panel .gw2-note,#gear-panel .gw2-choose{font-size:9px!important;line-height:1.2!important}
+ #gear-panel .gw2-resource-total{font-size:10px!important}
+ #gear-panel .gw2-resource-total strong{font-size:14px}
+ #gear-panel .gw2-actions{gap:4px}
+ #gear-panel .gw2-action{min-height:34px!important;font-size:10.5px!important;padding:4px!important;border-radius:6px!important}
+ #gear-panel .gw2-footer.bag2-slots{grid-column:1!important;grid-row:3!important;height:56px!important;padding:5px 4px 0!important;gap:5px!important;min-height:0!important}
+ #gear-panel .gw2-footer-title{flex-basis:73px!important}
+ #gear-panel .gw2-footer-title b{font-size:10px}
+ #gear-panel .gw2-footer-title small{font-size:7.5px}
+ #gear-panel .gw2-hotbar{gap:3px!important}
+ #gear-panel .gw2-slot.bag2-slot{
+   width:auto!important;flex:1 1 0!important;min-width:30px!important;max-width:49px!important;
+   height:44px!important;min-height:44px!important;border-radius:6px!important;padding:2px!important}
+ #gear-panel .gw2-slot small{font-size:8px!important;top:2px!important;left:3px!important}
+ #gear-panel .gw2-slot .bag2-art.r158a1-item-image{width:min(80%,29px)!important;height:31px!important}
+ #gear-panel .gw2-plus{font-size:15px}
+}
+@media (max-width:690px) and (orientation:landscape){
+ #gear-panel .gw2-brand small{display:none}
+ #gear-panel .gw2-filters button{padding:4px 6px!important;font-size:10px!important}
+ #gear-panel .gw2-tiles.bag2-grid{grid-template-columns:repeat(4,minmax(0,1fr))!important}
+ #gear-panel .gw2-detail.bag2-detail{grid-template-columns:32% 1fr!important}
+ #gear-panel .gw2-footer-title{flex-basis:58px!important}
+ #gear-panel .gw2-hotbar{gap:2px!important}
+ #gear-panel .gw2-slot.bag2-slot{min-width:25px!important}
+}
+@media (prefers-reduced-motion:reduce){#gear-panel .gw2-tile,#gear-panel .gw2-action{transition:none!important;animation:none!important}}
+
+/* The item hero is rendered ONCE from the actual life-vest.glb, not mockup art. */
+#gear-panel .gw2-hero-art img.gw2-real-vest-render{position:relative;z-index:1;display:block;width:min(98%,250px)!important;height:min(95%,250px)!important;object-fit:contain;filter:drop-shadow(0 12px 14px #05160974)}
+@media(max-height:560px) and (orientation:landscape){#gear-panel .gw2-hero-art img.gw2-real-vest-render{width:min(100%,130px)!important;height:min(100%,135px)!important;max-height:135px!important}}

@@ -1,5 +1,12 @@
 # THE GROWING WILDS — MASTER PROJECT DOCUMENT
 
+## R158A.2 — Bag real-art prototype (13/10/2026; user GO)
+- Dedicated feature branch `feature/r158a2-bag-real-assets` derived from R158A.1 candidate; no live/game movement/Workbench or GLB modifications.
+- Clarification from user: artificial 3D scene/background imagery in mockups cannot be shipped 1:1. Use only seven previously approved `brand/icons/tool3d` PNGs, real seven existing `brand/icons/resources` PNGs, and the actual rendered gameplay scene behind the UI. Never ship screenshot cutouts, AI foliage/hero models, or fabricated assets.
+- Bag now has an in-game overlay, five functional filters, current inventory/resource counts, actual selected/held/worn/slot status, 10 saved quickslots and bound existing Hold/Wear/Light/slot callbacks. No changes to save schema or economy.
+- R158A.1 candidate and original Workbench remain unchanged in independent PR #2. This is an unapproved **visual candidate**, not design LOCKED. Real physical iPhone Safari review and visual comparison against mockup required.
+- Existing R158A full-smoke bag/vest regression remains tracked separately in issue #6 until explicitly investigated and tested. Do not merge to live before complete regression and visual signoff.
+
 ## R157C.1 — single-writer handoff under delayed WebGL execution (12/10/2026)
 - **Authorisation:** GO 12/10/2026 to fix the reproducible R157C handoff bug (issue #3). Dedicated fix PR #4; independent R158A.1 integration PR #5; no direct edits to production until gated QA.
 - **Symptom:** Two-tab Chromium check on PR #2 failed twice; the waiting tab briefly observed a transferred lease, reloaded with a new ID, and remained blocked while the initial writer held the active lease. Exact scheduling mechanism is not proven from logs alone.

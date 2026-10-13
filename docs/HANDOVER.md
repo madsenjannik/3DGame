@@ -1,5 +1,12 @@
 # THE GROWING WILDS — HANDOVER — 2026-10-12 — R158A.1 (premium UI polish, approved art & GLB relative scale)
 
+## R158A.2 — Bag real-art prototype (13/10/2026; user GO)
+- Dedicated feature branch `feature/r158a2-bag-real-assets` derived from R158A.1 candidate; no live/game movement/Workbench or GLB modifications.
+- Clarification from user: artificial 3D scene/background imagery in mockups cannot be shipped 1:1. Use only seven previously approved `brand/icons/tool3d` PNGs, real seven existing `brand/icons/resources` PNGs, and the actual rendered gameplay scene behind the UI. Never ship screenshot cutouts, AI foliage/hero models, or fabricated assets.
+- Bag now has an in-game overlay, five functional filters, current inventory/resource counts, actual selected/held/worn/slot status, 10 saved quickslots and bound existing Hold/Wear/Light/slot callbacks. No changes to save schema or economy.
+- R158A.1 candidate and original Workbench remain unchanged in independent PR #2. This is an unapproved **visual candidate**, not design LOCKED. Real physical iPhone Safari review and visual comparison against mockup required.
+- Existing R158A full-smoke bag/vest regression remains tracked separately in issue #6 until explicitly investigated and tested. Do not merge to live before complete regression and visual signoff.
+
 ## R157C.1 — safe tab ownership and real Chromium regression (12/10/2026; GO "Så fix! GO")
 - **Bug:** Real Chromium R157C two-tab handoff failed repeatedly on R158A.1 PR #2: an acknowledged waiting tab remained read-only while the old tab regained writer status. See issue #3; browser diagnostics retained in GitHub Actions. The exact internal event-order root cause is not fully proven.
 - **Candidate fix:** Dedicated PR #4 (`fix/r157c-safe-takeover-race`) prevents automatic lease theft on a 12-second heartbeat stall. A blocked writer stops WebGL animation and cannot restart it in `syncRun`; the existing synchronous flush + matching ACK + rehydrating reload remain mandatory for normal takeover.
