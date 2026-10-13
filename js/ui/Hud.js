@@ -194,34 +194,95 @@ export class Hud {
   // strike, the game's own text, actions) and the 3 quick slots below. Tap = select; Hold / Add to slot / Wear / Light.
   bag2Mode(){return !this.touch()||(this.touch()&&document.body.classList.contains('hud-classic'));} // R158A: desktop inventory is unified in both player and DEV HUD profiles
   toolArt(it){return approvedItemArt(it);}
-  renderBag2(){
-    const all=this.gearItems?.()||[],held=this.selectedGearId?.()||null,slots=(this.hotbarItems?.()||[]).slice(0,10);
-    const filter=this._bagFilter||'all',items=all.filter(x=>filter==='all'||(filter==='tools'&&['Tool','Fishing','Night'].includes(x.kind))||(filter==='gear'&&x.kind==='Wear')||(filter==='special'&&x.kind==='Special Seed'));
+  renderBag2() {
+    const escape = v => String(v??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    const gear = this.gearItems?.() || [], held = this.selectedGearId?.() || null;
+    const slots=(this.hotbarItems?.()||[]).slice(0,10);
+    while(slots.length<10)slots.push(null);
+    const inventory=this.state.inventory;
+    const materialIds=['wood','stone','clay','fiber','amber','shell','wild_seed'];
+    const resources=materialIds.map(id=>({id:'resource:'+id,resourceId:id,name:approvedMaterialText(id),kind:'Material',count:inventory.get(id)||0,desc:id==='wild_seed'?'A seed collected in the wilds.':'A gathered material used by your existing crafting and upgrades.'}));
+    const filter=this._bagFilter||'all';
+    const items=filter==='resources'?resources:filter==='all'?[...gear,...resources]:gear.filter(x=>filter==='tools'?['Tool','Fishing','Night'].includes(x.kind):filter==='gear'?x.kind==='Wear':filter==='special'?x.kind==='Special Seed':true);
     if(!items.some(x=>x.id===this._bagSel))this._bagSel=items[0]?.id||null;
-    const it=items.find(x=>x.id===this._bagSel)||null,pick=!!this._bagPick&&!!it;
-    const tag=x=>x.id===held?'<span class="bag2-tag">HELD</span>':(x.worn?'<span class="bag2-tag">WORN</span>':'');
-    const tiles=items.map(x=>`<button type="button" class="bag2-tile r158a1-inventory-tile${x.id===this._bagSel?' sel':''}" data-item-id="${x.id}" aria-label="${x.name}" aria-pressed="${x.id===this._bagSel}"><span class="r158a1-tile-visual">${this.toolArt(x)}</span>${tag(x)}${x.count!=null?`<span class="bag2-num">${x.count}</span>`:''}<span class="r158a-tile-name">${x.name}</span></button>`).join('')
-      +'<span class="bag2-tile empty" aria-hidden="true"></span>'.repeat(Math.max(0,8-items.length));
-    const counts=this.materialIds.map(id=>{const name={wood:'Wood',stone:'Stone',clay:'Clay',fiber:'Fiber',amber:'Amber',shell:'Shell',wild_seed:'Wild Seed'}[id];
-      return `<span class="r158a-material" data-resource="${id}"><span class="r158a1-material-name">${approvedMaterialText(id)}</span><strong>${this.state.inventory.get(id)||0}</strong></span>`;}).join('');
-    let detail='<div class="r158a-bag-empty">Choose an item to see its abilities and controls.</div>';
-    if(it){
-      const chips=[`<span class="bag2-chip moss">${it.kind||'Gear'}</span>`];if(it.strike)chips.push(`<span class="bag2-chip">${it.strike}</span>`);
-      let a1,a2=`<button type="button" class="bag2-act" data-act="slot"${slots.some(s=>s?.id===it.id)?' disabled':''}>${slots.some(s=>s?.id===it.id)?'In quick slots':'Add to slot'}</button>`;
-      if(it.bagOnly){a1='<button type="button" class="bag2-act primary" disabled>Plant at Sprouting Ring</button>';a2='';}
-      else if(it.id==='vest'){a1=`<button type="button" class="bag2-act primary" data-act="wear">${it.worn?'Take off':'Wear'}</button>`;a2='<button type="button" class="bag2-act" disabled>Worn, not held</button>';}
-      else if(it.id==='lantern'){const night=document.body.classList.contains('lantern-ready');a1=`<button type="button" class="bag2-act primary" data-act="light"${night?'':' disabled'}>${night?(document.body.classList.contains('lantern-lit')?'Put away':'Light it'):'Night only'}</button>`;a2='<button type="button" class="bag2-act" disabled>Own button</button>';}
-      else a1=`<button type="button" class="bag2-act primary" data-act="hold">${held===it.id?'Put away':'Hold'}</button>`;
-      detail=`<div class="bag2-big r158a1-bag-hero">${this.toolArt(it)}</div><div class="r158a1-item-header"><small class="r158a1-kicker">SELECTED ITEM</small><h3>${it.name}</h3></div><div class="bag2-chips">${chips.join('')}</div>${it.desc?`<p>${it.desc}</p>`:''}<div class="bag2-acts">${a1}${a2}</div>`;
-    }else if(filter==='resources'){detail='<small class="r158a-bag-kicker">GATHER & BUILD</small><h3>Materials</h3><p>Materials are used by existing Workbench upgrades and crafting recipes. Open Workbench to spend them.</p>';}
-    const allSlots=Array.from({length:10},(_,q)=>{const item=slots[q];return `<button type="button" class="bag2-slot${item&&item.id===held?' on':''}${pick?' target':''}" data-q="${q}" aria-label="Quick slot ${q===9?0:q+1}${item?': '+item.name:': empty'}">${item?this.toolArt(item):'<span class="r158a1-quick-empty" aria-hidden="true"></span>'}<small>${q===9?0:q+1}</small></button>`;}).join('');
-    const tabs=[['all','All'],['tools','Tools'],['gear','Wear'],['special','Special'],['resources','Resources']].map(([k,n])=>`<button type="button" data-bag-filter="${k}" aria-pressed="${filter===k}">${n}</button>`).join('');
-    this.gear.innerHTML=`<div class="bag2 r158a-bag">
-      <div class="bag2-head"><div><b class="gear-title">Bag</b><small class="gear-subtitle">Your carried gear & gathered materials</small></div><button class="gear-close" type="button" aria-label="Close Bag">×</button></div>
-      <nav class="r158a-bag-filters" aria-label="Inventory filters">${tabs}</nav>
-      <div class="bag2-grid">${filter==='resources'?`<div class="r158a-resource-grid">${counts}</div>`:tiles}</div><div class="bag2-detail">${detail}</div>
-      <div class="r158a-bag-material-strip">${counts}</div>
-      <div class="bag2-slots"><span class="bag2-lbl">QUICK SLOTS</span>${allSlots}<span class="bag2-hint">${pick?`Select a slot for ${it.name}.`:'Click an item to equip or assign a slot.'}</span></div></div>`;
+    const it=items.find(x=>x.id===this._bagSel)||null;
+    if(it?.resourceId||it?.bagOnly)this._bagPick=false;
+    const pick=!!this._bagPick&&!!it&&!it.resourceId&&!it.bagOnly&&it.id!=='vest';
+    const position=id=>slots.findIndex(x=>x?.id===id);
+    const resArt=id=>`<img class="gw2-resource-art" alt="" loading="eager" draggable="false" src="./brand/icons/resources/icon-${escape(id==='wild_seed'?'wild-seed':id)}.png">`;
+    const art=x=>x?.resourceId?resArt(x.resourceId):this.toolArt(x);
+    const tile=x=>{
+      const selected=it?.id===x.id,slot=x.resourceId?-1:position(x.id);
+      const st=x.id===held?'HELD':x.worn?'WORN':'';
+      return `<button type="button" class="bag2-tile gw2-tile${selected?' selected':''}" data-item-id="${escape(x.id)}" aria-label="${escape(x.name)}${st?', '+st.toLowerCase():''}" aria-pressed="${selected}">
+        ${st?`<span class="gw2-tile-tag">${st}</span>`:''}${slot>=0?`<span class="gw2-index">${slot===9?'0':slot+1}</span>`:''}
+        <span class="gw2-tile-art">${art(x)}</span><span class="gw2-tile-name">${escape(x.name)}</span>
+        ${x.resourceId||x.count!=null?`<span class="gw2-amount">${x.count||0}</span>`:''}
+      </button>`;
+    };
+    const resourceTiles=resources.map(x=>`<span class="r158a-material" data-resource="${x.resourceId}" aria-label="${escape(x.name)} ${x.count}">${tile(x)}</span>`).join('');
+    const listMarkup=filter==='resources'?`<div class="r158a-resource-grid gw2-resource-grid">${resourceTiles}</div>`:
+      items.map(x=>x.resourceId?`<span class="gw2-material-tile" data-resource="${x.resourceId}">${tile(x)}</span>`:tile(x)).join('')+
+      (items.length<8?'<span class="gw2-tile-empty" aria-hidden="true"></span>'.repeat(8-items.length):'');
+    const status=it=>{
+      if(it.resourceId)return`<span class="gw2-pill">Owned · ${it.count}</span>`;
+      const states=['<span class="gw2-pill">Owned</span>'];
+      if(it.id===held)states.push('<span class="gw2-pill active">Held</span>');
+      if(it.worn)states.push('<span class="gw2-pill active">Worn</span>');
+      const q=position(it.id);
+      if(q>=0)states.push(`<span class="gw2-pill">Slot ${q===9?'0':q+1}</span>`);
+      return states.join('');
+    };
+    let actions='',message='';
+    if(it?.resourceId){message=`<p class="gw2-resource-total">In your Bag <strong>${it.count}</strong></p>`;}
+    else if(it?.bagOnly){message='<p class="gw2-note">Plant at Sprouting Ring in your garden.</p>';}
+    else if(it?.id==='vest'){
+      actions=`<button type="button" class="gw2-action main" data-act="wear">${it.worn?'Take Off':'Wear Life Vest'}</button>`;
+      message='<p class="gw2-note">Must remain worn while on the water.</p>';
+    }else if(it?.id==='lantern'){
+      const night=document.body.classList.contains('lantern-ready');
+      actions=`<button type="button" class="gw2-action main" data-act="light"${night?'':' disabled'}>${night?(document.body.classList.contains('lantern-lit')?'Put Away':'Light Lantern'):'Night Only'}</button>`;
+      actions+='<button type="button" class="gw2-action alt" data-act="slot">Assign / Move Slot</button>';
+    }else if(it){
+      if(position(it.id)>=0)actions=`<button type="button" class="gw2-action main" data-act="hold">${it.id===held?'Put Away':'Hold'}</button>`;
+      actions+=`<button type="button" class="gw2-action ${actions?'alt':'main'}" data-act="slot">${position(it.id)>=0?'Move Slot':'Assign Slot'}</button>`;
+    }
+    if(pick){
+      actions='<button type="button" class="gw2-action alt" data-act="cancel-slot">Cancel</button>';
+      message=`<p class="gw2-choose" role="status">Choose a quick slot for ${escape(it.name)} below.</p>`;
+    }
+    const detail=it?`<div class="gw2-hero"><div class="gw2-hero-art">${art(it)}</div></div>
+        <div class="gw2-info"><span class="gw2-eyebrow">${it.resourceId?'MATERIAL':it.kind||'ITEM'}</span>
+          <h3>${escape(it.name)}</h3><div class="gw2-states">${status(it)}</div>
+          <p class="gw2-description">${escape(it.desc||'Carried in your Bag.')}</p>
+          ${message}${actions?`<div class="gw2-actions">${actions}</div>`:''}
+        </div>`:'<p class="gw2-blank">No items in this category yet.</p>';
+    const tabs=[['all','All'],['tools','Tools'],['gear','Wear'],['special','Special'],['resources','Resources']].map(([k,label])=>
+      `<button type="button" data-bag-filter="${k}" aria-pressed="${k===filter}">${label}</button>`).join('');
+    const allSlots=slots.map((item,i)=>`<button type="button" class="bag2-slot gw2-slot${item?.id===held?' on':''}${pick?' target':''}" data-q="${i}" aria-pressed="${!!item&&item.id===held}" aria-label="Slot ${i===9?'0':i+1}${item?': '+escape(item.name):': empty'}"><small>${i===9?'0':i+1}</small>
+      ${item?art(item):'<span class="gw2-plus" aria-hidden="true">+</span>'}</button>`).join('');
+    const previous=this.gear?.querySelector?.('.gw2-tiles'),scroll=(this._gw2LastFilter===filter?previous?.scrollTop:0)||0;
+    this._gw2LastFilter=filter;
+    this.gear.innerHTML=`<div class="bag2 r158a-bag gw2-bag">
+      <header class="bag2-head gw2-head">
+        <div class="gw2-brand"><img src="./brand/icons/64/icon-bag.png" alt="" draggable="false"><div><h2>Bag</h2><small>INVENTORY &amp; EQUIPMENT</small></div></div>
+        <nav class="r158a-bag-filters gw2-filters" aria-label="Inventory filters">${tabs}</nav>
+        <button type="button" class="gear-close gw2-close" aria-label="Close Bag">×</button>
+      </header>
+      <main class="gw2-body">
+        <section class="gw2-inventory" aria-label="Carried items and materials">
+          <div class="gw2-inventory-label"><strong>${filter==='resources'?'Materials':'Your collection'}</strong><span>${items.length} items</span></div>
+          <div class="bag2-grid gw2-tiles">${listMarkup||'<p class="gw2-blank">No items collected yet.</p>'}</div>
+        </section>
+        <section class="bag2-detail gw2-detail" aria-label="Selected item">${detail}</section>
+      </main>
+      <footer class="bag2-slots gw2-footer">
+        <div class="gw2-footer-title"><b>Quick Slots</b><small>${pick?'Choose a slot':'Saved automatically'}</small></div>
+        <div class="gw2-hotbar">${allSlots}</div>
+      </footer>
+    </div>`;
+    const scroller=this.gear?.querySelector?.('.gw2-tiles');
+    if(scroller)scroller.scrollTop=scroll;
   }
   bag2Click(e){
     const t=e.target.closest?.('[data-item-id],[data-bag-filter],[data-act],[data-q]');if(!t)return;
@@ -230,6 +291,7 @@ export class Hud {
     else if(t.dataset.q!=null){const q=+t.dataset.q;if(this._bagPick&&this._bagSel){this.onBagPlace?.(this._bagSel,q);this._bagPick=false;}else this.onHotbarSelect?.(q);}
     else if(t.dataset.act==='hold'){if(this.selectedGearId?.()===this._bagSel)this.onGearPutAway?.();else this.onGearEquip?.(this._bagSel);}
     else if(t.dataset.act==='slot'){this._bagPick=true;}
+    else if(t.dataset.act==='cancel-slot'){this._bagPick=false;}
     else if(t.dataset.act==='wear'){this.onVestToggle?.();}
     else if(t.dataset.act==='light'){this.onLanternToggle?.();this.toggleGear(false);return;}
     this.renderBag2();this.renderDesktopHotbar();

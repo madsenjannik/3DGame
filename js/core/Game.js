@@ -14,7 +14,7 @@ import { GreenhouseProgressionSystem } from '../gameplay/GreenhouseProgressionSy
 import { OrangeryHubSystem } from '../gameplay/OrangeryHubSystem.js?build=CAMERA-CUTAWAY-CONTEXT-R21D-20260928E';
 import { FishingV1System } from '../gameplay/FishingV1System.js?build=UX-R157B1-20261011A';
 import { ChoicePanel } from '../ui/ChoicePanel.js';
-import { Hud } from '../ui/Hud.js?build=POLISH-R158A1-20261012A';
+import { Hud } from '../ui/Hud.js?build=BAG-R158A2-20261013A';
 import { WorldMap } from '../ui/WorldMap.js?build=UX-R157B1-20261011A';
 import { GardenEnvironment } from '../world/GardenEnvironment.js?build=WATER-VEG-R103-20261006A';
 import { WildlifeSystem } from '../world/WildlifeSystem.js?build=CAMERA-CUTAWAY-CONTEXT-R21D-20260928E';
