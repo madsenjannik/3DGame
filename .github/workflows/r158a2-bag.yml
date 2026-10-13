@@ -1,0 +1,51 @@
+name: R158A.2 Real Asset Bag — Desktop and iPhone QA
+on:
+  push:
+    branches:
+      - 'feature/r158a2-*'
+  pull_request:
+    paths:
+      - 'styles-r158a2-bag.css'
+      - 'js/ui/Hud.js'
+      - 'tests/r158a2-bag-browser.mjs'
+      - '.github/workflows/r158a2-bag.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: r158a2-bag-qa
+  cancel-in-progress: true
+jobs:
+  browser:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install pinned Playwright
+        run: npm install --no-save --ignore-scripts --no-audit --no-fund playwright@1.56.1
+      - name: Install Chromium and dependencies
+        run: npx playwright install --with-deps chromium
+      - name: Test contracts and source-art restrictions
+        run: |
+          node tests/r157b1-ui.mjs
+          node tests/r158a-ui-contract.mjs
+          node tests/r158a1-polish.mjs
+          node -e "const fs=require('fs'),s=fs.readFileSync('styles-r158a2-bag.css','utf8');if(/url\([^)]*(world\.jpg|hero|unsplash|mockup)/i.test(s))process.exit(1);"
+      - name: Desktop and iPhone landscape real Bag flow
+        shell: bash
+        run: set -o pipefail; node tests/r158a2-bag-browser.mjs 2>&1 | tee r158a2-bag-qa.log
+        env:
+          NODE_OPTIONS: '--unhandled-rejections=strict'
+      - name: Upload actual game screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: r158a2-bag-real-game-desktop-phone
+          path: |
+            r158a2-qa/*.png
+            r158a2-bag-qa.log
+          retention-days: 14
+          if-no-files-found: warn
