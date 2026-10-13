@@ -1,5 +1,10 @@
 # THE GROWING WILDS — HANDOVER — 2026-10-12 — R158A (Core Workbench / Bag UI + real GLB previews)
 
+## R158A.2 — iPhone Safari real-art Bag QA (13/10/2026)
+- User GO and clarified that AI-generated 3D/environment images in old Bag mockups are not real game assets. Feature PR #8 uses in-repository item/tool and material sprites, authentic game renderer, and a one-time image render of original `assets/props/life-vest.glb`, not fabricated artwork. R158A.2 visual candidate remains unmerged.
+- A separate QA tree at `/3DGame/qa/r158a2/` is staged with source candidate `ed8b005` and independent local/sessionStorage namespace `__tgw_preview_r158a2__`, based on the previously verified R158A.1 isolation mechanism. Allowed game-progress data is copied read-only once from live; live writer lease is never copied; all QA writes are namespaced; unsupported browsers fail closed.
+- New dedicated browser isolation test `tests/qa-r158a2-isolation.mjs` must pass before QA preview merges. The root live gameplay/Workbench/save schema and 3D assets stay untouched. PR #2 remains draft; physical iPhone Safari visual approval required before locking R158A.2. Legacy issue #6 stays independently open until full Bag/Wear smoke is reconciled.
+
 ## R158A.1 physical Safari QA preview (12/10/2026)
 - Authorised as the next step after user passed R157C.1 physical iPhone Safari two-tab handoff ("Det virker!! Videre"). The main live game stays R157C.1; R158A.1 PR #2 remains draft and unmerged.
 - A full read-only-source snapshot of the verified R158A.1 candidate is published at `/3DGame/qa/r158a1/` **under its own URL path**, with an early page-level browser storage sandbox and QA-only storage namespaces. Normal saves are read only once as a local starting snapshot; all QA writes go to separately prefixed local/session storage keys. The live writer lease is never imported. If storage interception fails, QA fails closed rather than touching live saves.

@@ -1,0 +1,23 @@
+name: R158A.2 — isolated Safari preview protection
+on:
+  push:
+    branches: ['qa/r158a2-*']
+  pull_request:
+    paths: ['qa/r158a2/**','tests/qa-r158a2-isolation.mjs','.github/workflows/qa-r158a2-isolated.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  preview:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - name: Install pinned Playwright
+        run: npm install --no-save --ignore-scripts --no-audit --no-fund playwright@1.56.1
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+      - name: Test QA save isolation and actual nested game
+        run: node tests/qa-r158a2-isolation.mjs
