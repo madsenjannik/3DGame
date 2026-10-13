@@ -203,7 +203,7 @@ export class Hud {
     const materialIds=['wood','stone','clay','fiber','amber','shell','wild_seed'];
     const resources=materialIds.map(id=>({id:'resource:'+id,resourceId:id,name:approvedMaterialText(id),kind:'Material',count:inventory.get(id)||0,desc:id==='wild_seed'?'A seed collected in the wilds.':'A gathered material used by your existing crafting and upgrades.'}));
     const filter=this._bagFilter||'all';
-    const items=filter==='resources'?resources:filter==='all'?[...gear,...resources]:gear.filter(x=>filter==='tools'?['Tool','Fishing','Night'].includes(x.kind):filter==='gear'?x.kind==='Wear':filter==='special'?x.kind==='Special Seed':true);
+    const items=filter==='resources'?resources:filter==='all'?gear:gear.filter(x=>filter==='tools'?['Tool','Fishing','Night'].includes(x.kind):filter==='gear'?x.kind==='Wear':filter==='special'?x.kind==='Special Seed':true);
     if(!items.some(x=>x.id===this._bagSel))this._bagSel=items[0]?.id||null;
     const it=items.find(x=>x.id===this._bagSel)||null;
     if(it?.resourceId||it?.bagOnly)this._bagPick=false;
@@ -251,7 +251,8 @@ export class Hud {
       actions='<button type="button" class="gw2-action alt" data-act="cancel-slot">Cancel</button>';
       message=`<p class="gw2-choose" role="status">Choose a quick slot for ${escape(it.name)} below.</p>`;
     }
-    const detail=it?`<div class="gw2-hero"><div class="gw2-hero-art">${art(it)}</div></div>
+    const heroArt=it?.id==='vest'&&this._gw2VestImage?'<img class="gw2-real-vest-render" alt="" draggable="false" src="'+this._gw2VestImage+'">':(it?art(it):'');
+    const detail=it?`<div class="gw2-hero"><div class="gw2-hero-art">${heroArt}</div></div>
         <div class="gw2-info"><span class="gw2-eyebrow">${it.resourceId?'MATERIAL':it.kind||'ITEM'}</span>
           <h3>${escape(it.name)}</h3><div class="gw2-states">${status(it)}</div>
           <p class="gw2-description">${escape(it.desc||'Carried in your Bag.')}</p>
@@ -283,6 +284,16 @@ export class Hud {
     </div>`;
     const scroller=this.gear?.querySelector?.('.gw2-tiles');
     if(scroller)scroller.scrollTop=scroll;
+    // The approved vest GLB already exists in the game. Render a single transparent
+    // PNG from that REAL model and reuse it, rather than inventing a hero image.
+    // The seven original item sprites remain the immediate fallback.
+    if(it?.id==='vest'&&!this._gw2VestImage&&!this._gw2VestFailed&&!this._gw2VestPending){
+      this._gw2VestPending=import('./BagVestPreview3D.js?build=BAG-R158A2-20261013B')
+        .then(m=>m.renderRealVestImage())
+        .then(src=>{this._gw2VestImage=src;if(this.gear?.classList.contains('open')&&this._bagSel==='vest')this.renderBag2();})
+        .catch(e=>{this._gw2VestFailed=true;console.warn('[R158A.2] real vest preview unavailable; original art preserved',e);})
+        .finally(()=>{this._gw2VestPending=null;});
+    }
   }
   bag2Click(e){
     const t=e.target.closest?.('[data-item-id],[data-bag-filter],[data-act],[data-q]');if(!t)return;

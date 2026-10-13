@@ -29,11 +29,13 @@ async function start(mobile,width,height){
  page=await context.newPage();
  await page.goto(origin+'game.html?char=cactus&dev=1&devSpawn=privateGarden',{waitUntil:'load'});
  await page.waitForFunction(()=>!!window.__tgw?.hud?.gear&&!!window.__tgw?.wilds,null,{timeout:160000});
- await page.evaluate(m=>{document.body.classList.toggle('hud-classic',m);document.body.classList.toggle('hud-desktop-e',!m);const g=window.__tgw;g.wilds.profile.tools.axe=true;g.wilds.profile.tools.pickaxe=true;g.wilds.profile.tools.can=true;g.wilds.profile.tools.sickle=true;g.hud.toggleGear(true);},mobile);
+ await page.evaluate(m=>{document.body.classList.toggle('hud-classic',m);document.body.classList.toggle('hud-desktop-e',!m);const g=window.__tgw;g.wilds.profile.tools.axe=true;g.wilds.profile.tools.pickaxe=true;g.wilds.profile.tools.can=true;g.wilds.profile.tools.sickle=true;if(g.fishing?.own){g.fishing.own.vest=true;g.fishing.own.rodBamboo=1;}g.save.profile.wear.vest=true;g.hud.toggleGear(true);},mobile);
  await page.waitForSelector('#gear-panel .gw2-bag',{state:'visible',timeout:30000});
 }
 async function checkAssetsAndLayout(width,height){
  await page.waitForFunction(()=>[...document.querySelectorAll('#gear-panel img')].every(i=>i.complete),null,{timeout:20000});
+ await page.evaluate(async()=>{await Promise.all([...document.querySelectorAll('#gear-panel img')].map(i=>i.decode?.().catch(()=>{})));});
+ await page.waitForTimeout(130);
  const report=await page.evaluate(()=>{
    const panel=document.querySelector('#gear-panel'),bag=panel?.querySelector('.gw2-bag');
    const bounded=sel=>{const a=document.querySelector(sel)?.getBoundingClientRect();return a?{x:a.x,y:a.y,width:a.width,height:a.height,right:a.right,bottom:a.bottom}:null;};
@@ -60,6 +62,16 @@ try{
    page.on('pageerror',e=>errors.push(e.message));
    await checkAssetsAndLayout(width,height);
    await page.screenshot({path:path.join(OUT,'Bag_'+name+'.png')});
+   await visibleClick('#gear-panel [data-bag-filter="wear"]');
+   assert.equal(await page.locator('#gear-panel [data-item-id="vest"]').count(),1,'owned vest missing');
+   await visibleClick('#gear-panel [data-item-id="vest"]');
+   await page.waitForFunction(()=>!!document.querySelector('#gear-panel .gw2-real-vest-render'),null,{timeout:40000});
+   const vestResult=await page.evaluate(()=>({src:document.querySelector('.gw2-real-vest-render')?.src,worn:document.querySelector('.gw2-pill.active')?.textContent}));
+   assert(vestResult.src?.startsWith('data:image/png;base64,'),'Real life-vest GLB did not render to an image');
+   assert(vestResult.worn?.includes('Worn'),'Vest worn indicator missing');
+   await page.screenshot({path:path.join(OUT,'Bag_LifeVest_'+name+'.png')});
+   await visibleClick('#gear-panel [data-act="wear"]');
+   assert.equal(await page.evaluate(()=>!!window.__tgw.save.profile.wear.vest),false,'Vest take-off did not change saved equipment state');
    await visibleClick('#gear-panel [data-bag-filter="resources"]');
    assert.equal(await page.locator('#gear-panel .r158a-resource-grid .r158a-material').count(),7,'seven original resource assets in Resources');
    await visibleClick('#gear-panel [data-item-id="resource:wood"]');

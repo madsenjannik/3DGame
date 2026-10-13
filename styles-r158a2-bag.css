@@ -188,3 +188,7 @@ html body #gear-panel .bag2.r158a-bag.gw2-bag{
  #gear-panel .gw2-slot.bag2-slot{min-width:25px!important}
 }
 @media (prefers-reduced-motion:reduce){#gear-panel .gw2-tile,#gear-panel .gw2-action{transition:none!important;animation:none!important}}
+
+/* The item hero is rendered ONCE from the actual life-vest.glb, not mockup art. */
+#gear-panel .gw2-hero-art img.gw2-real-vest-render{position:relative;z-index:1;display:block;width:min(98%,250px)!important;height:min(95%,250px)!important;object-fit:contain;filter:drop-shadow(0 12px 14px #05160974)}
+@media(max-height:560px) and (orientation:landscape){#gear-panel .gw2-hero-art img.gw2-real-vest-render{width:min(100%,130px)!important;height:min(100%,135px)!important;max-height:135px!important}}
