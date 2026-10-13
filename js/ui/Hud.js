@@ -194,7 +194,7 @@ export class Hud {
   // strike, the game's own text, actions) and the 3 quick slots below. Tap = select; Hold / Add to slot / Wear / Light.
   bag2Mode(){return !this.touch()||(this.touch()&&document.body.classList.contains('hud-classic'));} // R158A: desktop inventory is unified in both player and DEV HUD profiles
   toolArt(it){return approvedItemArt(it);}
-  renderBag2() {
+  renderBag2(){
     const escape = v => String(v??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
     const gear = this.gearItems?.() || [], held = this.selectedGearId?.() || null;
     const slots=(this.hotbarItems?.()||[]).slice(0,10);
