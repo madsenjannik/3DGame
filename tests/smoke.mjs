@@ -794,6 +794,27 @@ try {
       await w(1500); o.once = S.s.tulip === 2 && !g.hud.gearItems().some(x => x.id === 'seed-tulip');   // never earned twice
       return o; });
     check('R149 Special Seeds: Giant beaten -> Tulip Seed in the Bag (no quick slot), Ring offers Plant Tulip Seed, planting opens Tulip, bosses give no Golden Seed', ok && ['noGolden', 'start', 'bag', 'offer', 'beacon', 'planted', 'moment', 'ring', 'once'].every(k => r[k]) && !errors.length, errors[0] || JSON.stringify(r)); await ctx.close(); }
+  // 17r2. R157 experimental Ring premium (?ring=premium, GO 14/10): the sanctuary dresses the Ring (9 pods, open = unlocked),
+  // the classic pots hide, colliders, walkable mound and interactions stay the Ring's own; planting blooms the pod; ?ring=classic turns it off
+  { const ctx = await context({ viewport: { width: 1280, height: 720 } }); await ctx.addInitScript(() => { if (!sessionStorage.getItem('r157')) { sessionStorage.setItem('r157', '1'); localStorage.setItem('tgw.ring', 'premium'); } });
+    const { p, errors, ok } = await startGame(ctx, 'cactus', { hud: 'desktop-e' }); let r = {};
+    if (ok) r = await p.evaluate(async () => { const g = window.__tgw, w = ms => new Promise(x => setTimeout(x, ms)), o = {}, S = g.specialSeeds;
+      for (let i = 0; i < 240 && !g.swapSpot?.sanctuary; i++) await w(250); const R = g.swapSpot.sanctuary, M = g.swapSpot.model, s = g.swapSpot.spot, vis = n => M.getObjectByName(n)?.visible;
+      if (!R) return { built: false }; const open = id => R.pods.get(id)?.target === 1;
+      o.built = R.pods.size === 9 && open('cactus') && open('daisy') && open('swamp') && !open('tulip') && !vis('Pot_tulip_Body') && !vis('Pot_cactus_Body') && !vis('Mound') && vis('Sprout_cactus') && vis('Lock_tulip') && !vis('Lock_cactus');
+      o.solid = g.swapSpot.potColliders.filter(c => c.kind === 'ring-pot').length >= 14 && Math.abs(g.world.gardenHeight(s.x, s.z) - .47) < .01;
+      const m4 = new (R.grassMesh.instanceMatrix.array.constructor)(16); R.grassMesh.instanceMatrix.array.slice(0, 16).forEach((v, i) => m4[i] = v); o.grass = R.grassMesh.count > 1000 && Math.abs(m4[5]) > 0;   // never masked by the garden's vegetation mask
+      o.calls = R.stats().draws < 100;
+      g.devMenu.teleport('garden', s.x, s.z, 0); await w(600); o.swap = g.swapSpot.interaction({ x: s.x, z: s.z })?.type === 'home-swap';
+      g.save.profile.combat.giant.wins = 1; for (let i = 0; i < 40 && S.s.tulip !== 1; i++) await w(250);
+      o.offer = g.swapSpot.interaction({ x: s.x, z: s.z })?.label === 'Plant Tulip Seed';
+      o.planted = g.swapSpot.plantSeed() && g.save.isUnlocked('tulip') && open('tulip') && R.pods.get('tulip').k < 1 && R.pods.get('tulip').anim;   // it unfolds (not snapped open)
+      for (let i = 0; i < 60 && R.pods.get('tulip').k < 1; i++) await w(250); o.bloom = R.pods.get('tulip').k === 1 && vis('Sprout_tulip') && !vis('Lock_tulip') && !vis('Soil_tulip');
+      R.update = () => { throw new Error('test'); }; for (let i = 0; i < 40 && g.swapSpot.sanctuary; i++) await w(250);   // fails soft: the classic Ring comes back whole
+      o.soft = !g.swapSpot.sanctuary && !g.swapSpot.m.getObjectByName('R157_RING_SANCTUARY') && vis('Pot_tulip_Body') && vis('Mound') && vis('Lock_fern') && !vis('Lock_tulip') && Math.abs(M.getObjectByName('Sprout_cactus').position.y - .41) < .001;
+      return o; });
+    const back = ok && await p.goto(p.url().replace(/\?.*$/, '?char=cactus&ring=classic')).then(() => p.waitForFunction(() => window.__tgw?.swapSpot?.model, null, { timeout: 240000 })).then(() => p.waitForTimeout(3000)).then(() => p.evaluate(() => !window.__tgw.swapSpot.sanctuary && localStorage.getItem('tgw.ring') === 'classic' && window.__tgw.swapSpot.model.getObjectByName('Pot_tulip_Body').visible), () => false);
+    check('R157 Ring premium (?ring=premium): 9 pods follow the unlocks, classic pots hidden, colliders + mound kept, own grass unmasked, < 100 calls, swap + plant work, the pod blooms, a failure brings the classic Ring back; ?ring=classic turns it off', ok && ['built', 'solid', 'grass', 'calls', 'swap', 'offer', 'planted', 'bloom', 'soft'].every(k => r[k]) && back && !errors.length, errors[0] || JSON.stringify(r) + ' back=' + back); await ctx.close(); }
   // 17s. R150 Orangery tree (Jannik 09/10): the community tree starts as soil (stage 0); E feeds a Golden Seed; enough seeds
   // (1, 1, 2, ...) grow it a stage; no seed = Locked with the progress; saved on the shared profile
   { const ctx = await context({ viewport: { width: 1280, height: 720 } }); const { p, errors, ok } = await startGame(ctx, 'cactus', { hud: 'desktop-e' }); let r = {};

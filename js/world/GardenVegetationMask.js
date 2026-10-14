@@ -7,7 +7,7 @@
 import * as THREE from 'three';
 
 const ZERO = new THREE.Matrix4().makeScale(0, 0, 0);
-const SKIP = /^(WILDS_|GreenhouseProgression_|PRIVATE_SEED|Cabin)/;
+const SKIP = /^(WILDS_|GreenhouseProgression_|PRIVATE_SEED|Cabin|R157_)/;   // R157: the ring sanctuary's own instanced grass and leaves are never masked
 const COVERABLE = new Set(['stone', 'static']); // authored small stones (addObstacle) and bed shrubs (addCollider)
 
 export class GardenVegetationMask {

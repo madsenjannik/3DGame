@@ -37,6 +37,8 @@ const runeTex = () => canvasTex((x, s) => {
   for (let i = 0; i < 16; i++) { const a = i / 16 * Math.PI * 2, r = c * .85, px = c + Math.cos(a) * r, py = c + Math.sin(a) * r; x.save(); x.translate(px, py); x.rotate(a); x.beginPath(); x.moveTo(-7, 0); x.lineTo(0, -4); x.lineTo(7, 0); x.lineTo(0, 4); x.closePath(); x.fill(); x.restore(); }
 }, 256);
 
+// R157: ?ring=premium switches the experimental sanctuary look on (remembered), ?ring=classic switches it off
+export function ringMode() { try { const q = new URLSearchParams(location.search).get('ring'); if (q === 'premium' || q === 'classic') localStorage.setItem('tgw.ring', q); return localStorage.getItem('tgw.ring') === 'premium' ? 'premium' : 'classic'; } catch { return 'classic'; } }
 export class CharacterSwapSpot {
   constructor(game) { this.g = game; this.spot = null; this.m = null; this.model = null; this.mixer = null; this.near = 0; this.motes = []; this.glowMats = []; this.potColliders = []; }
   build() {
@@ -90,12 +92,27 @@ export class CharacterSwapSpot {
         if (r <= FLAT) return TOP; if (r < FOOT) return TOP * (FOOT - r) / (FOOT - FLAT); return 0; }; } catch {}
     const idle = clips?.find(c => c.name === 'Idle'); this.clips = clips || [];
     if (idle) { this.mixer = new THREE.AnimationMixer(scene); this.mixer.clipAction(idle).play(); }
+    if (ringMode() === 'premium') this.loadPremium();
   }
+  // R157 experimental (only with ?ring=premium): the concept's sanctuary dressing; any failure leaves the classic Ring as it is
+  loadPremium() {
+    import('../visual/RingSanctuary.js?build=SAVE-R157-20261014A').then(({ RingSanctuary }) => {
+      const M = this.model; this.classicPose = []; for (const id of IDS) for (const n of [`Sprout_${id}`, `Lock_${id}`]) { const o = M.getObjectByName(n); if (o) this.classicPose.push([o, o.position.clone(), o.scale.clone()]); }
+      try { this.sanctuary = new RingSanctuary(this, IDS); this.applyUnlocked();
+        const vm = this.g.vegetationMask; if (vm?.fixed) { this.premiumClear = { cx: this.spot.x, cz: this.spot.z, r: this.sanctuary.clearR }; vm.fixed.push(this.premiumClear); vm.apply(); }   // its own grass replaces the garden's there (colliders untouched)
+      } catch (e) { console.warn('[TGW] ring premium failed; classic Ring kept', e); this.m.getObjectByName('R157_RING_SANCTUARY')?.removeFromParent(); this.sanctuary = null; this.restoreClassic(); }
+    }).catch(e => console.warn('[TGW] ring premium module failed; classic Ring kept', e));
+  }
+  restoreClassic() { const M = this.model; if (!M) return; for (const [o, p, sc] of this.classicPose || []) { o.position.copy(p); o.scale.copy(sc); }
+    try { const vm = this.g.vegetationMask, i = vm?.fixed?.indexOf(this.premiumClear) ?? -1; if (i >= 0) { vm.fixed.splice(i, 1); vm.apply(); } } catch {}
+    for (const id of IDS) for (const n of [`Pot_${id}_Body`, `Pot_${id}_Earth`]) { const o = M.getObjectByName(n); if (o) o.visible = true; }
+    for (const n of ['Mound', 'Ground_Moss']) { const o = M.getObjectByName(n); if (o) o.visible = true; } this.applyUnlocked(); }
   // open = its sprout; locked = soil with a sprig and the padlock (the shared save's list)
   applyUnlocked() {
     if (!this.model) return; const open = new Set(this.g.save?.data?.unlocked || ['daisy', 'cactus', 'swamp']);
     for (const id of IDS) { const o = open.has(id), set = (n, v) => { const x = this.model.getObjectByName(n); if (x) x.visible = v; };
       set(`Sprout_${id}`, o); set(`Soil_${id}`, !o); set(`Lock_${id}`, !o); set(`Vine_${id}`, o); }   // R141: the vines climb the pergola as characters open
+    if (this.sanctuary) { for (const id of IDS) { const x = this.model.getObjectByName(`Soil_${id}`); if (x) x.visible = false; } this.sanctuary.setOpen(open); }   // R157: the pods show the state
   }
   fallback() {
     const holo = this.holo = createHoloIndicator({ radius: .58, height: 1.3, intensity: .48, breath: 2.4, scanSpeed: 2.0, scanDensity: 90, baseRing: true, groundHalo: true, fadeIn: .35 });
@@ -114,7 +131,8 @@ export class CharacterSwapSpot {
     // R153: the pot's own Pop_<id> clip lifts the padlock and the soil (it animates their scale), so they stay visible
     // until it has played; the sprout and vine appear at once. Then the normal open/locked state takes over.
     const clip = this.clips?.find(c => c.name === `Pop_${d.id}`), M = this.model, set = (n, v) => { const x = M?.getObjectByName(n); if (x) x.visible = v; };
-    if (clip && this.mixer && M) {
+    if (this.sanctuary) { this.sanctuary.bloom(d.id); this.applyUnlocked(); }   // R157: the husk parts and the pod unfolds instead of the pot's Pop
+    else if (clip && this.mixer && M) {
       set(`Sprout_${d.id}`, true); set(`Vine_${d.id}`, true); const a = this.mixer.clipAction(clip); a.reset(); a.setLoop(THREE.LoopOnce, 1); a.clampWhenFinished = true; a.play();
       const done = e => { if (e.action !== a) return; this.mixer.removeEventListener('finished', done); this.applyUnlocked(); }; this.mixer.addEventListener('finished', done);
       setTimeout(() => this.applyUnlocked(), 4000);   // safety: never stuck half-open
@@ -131,7 +149,7 @@ export class CharacterSwapSpot {
   update(t, dt) {
     if (!this.spot) { if (this.g.homePortal?.gardenHome) this.build(); return; }
     const vis = this.m.visible = this.g.world?.space === 'garden'; if (!vis) return;
-    this.mixer?.update(dt); this.holo?.update(t, dt);
+    this.mixer?.update(dt); this.holo?.update(t, dt); if (this.sanctuary) try { this.sanctuary.update(dt, this.g.camera); } catch (e) { console.warn('[TGW] ring premium update failed; classic Ring back', e); this.m.getObjectByName('R157_RING_SANCTUARY')?.removeFromParent(); this.sanctuary = null; this.restoreClassic(); }
     // R153: the agreed 'calling' beacon: while a Special Seed waits in the Bag, a gold light rises from the stone
     const calling = !!this.g.specialSeeds?.inBag?.().length;
     if (calling && !this.beacon) { this.beacon = createHoloIndicator({ radius: .5, height: 2.4, intensity: .6, breath: 1.6, scanSpeed: 2.4, scanDensity: 80, baseRing: false, groundHalo: true, fadeIn: .4 }); this.beacon.group.position.y = this.model ? TOP + .14 : .02; this.m.add(this.beacon.group); }
