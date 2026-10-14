@@ -9,7 +9,7 @@
 import * as THREE from 'three';
 import { loadGLTF } from '../core/AssetManager.js';
 import { WildsModel } from './WildsModels.js';
-import { GIANT } from '../data/combatCatalog.js?build=SAVE-R157-20261014A';
+import { GIANT } from '../data/combatCatalog.js?build=SAVE-R158-20261014A';
 import { createHoloIndicator } from '../visual/holo-indicator.js';
 
 const DIR = './assets/combat/';

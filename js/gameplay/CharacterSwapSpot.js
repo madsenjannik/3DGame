@@ -96,17 +96,18 @@ export class CharacterSwapSpot {
   }
   // R157 experimental (only with ?ring=premium): the concept's sanctuary dressing; any failure leaves the classic Ring as it is
   loadPremium() {
-    import('../visual/RingSanctuary.js?build=SAVE-R157-20261014A').then(({ RingSanctuary }) => {
+    import('../visual/RingSanctuary.js?build=SAVE-R158-20261014A').then(({ RingSanctuary }) => {
       const M = this.model; this.classicPose = []; for (const id of IDS) for (const n of [`Sprout_${id}`, `Lock_${id}`]) { const o = M.getObjectByName(n); if (o) this.classicPose.push([o, o.position.clone(), o.scale.clone()]); }
       try { this.sanctuary = new RingSanctuary(this, IDS); this.applyUnlocked();
         const vm = this.g.vegetationMask; if (vm?.fixed) { this.premiumClear = { cx: this.spot.x, cz: this.spot.z, r: this.sanctuary.clearR }; vm.fixed.push(this.premiumClear); vm.apply(); }   // its own grass replaces the garden's there (colliders untouched)
-      } catch (e) { console.warn('[TGW] ring premium failed; classic Ring kept', e); this.m.getObjectByName('R157_RING_SANCTUARY')?.removeFromParent(); this.sanctuary = null; this.restoreClassic(); }
+      } catch (e) { console.warn('[TGW] ring premium failed; classic Ring kept', e); this.m.getObjectByName('R157_RING_SANCTUARY')?.removeFromParent(); this.restoreClassic(); this.sanctuary = null; }
     }).catch(e => console.warn('[TGW] ring premium module failed; classic Ring kept', e));
   }
-  restoreClassic() { const M = this.model; if (!M) return; for (const [o, p, sc] of this.classicPose || []) { o.position.copy(p); o.scale.copy(sc); }
+  restoreClassic() { try { this.sanctuary?.dispose(); } catch {} this.g.world?.privateRoot?.getObjectByName('R158_RING_ENVIRONMENT')?.removeFromParent(); this.sanctuary = null;
+    const M = this.model; if (!M) return; for (const [o, p, sc] of this.classicPose || []) { o.position.copy(p); o.scale.copy(sc); }
     try { const vm = this.g.vegetationMask, i = vm?.fixed?.indexOf(this.premiumClear) ?? -1; if (i >= 0) { vm.fixed.splice(i, 1); vm.apply(); } } catch {}
     for (const id of IDS) for (const n of [`Pot_${id}_Body`, `Pot_${id}_Earth`]) { const o = M.getObjectByName(n); if (o) o.visible = true; }
-    for (const n of ['Mound', 'Ground_Moss']) { const o = M.getObjectByName(n); if (o) o.visible = true; } this.applyUnlocked(); }
+    for (const n of ['Mound', 'Ground_Moss', 'Pergola', 'Sign_Main']) { const o = M.getObjectByName(n); if (o) o.visible = true; } this.applyUnlocked(); }
   // open = its sprout; locked = soil with a sprig and the padlock (the shared save's list)
   applyUnlocked() {
     if (!this.model) return; const open = new Set(this.g.save?.data?.unlocked || ['daisy', 'cactus', 'swamp']);
@@ -149,7 +150,7 @@ export class CharacterSwapSpot {
   update(t, dt) {
     if (!this.spot) { if (this.g.homePortal?.gardenHome) this.build(); return; }
     const vis = this.m.visible = this.g.world?.space === 'garden'; if (!vis) return;
-    this.mixer?.update(dt); this.holo?.update(t, dt); if (this.sanctuary) try { this.sanctuary.update(dt, this.g.camera); } catch (e) { console.warn('[TGW] ring premium update failed; classic Ring back', e); this.m.getObjectByName('R157_RING_SANCTUARY')?.removeFromParent(); this.sanctuary = null; this.restoreClassic(); }
+    this.mixer?.update(dt); this.holo?.update(t, dt); if (this.sanctuary) try { this.sanctuary.update(dt, this.g.camera); } catch (e) { console.warn('[TGW] ring premium update failed; classic Ring back', e); this.m.getObjectByName('R157_RING_SANCTUARY')?.removeFromParent(); this.restoreClassic(); this.sanctuary = null; }
     // R153: the agreed 'calling' beacon: while a Special Seed waits in the Bag, a gold light rises from the stone
     const calling = !!this.g.specialSeeds?.inBag?.().length;
     if (calling && !this.beacon) { this.beacon = createHoloIndicator({ radius: .5, height: 2.4, intensity: .6, breath: 1.6, scanSpeed: 2.4, scanDensity: 80, baseRing: false, groundHalo: true, fadeIn: .4 }); this.beacon.group.position.y = this.model ? TOP + .14 : .02; this.m.add(this.beacon.group); }

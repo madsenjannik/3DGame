@@ -101,7 +101,9 @@ export class RingSanctuary {
     this.root = new THREE.Group(); this.root.name = 'R157_RING_SANCTUARY'; spot.m.add(this.root);
     this.pods = new Map(); this.cast = []; this.glows = []; this.seams = []; this.t0 = performance.now(); this.clearR = OUTER;
     const W = this.g.world; this.H = (lx, lz) => { const v = new V3(lx, 0, lz); spot.m.localToWorld(v); return (W.gardenHeight?.(v.x, v.z) || 0); };
-    this.blockers(); this.mats(); this.terrain(); this.flagstones(); this.podsBuild(); this.foliage(); this.grass(); this.atmosphere(); this.hideClassic(); this.batch(); this.setTier(this.tierId);
+    this.blockers(); this.mats(); this.terrain(); this.flagstones(); this.podsBuild(); this.foliage(); this.grass(); this.atmosphere(); this.hideClassic(); this.batch();
+    try { this.env = new RingEnvironment(this); } catch (e) { console.warn('[TGW] ring environment failed; garden kept', e); try { this.env?.restore(); } catch {} this.g.world.privateRoot.getObjectByName('R158_RING_ENVIRONMENT')?.removeFromParent(); this.env = null; }
+    this.setTier(this.tierId);
     this.buildMs = performance.now() - this.t0;
   }
   mats() {
@@ -146,6 +148,10 @@ export class RingSanctuary {
   }
   // the stone circle path (between the stone and the pods) and the lane out over the steps (+z) toward the garden path
   pathMask(x, z) { const r = Math.hypot(x, z), ring = 1 - ss(.16, .3, Math.abs(r - 1.0)), lane = (1 - ss(.22, .38, Math.abs(x))) * ss(.75, .95, z) * (1 - ss(4.6, 5.4, z)); return Math.max(ring, lane); }
+  // the pergola's post spots (their round colliders, kind ring-pot, r .14) in ring-local space
+  postLocal() { const v = new V3(), out = []; for (const c of this.s.potColliders || []) { if (c.kind !== 'ring-pot' || c.r > .2) continue; v.set(c.x, 0, c.z); this.s.m.worldToLocal(v); out.push({ x: v.x, z: v.z }); } return out; }
+  // undo what lives outside the ring group (the arch colliders, the garden-wide environment)
+  dispose() { try { this.env?.restore(); } catch {} this.env = null; const W = this.g.world; for (const c of this.archCols || []) { const i = W.colliders.indexOf(c); if (i >= 0) W.colliders.splice(i, 1); } this.archCols = []; }
   potLocal() {
     if (this._pots) return this._pots; const M = this.s.model, v = new V3(); this._pots = [];
     if (M) { M.updateMatrixWorld(true); for (const id of this.ids) { const p = M.getObjectByName(`Pot_${id}`); if (!p) continue; p.getWorldPosition(v); this.s.m.worldToLocal(v); this._pots.push({ id, x: v.x, z: v.z, y: v.y }); } }
@@ -171,14 +177,14 @@ export class RingSanctuary {
 
   // ---------- the nine pods ----------
   podsBuild() {
-    const S = .42, profile = closedProfile(30);
+    const S = .48, profile = closedProfile(30);
     for (const p of this.potLocal()) {
       const g = new THREE.Group(); g.name = `R157_POD_${p.id}`; g.position.set(p.x, this.H(p.x, p.z) - .01, p.z); g.rotation.y = Math.atan2(-p.x, -p.z); this.root.add(g);
       const s = new THREE.Group(); s.scale.setScalar(S); g.add(s); this.podS = S;
       this.add(moss(.62, .22, 3), this.m.moss, true, true, s).position.y = -.02;
       for (let i = 0; i < 5; i++) { const a = i / 5 * 6.28 + R(-.3, .3), c = Math.cos(a), sn = Math.sin(a), L = R(.8, 1.1); this.add(taperTube([new V3(c * .28, .28, sn * .28), new V3(c * .55, .1, sn * .55), new V3(c * L, -.06, sn * L)], .07, .015, { radial: 6, seg: 10, lump: .2 }), this.m.root, true, true, s); }
       // open: cupped petals + a moss cushion for the character sprout (the GLB's Sprout_<id>) + a warm pool of light
-      const open = new THREE.Group(); s.add(open); open.userData.full = 1.55;   // the open bloom is a little larger than the husk (as in the concept)
+      const open = new THREE.Group(); s.add(open); open.userData.full = 1.3;   // the open bloom is a little larger than the husk (as in the concept)
       this.add(petals(true, 6, 1.0, .36, ['#8a3a20', '#e0763f', '#ffe2bf'], R(0, 1)), this.m.petal, true, true, open);
       this.add(moss(.36, .42, 2), this.m.moss, false, true, open).position.y = .1;
       const pool = new THREE.Mesh(new THREE.PlaneGeometry(3.2, 3.2).rotateX(-Math.PI / 2), new THREE.MeshBasicMaterial({ map: this.T.radial, color: '#ff9a3c', transparent: true, opacity: .32, blending: THREE.AdditiveBlending, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -4 }));
@@ -225,12 +231,21 @@ export class RingSanctuary {
     for (let i = 0; i < 6; i++) { const a = i * 1.1 + .3, r = R(2.65, 3.15), x = Math.cos(a) * r, z = Math.sin(a) * r; if (free(x, z)) toad(x, z); }
     // fallen petals and leaves on the stone circle
     for (let i = 0; i < 200; i++) { const a = R(0, 6.28), r = rnd() < .6 ? 1.0 + R(-.35, .35) : R(.7, 2.1), x = Math.sin(a) * r, z = Math.cos(a) * r; addLeaf(new V3(x, this.H(x, z) + .012, z), new V3(R(-.25, .25), 1, R(-.25, .25)), .04, .06, C(['#b0703a', '#c99a4a', '#8a5a2a', '#d8a060'][(rnd() * 4) | 0]).multiplyScalar(R(.7, 1))); }
-    // lantern stalks between the pods (emissive bulbs, no lights)
-    const pots = this.potLocal(); if (pots.length) { for (let k = 0; k < pots.length; k++) { const a0 = Math.atan2(pots[k].x, pots[k].z), a1 = Math.atan2(pots[(k + 1) % pots.length].x, pots[(k + 1) % pots.length].z); let da = a1 - a0; if (da < -Math.PI) da += Math.PI * 2; if (da > Math.PI) da -= Math.PI * 2;
-      if (k % 2) continue; const a = a0 + da / 2, r = 1.95, x = Math.sin(a) * r, z = Math.cos(a) * r; if (Math.abs(x) < .7 && z > 0) continue; const y = this.H(x, z), ix = -Math.sin(a), iz = -Math.cos(a), top = new V3(x + ix * .22, y + .8, z + iz * .22);
-      this.add(taperTube([new V3(x, y - .08, z), new V3(x + ix * .015, y + .42, z + iz * .015), new V3(x + ix * .06, y + .75, z + iz * .06), new V3(x + ix * .17, y + .86, z + iz * .17), top], .035, .01, { radial: 6, seg: 16, lump: .15, flare: .8 }), this.m.bark, TIERS[this.tierId].shadows === 'full', true);
-      const bulb = new THREE.Mesh(new THREE.LatheGeometry([[0, 0], [.035, .014], [.052, .056], [.042, .098], [.018, .126], [0, .133]].map(v => new THREE.Vector2(v[0], v[1])), 12), this.m.lantern); bulb.position.copy(top).add(new V3(0, -.18, 0)); this.root.add(bulb);
-      cluster(x, y + .08, z, .2, 36, '#41602a', '#7f9a3e', .1, .5); } }
+    // R158: the pergola goes in premium; a concept lantern stalk stands on each of its post spots (the posts' colliders stay true)
+    const posts = this.postLocal(); for (const { x, z } of posts) { const a = Math.atan2(x, z), y = this.H(x, z), ix = -Math.sin(a), iz = -Math.cos(a), top = new V3(x + ix * .35, y + 1.38, z + iz * .35);
+      this.add(taperTube([new V3(x, y - .1, z), new V3(x + ix * .02, y + .66, z + iz * .02), new V3(x + ix * .09, y + 1.19, z + iz * .09), new V3(x + ix * .27, y + 1.37, z + iz * .27), top], .07, .016, { radial: 7, seg: 20, lump: .15, flare: .8 }), this.m.bark, TIERS[this.tierId].shadows === 'full', true);
+      const bulb = new THREE.Mesh(new THREE.LatheGeometry([[0, 0], [.05, .02], [.075, .08], [.06, .14], [.025, .18], [0, .19]].map(v => new THREE.Vector2(v[0], v[1])), 12), this.m.lantern); bulb.position.copy(top).add(new V3(0, -.27, 0)); this.root.add(bulb);
+      const halo = new THREE.Sprite(new THREE.SpriteMaterial({ map: this.T.radial, color: '#ffb35a', transparent: true, opacity: .55, depthWrite: false, blending: THREE.AdditiveBlending })); halo.scale.setScalar(.75); halo.position.copy(bulb.position).add(new V3(0, .09, 0)); halo.renderOrder = 6; this.root.add(halo); this.glows.push(halo);
+      cluster(x, y + .12, z, .3, 60, '#41602a', '#7f9a3e', .14, .5); rock(x + R(-.2, .2), z + R(-.2, .2), R(.08, .12)); }
+    // R158: the concept's vine arch frames the way up the steps (two solid legs beside the lane)
+    { const z0 = 3.25, hy = this.H(0, z0); this.archCols = [];
+      for (const sd of [-1, 1]) { const pts = [new V3(sd * .95, hy - .25, z0), new V3(sd * 1.0, hy + .9, z0), new V3(sd * .82, hy + 1.75, z0 + .05), new V3(sd * .4, hy + 2.28, z0), new V3(sd * .02, hy + 2.4, z0)];
+        this.add(taperTube(pts, .13, .07, { radial: 10, seg: 26, lump: .2, flare: 1.2 }), this.m.bark, TIERS[this.tierId].shadows !== 'none', true);
+        const cur = new THREE.CatmullRomCurve3(pts), vine = []; for (let i = 0; i <= 40; i++) { const t = i / 40, P = cur.getPointAt(t), a = t * 18 * sd; vine.push(P.clone().add(new V3(Math.cos(a) * .12, Math.sin(a) * .1, Math.sin(a) * .12))); }
+        this.add(taperTube(vine, .03, .015, { radial: 5, seg: 60, lump: .2 }), this.m.bark, false, true);
+        for (let i = 0; i < 70; i++) { const t = R(.15, 1), P = cur.getPointAt(t); addLeaf(P.clone().add(new V3(R(-.15, .15), R(-.1, .1), R(-.15, .15))), new V3(R(-1, 1), R(.2, 1), R(-1, 1)), .09, .13, C('#4d6e2a').lerp(C('#93a84a'), rnd())); }
+        for (let i = 0; i < 3; i++) rock(sd * R(.8, 1.15), z0 + R(-.3, .3), R(.14, .24));
+        const v = new V3(sd * .95, 0, z0); this.s.m.localToWorld(v); const c = { x: v.x, z: v.z, r: .16, kind: 'ring-arch', traversal: 'blocked', space: 'garden' }; this.g.world.colliders.push(c); this.archCols.push(c); } }
     // instanced leaves (one draw call), rocks (four), toadstools (two)
     this.leafAll = leaves; const g = new THREE.PlaneGeometry(1, 1).translate(0, .5, 0), m4 = new THREE.Matrix4();
     const im = new THREE.InstancedMesh(g, this.m.leaf, leaves.length); leaves.forEach((l, i) => { m4.compose(l.p, l.q, new V3(l.sx, l.sy, 1)); im.setMatrixAt(i, m4); im.setColorAt(i, l.c); }); im.receiveShadow = true; im.castShadow = false; this.leaves = im; this.root.add(im);
@@ -275,7 +290,7 @@ export class RingSanctuary {
   hideClassic() {
     const M = this.s.model; if (!M) return;
     for (const id of this.ids) for (const n of [`Pot_${id}_Body`, `Pot_${id}_Earth`, `Soil_${id}`]) { const o = M.getObjectByName(n); if (o) o.visible = false; }
-    for (const n of ['Mound', 'Ground_Moss']) { const o = M.getObjectByName(n); if (o) o.visible = false; }
+    for (const n of ['Mound', 'Ground_Moss', 'Pergola', 'Sign_Main']) { const o = M.getObjectByName(n); if (o) o.visible = false; }   // R158: the concept has no pergola or sign
     // the padlock moves to the front foot of its pod (it sat inside the pot)
     for (const P of this.pods.values()) { const lock = M.getObjectByName(`Lock_${P.base.id}`), pot = M.getObjectByName(`Pot_${P.base.id}`); if (!lock || !pot) continue;
       const v = new V3(P.base.x, 0, P.base.z).multiplyScalar(.74); v.y = this.H(v.x, v.z) + .12; this.s.m.localToWorld(v); pot.worldToLocal(v); lock.position.copy(v); lock.scale.setScalar(.8); }
@@ -301,10 +316,12 @@ export class RingSanctuary {
     if (this.motes) this.motes.geometry.setDrawRange(0, t.motes);
     for (const s of this.shafts || []) s.visible = t.shafts;
     for (const o of this.cast) o.castShadow = t.shadows === 'full' || (t.shadows === 'pods' && !!o.userData.pod);
+    this.env?.setTier(this.tierId);
   }
 
   update(dt, camera) {
     const t = (performance.now() - this.t0) / 1000; this.U.time.value = t;
+    if (this.env) try { this.env.mood(); } catch (e) { console.warn('[TGW] ring mood', e); this.env.restore(); this.env = null; }
     if (this.g.quality?.id && this.g.quality.id !== this.tierId) this.setTier(this.g.quality.id);
     const sun = this.g.world?.sun; if (sun) { const k = Math.min(1, Math.max(0, (sun.intensity - 1.15) / (this.sunBase - 1.15))); this.U.day.value = k; this.U.sunCol.value.copy(this.sunCol0).multiplyScalar(k); }   // night: no back-light glow
     const sd = this.g.world?.sunDir; if (sd && camera) this.U.sunView.value.copy(sd).transformDirection(camera.matrixWorldInverse);
@@ -317,4 +334,138 @@ export class RingSanctuary {
   bloom(id) { const P = this.pods.get(id); if (!P) return; P.k = 0; P.target = 1; P.anim = true; this.applyPod(P);
     try { const v = new V3(); P.g.getWorldPosition(v); v.y += .5; this.g.fx?.burst?.(v, 0xffb35a, 18, 1.4); } catch {} }
   stats() { let tris = 0, draws = 0; this.root.traverse(o => { if (!o.visible || !o.geometry) return; draws++; const n = (o.geometry.index ? o.geometry.index.count : o.geometry.attributes.position.count) / 3; tris += n * (o.isInstancedMesh ? o.count : 1); }); return { draws, tris: Math.round(tris), buildMs: Math.round(this.buildMs) }; }
+}
+
+// ======================================================================================================================
+// R158 experimental (Jannik 14/10: 'try it; if it does not work we delete it'): the whole VISIBLE garden in the concept's
+// look while ?ring=premium is on. Nothing is rebuilt or moved: the garden's own trees, shrubs, backdrop conifers, ground,
+// path stones and grass are hidden or re-tinted in place and replaced by concept-style meshes at the SAME positions, so
+// every collider, path, bed and the greenhouse stay exactly where they are. restore() puts every original back.
+// Mood: after DayNight sets the garden's light each frame, the concept's morning grade (haze, hemisphere, sun, sky) is
+// blended over the day part; DayNight is asked to re-apply every frame so nothing accumulates. Garden space only.
+// ======================================================================================================================
+const MOOD = { fog: C('#c8d3c3'), near: 6, far: 46, zenith: C('#86abc4'), hemiSky: C('#c6d8e2'), hemiGround: C('#5e4c2e'), hemiI: 1.05, sunC: C('#fff0d6'), sunI: 3.0, exposure: .98, env: .55 };
+const LEAF_BUDGET = { 'desktop': 1, 'mobile-high': .4, 'mobile-low': .25 };
+
+export class RingEnvironment {
+  constructor(sanctuary) {
+    this.S = sanctuary; this.g = sanctuary.g; this.W = this.g.world; this.undo = []; rnd = rng(23);
+    this.root = new THREE.Group(); this.root.name = 'R158_RING_ENVIRONMENT'; this.W.privateRoot.add(this.root);
+    this.leaves = []; this.bark = []; this.birch = [];
+    this.tier = sanctuary.tierId; const k = LEAF_BUDGET[this.tier] ?? 1; this.leafK = k; this.leafSize = 1 / Math.sqrt(Math.max(.3, k));
+    this.M = {
+      bark: new THREE.MeshStandardMaterial({ color: '#6e5038', map: sanctuary.T.bark, bumpMap: sanctuary.T.barkBump, bumpScale: 3, roughness: .92 }),
+      birch: new THREE.MeshStandardMaterial({ color: '#d9d2bf', map: sanctuary.T.bark, bumpMap: sanctuary.T.barkBump, bumpScale: 1.5, roughness: .85 }),
+      leaf: patch(new THREE.MeshStandardMaterial({ map: sanctuary.T.leaf, alphaTest: .5, side: THREE.DoubleSide, roughness: .6 }), { translucency: .7, wind: .12, lift: .12, U: sanctuary.U })
+    };
+    this.trees(); this.backdrop(); this.shrubs(); this.ground(); this.stones(); this.grassTint(); this.finish();
+  }
+  H(x, z) { return this.W.groundHeight?.(x, z) || 0; }
+  hide(o) { if (!o || !o.visible) return; o.visible = false; this.undo.push(() => { o.visible = true; }); }
+  // the concept's leaf clusters (cupped cards, darker inside, lighter on top) and tapered bark tubes
+  cluster(cx, cy, cz, rad, n, base, vr, size, flat = .75) {
+    n = Math.round(n * this.leafK); size *= this.leafSize; const Z = new V3(0, 0, 1), q2 = new THREE.Quaternion();
+    for (let i = 0; i < n; i++) { const d = new V3(R(-1, 1), R(-1, 1) * flat, R(-1, 1)); if (d.length() > 1) { i--; continue; }
+      const p = new V3(cx, cy, cz).addScaledVector(d, rad), nrm = d.clone().normalize().add(new V3(R(-.6, .6), R(-.3, .6), R(-.6, .6))).normalize();
+      const q = new THREE.Quaternion().setFromUnitVectors(Z, nrm); q2.setFromAxisAngle(nrm, R(0, 6.28)); q.premultiply(q2);
+      const c = C(base).lerp(C(vr), rnd() * rnd()); c.multiplyScalar(lerp(.6, 1.2, d.length() * (.5 + .5 * Math.max(0, d.y)))); const s = size * R(.75, 1.25);
+      this.leaves.push({ p, q, sx: s * .7, sy: s, c }); } }
+  tube(list, pts, r0, r1, o) { list.push(taperTube(pts, r0, r1, o)); }
+
+  // ---------- the garden's eight trees -> concept oaks (round) and birches at their own spots; the one behind the Ring is the hero ----------
+  trees() {
+    const defs = this.W.treeDefs || [], ring = this.S.s.spot, kids = this.W.privateRoot.children;
+    const bark = [0x675442, 0xd8d2bf], foliage = 0x718b4e;
+    for (const o of kids) { if (!o.isMesh || o.isInstancedMesh) continue; const t = o.geometry?.type, hex = o.material?.color?.getHex?.();
+      if ((t === 'CylinderGeometry' && bark.includes(hex)) || (t === 'IcosahedronGeometry' && hex === foliage)) { const near = defs.some(d => Math.hypot(o.position.x - d.x, o.position.z - d.z) < 2.2 * d.s); if (near) this.hide(o); } }
+    let hero = null, best = 1e9; for (const d of defs) { const dd = Math.hypot(d.x - ring.x, d.z - ring.z); if (dd < best) { best = dd; hero = d; } }
+    for (const d of defs) d.t === 'birch' ? this.birchTree(d.x, d.z, d.s) : this.oak(d.x, d.z, d === hero ? d.s * 1.05 : d.s * .82, d === hero);
+  }
+  oak(x, z, sc, hero) {
+    const y = this.H(x, z), P = (dx, dy, dz) => new V3(x + dx * sc, y + dy * sc, z + dz * sc);
+    this.tube(this.bark, [P(0, -.4, 0), P(.08, .9, .04), P(-.06, 1.8, .1), P(.12, 2.6, 0), P(.05, 3.1, -.05)], .5 * sc, .24 * sc, { radial: hero ? 14 : 10, seg: hero ? 26 : 16, lump: .16, flare: .9 });
+    const nr = hero ? 7 : 5; for (let i = 0; i < nr; i++) { const a = i / nr * 6.28 + R(-.25, .25), L = R(1.2, 1.9), c = Math.cos(a), s = Math.sin(a);
+      this.tube(this.bark, [P(c * .15, .7, s * .15), P(c * .55, .18, s * .55), P(c * L * .6, .04, s * L * .6), P(c * L, -.12, s * L)], .26 * sc, .03 * sc, { radial: 8, seg: 14, lump: .18, pow: .7 }); }
+    const ne = hero ? 6 : 5, ends = []; for (let i = 0; i < ne; i++) { const a = i / ne * 6.28 + R(-.3, .3), L = R(2, 2.7), c = Math.cos(a), s = Math.sin(a), y0 = R(2.2, 2.9), e = P(c * L, R(3.6, 4.3), s * L); ends.push(e);
+      this.tube(this.bark, [P(c * .1, y0, s * .1), P(c * L * .4, y0 + .6, s * L * .4), P(c * L * .75, (e.y - y) / sc - .1, s * L * .75), e], .17 * sc, .04 * sc, { radial: 7, seg: 12, lump: .15 }); }
+    const nb = hero ? 820 : 520; ends.forEach(e => this.cluster(e.x, e.y + .2 * sc, e.z, 1.35 * sc, nb, '#3f5a2a', '#7f9a3e', .28 * sc, .6));
+    for (let i = 0; i < 5; i++) { const a = R(0, 6.28), d = R(.5, 1.6) * sc; this.cluster(x + Math.cos(a) * d, y + R(4.3, 4.9) * sc, z + Math.sin(a) * d, 1.2 * sc, hero ? 650 : 380, '#3a5426', '#86a042', .28 * sc, .55); }
+  }
+  birchTree(x, z, sc) {
+    const y = this.H(x, z), P = (dx, dy, dz) => new V3(x + dx * sc, y + dy * sc, z + dz * sc);
+    this.tube(this.birch, [P(0, -.2, 0), P(.06, 1.4, .03), P(-.05, 2.8, .06), P(.04, 4.0, 0)], .17 * sc, .07 * sc, { radial: 9, seg: 16, lump: .1, flare: .5 });
+    for (let i = 0; i < 6; i++) { const a = i / 6 * 6.28 + R(-.3, .3), y0 = R(1.8, 3.3), L = R(.7, 1.2), c = Math.cos(a), s = Math.sin(a), e = P(c * L, y0 + .7, s * L);
+      this.tube(this.birch, [P(0, y0, 0), P(c * L * .5, y0 + .45, s * L * .5), e], .06 * sc, .02 * sc, { radial: 6, seg: 8, lump: .1 });
+      this.cluster(e.x, e.y + .15 * sc, e.z, .75 * sc, 260, '#4c6a2c', '#a3b85a', .2 * sc, .7); }
+    this.cluster(x, y + 4.0 * sc, z, .9 * sc, 300, '#4c6a2c', '#a3b85a', .2 * sc, .7);
+  }
+
+  // ---------- the cone conifers on the garden's edge -> tall concept trees (trunk + two crowns) on the same spots; far cone backdrop hidden in the haze ----------
+  backdrop() {
+    const m4 = new THREE.Matrix4(), v = new V3(), sc = new V3(), q = new THREE.Quaternion(); let spots = null;
+    for (const o of this.W.privateRoot.children) { if (!o.isInstancedMesh) continue; const p = o.geometry?.parameters || {};
+      if (o.geometry?.type === 'ConeGeometry' && p.radius === 1 && p.height === 1.5) { if (!spots) { spots = []; for (let i = 0; i < o.count; i++) { o.getMatrixAt(i, m4); m4.decompose(v, q, sc); spots.push([v.x, v.z, sc.x / 1.12]); } } this.hide(o); }
+      else if (o.geometry?.type === 'CylinderGeometry' && p.radiusTop === .08 && p.radiusBottom === .12) this.hide(o); }
+    const ctx = this.W.privateRoot.getObjectByName('PRIVATE_GARDEN_WORLD_CONTEXT_BACKDROP'); if (ctx) for (const o of ctx.children) if (o.isInstancedMesh && /Cone|Cylinder/.test(o.geometry?.type)) this.hide(o);
+    for (const [x, z, s] of spots || []) { const y = this.H(x, z), ht = R(4.5, 6.5) * s;
+      this.tube(this.bark, [new V3(x, y - .3, z), new V3(x + R(-.3, .3), y + ht * .5, z + R(-.3, .3)), new V3(x + R(-.4, .4), y + ht, z + R(-.4, .4))], R(.28, .4) * s, .1 * s, { radial: 7, seg: 10, lump: .15, flare: .6 });
+      this.cluster(x, y + ht + .3, z, R(1.8, 2.4) * s, 260, '#2f4a26', '#5d7a34', .5, .65); this.cluster(x + R(-.8, .8), y + ht - 1.1, z + R(-.8, .8), 1.4 * s, 120, '#2f4a26', '#5d7a34', .45, .6); }
+  }
+
+  // ---------- the round shrubs (beds and garden edge) -> leafy concept clumps per shrub instance (masked instances stay away) ----------
+  shrubs() {
+    const m4 = new THREE.Matrix4(), v = new V3(), sc = new V3(), q = new THREE.Quaternion();
+    for (const o of this.W.privateRoot.children) { if (!o.isInstancedMesh || o.geometry?.type !== 'IcosahedronGeometry') continue; const r = o.geometry.parameters.radius; if (r !== .55 && r !== .32) continue;
+      for (let i = 0; i < o.count; i++) { o.getMatrixAt(i, m4); m4.decompose(v, q, sc); if (sc.x < .01) continue; const rad = r * sc.x * 1.05;
+        this.cluster(v.x, v.y + rad * .1, v.z, rad, r === .55 ? 150 : 55, '#33502a', '#6f8a3a', r === .55 ? .17 : .12, .75); }
+      this.hide(o); }
+  }
+
+  // ---------- ground: the garden's own colours graded to the concept's loam, moss and trodden paths (water and the pond bank keep theirs) ----------
+  ground() {
+    const mesh = this.W.privateRoot.children.find(o => o.isMesh && o.geometry?.type === 'PlaneGeometry' && o.geometry.parameters?.width === 36 && o.material?.vertexColors);
+    if (!mesh) return; const col = mesh.geometry.attributes.color, pos = mesh.geometry.attributes.position, orig = col.array.slice(), c = new THREE.Color();
+    const soil = C('#45311f'), moss = C('#3a5220'), grass = C('#4a6327'), loam = C('#4a3a27'), dust = C('#6e5c40');
+    for (let i = 0; i < col.count; i++) { c.fromBufferAttribute(col, i); const x = pos.getX(i), z = pos.getZ(i);
+      if (c.b > c.r * .95 && c.b > .25) continue;   // water
+      const orange = c.r > c.g * 1.12, n1 = fbm(x * .35, z * .35), n2 = fbm(x * 1.3 + 5, z * 1.3);
+      if (orange) { const k = Math.min(1, (c.r - c.g) * 4); c.lerp(loam.clone().lerp(dust, n2 * .7), .7 + .3 * k); }
+      else { const t = grass.clone().lerp(moss, ss(.45, .7, n1)).lerp(soil, ss(.62, .82, n2) * .55); c.lerp(t, .85); }
+      c.multiplyScalar(.74 + .22 * n2); col.setXYZ(i, c.r, c.g, c.b); }
+    col.needsUpdate = true; this.undo.push(() => { col.array.set(orig); col.needsUpdate = true; });
+  }
+  // flat grey slab stones and boulders in the concept's warm sandstone
+  stones() {
+    this.W.privateRoot.traverse(o => { if (!o.isMesh || o.isInstancedMesh || o.geometry?.type !== 'DodecahedronGeometry' || !o.material?.color) return; const m = o.material, c0 = m.color.clone(), f = m.flatShading;
+      m.color.lerp(C('#b0a790'), .7); this.undo.push(() => { m.color.copy(c0); }); if (f !== undefined) { m.flatShading = f; } });
+  }
+  // the garden's meadow grass toward the concept's olive-gold tint
+  grassTint() {
+    this.W.privateRoot.traverse(o => { if (o.userData?.calmType !== 'grass' || !o.material?.color) return; const m = o.material, c0 = m.color.clone(); m.color.set('#bdb87c'); this.undo.push(() => m.color.copy(c0)); });
+  }
+
+  finish() {
+    const add = (list, mat, cast) => { if (!list.length) return; const g = mergeGeometries(list, false); list.forEach(x => x.dispose()); const m = new THREE.Mesh(g, mat); m.castShadow = cast; m.receiveShadow = true; this.root.add(m); };
+    add(this.bark, this.M.bark, true); add(this.birch, this.M.birch, true);
+    const ls = this.leaves; ls.forEach(l => l.rank = rnd()); ls.sort((a, b) => a.rank - b.rank);
+    const g = new THREE.PlaneGeometry(1, 1).translate(0, .5, 0), m4 = new THREE.Matrix4(), im = new THREE.InstancedMesh(g, this.M.leaf, Math.max(1, ls.length));
+    ls.forEach((l, i) => { m4.compose(l.p, l.q, new V3(l.sx, l.sy, 1)); im.setMatrixAt(i, m4); im.setColorAt(i, l.c); });
+    im.castShadow = this.tier === 'desktop'; im.receiveShadow = true; this.leafMesh = im; this.leafAll = ls.length; this.root.add(im); this.leaves = null;
+  }
+  setTier(id) { if (!this.leafMesh) return; const k = (LEAF_BUDGET[id] ?? 1) / this.leafK; this.leafMesh.count = Math.max(1, Math.floor(this.leafAll * Math.min(1, k))); this.leafMesh.castShadow = id === 'desktop'; }
+
+  // the concept's morning grade over the garden's day light (DayNight re-applies its own values first, every frame)
+  mood() {
+    const g = this.g, w = this.W, s = g.scene, dn = g.dayNight, u = w.sky?.material?.uniforms;
+    if (!dn || !s.fog || !w.hemi || !w.sun) return;
+    dn.lastN = null; if (w.space !== 'garden') return;
+    const k = Math.max(0, 1 - (dn.n || 0) * 2), t = new THREE.Color();   // the morning grade fades out through dusk; the night stays DayNight's
+    s.fog.color.lerp(MOOD.fog, k); s.background?.copy?.(s.fog.color); g.renderer.setClearColor(s.fog.color, 1); if (u?.uH) u.uH.value.copy(s.fog.color); if (u?.uZ) u.uZ.value.lerp(MOOD.zenith, k);
+    s.fog.near = lerp(s.fog.near, MOOD.near, k); s.fog.far = lerp(s.fog.far, MOOD.far, k);
+    w.hemi.color.lerp(MOOD.hemiSky, k); w.hemi.groundColor.lerp(MOOD.hemiGround, k); w.hemi.intensity = lerp(w.hemi.intensity, MOOD.hemiI, k);
+    w.sun.color.lerp(MOOD.sunC, k); w.sun.intensity = lerp(w.sun.intensity, MOOD.sunI, k);
+    g.renderer.toneMappingExposure = lerp(g.renderer.toneMappingExposure, MOOD.exposure, k); if (s.environmentIntensity !== undefined) s.environmentIntensity = lerp(s.environmentIntensity, MOOD.env, k); void t;
+  }
+  restore() { this.root.removeFromParent(); for (const f of this.undo.splice(0).reverse()) try { f(); } catch {} if (this.g.dayNight) this.g.dayNight.lastN = null; }
+  stats() { return { leaves: this.leafMesh?.count || 0, hidden: this.undo.length }; }
 }
