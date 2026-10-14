@@ -46,10 +46,10 @@ import { BoatEconomySystem } from '../gameplay/BoatEconomySystem.js?build=UX-R15
 import { LakeRunSystem } from '../gameplay/LakeRunSystem.js';
 import { GardenBuildSystem } from '../gameplay/GardenBuildSystem.js';
 import { GardenBuildMode } from '../ui/GardenBuildMode.js';
-import { GardenVegetationMask } from '../world/GardenVegetationMask.js?build=RING-R164-20261014A';
+import { GardenVegetationMask } from '../world/GardenVegetationMask.js?build=RING-R165-20261014A';
 import { CombatSystem } from '../gameplay/CombatSystem.js?build=UX-R157B1-20261011A';
 import { isToolJob } from '../ui/actionIcons.js?build=UX-R157B1-20261011A';   // R142
-import { CharacterSwapSpot } from '../gameplay/CharacterSwapSpot.js?build=RING-R164-20261014A';   // R138
+import { CharacterSwapSpot } from '../gameplay/CharacterSwapSpot.js?build=RING-R165-20261014A';   // R138
 import { ImpactFx } from '../gameplay/ImpactFx.js?build=UX-R157B1-20261011A';   // R129 FX layer
 import { EquippedToolVisual } from '../gameplay/EquippedToolVisual.js?build=UX-R157B1-20261011A';
 
@@ -373,7 +373,7 @@ this.workbenchPanel.show();this.input.resetTouchPointers?.();};
   frame(){
     try{this.frameStep();}catch(e){if(!this._frameWarned){this._frameWarned=1;warn('FRAME','frame step failed; rendering continues',e);}}
     // R145: the context can be lost a frame before 'webglcontextlost' fires; three.js then throws on a program's first use
-    if(!this.renderer.getContext().isContextLost())this.renderer.render(this.scene,this.camera);
+    if(!this.renderer.getContext().isContextLost()){let post=false;try{post=!!this.postFx?.render?.();}catch(e){warn('POST','post pass failed; plain render',e);this.postFx=null;}if(!post)this.renderer.render(this.scene,this.camera);}   // R165: the premium Ring's bloom (desktop, garden), else plain
     this.perfHud?.tick();
   }
   frameStep(){

@@ -208,8 +208,9 @@ try {
       await p.keyboard.press('KeyB'); await p.waitForTimeout(400);
       r = await p.evaluate(async () => { const g = window.__tgw, w = ms => new Promise(x => setTimeout(x, ms)), gp = document.getElementById('gear-panel'), o = {};
         const row = () => gp.querySelector('.gear-item[data-item-id="vest"]'); o.row = !!row() && row().dataset.wear === '1' && /Click to wear/.test(row().textContent);
+        if (!row()) return o;   // R164: R158A replaced the desktop Bag list; a missing row fails this check instead of aborting the whole run
         row().click(); await w(100); o.worn = g.vestWorn() && /Worn/.test(row()?.textContent || '') && row()?.classList.contains('selected');
-        row().click(); await w(100); o.off = !g.vestWorn(); row().click(); await w(100); return o; });
+        row()?.click(); await w(100); o.off = !g.vestWorn(); row()?.click(); await w(100); return o; });
       r.stays = await p.evaluate(() => window.__tgw.vestWorn()); }
     check('R146 desktop Bag: click the Life Vest to wear it, again to take it off', ok && r.row && r.worn && r.off && r.stays && !errors.length, errors[0] || JSON.stringify(r)); await ctx.close(); }
   // 2i. R126 phone thumb arc: special ring on the action button, tap = strike (keeps the full ring), hold 0.8 s = special,
