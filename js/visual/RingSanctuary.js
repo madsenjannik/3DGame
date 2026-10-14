@@ -56,7 +56,7 @@ function patch(m, { translucency = 0, wind = 0, lift = 0, U }) {
  transformed.x += sin(uTime * 1.7 + wp.x * 1.3 + wp.y * .7) * wk;
  transformed.z += cos(uTime * 1.3 + wp.y * 1.1) * wk * .6;`);
     }
-    if (translucency) s.fragmentShader = 'uniform vec3 uSunView;uniform vec3 uSunCol;uniform float uDay;\n' + s.fragmentShader.replace('#include <emissivemap_fragment>', `#include <emissivemap_fragment>
+    if (translucency || lift) s.fragmentShader = 'uniform vec3 uSunView;uniform vec3 uSunCol;uniform float uDay;\n' + s.fragmentShader.replace('#include <emissivemap_fragment>', `#include <emissivemap_fragment>
  float bl = pow(max(dot(normalize(-vViewPosition), uSunView), 0.0), 3.0); totalEmissiveRadiance += diffuseColor.rgb * (uSunCol * bl * ${translucency.toFixed(2)} + ${lift.toFixed(2)} * uDay);`);
   };
   m.customProgramCacheKey = () => `ring-${translucency}-${wind}-${lift}`;
@@ -127,6 +127,21 @@ class RingPost {
   dispose() { this.on = false; this.c.dispose?.(); this.rt.dispose(); }
 }
 
+// R166 (phones): a leaf as a leaf-shaped polygon, opaque (no alpha test). iPhone GPUs pay heavily for cut-out cards
+// (every discarded pixel defeats their hidden-surface removal); a few more triangles cost far less. Desktop keeps the card.
+const PHONE = id => id !== 'desktop';
+function leafGeometry(phone) {
+  if (!phone) return new THREE.PlaneGeometry(1, 1).translate(0, .5, 0);
+  const o = [[0, 0], [.3, .2], [.38, .5], [.24, .8], [0, 1], [-.24, .8], [-.38, .5], [-.3, .2]], pos = [0, .45, 0], uv = [.5, .45], idx = [];   // 8 triangles
+  for (const [x, y] of o) { pos.push(x, y, 0); uv.push(x + .5, y); }
+  for (let i = 1; i <= o.length; i++) idx.push(0, i, i % o.length + 1);
+  const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2)); g.setIndex(idx); g.computeVertexNormals(); return g;
+}
+function leafMaterial(T, U, tier) {
+  const phone = PHONE(tier);
+  return patch(new THREE.MeshStandardMaterial({ map: T.leaf, alphaTest: phone ? 0 : .5, side: THREE.DoubleSide, roughness: .6 }), { translucency: phone ? 0 : .7, wind: .12, lift: .12, U });
+}
+
 export class RingSanctuary {
   // spot: the CharacterSwapSpot; center: world {x, z} of the new Ring; facing: world yaw so the lane (+z) points at the garden path
   constructor(spot, ids, center, yaw) {
@@ -159,13 +174,13 @@ export class RingSanctuary {
       root: new THREE.MeshStandardMaterial({ color: '#c4ae8c', map: T.bark, bumpMap: T.barkBump, bumpScale: 2, roughness: .8 }),
       husk: new THREE.MeshStandardMaterial({ vertexColors: true, side: THREE.DoubleSide, roughness: .9, map: T.bark, bumpMap: T.barkBump, bumpScale: 1.5 }),
       petal: patch(phys ? new THREE.MeshPhysicalMaterial({ vertexColors: true, side: THREE.DoubleSide, roughness: .55, sheen: .6, sheenColor: C('#ffd9a8'), emissive: C('#ff8a30'), emissiveMap: T.petalGlow, emissiveIntensity: .9, bumpMap: T.grain, bumpScale: .6 })
-        : new THREE.MeshStandardMaterial({ vertexColors: true, side: THREE.DoubleSide, roughness: .55, emissive: C('#ff8a30'), emissiveMap: T.petalGlow, emissiveIntensity: .95 }), { translucency: .8, U }),
+        : new THREE.MeshStandardMaterial({ vertexColors: true, side: THREE.DoubleSide, roughness: .55, emissive: C('#ff8a30'), emissiveMap: T.petalGlow, emissiveIntensity: .95 }), { translucency: PHONE(this.tierId) ? 0 : .8, U }),
       ember: new THREE.MeshStandardMaterial({ color: '#5a2a10', emissive: C('#ff9a30'), emissiveIntensity: 3 }),
       moss: new THREE.MeshStandardMaterial({ vertexColors: true, roughness: .97, bumpMap: T.grain, bumpScale: 3 }),
       stone: new THREE.MeshStandardMaterial({ color: '#b0a790', roughness: .86, bumpMap: T.grain, bumpScale: 2 }),
       rock: new THREE.MeshStandardMaterial({ vertexColors: true, roughness: .9, bumpMap: T.grain, bumpScale: 2.5 }),
-      leaf: patch(new THREE.MeshStandardMaterial({ map: T.leaf, alphaTest: .5, side: THREE.DoubleSide, roughness: .6 }), { translucency: .7, wind: .12, lift: .12, U }),
-      grass: patch(new THREE.MeshStandardMaterial({ vertexColors: true, side: THREE.DoubleSide, roughness: .75 }), { translucency: .55, wind: .07, lift: .03, U }),
+      leaf: leafMaterial(T, U, this.tierId),
+      grass: patch(new THREE.MeshStandardMaterial({ vertexColors: true, side: THREE.DoubleSide, roughness: .75 }), { translucency: PHONE(this.tierId) ? 0 : .55, wind: .07, lift: .03, U }),
       lantern: new THREE.MeshStandardMaterial({ color: '#ffcf8a', emissive: C('#f2a93b'), emissiveIntensity: 1.5, roughness: .4 }),
       cap: new THREE.MeshStandardMaterial({ color: '#c8603a', roughness: .5 }), stem: new THREE.MeshStandardMaterial({ color: '#efe3c8', roughness: .7 })
     };
@@ -275,6 +290,23 @@ export class RingSanctuary {
     for (const l of this.lights) if (l !== this.stoneLight) l.intensity = l.userData.base * (.75 + .5 * (1 - day));   // lanterns warm the day, more at dusk
     if (this.post) this.post.on = this.tierId === 'desktop';
   }
+  // R166 (phones only): the shadow map is redrawn every 2nd (mobile-high) or 3rd (mobile-low) frame instead of every frame (the
+  // garden stands still; only the player and creatures move), and the render resolution follows the frame rate (down to 0.85,
+  // back up to the tier's own when there is headroom). Both are handed back when leaving the garden or the premium Ring.
+  phoneBudget(dt) {
+    const r = this.g.renderer, phone = PHONE(this.tierId); if (!phone) { this.leaveGarden(); return; }
+    const every = this.tierId === 'mobile-low' ? 3 : 2; this.sf = ((this.sf || 0) + 1) % every; r.shadowMap.autoUpdate = false; if (this.sf === 0) r.shadowMap.needsUpdate = true; this.shadowHeld = true;
+    this.fpsT = (this.fpsT || 0) + dt; this.fpsN = (this.fpsN || 0) + 1; if (this.fpsT < 1.5) return;
+    const fps = this.fpsN / this.fpsT; this.fpsT = 0; this.fpsN = 0; const top = Math.min(devicePixelRatio || 1, { 'mobile-high': 1.5, 'mobile-low': 1.15 }[this.tierId] || 1.5);
+    this.dpr ??= r.getPixelRatio(); const was = this.dpr;
+    if (fps < 45) this.dpr = Math.max(.85, this.dpr - .1); else if (fps > 56) this.dpr = Math.min(top, this.dpr + .05);
+    if (Math.abs(this.dpr - r.getPixelRatio()) > .001) { r.setPixelRatio(this.dpr); const { w, h } = this.g.viewSize?.() || { w: innerWidth, h: innerHeight }; r.setSize(w, h, false); }
+    if (this.dpr !== was) this.dprMoved = true;
+  }
+  leaveGarden() {
+    const r = this.g.renderer; if (this.shadowHeld) { r.shadowMap.autoUpdate = true; this.shadowHeld = false; }
+    if (this.dprMoved) { this.dprMoved = false; this.dpr = null; try { this.g.resize?.(); } catch {} }
+  }
   setOpen(openSet) { for (const [id, P] of this.pods) { const o = openSet.has(id) ? 1 : 0; P.target = o; if (!P.anim) P.k = o; this.applyPod(P); } }
   applyPod(P) { const e = P.k * P.k * (3 - 2 * P.k); P.open.visible = e > .02; P.open.scale.setScalar(Math.max(.02, e)); P.closed.visible = e < .98; P.closed.scale.set(1 - e * .6, 1 - e, 1 - e * .6);
     if (P.sprout) P.sprout.scale.setScalar(Math.max(.01, ss(.5, 1, e)) * 1.1 / K / Math.max(.02, e)); if (P.lock) P.lock.visible = e < .5; }
@@ -325,7 +357,7 @@ export class RingSanctuary {
   }
   instanced() {
     const leafK = { 'desktop': 1, 'mobile-high': .6, 'mobile-low': .4 }[this.tierId] ?? 1, ls = this.leaves; ls.forEach(l => l.rank = rnd()); ls.sort((a, b) => a.rank - b.rank);
-    const g = new THREE.PlaneGeometry(1, 1).translate(0, .5, 0), m4 = new THREE.Matrix4(); const im = new THREE.InstancedMesh(g, this.m.leaf, ls.length);
+    const g = leafGeometry(PHONE(this.tierId)), m4 = new THREE.Matrix4(); const im = new THREE.InstancedMesh(g, this.m.leaf, ls.length);
     ls.forEach((l, i) => { m4.compose(l.p, l.q, new V3(l.sx, l.sy, 1)); im.setMatrixAt(i, m4); im.setColorAt(i, l.c); }); im.receiveShadow = true; this.leafMesh = im; this.leafAll = ls.length; this.root.add(im); void leafK;
     const rockGeos = [0, 1, 2, 3].map(v => { const gg = new THREE.IcosahedronGeometry(1, 2), p = gg.attributes.position; for (let i = 0; i < p.count; i++) { const x = p.getX(i), y = p.getY(i), z = p.getZ(i), k = 1 + (fbm(x * 1.2 + y * .7 + v * 5, z * 1.2 - y * .9) - .5) * .75; p.setXYZ(i, x * k, Math.max(y * k, -.35), z * k); }
       gg.computeVertexNormals(); const n = gg.attributes.normal, col = []; for (let i = 0; i < p.count; i++) { const c = C('#958c78').lerp(C('#6f6857'), rnd() * .4).lerp(C('#4d6a26'), ss(.45, .85, n.getY(i)) * .85); col.push(c.r, c.g, c.b); } gg.setAttribute('color', new THREE.Float32BufferAttribute(col, 3)); return gg; });
@@ -380,7 +412,7 @@ export class RingSanctuary {
     merge(base, this.root, true); merge(this.root.children.filter(o => o.isMesh && o !== this.ground && (o.material === this.m.bark || o.material === this.m.lantern || o.material === this.m.root)), this.root, false);
   }
   setTier(id) {
-    const t = TIERS[id] || TIERS.desktop; this.tierId = TIERS[id] ? id : 'desktop';
+    const t = TIERS[id] || TIERS.desktop; this.tierId = TIERS[id] ? id : 'desktop'; this.dpr = null;
     const grassK = { 'desktop': 1, 'mobile-high': .42, 'mobile-low': .25 }[this.tierId], leafK = { 'desktop': 1, 'mobile-high': .6, 'mobile-low': .4 }[this.tierId];
     if (this.grassMesh) this.grassMesh.count = Math.floor(this.grassMesh.instanceMatrix.count * grassK);
     if (this.leafMesh) { this.leafMesh.count = Math.max(1, Math.floor(this.leafAll * leafK)); this.leafMesh.castShadow = t.shadows === 'full'; }
@@ -398,7 +430,7 @@ export class RingSanctuary {
     const sd = this.g.world?.sunDir; if (sd && camera) this.U.sunView.value.copy(sd).transformDirection(camera.matrixWorldInverse);
     for (const P of this.pods.values()) { if (P.k !== P.target) { P.k += Math.sign(P.target - P.k) * Math.min(Math.abs(P.target - P.k), Math.min(dt, .1) / 1.6); if (P.k === P.target) P.anim = false; this.applyPod(P); }
       if (P.sway && P.open.visible) P.sway.rotation.z = Math.sin(t * 1.3 + P.ph) * .07; }
-    this.glowUpdate(t, dt);
+    this.glowUpdate(t, dt); this.phoneBudget(dt);
     const br = .5 + .5 * Math.sin(t * 2.1); this.m.ember.emissiveIntensity = 2 + 1.5 * br; for (const gl of this.glows) gl.material.opacity = (gl.isSprite ? .4 : .24) + .12 * br;
     if (this.motes) this.motes.rotation.y = t * .02;
     if (sd && this.shafts) for (const m of this.shafts) { if (!m.visible) continue; m.position.copy(m.userData.g).addScaledVector(sd, 3.6); m.quaternion.setFromUnitVectors(new V3(0, 1, 0), sd); }
@@ -406,7 +438,7 @@ export class RingSanctuary {
   bloom(id) { const P = this.pods.get(id); if (!P) return; P.k = 0; P.target = 1; P.anim = true; this.applyPod(P);
     try { this.g.fx?.burst?.(this.podWorld(id), 0xffb35a, 18, 1.4); } catch {} }
   podWorld(id) { const P = this.pods.get(id); const v = new V3(); P?.g.getWorldPosition(v); v.y += .5; return v; }
-  dispose() { try { this.env?.restore(); } catch {} this.env = null; if (this.g.postFx === this.post) this.g.postFx = null; try { this.post?.dispose(); } catch {} const W = this.g.world; for (const c of this.cols) { const i = W.colliders.indexOf(c); if (i >= 0) W.colliders.splice(i, 1); } this.cols = []; this.root.removeFromParent(); }
+  dispose() { try { this.leaveGarden(); } catch {} try { this.env?.restore(); } catch {} this.env = null; if (this.g.postFx === this.post) this.g.postFx = null; try { this.post?.dispose(); } catch {} const W = this.g.world; for (const c of this.cols) { const i = W.colliders.indexOf(c); if (i >= 0) W.colliders.splice(i, 1); } this.cols = []; this.root.removeFromParent(); }
   stats() { let tris = 0, draws = 0; this.root.traverse(o => { if (!o.visible || !o.geometry) return; draws++; const n = (o.geometry.index ? o.geometry.index.count : o.geometry.attributes.position.count) / 3; tris += n * (o.isInstancedMesh ? o.count : 1); }); return { draws, tris: Math.round(tris), buildMs: Math.round(this.buildMs) }; }
 }
 
@@ -438,7 +470,7 @@ export class RingEnvironment {
     this.M = {
       bark: new THREE.MeshStandardMaterial({ color: '#6e5038', map: sanctuary.T.bark, bumpMap: sanctuary.T.barkBump, bumpScale: 3, roughness: .92 }),
       birch: new THREE.MeshStandardMaterial({ color: '#d9d2bf', map: sanctuary.T.bark, bumpMap: sanctuary.T.barkBump, bumpScale: 1.5, roughness: .85 }),
-      leaf: patch(new THREE.MeshStandardMaterial({ map: sanctuary.T.leaf, alphaTest: .5, side: THREE.DoubleSide, roughness: .6 }), { translucency: .7, wind: .12, lift: .12, U: sanctuary.U })
+      leaf: leafMaterial(sanctuary.T, sanctuary.U, sanctuary.tierId)
     };
     this.trees(); this.backdrop(); this.shrubs(); this.ground(); this.stones(); this.rocks(); this.fence(); this.homeTrees(); this.grassTint(); this.finish();
   }
@@ -559,9 +591,9 @@ export class RingEnvironment {
 
   finish() {
     const add = (list, mat, cast) => { if (!list.length) return; const g = mergeGeometries(list, false); list.forEach(x => x.dispose()); const m = new THREE.Mesh(g, mat); m.castShadow = cast; m.receiveShadow = true; this.root.add(m); };
-    add(this.bark, this.M.bark, true); add(this.birch, this.M.birch, true);
+    add(this.bark, this.M.bark, this.tier === 'desktop'); add(this.birch, this.M.birch, this.tier === 'desktop');   // R166: phones keep the Ring's own casters only
     const ls = this.leaves; ls.forEach(l => l.rank = rnd()); ls.sort((a, b) => a.rank - b.rank);
-    const g = new THREE.PlaneGeometry(1, 1).translate(0, .5, 0), m4 = new THREE.Matrix4(), im = new THREE.InstancedMesh(g, this.M.leaf, Math.max(1, ls.length));
+    const g = leafGeometry(PHONE(this.tier)), m4 = new THREE.Matrix4(), im = new THREE.InstancedMesh(g, this.M.leaf, Math.max(1, ls.length));
     ls.forEach((l, i) => { m4.compose(l.p, l.q, new V3(l.sx, l.sy, 1)); im.setMatrixAt(i, m4); im.setColorAt(i, l.c); });
     im.castShadow = this.tier === 'desktop'; im.receiveShadow = true; this.leafMesh = im; this.leafAll = ls.length; this.root.add(im); this.leaves = null;
   }

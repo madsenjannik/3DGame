@@ -1,3 +1,3 @@
 // Single source of truth for the public version/build label.
 // Classic script (not a module) so both inline entry scripts and ES modules can read it.
-window.TGW_VERSION = Object.freeze({ version: '0.8.165', build: 'RING-R165-20261014A' });
+window.TGW_VERSION = Object.freeze({ version: '0.8.166', build: 'RING-R166-20261014A' });

@@ -1,5 +1,5 @@
 // @ts-nocheck
-import { Game } from './core/Game.js?build=RING-R165-20261014A';
+import { Game } from './core/Game.js?build=RING-R166-20261014A';
 import { characterCatalog } from './data/assetCatalog.js';
 import { unlockedIds } from './core/SaveGame.js?build=UX-R157B1-20261011A';
 import { devMenuEnabled } from './ui/DevMenu.js?build=UX-R157B1-20261011A';
