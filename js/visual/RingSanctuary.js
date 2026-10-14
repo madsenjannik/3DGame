@@ -97,11 +97,15 @@ function moss(rad, hy, detail = 3) {
 // between the pods. It stands on the free east lawn (it does not fit at the old spot: the house is 4 m and the Perk Shrine
 // 2.7 m from it). Everything is built in concept units inside one group scaled by K; heights, colliders and the
 // interaction point are handed to the game in world units. The old Ring stays loaded and comes back on ?ring=classic.
-const K = .7, RING = 3.4, PODR = 4.9, RT = 6.6, LANE_END = 9.4, ARCH_Z = 7.9;
+const K = .7, RING = 3.4, PODR = 4.9, RT = 6.6, LANE_END = 9.4, HEDGE = 6.15, GATE = 1.05, ARCH_Z = HEDGE;   // R164: a hedge closes the Ring; the arch in it is the only way in
 export const CONCEPT = { K, RING, PODR, RT, LANE_END };
 const podTh = k => (20 + 40 * k) * Math.PI / 180;   // nine pods round the ring, the gap faces the lane (+z)
 function laneX(z) { return .12 * Math.sin(z * .8); }
 function pathMaskC(x, z) { const r = Math.hypot(x, z), ring = 1 - ss(.38, .62, Math.abs(r - RING)), lane = (1 - ss(.38, .62, Math.abs(x - laneX(z)))) * ss(RING - .1, RING + .3, z); return Math.max(ring, lane); }
+
+// the lane from the arch out to the garden path, in world units, for the garden's vegetation mask (its stones and shrubs go)
+export function laneRect(center, yaw) { const w = (x, z) => new V3(x * K, 0, z * K).applyAxisAngle(new V3(0, 1, 0), yaw).add(new V3(center.x, 0, center.z));
+  const a = w(-GATE - .3, HEDGE - .2), b = w(GATE + .3, LANE_END + .3); return { x0: Math.min(a.x, b.x), x1: Math.max(a.x, b.x), z0: Math.min(a.z, b.z), z1: Math.max(a.z, b.z), colliders: true }; }
 
 export class RingSanctuary {
   // spot: the CharacterSwapSpot; center: world {x, z} of the new Ring; facing: world yaw so the lane (+z) points at the garden path
@@ -113,7 +117,7 @@ export class RingSanctuary {
     this.g.world.privateRoot.add(this.root); this.root.updateMatrixWorld(true); this.inv = this.root.matrixWorld.clone().invert();
     this.pods = new Map(); this.cast = []; this.glows = []; this.seams = []; this.cols = []; this.leaves = []; this.rocks = []; this.shrooms = [];
     this.clearR = RT * K; this.stoneC = new V3(laneX(RING), 0, RING);
-    this.mats(); this.terrain(); this.flagstones(); this.oak(); this.podsBuild(); this.lanterns(); this.arch(); this.understory(); this.instanced(); this.grass(); this.atmosphere(); this.stone(); this.batch();
+    this.mats(); this.terrain(); this.flagstones(); this.oak(); this.podsBuild(); this.lanterns(); this.arch(); this.hedge(); this.understory(); this.instanced(); this.grass(); this.atmosphere(); this.stone(); this.batch();
     this.solid();
     try { this.env = new RingEnvironment(this); } catch (e) { console.warn('[TGW] ring environment failed; garden kept', e); try { this.env?.restore(); } catch {} this.g.world.privateRoot.getObjectByName('R158_RING_ENVIRONMENT')?.removeFromParent(); this.env = null; }
     this.setTier(this.tierId); this.buildMs = performance.now() - this.t0;
@@ -238,22 +242,33 @@ export class RingSanctuary {
   // ---------- the vine arch over the lane ----------
   arch() {
     const z0 = ARCH_Z, h = this.Hc(0, z0);
-    for (const s of [-1, 1]) { const pts = [new V3(s * .85, h - .25, z0), new V3(s * .9, h + .8, z0), new V3(s * .74, h + 1.6, z0 + .05), new V3(s * .35, h + 2.08, z0), new V3(s * .02, h + 2.18, z0)];
+    for (const s of [-1, 1]) { const pts = [new V3(s * GATE, h - .25, z0), new V3(s * (GATE + .05), h + .85, z0), new V3(s * (GATE - .12), h + 1.7, z0 + .05), new V3(s * .45, h + 2.2, z0), new V3(s * .02, h + 2.3, z0)];
       this.add(taperTube(pts, .13, .07, { radial: 10, seg: 30, lump: .2, flare: 1.2 }), this.m.bark, true, true);
       const cur = new THREE.CatmullRomCurve3(pts), vine = []; for (let i = 0; i <= 40; i++) { const t = i / 40, P = cur.getPointAt(t), a = t * 18 * s; vine.push(P.clone().add(new V3(Math.cos(a) * .12, Math.sin(a) * .1, Math.sin(a) * .12))); }
       this.add(taperTube(vine, .03, .015, { radial: 6, seg: 80, lump: .2 }), this.m.bark, false, true);
       for (let i = 0; i < 70; i++) { const t = R(.15, 1), P = cur.getPointAt(t); this.addLeaf(P.clone().add(new V3(R(-.15, .15), R(-.1, .1), R(-.15, .15))), new V3(R(-1, 1), R(.2, 1), R(-1, 1)), .09, .13, C('#4d6e2a').lerp(C('#93a84a'), rnd())); }
-      for (let i = 0; i < 3; i++) this.rock(s * R(.75, 1.1), z0 + R(-.3, .3), R(.14, .24));
-      this.collider(s * .85, z0, .2, 'ring-arch'); }
+      for (let i = 0; i < 3; i++) this.rock(s * R(GATE + .25, GATE + .6), z0 + R(-.35, .1), R(.12, .2));   // beside the legs, never in the opening
+      this.collider(s * GATE, z0, .2, 'ring-arch'); }
   }
-  // ---------- understory (ferns, toadstools, leafy banks, fallen petals) ----------
+  // ---------- the hedge: leafy clumps round the whole Ring on HEDGE, solid, open only where the arch stands ----------
+  hedge() {
+    const step = .62, n = Math.round(Math.PI * 2 * HEDGE / step);
+    for (let i = 0; i < n; i++) { const a = i / n * Math.PI * 2, x = Math.sin(a) * HEDGE, z = Math.cos(a) * HEDGE; if (z > 0 && Math.abs(x) < GATE + .3) continue;
+      const y = this.Hc(x, z), hgt = R(.95, 1.25);
+      this.cluster(x, y + hgt * .55, z, R(.55, .68), 150, '#2f4a24', '#6f8a3a', .2, 1.05);
+      if (rnd() < .5) this.cluster(x + R(-.2, .2), y + hgt * .95, z + R(-.2, .2), .42, 70, '#36522a', '#7f9a3e', .18, .8);
+      this.collider(x, z, .5, 'ring-hedge'); }
+    for (let i = 0; i < 18; i++) { const a = R(0, 6.28), x = Math.sin(a) * (HEDGE - .55), z = Math.cos(a) * (HEDGE - .55); if (z > 0 && Math.abs(x) < GATE + .6) continue; this.fern(x, z, R(.6, .85)); }
+  }
+  // the lane from the arch out to the garden path, in world units (its garden stones and shrubs are cleared)
+  // ---------- understory (ferns, toadstools, fallen petals) ----------
   understory() {
     for (let k = 0; k < 9; k++) { const th = podTh(k), x = Math.sin(th) * PODR, z = Math.cos(th) * PODR, out = new V3(x, 0, z).normalize(), side = new V3(-out.z, 0, out.x);
       this.fern(x + out.x * 1.1 + side.x * .9, z + out.z * 1.1 + side.z * .9, R(.8, 1.1)); this.fern(x + out.x * 1.0 - side.x * 1.0, z + out.z * 1.0 - side.z * 1.0, R(.7, 1));
       if (k % 2 === 0) this.toad(x + side.x * .95 - out.x * .1, z + side.z * .95 - out.z * .1);
-      this.cluster(x + out.x * 1.45, this.Hc(x + out.x * 1.45, z + out.z * 1.45) + .35, z + out.z * 1.45, .6, 220, '#3a5426', '#7a9640', .2, .6); }
+    }
     for (let i = 0; i < 5; i++) { const a = i * 1.3 + .4; this.toad(Math.cos(a) * 1.3, Math.sin(a) * 1.3); }
-    for (let i = 0; i < 6; i++) { const z = R(RT - 1.4, RT - .3), x = laneX(z) + (rnd() < .5 ? -1 : 1) * R(.9, 1.6); this.fern(x, z, R(.6, .9)); }
+    for (let i = 0; i < 4; i++) { const z = R(HEDGE - 1.2, HEDGE - .5), x = laneX(z) + (rnd() < .5 ? -1 : 1) * R(GATE + .2, GATE + .7); this.fern(x, z, R(.6, .9)); }
     for (let i = 0; i < 420; i++) { const a = R(0, 6.28), r = rnd() < .6 ? RING + R(-.9, .9) : R(.6, 3), x = Math.sin(a) * r, z = Math.cos(a) * r; this.addLeaf(new V3(x, this.Hc(x, z) + .015, z), new V3(R(-.25, .25), 1, R(-.25, .25)), .05, .075, C(['#b0703a', '#c99a4a', '#8a5a2a', '#d8a060'][(rnd() * 4) | 0]).multiplyScalar(R(.7, 1))); }
   }
   instanced() {

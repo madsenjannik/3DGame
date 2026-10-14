@@ -99,12 +99,12 @@ export class CharacterSwapSpot {
   // (it does not fit at the old spot). The old Ring stays loaded but hidden; its colliders, mound, clearing and the
   // interaction point hand over to the new one, and restoreClassic() hands everything back (also on any failure).
   loadPremium() {
-    import('../visual/RingSanctuary.js?build=RING-R163-20261014A').then(({ RingSanctuary }) => {
+    import('../visual/RingSanctuary.js?build=RING-R164-20261014A').then(({ RingSanctuary, laneRect }) => {
       const W = this.g.world, vm = this.g.vegetationMask, sp = this.g.homePortal.gardenSpawn(), center = { x: sp.x + EAST_DX, z: sp.z + EAST_DZ };
       const px = W.pathX?.(center.z) ?? 0, yaw = Math.atan2(px - center.x, 0);   // the lane (+z) points at the garden path
       this.prev = { spot: { ...this.spot }, height: W.gardenHeight, extra: this.g.wilds?.extraProps, oldClear: vm?.fixed?.find(c => c.cx === this.spot.x && c.cz === this.spot.z) };
       try {
-        if (vm?.fixed) { if (this.prev.oldClear) vm.fixed.splice(vm.fixed.indexOf(this.prev.oldClear), 1); this.premiumClear = { cx: center.x, cz: center.z, r: 6.6 * .7, colliders: true }; vm.fixed.push(this.premiumClear); vm.apply(); }
+        if (vm?.fixed) { if (this.prev.oldClear) vm.fixed.splice(vm.fixed.indexOf(this.prev.oldClear), 1); this.premiumClear = { cx: center.x, cz: center.z, r: 6.6 * .7, colliders: true }; this.premiumLane = laneRect(center, yaw); vm.fixed.push(this.premiumClear, this.premiumLane); vm.apply(); }   // R164: the lane to the arch is clear too
         for (const c of this.potColliders) { const i = W.colliders.indexOf(c); if (i >= 0) W.colliders.splice(i, 1); }
         const S = this.sanctuary = new RingSanctuary(this, IDS, center, yaw);
         W.gardenHeight = (x, z) => S.height(x, z); this.spot = { ...S.stoneWorld };
@@ -121,7 +121,7 @@ export class CharacterSwapSpot {
     const P = this.prev; if (!P) return; this.prev = null;
     for (const c of this.potColliders) if (!W.colliders.includes(c)) W.colliders.push(c);
     W.gardenHeight = P.height; this.spot = P.spot;
-    try { if (vm?.fixed) { const i = vm.fixed.indexOf(this.premiumClear); if (i >= 0) vm.fixed.splice(i, 1); if (P.oldClear && !vm.fixed.includes(P.oldClear)) vm.fixed.push(P.oldClear); vm.apply(); } } catch {}
+    try { if (vm?.fixed) { for (const f of [this.premiumClear, this.premiumLane]) { const i = vm.fixed.indexOf(f); if (i >= 0) vm.fixed.splice(i, 1); } if (P.oldClear && !vm.fixed.includes(P.oldClear)) vm.fixed.push(P.oldClear); vm.apply(); } } catch {}
     const t = this.g.garden?.trees, ti = t?.indexOf(this.premiumTree) ?? -1; if (ti >= 0) t.splice(ti, 1);
     if (this.g.wilds) { this.g.wilds.extraProps = P.extra; this.g.wilds.threat?.relayout?.(); }
     this.fx.position.y = 0; this.m.add(this.fx); if (this.beacon) { this.m.add(this.beacon.group); this.beacon.group.position.y = this.model ? TOP + .14 : .02; }
