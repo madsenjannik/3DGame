@@ -1,5 +1,5 @@
 // @ts-nocheck
-import { actionIcon, actionIconName, isToolJob } from './actionIcons.js?build=SAVE-R158-20261014A';
+import { actionIcon, actionIconName, isToolJob } from './actionIcons.js?build=SAVE-R159-20261014A';
 export class Hud {
   constructor(state){
     this.seed=document.getElementById('seed-count');this.action=document.getElementById('action');this.toast=document.getElementById('toast');this.objective=document.getElementById('objective');this.kicker=document.getElementById('objective-kicker');this.title=document.getElementById('objective-title');this.copy=document.getElementById('objective-copy');this.hint=document.getElementById('hint');this.loading=document.getElementById('loading');this.materials=document.getElementById('materials');

@@ -17,7 +17,6 @@ export const TIERS = {
   'mobile-high': { grass: 6000,  leaves: .6, shadows: 'pods', petals: 'standard', motes: 90, shafts: false },
   'mobile-low':  { grass: 3000,  leaves: .35, shadows: 'none', petals: 'standard', motes: 50, shafts: false }
 };
-const OUTER = 3.4;   // radius of the sanctuary ground (the garden's own grass is cleared inside it); the pine at 3.3 m, the shrubs and the pond stay the garden's
 
 // ---------- noise + rng (the concept's) ----------
 function rng(seed) { return () => { seed = seed + 0x6D2B79F5 | 0; let t = Math.imul(seed ^ seed >>> 15, 1 | seed); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
@@ -92,20 +91,42 @@ function moss(rad, hy, detail = 3) {
   g.setAttribute('color', new THREE.Float32BufferAttribute(col, 3)); g.computeVertexNormals(); return g;
 }
 
+// R159 (Jannik 14/10 'A 70% GO'): the concept's Sprouting Ring built new, not dressed over the old one. Jannik's concept
+// measures at 70 % (K): the Sanctuary Oak in the middle, the stone path ring (RING), nine pods on PODR (one per character,
+// the concept had eight), the double flagstone lanes, the lane out to the garden path with the vine arch, lantern stalks
+// between the pods. It stands on the free east lawn (it does not fit at the old spot: the house is 4 m and the Perk Shrine
+// 2.7 m from it). Everything is built in concept units inside one group scaled by K; heights, colliders and the
+// interaction point are handed to the game in world units. The old Ring stays loaded and comes back on ?ring=classic.
+const K = .7, RING = 3.4, PODR = 4.9, RT = 6.6, LANE_END = 9.4, ARCH_Z = 7.9;
+export const CONCEPT = { K, RING, PODR, RT, LANE_END };
+const podTh = k => (20 + 40 * k) * Math.PI / 180;   // nine pods round the ring, the gap faces the lane (+z)
+function laneX(z) { return .12 * Math.sin(z * .8); }
+function pathMaskC(x, z) { const r = Math.hypot(x, z), ring = 1 - ss(.38, .62, Math.abs(r - RING)), lane = (1 - ss(.38, .62, Math.abs(x - laneX(z)))) * ss(RING - .1, RING + .3, z); return Math.max(ring, lane); }
+
 export class RingSanctuary {
-  // spot: the CharacterSwapSpot (its group `m` is the local frame; its model holds Pot_<id>); ids: the nine characters
-  constructor(spot, ids) {
-    this.s = spot; this.g = spot.g; this.ids = ids; rnd = rng(11);
+  // spot: the CharacterSwapSpot; center: world {x, z} of the new Ring; facing: world yaw so the lane (+z) points at the garden path
+  constructor(spot, ids, center, yaw) {
+    this.s = spot; this.g = spot.g; this.ids = ids; rnd = rng(11); this.t0 = performance.now(); this.center = center;
     this.tierId = TIERS[this.g.quality?.id] ? this.g.quality.id : (this.g.input?.isTouch ? 'mobile-high' : 'desktop');
-    this.T = makeTextures(); this.U = { sunView: { value: new V3(0, 1, 0) }, sunCol: { value: C('#ffe3b8').multiplyScalar(.9) }, time: { value: 0 }, day: { value: 1 } }; this.sunBase = 2.7; this.sunCol0 = this.U.sunCol.value.clone();   // GardenEnvironment's day sun (DayNight's night sun is 1.15)
-    this.root = new THREE.Group(); this.root.name = 'R157_RING_SANCTUARY'; spot.m.add(this.root);
-    this.pods = new Map(); this.cast = []; this.glows = []; this.seams = []; this.t0 = performance.now(); this.clearR = OUTER;
-    const W = this.g.world; this.H = (lx, lz) => { const v = new V3(lx, 0, lz); spot.m.localToWorld(v); return (W.gardenHeight?.(v.x, v.z) || 0); };
-    this.blockers(); this.mats(); this.terrain(); this.flagstones(); this.podsBuild(); this.foliage(); this.grass(); this.atmosphere(); this.hideClassic(); this.batch();
+    this.T = makeTextures(); this.U = { sunView: { value: new V3(0, 1, 0) }, sunCol: { value: C('#ffe3b8').multiplyScalar(.9) }, time: { value: 0 }, day: { value: 1 } }; this.sunBase = 2.7; this.sunCol0 = this.U.sunCol.value.clone();
+    this.root = new THREE.Group(); this.root.name = 'R157_RING_SANCTUARY'; this.root.position.set(center.x, 0, center.z); this.root.rotation.y = yaw; this.root.scale.setScalar(K);
+    this.g.world.privateRoot.add(this.root); this.root.updateMatrixWorld(true); this.inv = this.root.matrixWorld.clone().invert();
+    this.pods = new Map(); this.cast = []; this.glows = []; this.seams = []; this.cols = []; this.leaves = []; this.rocks = []; this.shrooms = [];
+    this.clearR = RT * K; this.stoneC = new V3(laneX(RING), 0, RING);
+    this.mats(); this.terrain(); this.flagstones(); this.oak(); this.podsBuild(); this.lanterns(); this.arch(); this.understory(); this.instanced(); this.grass(); this.atmosphere(); this.stone(); this.batch();
+    this.solid();
     try { this.env = new RingEnvironment(this); } catch (e) { console.warn('[TGW] ring environment failed; garden kept', e); try { this.env?.restore(); } catch {} this.g.world.privateRoot.getObjectByName('R158_RING_ENVIRONMENT')?.removeFromParent(); this.env = null; }
-    this.setTier(this.tierId);
-    this.buildMs = performance.now() - this.t0;
+    this.setTier(this.tierId); this.buildMs = performance.now() - this.t0;
   }
+  // ---------- concept-space helpers ----------
+  Hc(x, z) { const r = Math.hypot(x, z), fade = 1 - ss(RT - 1.4, RT - .1, r); let h = .38 * Math.exp(-(r * r) / (1.7 * 1.7));
+    h += ((fbm(x * .35, z * .35) - .5) * .32 + (fbm(x * 1.4, z * 1.4) - .5) * .05) * fade;
+    for (let k = 0; k < 9; k++) { const th = podTh(k), d = Math.hypot(x - Math.sin(th) * PODR, z - Math.cos(th) * PODR); h += .12 * (1 - ss(.6, 1.05, d)); }
+    const ds = Math.hypot(x - this.stoneC.x, z - this.stoneC.z); if (ds < .72) h += .19 * (1 - ss(.55, .72, ds));   // the stone's top is walkable (as before)
+    return r >= RT ? 0 : h * fade; }
+  // world-space height for the game (W.gardenHeight); 0 outside the Ring's ground
+  height(x, z) { const v = new V3(x, 0, z).applyMatrix4(this.inv); return Math.hypot(v.x, v.z) >= RT ? 0 : this.Hc(v.x, v.z) * K; }
+  toWorld(x, y, z) { return new V3(x, y, z).applyMatrix4(this.root.matrixWorld); }
   mats() {
     const T = this.T, U = this.U, phys = TIERS[this.tierId].petals === 'physical';
     this.m = {
@@ -114,190 +135,172 @@ export class RingSanctuary {
       husk: new THREE.MeshStandardMaterial({ vertexColors: true, side: THREE.DoubleSide, roughness: .9, map: T.bark, bumpMap: T.barkBump, bumpScale: 1.5 }),
       petal: patch(phys ? new THREE.MeshPhysicalMaterial({ vertexColors: true, side: THREE.DoubleSide, roughness: .55, sheen: .6, sheenColor: C('#ffd9a8'), emissive: C('#ff8a30'), emissiveMap: T.petalGlow, emissiveIntensity: .9, bumpMap: T.grain, bumpScale: .6 })
         : new THREE.MeshStandardMaterial({ vertexColors: true, side: THREE.DoubleSide, roughness: .55, emissive: C('#ff8a30'), emissiveMap: T.petalGlow, emissiveIntensity: .95 }), { translucency: .8, U }),
-      ember: new THREE.MeshStandardMaterial({ color: '#5a2a10', emissive: C('#ff9a30'), emissiveIntensity: 2.6 }),
+      ember: new THREE.MeshStandardMaterial({ color: '#5a2a10', emissive: C('#ff9a30'), emissiveIntensity: 3 }),
       moss: new THREE.MeshStandardMaterial({ vertexColors: true, roughness: .97, bumpMap: T.grain, bumpScale: 3 }),
       stone: new THREE.MeshStandardMaterial({ color: '#b0a790', roughness: .86, bumpMap: T.grain, bumpScale: 2 }),
       rock: new THREE.MeshStandardMaterial({ vertexColors: true, roughness: .9, bumpMap: T.grain, bumpScale: 2.5 }),
-      leaf: patch(new THREE.MeshStandardMaterial({ map: T.leaf, alphaTest: .5, side: THREE.DoubleSide, roughness: .6 }), { translucency: .7, wind: .5, lift: .22, U }),
-      grass: patch(new THREE.MeshStandardMaterial({ vertexColors: true, side: THREE.DoubleSide, roughness: .75 }), { translucency: .45, wind: .07, lift: .03, U }),
-      lantern: new THREE.MeshStandardMaterial({ color: '#ffcf8a', emissive: C('#f2a93b'), emissiveIntensity: 1.6, roughness: .4 }),
+      leaf: patch(new THREE.MeshStandardMaterial({ map: T.leaf, alphaTest: .5, side: THREE.DoubleSide, roughness: .6 }), { translucency: .7, wind: .12, lift: .12, U }),
+      grass: patch(new THREE.MeshStandardMaterial({ vertexColors: true, side: THREE.DoubleSide, roughness: .75 }), { translucency: .55, wind: .07, lift: .03, U }),
+      lantern: new THREE.MeshStandardMaterial({ color: '#ffcf8a', emissive: C('#f2a93b'), emissiveIntensity: 1.5, roughness: .4 }),
       cap: new THREE.MeshStandardMaterial({ color: '#c8603a', roughness: .5 }), stem: new THREE.MeshStandardMaterial({ color: '#efe3c8', roughness: .7 })
     };
-    this.m.petal.userData.phys = phys;
   }
-  add(geo, mat, cast = true, recv = true, parent = this.root) { const o = new THREE.Mesh(geo, mat); o.castShadow = cast; o.receiveShadow = recv; if (cast) this.cast.push(o); parent.add(o); return o; }
+  add(geo, mat, cast = true, recv = true, parent = this.root, pod = false) { const o = new THREE.Mesh(geo, mat); o.castShadow = cast; o.receiveShadow = recv; o.userData.pod = pod; if (cast) this.cast.push(o); parent.add(o); return o; }
+  addLeaf(p, n, sx, sy, c, roll) { const Z = new V3(0, 0, 1); n = n.clone().normalize(); const q = new THREE.Quaternion().setFromUnitVectors(Z, n); q.premultiply(new THREE.Quaternion().setFromAxisAngle(n, roll ?? R(0, 6.28))); this.leaves.push({ p: p.clone(), q, sx, sy, c }); }
+  cluster(cx, cy, cz, rad, n, base, vr, size, flat = .75) { for (let i = 0; i < n; i++) { const d = new V3(R(-1, 1), R(-1, 1) * flat, R(-1, 1)); if (d.length() > 1) { i--; continue; } const p = new V3(cx, cy, cz).addScaledVector(d, rad), nrm = d.clone().normalize().add(new V3(R(-.6, .6), R(-.3, .6), R(-.6, .6)));
+    const c = C(base).lerp(C(vr), rnd() * rnd()); c.multiplyScalar(lerp(.6, 1.2, d.length() * (.5 + .5 * Math.max(0, d.y)))); const s = size * R(.75, 1.25); this.addLeaf(p, nrm, s * .7, s, c); } }
+  rock(x, z, s, sy = .6, sink = .35) { this.rocks.push([x, z, s, sy, sink]); }
+  fern(x, z, s) { const y = this.Hc(x, z), n = 7 + (rnd() * 3 | 0); for (let f = 0; f < n; f++) { const a = f / n * 6.28 + R(-.3, .3), dir = new V3(Math.cos(a), 0, Math.sin(a)), L = R(.5, .75) * s, up = R(.35, .55) * s, side = new V3(-dir.z, 0, dir.x);
+    for (let i = 1; i < 12; i++) { const t = i / 12, P = new V3(x, y, z).addScaledVector(dir, L * t).add(new V3(0, up * Math.sin(Math.PI * t * .85), 0));
+      for (const sd of [-1, 1]) { const pp = P.clone().addScaledVector(side, sd * .02 * s), n2 = new V3(0, 1, 0).addScaledVector(dir, -.4 + t * .9).addScaledVector(side, sd * .3), lf = (1 - t * .65) * s; this.addLeaf(pp, n2, .05 * lf, .16 * lf, C('#456a28').lerp(C('#8aa448'), t * .6 + rnd() * .2), Math.atan2(sd, 1) + sd * 1.2); } } } }
+  toad(x, z) { for (let i = 0; i < 3 + (rnd() * 3 | 0); i++) this.shrooms.push([x + R(-.25, .25), z + R(-.25, .25), R(.12, .26)]); }
+  collider(x, z, r, kind) { const v = this.toWorld(x, 0, z), c = { x: v.x, z: v.z, r: r * K, kind, traversal: 'blocked', space: 'garden' }; this.cols.push(c); }
 
-  // ---------- ground: a polar patch that follows the mound (gardenHeight) and melts into the garden ground at the edge ----------
+  // ---------- ground (the concept's palette; melts into the graded garden ground at the edge) ----------
   terrain() {
-    const rings = 46, segs = 120, pos = [], col = [], idx = [], W = this.g.world, wv = new V3(), gc = new THREE.Color();
-    const soil = C('#4a3526'), grass = C('#4c6629'), mossC = C('#3d5522'), joint = C('#4a5a2a'), dust = C('#8b7858');
-    for (let i = 0; i <= rings; i++) { const r = Math.pow(i / rings, 1.25) * OUTER;
-      for (let j = 0; j <= segs; j++) { const a = j / segs * Math.PI * 2, x = Math.sin(a) * r, z = Math.cos(a) * r, edge = ss(OUTER * .78, OUTER, r);
-        const y = this.H(x, z) + (fbm(x * 1.4, z * 1.4) - .5) * .03 * (1 - edge) + .008;
-        const pm = this.pathMask(x, z); wv.set(x, 0, z); this.s.m.localToWorld(wv); W.groundColorAt?.(wv.x, wv.z, gc);
-        // the garden's own ground colour, deepened toward the concept's mossy green on the mound, bare loam under each pod, dusty joints on the path
-        const c = gc.clone().lerp(grass, .35 * (1 - edge)); c.lerp(mossC, Math.exp(-(r * r) / 2.2) * .55 * (1 - edge));
-        let pod = 0; for (const q of this.potLocal()) { const d = Math.hypot(x - q.x, z - q.z); pod = Math.max(pod, Math.exp(-(d * d) / .09)); }
-        c.lerp(soil, pod * .75); c.lerp(joint.clone().lerp(dust, fbm(x * 3, z * 3) * .8), pm * .85);
-        c.multiplyScalar((1 - .25 * pod) * (.88 + .24 * fbm(x * 1.7, z * 1.7)));
-        pos.push(x, y, z); col.push(c.r, c.g, c.b); } }
+    const rings = 52, segs = 150, pos = [], col = [], idx = [], W = this.g.world, gc = new THREE.Color();
+    const soil = C('#4a3526'), grass = C('#4c6629'), moss = C('#3d5522'), joint = C('#4a5a2a'), dust = C('#8b7858');
+    for (let i = 0; i <= rings; i++) { const r = Math.pow(i / rings, 1.15) * RT;
+      for (let j = 0; j <= segs; j++) { const a = j / segs * Math.PI * 2, x = Math.sin(a) * r, z = Math.cos(a) * r, edge = ss(RT - 1.6, RT, r);
+        const gd = ss(.4, .62, fbm(x * .55 + 3, z * .55)), pm = pathMaskC(x, z);
+        const c = soil.clone().lerp(grass, gd * .8 + ss(4.5, 6.2, r) * .3); c.lerp(moss, Math.exp(-(r * r) / 4) * .8); c.lerp(joint.clone().lerp(dust, fbm(x * 3, z * 3) * .8), pm * .95);
+        let ao = 1 - .4 * Math.exp(-(r * r) / 1.6); for (let k = 0; k < 9; k++) { const th = podTh(k), d = Math.hypot(x - Math.sin(th) * PODR, z - Math.cos(th) * PODR); ao *= 1 - .45 * Math.exp(-(d * d) / .45); }
+        c.multiplyScalar(ao * (.85 + .3 * fbm(x * 1.7, z * 1.7)));
+        if (edge > 0) { const w = this.toWorld(x, 0, z); W.groundColorAt?.(w.x, w.z, gc); gradeGround(gc, w.x, w.z); c.lerp(gc, edge); }
+        pos.push(x, this.Hc(x, z) + .012, z); col.push(c.r, c.g, c.b); } }
     for (let i = 0; i < rings; i++) for (let j = 0; j < segs; j++) { const a = i * (segs + 1) + j, b = a + segs + 1; idx.push(a, b, a + 1, b, b + 1, a + 1); }
     const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute('color', new THREE.Float32BufferAttribute(col, 3)); g.setIndex(idx); g.computeVertexNormals();
-    this.T.grain.repeat.set(14, 14);
-    this.ground = this.add(g, new THREE.MeshStandardMaterial({ vertexColors: true, roughness: .97, bumpMap: this.T.grain, bumpScale: 1.2 }), false, true); this.ground.name = 'R157_GROUND';
+    this.T.grain.repeat.set(30, 30);
+    this.ground = this.add(g, new THREE.MeshStandardMaterial({ vertexColors: true, roughness: .97, bumpMap: this.T.grain, bumpScale: 1.2, polygonOffset: true, polygonOffsetFactor: -1 }), false, true); this.ground.name = 'R159_GROUND';
   }
-  // the stone circle path (between the stone and the pods) and the lane out over the steps (+z) toward the garden path
-  pathMask(x, z) { const r = Math.hypot(x, z), ring = 1 - ss(.16, .3, Math.abs(r - 1.0)), lane = (1 - ss(.22, .38, Math.abs(x))) * ss(.75, .95, z) * (1 - ss(4.6, 5.4, z)); return Math.max(ring, lane); }
-  // the pergola's post spots (their round colliders, kind ring-pot, r .14) in ring-local space
-  postLocal() { const v = new V3(), out = []; for (const c of this.s.potColliders || []) { if (c.kind !== 'ring-pot' || c.r > .2) continue; v.set(c.x, 0, c.z); this.s.m.worldToLocal(v); out.push({ x: v.x, z: v.z }); } return out; }
-  // undo what lives outside the ring group (the arch colliders, the garden-wide environment)
-  dispose() { try { this.env?.restore(); } catch {} this.env = null; const W = this.g.world; for (const c of this.archCols || []) { const i = W.colliders.indexOf(c); if (i >= 0) W.colliders.splice(i, 1); } this.archCols = []; }
-  potLocal() {
-    if (this._pots) return this._pots; const M = this.s.model, v = new V3(); this._pots = [];
-    if (M) { M.updateMatrixWorld(true); for (const id of this.ids) { const p = M.getObjectByName(`Pot_${id}`); if (!p) continue; p.getWorldPosition(v); this.s.m.worldToLocal(v); this._pots.push({ id, x: v.x, z: v.z, y: v.y }); } }
-    return this._pots;
-  }
-
-  // the garden's own props near the ring (trees, rocks, shrubs: their colliders) in ring-local space; nothing of ours grows through them
-  blockers() { const W = this.g.world, v = new V3(); this.blk = [];
-    for (const c of W.colliders || []) { if ((c.space || 'garden') !== 'garden' || String(c.kind).startsWith('ring')) continue; v.set(c.x, 0, c.z); this.s.m.worldToLocal(v); if (Math.hypot(v.x, v.z) < OUTER + 1.2) this.blk.push([v.x, v.z, c.r || .3]); } }
-  blocked(x, z, pad) { return this.blk.some(([bx, bz, r]) => Math.hypot(x - bx, z - bz) < r + pad); }
+  // ---------- the double flagstone ring and the lane out to the garden path ----------
   flagstones() {
-    const variants = []; for (let v = 0; v < 5; v++) { const s = new THREE.Shape(), n = 7; for (let i = 0; i < n; i++) { const a = i / n * Math.PI * 2 + R(-.2, .2), r = R(.72, 1); i ? s.lineTo(Math.cos(a) * r, Math.sin(a) * r) : s.moveTo(Math.cos(a) * r, Math.sin(a) * r); }
+    const variants = []; for (let v = 0; v < 6; v++) { const s = new THREE.Shape(), n = 7; for (let i = 0; i < n; i++) { const a = i / n * Math.PI * 2 + R(-.2, .2), r = R(.72, 1); i ? s.lineTo(Math.cos(a) * r, Math.sin(a) * r) : s.moveTo(Math.cos(a) * r, Math.sin(a) * r); }
       const g = new THREE.ExtrudeGeometry(s, { depth: .25, bevelEnabled: true, bevelThickness: .2, bevelSize: .17, bevelSegments: 2, curveSegments: 1 }); g.rotateX(-Math.PI / 2);
       const p = g.attributes.position; for (let i = 0; i < p.count; i++) if (p.getY(i) > .2) p.setY(i, p.getY(i) + (vn(p.getX(i) * 2 + v * 7, p.getZ(i) * 2) - .5) * .14); g.computeVertexNormals(); variants.push({ g, list: [] }); }
-    const put = (x, z, s) => variants[(rnd() * variants.length) | 0].list.push([x, z, s]);
-    const n = 22; for (let i = 0; i < n; i++) { if (rnd() < .06) continue; const a = i / n * Math.PI * 2 + R(-.03, .03), r = 1.0 + R(-.04, .04); if (Math.abs(Math.sin(a) * r) < .3 && Math.cos(a) > 0) continue; put(Math.sin(a) * r, Math.cos(a) * r, R(.12, .16)); }
-    for (let z = 2.95; z < OUTER - .1; z += .4) { const x = .08 * Math.sin(z * 1.3); if (rnd() < .5) { put(x - .17, z, R(.12, .15)); put(x + .17, z + R(-.06, .06), R(.12, .15)); } else put(x + R(-.06, .06), z, R(.16, .2)); }
+    this.flagVariants = variants; const put = (x, z, s) => variants[(rnd() * variants.length) | 0].list.push([x, z, s]);
+    for (const lane of [-.25, .25]) { const n = 46; for (let i = 0; i < n; i++) { if (rnd() < .07) continue; const a = (i + (lane > 0 ? .5 : 0)) / n * Math.PI * 2 + R(-.02, .02), r = RING + lane + R(-.04, .04); const x = Math.sin(a) * r, z = Math.cos(a) * r; if (Math.hypot(x - this.stoneC.x, z - this.stoneC.z) < .8) continue; put(x, z, R(.17, .22)); } }
+    for (let z = RING + .55; z < LANE_END; z += .43) { const x = laneX(z); if (rnd() < .5) { put(x - .2 + R(-.03, .03), z, R(.16, .2)); put(x + .2, z + R(-.08, .08), R(.16, .2)); } else put(x + R(-.08, .08), z, R(.22, .27)); }
     const m4 = new THREE.Matrix4(), q = new THREE.Quaternion();
     for (const v of variants) { if (!v.list.length) continue; const im = new THREE.InstancedMesh(v.g, this.m.stone, v.list.length);
-      v.list.forEach(([x, z, s], i) => { q.setFromEuler(new THREE.Euler(R(-.04, .04), R(0, 6.28), R(-.04, .04))); m4.compose(new V3(x, this.H(x, z) - .03, z), q, new V3(s, .15, s)); im.setMatrixAt(i, m4); im.setColorAt(i, C('#ffffff').multiplyScalar(R(.78, 1.08)).lerp(C('#c9c09a'), rnd() * .4)); });
+      v.list.forEach(([x, z, s], i) => { q.setFromEuler(new THREE.Euler(R(-.04, .04), R(0, 6.28), R(-.04, .04))); m4.compose(new V3(x, this.Hc(x, z) - .045, z), q, new V3(s, .19, s)); im.setMatrixAt(i, m4); im.setColorAt(i, C('#ffffff').multiplyScalar(R(.78, 1.08)).lerp(C('#c9c09a'), rnd() * .4)); });
       im.castShadow = false; im.receiveShadow = true; this.root.add(im); }
   }
-
-  // ---------- the nine pods ----------
+  // ---------- the Sanctuary Oak (the concept's, in the middle) ----------
+  oak() {
+    const h0 = this.Hc(0, 0), T = (pts, r0, r1, o) => this.add(taperTube(pts, r0, r1, o), this.m.bark, true, true);
+    T([new V3(0, h0 - .4, 0), new V3(.08, h0 + .9, .04), new V3(-.06, h0 + 1.8, .1), new V3(.12, h0 + 2.6, 0), new V3(.05, h0 + 3.1, -.05)], .5, .24, { radial: 16, seg: 30, lump: .16, flare: .9 });
+    for (let i = 0; i < 7; i++) { const a = i / 7 * 6.28 + R(-.25, .25), L = R(1.4, 2.1), c = Math.cos(a), s = Math.sin(a), pt = (d, y) => new V3(c * d, y, s * d);
+      T([pt(.15, h0 + .7), pt(.55, h0 + .18), pt(L * .6, this.Hc(c * L * .6, s * L * .6) + .04), pt(L, this.Hc(c * L, s * L) - .12)], .26, .03, { radial: 9, seg: 18, lump: .18, pow: .7 }); }
+    const ends = []; for (let i = 0; i < 6; i++) { const a = i / 6 * 6.28 + R(-.3, .3), L = R(2, 2.8), c = Math.cos(a), s = Math.sin(a), y0 = h0 + R(2.2, 2.9), e = new V3(c * L, h0 + R(3.6, 4.4), s * L); ends.push(e);
+      T([new V3(c * .1, y0, s * .1), new V3(c * L * .4, y0 + .6, s * L * .4), new V3(c * L * .75, e.y - .1, s * L * .75), e], .17, .04, { radial: 8, seg: 16, lump: .15 }); }
+    ends.forEach(e => this.cluster(e.x, e.y + .2, e.z, 1.35, 820, '#3f5a2a', '#7f9a3e', .28, .6));
+    for (let i = 0; i < 5; i++) { const a = R(0, 6.28), d = R(.5, 1.6); this.cluster(Math.cos(a) * d, h0 + R(4.3, 4.9), Math.sin(a) * d, 1.2, 650, '#3a5426', '#86a042', .28, .55); }
+    for (let i = 0; i < 7; i++) this.rock(Math.cos(i * .9) * R(1.2, 1.8), Math.sin(i * .9) * R(1.2, 1.8), R(.12, .22));
+    this.collider(0, 0, .62, 'ring-oak');
+  }
+  // ---------- nine pods (open = petals, cushion, the character's sprout; locked = husk, ember seams, spiral roots, its padlock) ----------
   podsBuild() {
-    const S = .48, profile = closedProfile(30);
-    for (const p of this.potLocal()) {
-      const g = new THREE.Group(); g.name = `R157_POD_${p.id}`; g.position.set(p.x, this.H(p.x, p.z) - .01, p.z); g.rotation.y = Math.atan2(-p.x, -p.z); this.root.add(g);
-      const s = new THREE.Group(); s.scale.setScalar(S); g.add(s); this.podS = S;
-      this.add(moss(.62, .22, 3), this.m.moss, true, true, s).position.y = -.02;
-      for (let i = 0; i < 5; i++) { const a = i / 5 * 6.28 + R(-.3, .3), c = Math.cos(a), sn = Math.sin(a), L = R(.8, 1.1); this.add(taperTube([new V3(c * .28, .28, sn * .28), new V3(c * .55, .1, sn * .55), new V3(c * L, -.06, sn * L)], .07, .015, { radial: 6, seg: 10, lump: .2 }), this.m.root, true, true, s); }
-      // open: cupped petals + a moss cushion for the character sprout (the GLB's Sprout_<id>) + a warm pool of light
-      const open = new THREE.Group(); s.add(open); open.userData.full = 1.3;   // the open bloom is a little larger than the husk (as in the concept)
-      this.add(petals(true, 6, 1.0, .36, ['#8a3a20', '#e0763f', '#ffe2bf'], R(0, 1)), this.m.petal, true, true, open);
-      this.add(moss(.36, .42, 2), this.m.moss, false, true, open).position.y = .1;
-      const pool = new THREE.Mesh(new THREE.PlaneGeometry(3.2, 3.2).rotateX(-Math.PI / 2), new THREE.MeshBasicMaterial({ map: this.T.radial, color: '#ff9a3c', transparent: true, opacity: .32, blending: THREE.AdditiveBlending, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -4 }));
-      pool.position.set(0, .07, .45); pool.renderOrder = 3; open.add(pool); this.glows.push(pool);
-      // dormant: a closed husk with two glowing seams and spiral roots
-      const closed = new THREE.Group(); s.add(closed);
-      this.add(petals(false, 6, 0, .3, ['#4a3a2a', '#8a6e50', '#b09a78'], Math.PI / 2 + Math.PI / 6), this.m.husk, true, true, closed);
-      for (const sa of [Math.PI / 2, Math.PI / 2 + Math.PI / 3 * 2]) { const pts = profile.filter((q, i) => i > 2 && i < 27).map(([r, y]) => new V3((r + .01) * Math.cos(sa), y, (r + .01) * Math.sin(sa))); const sm = this.add(taperTube(pts, .02, .01, { radial: 5, seg: 24, lump: .3 }), this.m.ember, false, false, closed); this.seams.push(sm); }
-      for (const a0 of [R(0, 1), R(3, 4)]) { const pts = [new V3(.75 * Math.cos(a0 - .6), -.12, .75 * Math.sin(a0 - .6))]; for (let i = 0; i <= 16; i++) { const t = i / 16, v = .04 + t * .72, r = profile[Math.round(v * 30)][0] + .035, a = a0 + t * Math.PI * 2 * 1.35; pts.push(new V3(r * Math.cos(a), profile[Math.round(v * 30)][1], r * Math.sin(a))); }
-        this.add(taperTube(pts, .055, .014, { radial: 6, seg: 48, lump: .25 }), this.m.root, true, true, closed); }
-      // toadstools beside every other pod (instanced below)
-      this.pods.set(p.id, { g, open, closed, k: 0, target: 0, base: p });
-    }
+    const M = this.s.model, prof = closedProfile(40);
+    this.ids.forEach((id, k) => { const th = podTh(k), x = Math.sin(th) * PODR, z = Math.cos(th) * PODR;
+      const g = new THREE.Group(); g.name = `R159_POD_${id}`; g.position.set(x, this.Hc(x, z) - .02, z); g.rotation.y = Math.atan2(-x, -z); this.root.add(g);
+      this.add(moss(.62, .22, 3), this.m.moss, true, true, g, true).position.y = -.02;
+      for (let i = 0; i < 6; i++) { const a = i / 6 * 6.28 + R(-.3, .3), c = Math.cos(a), s = Math.sin(a), L = R(.8, 1.15); this.add(taperTube([new V3(c * .28, .28, s * .28), new V3(c * .55, .1, s * .55), new V3(c * L, -.06, s * L)], .07, .015, { radial: 7, seg: 12, lump: .2 }), this.m.root, true, true, g, true); }
+      const open = new THREE.Group(); g.add(open);
+      this.add(petals(true, 6, 1.0, .36, ['#7a3220', '#c8603a', '#f2dcbc'], R(0, 1)), this.m.petal, true, true, open, true);
+      this.add(moss(.36, .42, 2), this.m.moss, false, true, open, true).position.y = .1;
+      const pool = new THREE.Mesh(new THREE.PlaneGeometry(3.4, 3.4).rotateX(-Math.PI / 2), new THREE.MeshBasicMaterial({ map: this.T.radial, color: '#ff9a3c', transparent: true, opacity: .3, blending: THREE.AdditiveBlending, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -4 }));
+      pool.position.set(0, .06, .5); pool.renderOrder = 3; open.add(pool); this.glows.push(pool);
+      const closed = new THREE.Group(); g.add(closed);
+      this.add(petals(false, 6, 0, .3, ['#3f3a2e', '#857d68', '#a39a84'], Math.PI / 2 + Math.PI / 6), this.m.husk, true, true, closed, true);
+      for (const sa of [Math.PI / 2, Math.PI / 2 + Math.PI / 3 * 2]) { const pts = prof.filter((q, i) => i > 3 && i < 36).map(([r, y]) => new V3((r + .01) * Math.cos(sa), y, (r + .01) * Math.sin(sa))); this.seams.push(this.add(taperTube(pts, .011, .006, { radial: 6, seg: 40, lump: .3 }), this.m.ember, false, false, closed, true)); }
+      for (const a0 of [R(0, 1), R(3, 4)]) { const pts = [new V3(.75 * Math.cos(a0 - .6), -.12, .75 * Math.sin(a0 - .6))]; for (let i = 0; i <= 24; i++) { const t = i / 24, v = .04 + t * .72, ix = Math.round(v * 40), r = prof[ix][0] + .035, a = a0 + t * Math.PI * 2 * 1.35; pts.push(new V3(r * Math.cos(a), prof[ix][1], r * Math.sin(a))); }
+        this.add(taperTube(pts, .055, .014, { radial: 7, seg: 60, lump: .25 }), this.m.root, true, true, closed, true); }
+      // the character's own sprout (a copy of the Ring model's) lives in the open pod; its padlock sits on the ring path side
+      let sprout = null, lock = null; const src = M?.getObjectByName(`Sprout_${id}`), lk = M?.getObjectByName(`Lock_${id}`);
+      if (src) { sprout = src.clone(true); sprout.visible = true; sprout.position.set(0, .2, .02); sprout.rotation.set(0, 0, 0); sprout.scale.setScalar(1.1 / K); open.add(sprout); }
+      if (lk) { lock = lk.clone(true); lock.visible = true; lock.position.set(0, .12, .72); lock.rotation.set(0, 0, 0); lock.scale.setScalar(1 / K); g.add(lock); }
+      for (let i = 0; i < 5; i++) { const a = R(0, 6.28), d = R(.75, 1.05); this.rock(x + Math.cos(a) * d, z + Math.sin(a) * d, R(.08, .17)); }
+      this.collider(x, z, .58, 'ring-pod');
+      this.pods.set(id, { g, open, closed, sprout, lock, sway: sprout?.getObjectByName(`Sprout_${id}_Sway`), k: 0, target: 0, base: { id, x, z }, ph: k * .9 }); });
   }
-  // which pods are open (the Ring's own unlock list); a pod that is blooming (bloom) keeps animating toward it
-  setOpen(openSet) {
-    for (const [id, P] of this.pods) { const o = openSet.has(id) ? 1 : 0; P.target = o; if (!P.anim) P.k = o; this.applyPod(P); }
+  setOpen(openSet) { for (const [id, P] of this.pods) { const o = openSet.has(id) ? 1 : 0; P.target = o; if (!P.anim) P.k = o; this.applyPod(P); } }
+  applyPod(P) { const e = P.k * P.k * (3 - 2 * P.k); P.open.visible = e > .02; P.open.scale.setScalar(Math.max(.02, e)); P.closed.visible = e < .98; P.closed.scale.set(1 - e * .6, 1 - e, 1 - e * .6);
+    if (P.sprout) P.sprout.scale.setScalar(Math.max(.01, ss(.5, 1, e)) * 1.1 / K / Math.max(.02, e)); if (P.lock) P.lock.visible = e < .5; }
+  // ---------- lantern stalks between the pods (emissive bulbs + halos; no lights) ----------
+  lanterns() {
+    for (let k = 1; k < 9; k++) { const th = k * 40 * Math.PI / 180, r = 4.25, x = Math.sin(th) * r, z = Math.cos(th) * r, y = this.Hc(x, z), ix = -Math.sin(th), iz = -Math.cos(th), top = new V3(x + ix * .32, y + 1.15, z + iz * .32);
+      this.add(taperTube([new V3(x, y - .1, z), new V3(x + ix * .02, y + .6, z + iz * .02), new V3(x + ix * .08, y + 1.08, z + iz * .08), new V3(x + ix * .25, y + 1.25, z + iz * .25), top], .05, .014, { radial: 7, seg: 22, lump: .15, flare: .8 }), this.m.bark, true, true);
+      const bulb = new THREE.Mesh(new THREE.LatheGeometry([[0, 0], [.05, .02], [.075, .08], [.06, .14], [.025, .18], [0, .19]].map(v => new THREE.Vector2(v[0], v[1])), 14), this.m.lantern); bulb.position.copy(top).add(new V3(0, -.26, 0)); this.root.add(bulb);
+      const halo = new THREE.Sprite(new THREE.SpriteMaterial({ map: this.T.radial, color: '#ffb35a', transparent: true, opacity: .5, depthWrite: false, blending: THREE.AdditiveBlending })); halo.scale.setScalar(1.1); halo.position.copy(bulb.position).add(new V3(0, .09, 0)); halo.renderOrder = 6; this.root.add(halo); this.glows.push(halo);
+      this.cluster(x, y + .12, z, .3, 60, '#41602a', '#7f9a3e', .14, .5); this.rock(x + R(-.2, .2), z + R(-.2, .2), R(.08, .12)); this.collider(x, z, .14, 'ring-lantern'); }
   }
-  applyPod(P) { const e = P.k * P.k * (3 - 2 * P.k); P.open.visible = e > .02; P.open.scale.setScalar(Math.max(.02, e) * P.open.userData.full); P.closed.visible = e < .98; P.closed.scale.set(1 - e * .6, 1 - e, 1 - e * .6);
-    const M = this.s.model, sp = M?.getObjectByName(`Sprout_${P.base.id}`), lock = M?.getObjectByName(`Lock_${P.base.id}`);
-    if (sp) { sp.visible = e > .5; sp.position.y = .2; sp.scale.setScalar(Math.max(.01, ss(.5, 1, e))); }
-    if (lock) lock.visible = e < .5; }
-
-  // ---------- understory: leaf cards (ferns + bush clusters), rocks, toadstools, lantern stalks ----------
-  foliage() {
-    const leaves = [], Z = new V3(0, 0, 1), q2 = new THREE.Quaternion();
-    const addLeaf = (p, n, sx, sy, c, roll) => { n = n.clone().normalize(); const q = new THREE.Quaternion().setFromUnitVectors(Z, n); q2.setFromAxisAngle(n, roll ?? R(0, 6.28)); q.premultiply(q2); leaves.push({ p: p.clone(), q, sx, sy, c }); };
-    const cluster = (cx, cy, cz, rad, n, base, vr, size, flat = .75) => { for (let i = 0; i < n; i++) { const d = new V3(R(-1, 1), R(-1, 1) * flat, R(-1, 1)); if (d.length() > 1) { i--; continue; } const p = new V3(cx, cy, cz).addScaledVector(d, rad), nrm = d.clone().normalize().add(new V3(R(-.6, .6), R(-.3, .6), R(-.6, .6)));
-      const c = C(base).lerp(C(vr), rnd() * rnd()); c.multiplyScalar(lerp(.8, 1.3, d.length() * (.5 + .5 * Math.max(0, d.y)))); const s = size * R(.75, 1.25); addLeaf(p, nrm, s * .7, s, c); } };
-    const fern = (x, z, s) => { const y = this.H(x, z), n = 7 + (rnd() * 3 | 0); for (let f = 0; f < n; f++) { const a = f / n * 6.28 + R(-.3, .3), dir = new V3(Math.cos(a), 0, Math.sin(a)), L = R(.5, .75) * s, up = R(.35, .55) * s, side = new V3(-dir.z, 0, dir.x);
-      for (let i = 1; i < 11; i++) { const t = i / 11, P = new V3(x, y, z).addScaledVector(dir, L * t).add(new V3(0, up * Math.sin(Math.PI * t * .85), 0));
-        for (const sd of [-1, 1]) { const pp = P.clone().addScaledVector(side, sd * .02 * s), n2 = new V3(0, 1, 0).addScaledVector(dir, -.4 + t * .9).addScaledVector(side, sd * .3), lf = (1 - t * .65) * s; addLeaf(pp, n2, .05 * lf, .16 * lf, C('#5a8a32').lerp(C('#a6c25a'), t * .6 + rnd() * .2), Math.atan2(sd, 1) + sd * 1.2); } } } };
-    const rocks = []; const rock = (x, z, s, sy = .6, sink = .35) => rocks.push([x, z, s, sy, sink]);
-    const shrooms = []; const toad = (x, z) => { for (let i = 0; i < 3 + (rnd() * 2 | 0); i++) { const px = x + R(-.18, .18), pz = z + R(-.18, .18); shrooms.push([px, pz, R(.1, .2)]); } };
-    const free = (x, z) => this.pathMask(x, z) < .2 && !(Math.abs(x) < .75 && z > 1.6) && !this.blocked(x, z, .35);   // keep the path, the steps lane and the garden's own props clear
-    this.potLocal().forEach((p, i) => { const out = new V3(p.x, 0, p.z).normalize(), side = new V3(-out.z, 0, out.x);
-      const f1 = [p.x + out.x * .95 + side.x * .55, p.z + out.z * .95 + side.z * .55]; if (free(...f1)) fern(f1[0], f1[1], R(.55, .7));
-      if (i % 2 === 0) toad(p.x - out.x * .45 + side.x * .35, p.z - out.z * .45 + side.z * .35);
-      for (let k = 0; k < 3; k++) { const a = R(0, 6.28), d = R(.32, .5); rock(p.x + Math.cos(a) * d, p.z + Math.sin(a) * d, R(.05, .1)); } });
-    // the outer bank: ferns and leafy clumps around the mound, never on the lane; a few under the pergola corners
-    for (let i = 0; i < 22; i++) { const a = R(0, 6.28), r = R(2.7, 3.25), x = Math.sin(a) * r, z = Math.cos(a) * r; if (!free(x, z)) continue;
-      if (rnd() < .55) fern(x, z, R(.6, .95)); else { const s = R(.6, 1); cluster(x, this.H(x, z) + .3 * s, z, .55 * s, (150 * s) | 0, '#33502a', '#6f8a3a', .17, .7); }
-      if (rnd() < .5) rock(x + R(-.5, .5), z + R(-.5, .5), R(.12, .26)); }
-    for (let i = 0; i < 6; i++) { const a = i * 1.1 + .3, r = R(2.65, 3.15), x = Math.cos(a) * r, z = Math.sin(a) * r; if (free(x, z)) toad(x, z); }
-    // fallen petals and leaves on the stone circle
-    for (let i = 0; i < 200; i++) { const a = R(0, 6.28), r = rnd() < .6 ? 1.0 + R(-.35, .35) : R(.7, 2.1), x = Math.sin(a) * r, z = Math.cos(a) * r; addLeaf(new V3(x, this.H(x, z) + .012, z), new V3(R(-.25, .25), 1, R(-.25, .25)), .04, .06, C(['#b0703a', '#c99a4a', '#8a5a2a', '#d8a060'][(rnd() * 4) | 0]).multiplyScalar(R(.7, 1))); }
-    // R158: the pergola goes in premium; a concept lantern stalk stands on each of its post spots (the posts' colliders stay true)
-    const posts = this.postLocal(); for (const { x, z } of posts) { const a = Math.atan2(x, z), y = this.H(x, z), ix = -Math.sin(a), iz = -Math.cos(a), top = new V3(x + ix * .35, y + 1.38, z + iz * .35);
-      this.add(taperTube([new V3(x, y - .1, z), new V3(x + ix * .02, y + .66, z + iz * .02), new V3(x + ix * .09, y + 1.19, z + iz * .09), new V3(x + ix * .27, y + 1.37, z + iz * .27), top], .07, .016, { radial: 7, seg: 20, lump: .15, flare: .8 }), this.m.bark, TIERS[this.tierId].shadows === 'full', true);
-      const bulb = new THREE.Mesh(new THREE.LatheGeometry([[0, 0], [.05, .02], [.075, .08], [.06, .14], [.025, .18], [0, .19]].map(v => new THREE.Vector2(v[0], v[1])), 12), this.m.lantern); bulb.position.copy(top).add(new V3(0, -.27, 0)); this.root.add(bulb);
-      const halo = new THREE.Sprite(new THREE.SpriteMaterial({ map: this.T.radial, color: '#ffb35a', transparent: true, opacity: .55, depthWrite: false, blending: THREE.AdditiveBlending })); halo.scale.setScalar(.75); halo.position.copy(bulb.position).add(new V3(0, .09, 0)); halo.renderOrder = 6; this.root.add(halo); this.glows.push(halo);
-      cluster(x, y + .12, z, .3, 60, '#41602a', '#7f9a3e', .14, .5); rock(x + R(-.2, .2), z + R(-.2, .2), R(.08, .12)); }
-    // R158: the concept's vine arch frames the way up the steps (two solid legs beside the lane)
-    { const z0 = 3.25, hy = this.H(0, z0); this.archCols = [];
-      for (const sd of [-1, 1]) { const pts = [new V3(sd * .95, hy - .25, z0), new V3(sd * 1.0, hy + .9, z0), new V3(sd * .82, hy + 1.75, z0 + .05), new V3(sd * .4, hy + 2.28, z0), new V3(sd * .02, hy + 2.4, z0)];
-        this.add(taperTube(pts, .13, .07, { radial: 10, seg: 26, lump: .2, flare: 1.2 }), this.m.bark, TIERS[this.tierId].shadows !== 'none', true);
-        const cur = new THREE.CatmullRomCurve3(pts), vine = []; for (let i = 0; i <= 40; i++) { const t = i / 40, P = cur.getPointAt(t), a = t * 18 * sd; vine.push(P.clone().add(new V3(Math.cos(a) * .12, Math.sin(a) * .1, Math.sin(a) * .12))); }
-        this.add(taperTube(vine, .03, .015, { radial: 5, seg: 60, lump: .2 }), this.m.bark, false, true);
-        for (let i = 0; i < 70; i++) { const t = R(.15, 1), P = cur.getPointAt(t); addLeaf(P.clone().add(new V3(R(-.15, .15), R(-.1, .1), R(-.15, .15))), new V3(R(-1, 1), R(.2, 1), R(-1, 1)), .09, .13, C('#4d6e2a').lerp(C('#93a84a'), rnd())); }
-        for (let i = 0; i < 3; i++) rock(sd * R(.8, 1.15), z0 + R(-.3, .3), R(.14, .24));
-        const v = new V3(sd * .95, 0, z0); this.s.m.localToWorld(v); const c = { x: v.x, z: v.z, r: .16, kind: 'ring-arch', traversal: 'blocked', space: 'garden' }; this.g.world.colliders.push(c); this.archCols.push(c); } }
-    // instanced leaves (one draw call), rocks (four), toadstools (two)
-    this.leafAll = leaves; const g = new THREE.PlaneGeometry(1, 1).translate(0, .5, 0), m4 = new THREE.Matrix4();
-    const im = new THREE.InstancedMesh(g, this.m.leaf, leaves.length); leaves.forEach((l, i) => { m4.compose(l.p, l.q, new V3(l.sx, l.sy, 1)); im.setMatrixAt(i, m4); im.setColorAt(i, l.c); }); im.receiveShadow = true; im.castShadow = false; this.leaves = im; this.root.add(im);
+  // ---------- the vine arch over the lane ----------
+  arch() {
+    const z0 = ARCH_Z, h = this.Hc(0, z0);
+    for (const s of [-1, 1]) { const pts = [new V3(s * .85, h - .25, z0), new V3(s * .9, h + .8, z0), new V3(s * .74, h + 1.6, z0 + .05), new V3(s * .35, h + 2.08, z0), new V3(s * .02, h + 2.18, z0)];
+      this.add(taperTube(pts, .13, .07, { radial: 10, seg: 30, lump: .2, flare: 1.2 }), this.m.bark, true, true);
+      const cur = new THREE.CatmullRomCurve3(pts), vine = []; for (let i = 0; i <= 40; i++) { const t = i / 40, P = cur.getPointAt(t), a = t * 18 * s; vine.push(P.clone().add(new V3(Math.cos(a) * .12, Math.sin(a) * .1, Math.sin(a) * .12))); }
+      this.add(taperTube(vine, .03, .015, { radial: 6, seg: 80, lump: .2 }), this.m.bark, false, true);
+      for (let i = 0; i < 70; i++) { const t = R(.15, 1), P = cur.getPointAt(t); this.addLeaf(P.clone().add(new V3(R(-.15, .15), R(-.1, .1), R(-.15, .15))), new V3(R(-1, 1), R(.2, 1), R(-1, 1)), .09, .13, C('#4d6e2a').lerp(C('#93a84a'), rnd())); }
+      for (let i = 0; i < 3; i++) this.rock(s * R(.75, 1.1), z0 + R(-.3, .3), R(.14, .24));
+      this.collider(s * .85, z0, .2, 'ring-arch'); }
+  }
+  // ---------- understory (ferns, toadstools, leafy banks, fallen petals) ----------
+  understory() {
+    for (let k = 0; k < 9; k++) { const th = podTh(k), x = Math.sin(th) * PODR, z = Math.cos(th) * PODR, out = new V3(x, 0, z).normalize(), side = new V3(-out.z, 0, out.x);
+      this.fern(x + out.x * 1.1 + side.x * .9, z + out.z * 1.1 + side.z * .9, R(.8, 1.1)); this.fern(x + out.x * 1.0 - side.x * 1.0, z + out.z * 1.0 - side.z * 1.0, R(.7, 1));
+      if (k % 2 === 0) this.toad(x + side.x * .95 - out.x * .1, z + side.z * .95 - out.z * .1);
+      this.cluster(x + out.x * 1.45, this.Hc(x + out.x * 1.45, z + out.z * 1.45) + .35, z + out.z * 1.45, .6, 220, '#3a5426', '#7a9640', .2, .6); }
+    for (let i = 0; i < 5; i++) { const a = i * 1.3 + .4; this.toad(Math.cos(a) * 1.3, Math.sin(a) * 1.3); }
+    for (let i = 0; i < 6; i++) { const z = R(RT - 1.4, RT - .3), x = laneX(z) + (rnd() < .5 ? -1 : 1) * R(.9, 1.6); this.fern(x, z, R(.6, .9)); }
+    for (let i = 0; i < 420; i++) { const a = R(0, 6.28), r = rnd() < .6 ? RING + R(-.9, .9) : R(.6, 3), x = Math.sin(a) * r, z = Math.cos(a) * r; this.addLeaf(new V3(x, this.Hc(x, z) + .015, z), new V3(R(-.25, .25), 1, R(-.25, .25)), .05, .075, C(['#b0703a', '#c99a4a', '#8a5a2a', '#d8a060'][(rnd() * 4) | 0]).multiplyScalar(R(.7, 1))); }
+  }
+  instanced() {
+    const leafK = { 'desktop': 1, 'mobile-high': .6, 'mobile-low': .4 }[this.tierId] ?? 1, ls = this.leaves; ls.forEach(l => l.rank = rnd()); ls.sort((a, b) => a.rank - b.rank);
+    const g = new THREE.PlaneGeometry(1, 1).translate(0, .5, 0), m4 = new THREE.Matrix4(); const im = new THREE.InstancedMesh(g, this.m.leaf, ls.length);
+    ls.forEach((l, i) => { m4.compose(l.p, l.q, new V3(l.sx, l.sy, 1)); im.setMatrixAt(i, m4); im.setColorAt(i, l.c); }); im.receiveShadow = true; this.leafMesh = im; this.leafAll = ls.length; this.root.add(im); void leafK;
     const rockGeos = [0, 1, 2, 3].map(v => { const gg = new THREE.IcosahedronGeometry(1, 2), p = gg.attributes.position; for (let i = 0; i < p.count; i++) { const x = p.getX(i), y = p.getY(i), z = p.getZ(i), k = 1 + (fbm(x * 1.2 + y * .7 + v * 5, z * 1.2 - y * .9) - .5) * .75; p.setXYZ(i, x * k, Math.max(y * k, -.35), z * k); }
       gg.computeVertexNormals(); const n = gg.attributes.normal, col = []; for (let i = 0; i < p.count; i++) { const c = C('#958c78').lerp(C('#6f6857'), rnd() * .4).lerp(C('#4d6a26'), ss(.45, .85, n.getY(i)) * .85); col.push(c.r, c.g, c.b); } gg.setAttribute('color', new THREE.Float32BufferAttribute(col, 3)); return gg; });
-    const per = [[], [], [], []]; rocks.forEach(r => per[(rnd() * 4) | 0].push(r)); const q = new THREE.Quaternion();
-    per.forEach((list, v) => { if (!list.length) return; const ri = new THREE.InstancedMesh(rockGeos[v], this.m.rock, list.length); list.forEach(([x, z, s, sy, sink], i) => { q.setFromEuler(new THREE.Euler(R(-.3, .3), R(0, 6), R(-.3, .3))); m4.compose(new V3(x, this.H(x, z) - s * sink * .6, z), q, new V3(s * R(.9, 1.3), s * sy, s)); ri.setMatrixAt(i, m4); }); ri.receiveShadow = true; ri.castShadow = TIERS[this.tierId].shadows === 'full'; this.root.add(ri); });
+    const per = [[], [], [], []]; this.rocks.forEach(r => per[(rnd() * 4) | 0].push(r)); const q = new THREE.Quaternion(); this.rockMeshes = [];
+    per.forEach((list, v) => { if (!list.length) return; const ri = new THREE.InstancedMesh(rockGeos[v], this.m.rock, list.length); list.forEach(([x, z, s, sy, sink], i) => { q.setFromEuler(new THREE.Euler(R(-.3, .3), R(0, 6), R(-.3, .3))); m4.compose(new V3(x, this.Hc(x, z) - s * sink * .6, z), q, new V3(s * R(.9, 1.3), s * sy, s)); ri.setMatrixAt(i, m4); }); ri.receiveShadow = true; this.rockMeshes.push(ri); this.root.add(ri); });
     const capGeo = new THREE.LatheGeometry([[0, .62], [.25, .6], [.45, .52], [.52, .4], [.48, .36], [.15, .4], [0, .42]].map(a => new THREE.Vector2(a[0], a[1])), 14), stemGeo = new THREE.LatheGeometry([[0, 0], [.13, 0], [.1, .2], [.09, .42], [0, .44]].map(a => new THREE.Vector2(a[0], a[1])), 8);
-    for (const [geo, mat] of [[stemGeo, this.m.stem], [capGeo, this.m.cap]]) { const ti = new THREE.InstancedMesh(geo, mat, shrooms.length); shrooms.forEach(([x, z, s], i) => { q.setFromEuler(new THREE.Euler(R(-.15, .15), R(0, 6), R(-.15, .15))); m4.compose(new V3(x, this.H(x, z) - .01, z), q, new V3(s, s, s)); ti.setMatrixAt(i, m4); }); ti.receiveShadow = true; this.root.add(ti); }
-    rnd = rng(77);
+    for (const [geo, mat] of [[stemGeo, this.m.stem], [capGeo, this.m.cap]]) { const ti = new THREE.InstancedMesh(geo, mat, this.shrooms.length); this.shrooms.forEach(([x, z, s], i) => { q.setFromEuler(new THREE.Euler(R(-.15, .15), R(0, 6), R(-.15, .15))); m4.compose(new V3(x, this.Hc(x, z) - .01, z), q, new V3(s, s, s)); ti.setMatrixAt(i, m4); }); ti.receiveShadow = true; this.root.add(ti); }
+    this.leaves = null; this.rocks = null;
   }
-
-  // ---------- sculpted grass blades (instanced, wind in the vertex shader, density per tier) ----------
+  // ---------- sculpted grass (the concept's density rule; count per tier) ----------
   grass() {
-    const seg = 4, pos = [], col = [], nor = [], idx = []; for (let i = 0; i <= seg; i++) { const t = i / seg, w = .5 * (1 - t) + .04, c = C('#2c4519').lerp(C('#a4c25a'), Math.pow(t, 1.1)); pos.push(-w, t, .3 * t * t, w, t, .3 * t * t); col.push(c.r, c.g, c.b, c.r, c.g, c.b); nor.push(-.15, 1, .25, .15, 1, .25); }
+    const seg = 4, pos = [], col = [], nor = [], idx = []; for (let i = 0; i <= seg; i++) { const t = i / seg, w = .5 * (1 - t) + .04, c = C('#26351a').lerp(C('#b4c06a'), Math.pow(t, 1.1)); pos.push(-w, t, .3 * t * t, w, t, .3 * t * t); col.push(c.r, c.g, c.b, c.r, c.g, c.b); nor.push(-.15, 1, .25, .15, 1, .25); }
     for (let i = 0; i < seg; i++) idx.push(2 * i, 2 * i + 1, 2 * i + 2, 2 * i + 1, 2 * i + 3, 2 * i + 2);
     const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute('color', new THREE.Float32BufferAttribute(col, 3)); g.setAttribute('normal', new THREE.Float32BufferAttribute(nor, 3)); g.setIndex(idx);
-    const max = TIERS.desktop.grass, items = [], pots = this.potLocal();
-    for (let a = 0; a < max * 6 && items.length < max; a++) { const x = R(-OUTER, OUTER), z = R(-OUTER, OUTER), r = Math.hypot(x, z); if (r > OUTER * .97 || r < .72) continue;
-      let d = ss(.3, .6, fbm(x * .9 + 3, z * .9)) * .9 + .1; d *= 1 - this.pathMask(x, z); if (Math.abs(x) < .62 && z > 1.7 && z < 3.0) d = 0;   // the steps
-      for (const p of pots) { const dd = Math.hypot(x - p.x, z - p.z); if (dd < .3) d = 0; else if (dd < .55) d = Math.max(d, .7); }
-      d *= ss(OUTER, OUTER * .6, r) * .85 + .15; if (r < 2.4) d *= .5; if (this.blocked(x, z, .1)) d = 0; if (rnd() > d) continue; items.push([x, z, rnd()]); }
-    items.sort((a, b) => a[2] - b[2]);   // random order: lowering .count keeps an even spread
+    const max = 26000, items = [];
+    for (let a = 0; a < max * 8 && items.length < max; a++) { const x = R(-RT, RT), z = R(-RT, RT), r = Math.hypot(x, z); if (r > RT - .15 || r < .55) continue;
+      let d = ss(.36, .6, fbm(x * .55 + 3, z * .55)) * .95 + .05; d *= 1 - pathMaskC(x, z); const e = Math.abs(r - RING); if (e > .5 && e < .85) d = Math.max(d, .55);
+      for (let k = 0; k < 9; k++) { const th = podTh(k), dd = Math.hypot(x - Math.sin(th) * PODR, z - Math.cos(th) * PODR); if (dd < .62) d = 0; else if (dd < 1.2) d = Math.max(d, .6); }
+      if (Math.hypot(x - this.stoneC.x, z - this.stoneC.z) < .75) d = 0; d *= 1 - .6 * Math.exp(-(r * r) / 2.5); d *= 1 - ss(RT - 1, RT - .15, r) * .5; if (rnd() > d) continue; items.push([x, z, rnd()]); }
+    items.sort((a, b) => a[2] - b[2]);
     const im = new THREE.InstancedMesh(g, this.m.grass, items.length), m4 = new THREE.Matrix4(), q = new THREE.Quaternion(), e = new THREE.Euler();
-    items.forEach(([x, z], i) => { const r = Math.hypot(x, z), h = R(.1, .2) + ss(2.2, 3.1, r) * R(.08, .2); e.set(R(-.25, .25), R(0, 6.28), R(-.25, .25)); q.setFromEuler(e); m4.compose(new V3(x, this.H(x, z) - .01, z), q, new V3(R(.03, .05), h, h)); im.setMatrixAt(i, m4);
-      im.setColorAt(i, C('#ffffff').lerp(C('#e9d890'), fbm(x * .3 + 9, z * .3) * .45).multiplyScalar(R(.72, 1.05))); });
+    items.forEach(([x, z], i) => { const h = R(.12, .3) * (1 + .5 * ss(4, 6.4, Math.hypot(x, z))); e.set(R(-.25, .25), R(0, 6.28), R(-.25, .25)); q.setFromEuler(e); m4.compose(new V3(x, this.Hc(x, z) - .01, z), q, new V3(R(.03, .05), h, h)); im.setMatrixAt(i, m4);
+      im.setColorAt(i, C('#ffffff').lerp(C('#e9e2a0'), fbm(x * .3 + 9, z * .3) * .7).multiplyScalar(R(.75, 1.12))); });
     im.receiveShadow = true; im.castShadow = false; this.grassMesh = im; this.root.add(im);
   }
-
-  // ---------- atmosphere: motes over the ring, soft light shafts (desktop), pulsing seams ----------
   atmosphere() {
-    const n = TIERS.desktop.motes, p = []; for (let i = 0; i < n; i++) { const a = R(0, 6.28), r = Math.sqrt(rnd()) * 3.4; p.push(Math.sin(a) * r, R(.25, 2.2) + this.H(Math.sin(a) * r, Math.cos(a) * r), Math.cos(a) * r); }
+    const n = 380, p = []; for (let i = 0; i < n; i++) { const a = R(0, 6.28), r = Math.sqrt(rnd()) * 6; p.push(Math.sin(a) * r, R(.2, 2.6) + this.Hc(Math.sin(a) * r, Math.cos(a) * r), Math.cos(a) * r); }
     const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(p, 3));
-    this.motes = new THREE.Points(g, new THREE.PointsMaterial({ size: .03, map: this.T.radial, color: '#ffe2a0', transparent: true, opacity: .85, depthWrite: false, blending: THREE.AdditiveBlending })); this.motes.renderOrder = 5; this.root.add(this.motes);
-    this.shaftMat = new THREE.ShaderMaterial({ transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, side: THREE.DoubleSide, uniforms: { uK: { value: .05 }, uCol: { value: C('#ffe6b8') } },
+    this.motes = new THREE.Points(g, new THREE.PointsMaterial({ size: .04, map: this.T.radial, color: '#ffe2a0', transparent: true, opacity: .85, depthWrite: false, blending: THREE.AdditiveBlending })); this.motes.renderOrder = 5; this.root.add(this.motes);
+    this.shaftMat = new THREE.ShaderMaterial({ transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, side: THREE.DoubleSide, uniforms: { uK: { value: .06 }, uCol: { value: C('#ffe6b8') } },
       vertexShader: 'varying vec2 vU;varying float vF;void main(){vU=uv;vec3 n=normalize(normalMatrix*normal);vec4 mv=modelViewMatrix*vec4(position,1.);vF=abs(dot(n,normalize(-mv.xyz)));gl_Position=projectionMatrix*mv;}',
       fragmentShader: 'uniform float uK;uniform vec3 uCol;varying vec2 vU;varying float vF;void main(){float a=uK*smoothstep(0.,.3,vU.y)*pow(1.-vU.y,.6)*pow(vF,2.5);gl_FragColor=vec4(uCol*a,1.);}' });
-    this.shafts = [[-.9, .6], [1.1, -.4]].map(([x, z]) => { const m = new THREE.Mesh(new THREE.CylinderGeometry(.22, .5, 5, 16, 1, true), this.shaftMat); m.userData.g = new V3(x, this.H(x, z), z); this.root.add(m); return m; });
+    this.shafts = [[-1.6, 2.2], [2.4, -.6], [.9, 3.1]].map(([x, z]) => { const m = new THREE.Mesh(new THREE.CylinderGeometry(.35, .75, 8, 20, 1, true), this.shaftMat); m.userData.g = new V3(x, this.Hc(x, z), z); this.root.add(m); return m; });
   }
-
-  // the classic pots, soil and mound give way to the sanctuary (sprouts, padlocks, stone, steps, pergola, vines and lanterns stay)
-  hideClassic() {
-    const M = this.s.model; if (!M) return;
-    for (const id of this.ids) for (const n of [`Pot_${id}_Body`, `Pot_${id}_Earth`, `Soil_${id}`]) { const o = M.getObjectByName(n); if (o) o.visible = false; }
-    for (const n of ['Mound', 'Ground_Moss', 'Pergola', 'Sign_Main']) { const o = M.getObjectByName(n); if (o) o.visible = false; }   // R158: the concept has no pergola or sign
-    // the padlock moves to the front foot of its pod (it sat inside the pot)
-    for (const P of this.pods.values()) { const lock = M.getObjectByName(`Lock_${P.base.id}`), pot = M.getObjectByName(`Pot_${P.base.id}`); if (!lock || !pot) continue;
-      const v = new V3(P.base.x, 0, P.base.z).multiplyScalar(.74); v.y = this.H(v.x, v.z) + .12; this.s.m.localToWorld(v); pot.worldToLocal(v); lock.position.copy(v); lock.scale.setScalar(.8); }
+  // the Ring model's own stone (a copy) at the head of the lane: the planting and switch point
+  stone() {
+    const M = this.s.model, g = new THREE.Group(); g.name = 'R159_STONE'; g.position.set(this.stoneC.x, this.Hc(this.stoneC.x, this.stoneC.z) - .19, this.stoneC.z); g.scale.setScalar(1 / K); this.root.add(g);
+    for (const n of ['Stone', 'Stone_Inner', 'Stone_Glow', 'Stone_Emblem']) { const o = M?.getObjectByName(n); if (!o) continue; const c = o.clone(true); c.position.set(o.position.x, o.position.y, o.position.z); g.add(c); }
+    this.stoneGroup = g; const w = this.toWorld(this.stoneC.x, 0, this.stoneC.z); this.stoneWorld = { x: w.x, z: w.z };
   }
-
-  // draw calls matter most on the iPhone: meshes that share a material are baked into one (pod bases + roots across all nine
-  // pods, the lantern stalks, the bulbs; inside each pod its open bloom and its husk) so the ring costs ~60 calls, not ~150
+  // the colliders go to the game's world (garden space); dispose takes them out again
+  solid() { const W = this.g.world; for (const c of this.cols) W.colliders.push(c); }
   batch() {
     this.root.updateMatrixWorld(true); const inv = new THREE.Matrix4(), m = new THREE.Matrix4();
     const merge = (meshes, parent, pod) => { const by = new Map(); for (const o of meshes) { if (!o.isMesh || o.isInstancedMesh || this.glows.includes(o)) continue; (by.get(o.material) || by.set(o.material, []).get(o.material)).push(o); }
@@ -306,33 +309,36 @@ export class RingSanctuary {
         const geo = mergeGeometries(geos, false); if (!geo) continue; const cast = list.some(o => o.castShadow);
         for (const o of list) { o.removeFromParent(); o.geometry.dispose(); const i = this.cast.indexOf(o); if (i >= 0) this.cast.splice(i, 1); }
         const out = new THREE.Mesh(geo, mat); out.castShadow = cast; out.receiveShadow = true; out.userData.pod = pod; parent.add(out); if (cast) this.cast.push(out); } };
-    const podBase = []; for (const P of this.pods.values()) { const s = P.open.parent; for (const o of s.children) if (o.isMesh) podBase.push(o); merge(P.open.children.slice(), P.open, true); merge(P.closed.children.slice(), P.closed, true); }
-    merge(podBase, this.root, true); merge(this.root.children.filter(o => o.isMesh && (o.material === this.m.bark || o.material === this.m.lantern)), this.root, false);
+    const base = []; for (const P of this.pods.values()) { for (const o of P.g.children) if (o.isMesh) base.push(o); merge(P.open.children.filter(o => o.isMesh), P.open, true); merge(P.closed.children.filter(o => o.isMesh), P.closed, true); }
+    merge(base, this.root, true); merge(this.root.children.filter(o => o.isMesh && o !== this.ground && (o.material === this.m.bark || o.material === this.m.lantern || o.material === this.m.root)), this.root, false);
   }
   setTier(id) {
     const t = TIERS[id] || TIERS.desktop; this.tierId = TIERS[id] ? id : 'desktop';
-    if (this.grassMesh) this.grassMesh.count = Math.min(this.grassMesh.instanceMatrix.count, t.grass);
-    if (this.leaves) this.leaves.count = Math.max(1, Math.floor(this.leafAll.length * t.leaves));
-    if (this.motes) this.motes.geometry.setDrawRange(0, t.motes);
+    const grassK = { 'desktop': 1, 'mobile-high': .42, 'mobile-low': .25 }[this.tierId], leafK = { 'desktop': 1, 'mobile-high': .6, 'mobile-low': .4 }[this.tierId];
+    if (this.grassMesh) this.grassMesh.count = Math.floor(this.grassMesh.instanceMatrix.count * grassK);
+    if (this.leafMesh) { this.leafMesh.count = Math.max(1, Math.floor(this.leafAll * leafK)); this.leafMesh.castShadow = t.shadows === 'full'; }
+    for (const r of this.rockMeshes || []) r.castShadow = t.shadows === 'full';
+    if (this.motes) this.motes.geometry.setDrawRange(0, Math.round(380 * t.motes / 160));
     for (const s of this.shafts || []) s.visible = t.shafts;
     for (const o of this.cast) o.castShadow = t.shadows === 'full' || (t.shadows === 'pods' && !!o.userData.pod);
     this.env?.setTier(this.tierId);
   }
-
   update(dt, camera) {
     const t = (performance.now() - this.t0) / 1000; this.U.time.value = t;
     if (this.env) try { this.env.mood(); } catch (e) { console.warn('[TGW] ring mood', e); this.env.restore(); this.env = null; }
     if (this.g.quality?.id && this.g.quality.id !== this.tierId) this.setTier(this.g.quality.id);
-    const sun = this.g.world?.sun; if (sun) { const k = Math.min(1, Math.max(0, (sun.intensity - 1.15) / (this.sunBase - 1.15))); this.U.day.value = k; this.U.sunCol.value.copy(this.sunCol0).multiplyScalar(k); }   // night: no back-light glow
+    const sun = this.g.world?.sun; if (sun) { const k = Math.min(1, Math.max(0, (sun.intensity - 1.15) / (this.sunBase - 1.15))); this.U.day.value = k; this.U.sunCol.value.copy(this.sunCol0).multiplyScalar(k); }
     const sd = this.g.world?.sunDir; if (sd && camera) this.U.sunView.value.copy(sd).transformDirection(camera.matrixWorldInverse);
-    for (const P of this.pods.values()) if (P.k !== P.target) { P.k += Math.sign(P.target - P.k) * Math.min(Math.abs(P.target - P.k), Math.min(dt, .1) / 1.6); if (P.k === P.target) P.anim = false; this.applyPod(P); }
-    const br = .5 + .5 * Math.sin(t * 2.1); this.m.ember.emissiveIntensity = 1.8 + 1.4 * br; for (const gl of this.glows) gl.material.opacity = .24 + .12 * br;
+    for (const P of this.pods.values()) { if (P.k !== P.target) { P.k += Math.sign(P.target - P.k) * Math.min(Math.abs(P.target - P.k), Math.min(dt, .1) / 1.6); if (P.k === P.target) P.anim = false; this.applyPod(P); }
+      if (P.sway && P.open.visible) P.sway.rotation.z = Math.sin(t * 1.3 + P.ph) * .07; }
+    const br = .5 + .5 * Math.sin(t * 2.1); this.m.ember.emissiveIntensity = 2 + 1.5 * br; for (const gl of this.glows) gl.material.opacity = (gl.isSprite ? .4 : .24) + .12 * br;
     if (this.motes) this.motes.rotation.y = t * .02;
-    if (sd && this.shafts) for (const m of this.shafts) { if (!m.visible) continue; m.position.copy(m.userData.g).addScaledVector(sd, 2.4); m.quaternion.setFromUnitVectors(new V3(0, 1, 0), sd); }
+    if (sd && this.shafts) for (const m of this.shafts) { if (!m.visible) continue; m.position.copy(m.userData.g).addScaledVector(sd, 3.6); m.quaternion.setFromUnitVectors(new V3(0, 1, 0), sd); }
   }
-  // the bloom moment when a Special Seed is planted: the husk parts, the petals unfold, sparks rise
   bloom(id) { const P = this.pods.get(id); if (!P) return; P.k = 0; P.target = 1; P.anim = true; this.applyPod(P);
-    try { const v = new V3(); P.g.getWorldPosition(v); v.y += .5; this.g.fx?.burst?.(v, 0xffb35a, 18, 1.4); } catch {} }
+    try { this.g.fx?.burst?.(this.podWorld(id), 0xffb35a, 18, 1.4); } catch {} }
+  podWorld(id) { const P = this.pods.get(id); const v = new V3(); P?.g.getWorldPosition(v); v.y += .5; return v; }
+  dispose() { try { this.env?.restore(); } catch {} this.env = null; const W = this.g.world; for (const c of this.cols) { const i = W.colliders.indexOf(c); if (i >= 0) W.colliders.splice(i, 1); } this.cols = []; this.root.removeFromParent(); }
   stats() { let tris = 0, draws = 0; this.root.traverse(o => { if (!o.visible || !o.geometry) return; draws++; const n = (o.geometry.index ? o.geometry.index.count : o.geometry.attributes.position.count) / 3; tris += n * (o.isInstancedMesh ? o.count : 1); }); return { draws, tris: Math.round(tris), buildMs: Math.round(this.buildMs) }; }
 }
 
@@ -345,6 +351,14 @@ export class RingSanctuary {
 // blended over the day part; DayNight is asked to re-apply every frame so nothing accumulates. Garden space only.
 // ======================================================================================================================
 const MOOD = { fog: C('#c8d3c3'), near: 6, far: 46, zenith: C('#86abc4'), hemiSky: C('#c6d8e2'), hemiGround: C('#5e4c2e'), hemiI: 1.05, sunC: C('#fff0d6'), sunI: 3.0, exposure: .98, env: .55 };
+// the garden ground's colour graded to the concept's loam, moss and trodden paths (water keeps its colour); shared with the Ring's ground edge
+export function gradeGround(c, x, z) {
+  if (c.b > c.r * .95 && c.b > .25) return c;
+  const orange = c.r > c.g * 1.12, n1 = fbm(x * .35, z * .35), n2 = fbm(x * 1.3 + 5, z * 1.3);
+  if (orange) { const k = Math.min(1, (c.r - c.g) * 4); c.lerp(C('#4a3a27').lerp(C('#6e5c40'), n2 * .7), .7 + .3 * k); }
+  else { const t = C('#4a6327').lerp(C('#3a5220'), ss(.45, .7, n1)).lerp(C('#45311f'), ss(.62, .82, n2) * .55); c.lerp(t, .85); }
+  return c.multiplyScalar(.74 + .22 * n2);
+}
 const LEAF_BUDGET = { 'desktop': 1, 'mobile-high': .4, 'mobile-low': .25 };
 
 export class RingEnvironment {
@@ -374,12 +388,12 @@ export class RingEnvironment {
 
   // ---------- the garden's eight trees -> concept oaks (round) and birches at their own spots; the one behind the Ring is the hero ----------
   trees() {
-    const defs = this.W.treeDefs || [], ring = this.S.s.spot, kids = this.W.privateRoot.children;
+    const defs = this.W.treeDefs || [], ring = this.S.center, kids = this.W.privateRoot.children;
     const bark = [0x675442, 0xd8d2bf], foliage = 0x718b4e;
     for (const o of kids) { if (!o.isMesh || o.isInstancedMesh) continue; const t = o.geometry?.type, hex = o.material?.color?.getHex?.();
       if ((t === 'CylinderGeometry' && bark.includes(hex)) || (t === 'IcosahedronGeometry' && hex === foliage)) { const near = defs.some(d => Math.hypot(o.position.x - d.x, o.position.z - d.z) < 2.2 * d.s); if (near) this.hide(o); } }
-    let hero = null, best = 1e9; for (const d of defs) { const dd = Math.hypot(d.x - ring.x, d.z - ring.z); if (dd < best) { best = dd; hero = d; } }
-    for (const d of defs) d.t === 'birch' ? this.birchTree(d.x, d.z, d.s) : this.oak(d.x, d.z, d === hero ? d.s * 1.05 : d.s * .82, d === hero);
+    for (const d of defs) { if (Math.hypot(d.x - ring.x, d.z - ring.z) < this.S.clearR + .8) continue;   // the Ring's own oak stands there now
+      d.t === 'birch' ? this.birchTree(d.x, d.z, d.s) : this.oak(d.x, d.z, d.s * .82, false); }
   }
   oak(x, z, sc, hero) {
     const y = this.H(x, z), P = (dx, dy, dz) => new V3(x + dx * sc, y + dy * sc, z + dz * sc);
@@ -425,17 +439,18 @@ export class RingEnvironment {
   ground() {
     const mesh = this.W.privateRoot.children.find(o => o.isMesh && o.geometry?.type === 'PlaneGeometry' && o.geometry.parameters?.width === 36 && o.material?.vertexColors);
     if (!mesh) return; const col = mesh.geometry.attributes.color, pos = mesh.geometry.attributes.position, orig = col.array.slice(), c = new THREE.Color();
-    const soil = C('#45311f'), moss = C('#3a5220'), grass = C('#4a6327'), loam = C('#4a3a27'), dust = C('#6e5c40');
-    for (let i = 0; i < col.count; i++) { c.fromBufferAttribute(col, i); const x = pos.getX(i), z = pos.getZ(i);
-      if (c.b > c.r * .95 && c.b > .25) continue;   // water
-      const orange = c.r > c.g * 1.12, n1 = fbm(x * .35, z * .35), n2 = fbm(x * 1.3 + 5, z * 1.3);
-      if (orange) { const k = Math.min(1, (c.r - c.g) * 4); c.lerp(loam.clone().lerp(dust, n2 * .7), .7 + .3 * k); }
-      else { const t = grass.clone().lerp(moss, ss(.45, .7, n1)).lerp(soil, ss(.62, .82, n2) * .55); c.lerp(t, .85); }
-      c.multiplyScalar(.74 + .22 * n2); col.setXYZ(i, c.r, c.g, c.b); }
+    for (let i = 0; i < col.count; i++) { c.fromBufferAttribute(col, i); gradeGround(c, pos.getX(i), pos.getZ(i)); col.setXYZ(i, c.r, c.g, c.b); }
     col.needsUpdate = true; this.undo.push(() => { col.array.set(orig); col.needsUpdate = true; });
   }
-  // flat grey slab stones and boulders in the concept's warm sandstone
+  // the garden path's flat grey stepping stones become the concept's flagstones on the same spots; boulders get its warm sandstone
   stones() {
+    const vars = this.S.flagVariants || [], list = vars.map(() => []), v = new V3();
+    for (const o of [...this.W.privateRoot.children]) { if (!o.isMesh || o.geometry?.type !== 'DodecahedronGeometry' || o.scale.y > .07 || !o.visible) continue;
+      o.getWorldPosition(v); list[(rnd() * Math.max(1, vars.length)) | 0]?.push([v.x, v.z, Math.max(o.scale.x, o.scale.z) * .95, o.rotation.y]); this.hide(o); }
+    const m4 = new THREE.Matrix4(), q = new THREE.Quaternion();
+    vars.forEach((va, k) => { const L = list[k]; if (!L?.length) return; const im = new THREE.InstancedMesh(va.g, this.S.m.stone, L.length);
+      L.forEach(([x, z, s, ry], i) => { q.setFromEuler(new THREE.Euler(R(-.04, .04), ry + R(-.3, .3), R(-.04, .04))); m4.compose(new V3(x, this.H(x, z) - .04, z), q, new V3(s, .13, s)); im.setMatrixAt(i, m4); im.setColorAt(i, C('#ffffff').multiplyScalar(R(.8, 1.05)).lerp(C('#c9c09a'), rnd() * .4)); });
+      im.receiveShadow = true; this.root.add(im); });
     this.W.privateRoot.traverse(o => { if (!o.isMesh || o.isInstancedMesh || o.geometry?.type !== 'DodecahedronGeometry' || !o.material?.color) return; const m = o.material, c0 = m.color.clone(), f = m.flatShading;
       m.color.lerp(C('#b0a790'), .7); this.undo.push(() => { m.color.copy(c0); }); if (f !== undefined) { m.flatShading = f; } });
   }

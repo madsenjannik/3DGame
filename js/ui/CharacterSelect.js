@@ -9,8 +9,8 @@
 import * as THREE from 'three';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { loadGLTF } from '../core/AssetManager.js';
-import { SPECIAL } from '../data/combatCatalog.js?build=SAVE-R158-20261014A';
-import { unlockedIds, specialSeedState } from '../core/SaveGame.js?build=SAVE-R158-20261014A';
+import { SPECIAL } from '../data/combatCatalog.js?build=SAVE-R159-20261014A';
+import { unlockedIds, specialSeedState } from '../core/SaveGame.js?build=SAVE-R159-20261014A';
 
 const ROSTER = globalThis.DYM_CHARACTER_ROSTER || [];
 const ORDER = ['daisy', 'cactus', 'swamp', 'aloe', 'tulip', 'hyacinth', 'succulent', 'spire', 'fern'];

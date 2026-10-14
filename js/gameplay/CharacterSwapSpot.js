@@ -20,6 +20,7 @@ import { loadGLTF } from '../core/AssetManager.js';
 const MODEL = './assets/garden/spirebaenken.glb';
 const IDS = ['daisy', 'cactus', 'swamp', 'aloe', 'tulip', 'hyacinth', 'succulent', 'spire', 'fern'];
 // metres from the garden spawn to the ring's stone (the authored bed-shrub pair at -6.5, 6.7); clearing radius; stone reach
+const EAST_DX = 6.8, EAST_DZ = -11.65;   // R159: the premium Ring's spot (the east lawn, ~(7, -2)) from the garden spawn, like SIDE/BACK
 const SIDE = -6.7, BACK = -2.95, CLEAR = 2.5, RADIUS = 1.0, NEAR = .75, MOTES = 0, POT_R = .3;
 // the mound in model space (+z = the steps): top height, flat top radius, outer foot radius, rim collider radius, steps strip
 const TOP = .34, FLAT = 2.22, FOOT = 2.52, RIM = 2.27, STEP_W = .62, STEP_IN = 1.84, STEP_OUT = 2.78, POST_R = .14;
@@ -94,20 +95,38 @@ export class CharacterSwapSpot {
     if (idle) { this.mixer = new THREE.AnimationMixer(scene); this.mixer.clipAction(idle).play(); }
     if (ringMode() === 'premium') this.loadPremium();
   }
-  // R157 experimental (only with ?ring=premium): the concept's sanctuary dressing; any failure leaves the classic Ring as it is
+  // R157-R159 experimental (only with ?ring=premium): the concept's Sprouting Ring, built new at 70 % on the east lawn
+  // (it does not fit at the old spot). The old Ring stays loaded but hidden; its colliders, mound, clearing and the
+  // interaction point hand over to the new one, and restoreClassic() hands everything back (also on any failure).
   loadPremium() {
-    import('../visual/RingSanctuary.js?build=SAVE-R158-20261014A').then(({ RingSanctuary }) => {
-      const M = this.model; this.classicPose = []; for (const id of IDS) for (const n of [`Sprout_${id}`, `Lock_${id}`]) { const o = M.getObjectByName(n); if (o) this.classicPose.push([o, o.position.clone(), o.scale.clone()]); }
-      try { this.sanctuary = new RingSanctuary(this, IDS); this.applyUnlocked();
-        const vm = this.g.vegetationMask; if (vm?.fixed) { this.premiumClear = { cx: this.spot.x, cz: this.spot.z, r: this.sanctuary.clearR }; vm.fixed.push(this.premiumClear); vm.apply(); }   // its own grass replaces the garden's there (colliders untouched)
-      } catch (e) { console.warn('[TGW] ring premium failed; classic Ring kept', e); this.m.getObjectByName('R157_RING_SANCTUARY')?.removeFromParent(); this.restoreClassic(); this.sanctuary = null; }
+    import('../visual/RingSanctuary.js?build=SAVE-R159-20261014A').then(({ RingSanctuary }) => {
+      const W = this.g.world, vm = this.g.vegetationMask, sp = this.g.homePortal.gardenSpawn(), center = { x: sp.x + EAST_DX, z: sp.z + EAST_DZ };
+      const px = W.pathX?.(center.z) ?? 0, yaw = Math.atan2(px - center.x, 0);   // the lane (+z) points at the garden path
+      this.prev = { spot: { ...this.spot }, height: W.gardenHeight, extra: this.g.wilds?.extraProps, oldClear: vm?.fixed?.find(c => c.cx === this.spot.x && c.cz === this.spot.z) };
+      try {
+        if (vm?.fixed) { if (this.prev.oldClear) vm.fixed.splice(vm.fixed.indexOf(this.prev.oldClear), 1); this.premiumClear = { cx: center.x, cz: center.z, r: 6.6 * .7, colliders: true }; vm.fixed.push(this.premiumClear); vm.apply(); }
+        for (const c of this.potColliders) { const i = W.colliders.indexOf(c); if (i >= 0) W.colliders.splice(i, 1); }
+        const S = this.sanctuary = new RingSanctuary(this, IDS, center, yaw);
+        W.gardenHeight = (x, z) => S.height(x, z); this.spot = { ...S.stoneWorld };
+        this.premiumTree = { x: center.x, z: center.z, r: S.clearR + .2, id: 'Sprouting Ring' }; this.g.garden?.trees?.push(this.premiumTree);
+        if (this.g.wilds) { this.g.wilds.extraProps = () => [{ x: center.x, z: center.z, r: S.clearR + .3 }]; this.g.wilds.threat?.relayout?.(); }
+        this.fx.position.y = -TOP; S.stoneGroup.add(this.fx); if (this.beacon) { S.stoneGroup.add(this.beacon.group); this.beacon.group.position.y = .14; }
+        this.applyUnlocked();
+      } catch (e) { console.warn('[TGW] ring premium failed; classic Ring kept', e); this.restoreClassic(); }
     }).catch(e => console.warn('[TGW] ring premium module failed; classic Ring kept', e));
   }
-  restoreClassic() { try { this.sanctuary?.dispose(); } catch {} this.g.world?.privateRoot?.getObjectByName('R158_RING_ENVIRONMENT')?.removeFromParent(); this.sanctuary = null;
-    const M = this.model; if (!M) return; for (const [o, p, sc] of this.classicPose || []) { o.position.copy(p); o.scale.copy(sc); }
-    try { const vm = this.g.vegetationMask, i = vm?.fixed?.indexOf(this.premiumClear) ?? -1; if (i >= 0) { vm.fixed.splice(i, 1); vm.apply(); } } catch {}
-    for (const id of IDS) for (const n of [`Pot_${id}_Body`, `Pot_${id}_Earth`]) { const o = M.getObjectByName(n); if (o) o.visible = true; }
-    for (const n of ['Mound', 'Ground_Moss', 'Pergola', 'Sign_Main']) { const o = M.getObjectByName(n); if (o) o.visible = true; } this.applyUnlocked(); }
+  restoreClassic() {
+    const S = this.sanctuary, W = this.g.world, vm = this.g.vegetationMask; this.sanctuary = null;
+    try { S?.dispose(); } catch {} W?.privateRoot?.getObjectByName('R157_RING_SANCTUARY')?.removeFromParent(); W?.privateRoot?.getObjectByName('R158_RING_ENVIRONMENT')?.removeFromParent();
+    const P = this.prev; if (!P) return; this.prev = null;
+    for (const c of this.potColliders) if (!W.colliders.includes(c)) W.colliders.push(c);
+    W.gardenHeight = P.height; this.spot = P.spot;
+    try { if (vm?.fixed) { const i = vm.fixed.indexOf(this.premiumClear); if (i >= 0) vm.fixed.splice(i, 1); if (P.oldClear && !vm.fixed.includes(P.oldClear)) vm.fixed.push(P.oldClear); vm.apply(); } } catch {}
+    const t = this.g.garden?.trees, ti = t?.indexOf(this.premiumTree) ?? -1; if (ti >= 0) t.splice(ti, 1);
+    if (this.g.wilds) { this.g.wilds.extraProps = P.extra; this.g.wilds.threat?.relayout?.(); }
+    this.fx.position.y = 0; this.m.add(this.fx); if (this.beacon) { this.m.add(this.beacon.group); this.beacon.group.position.y = this.model ? TOP + .14 : .02; }
+    this.applyUnlocked();
+  }
   // open = its sprout; locked = soil with a sprig and the padlock (the shared save's list)
   applyUnlocked() {
     if (!this.model) return; const open = new Set(this.g.save?.data?.unlocked || ['daisy', 'cactus', 'swamp']);
@@ -138,8 +157,7 @@ export class CharacterSwapSpot {
       const done = e => { if (e.action !== a) return; this.mixer.removeEventListener('finished', done); this.applyUnlocked(); }; this.mixer.addEventListener('finished', done);
       setTimeout(() => this.applyUnlocked(), 4000);   // safety: never stuck half-open
     } else this.applyUnlocked();
-    try { const pot = M?.getObjectByName(`Pot_${d.id}`), v = new THREE.Vector3(); if (pot) pot.getWorldPosition(v); else v.set(this.spot.x, 0, this.spot.z);
-      v.y += .6; this.g.fx?.burst?.(v, 0xffd86b, 14, 1.2); this.g.fx?.floatText?.(d.id[0].toUpperCase() + d.id.slice(1) + '!', v.clone().setY(v.y + .4)); } catch {}
+    try { const pot = M?.getObjectByName(`Pot_${d.id}`), v = new THREE.Vector3(); if (this.sanctuary) v.copy(this.sanctuary.podWorld(d.id)); else if (pot) { pot.getWorldPosition(v); v.y += .6; } else v.set(this.spot.x, .6, this.spot.z); this.g.fx?.burst?.(v, 0xffd86b, 14, 1.2); this.g.fx?.floatText?.(d.id[0].toUpperCase() + d.id.slice(1) + '!', v.clone().setY(v.y + .4)); } catch {}
     this.g.hud?.showToast?.(`${d.name} planted. ${d.id[0].toUpperCase() + d.id.slice(1)} has sprouted and can be chosen here`, { milestone: true });
     return true;
   }
@@ -149,11 +167,11 @@ export class CharacterSwapSpot {
   }
   update(t, dt) {
     if (!this.spot) { if (this.g.homePortal?.gardenHome) this.build(); return; }
-    const vis = this.m.visible = this.g.world?.space === 'garden'; if (!vis) return;
-    this.mixer?.update(dt); this.holo?.update(t, dt); if (this.sanctuary) try { this.sanctuary.update(dt, this.g.camera); } catch (e) { console.warn('[TGW] ring premium update failed; classic Ring back', e); this.m.getObjectByName('R157_RING_SANCTUARY')?.removeFromParent(); this.restoreClassic(); this.sanctuary = null; }
+    const vis = this.g.world?.space === 'garden'; this.m.visible = vis && !this.sanctuary; if (!vis) return;
+    this.mixer?.update(dt); this.holo?.update(t, dt); if (this.sanctuary) try { this.sanctuary.update(dt, this.g.camera); } catch (e) { console.warn('[TGW] ring premium update failed; classic Ring back', e); this.restoreClassic(); }
     // R153: the agreed 'calling' beacon: while a Special Seed waits in the Bag, a gold light rises from the stone
     const calling = !!this.g.specialSeeds?.inBag?.().length;
-    if (calling && !this.beacon) { this.beacon = createHoloIndicator({ radius: .5, height: 2.4, intensity: .6, breath: 1.6, scanSpeed: 2.4, scanDensity: 80, baseRing: false, groundHalo: true, fadeIn: .4 }); this.beacon.group.position.y = this.model ? TOP + .14 : .02; this.m.add(this.beacon.group); }
+    if (calling && !this.beacon) { this.beacon = createHoloIndicator({ radius: .5, height: 2.4, intensity: .6, breath: 1.6, scanSpeed: 2.4, scanDensity: 80, baseRing: false, groundHalo: true, fadeIn: .4 }); this.beacon.group.position.y = this.sanctuary ? .14 : this.model ? TOP + .14 : .02; (this.sanctuary?.stoneGroup || this.m).add(this.beacon.group); }
     if (this.beacon) { this.beacon.group.visible = calling; if (calling) this.beacon.update(t, dt); }
     const c = this.g.character?.position, d = c ? Math.hypot(c.x - this.spot.x, c.z - this.spot.z) : 9;
     this.near += ((d < NEAR ? 1 : 0) - this.near) * Math.min(1, dt * 5); const k = this.near, br = .5 + .5 * Math.sin(t * 2.2);
