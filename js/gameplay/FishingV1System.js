@@ -137,7 +137,10 @@ export class FishingV1System{
     root.updateMatrixWorld(true);
     this.buildShopAnchors();
     const cabinRoot=this.land.cabinAsset?.root;
-    this._greetOccluders=['Cabin_Wall_Tar','Cabin_Interior_Emissive'].map(n=>cabinRoot?.getObjectByName(n)).filter(Boolean);
+    // R157B: the hatch cuts the source Tar wall into a new facade mesh.
+    // It MUST be included in LOS, otherwise the authored greeting raycast misses
+    // exactly the panels that can cover Sigurd on the iPhone.
+    this._greetOccluders=['Cabin_Wall_Tar','Cabin_Interior_Emissive','Fishing_Hatch_Facade_R13'].map(n=>cabinRoot?.getObjectByName(n)).filter(Boolean);
 
     // Claude's exported point light is intentionally not part of the GLB. Recreate only
     // that light inside the admitted shop overlay, at the exact authored local position.
@@ -455,7 +458,7 @@ export class FishingV1System{
   }
 
   bindUI(){
-    const q=id=>document.getElementById(id);this.ui={root:q('fishing-v1'),mini:q('fishing-mini-hud'),gearBtn:q('fishing-gear-btn'),logBtn:q('fishing-log-btn'),gearN:q('fishing-gear-n'),logN:q('fishing-log-n'),gear:q('fishing-gear-panel'),log:q('fishing-log-panel'),close:q('fishing-close'),closeL:q('fishing-close-label'),dlg:q('fishing-dialog'),card:q('fishing-card'),prev:q('fishing-prev'),next:q('fishing-next'),cName:q('fishing-card-name'),cSub:q('fishing-card-sub'),cIdx:q('fishing-card-index'),cState:q('fishing-card-state'),bubble:q('fishing-bubble'),ring:q('fishing-ring'),fwrap:q('fishing-fwrap'),fbtn:q('fishing-fbtn'),fbtnShell:q('fishing-fwrap')?.querySelector('.fishing-fbtn-shell'),fbtnHalo:q('fishing-fwrap')?.querySelector('.fishing-fbtn-halo'),fbL:q('fishing-fbtn-label'),fbS:q('fishing-fbtn-sub'),reel:q('fishing-reel-ui'),tens:q('fishing-tension'),prog:q('fishing-progress'),dist:q('fishing-distance'),bite:q('fishing-bite'),shr:q('fishing-shr'),msg:q('fishing-message'),res:q('fishing-result'),rK:q('fishing-result-kicker'),rN:q('fishing-result-name'),rS:q('fishing-result-size'),rL:q('fishing-result-line'),rB:q('fishing-result-button')};
+    const q=id=>document.getElementById(id);this.ui={root:q('fishing-v1'),mini:q('fishing-mini-hud'),gearBtn:q('fishing-gear-btn'),logBtn:q('fishing-log-btn'),gearN:q('fishing-gear-n'),logN:q('fishing-log-n'),gear:q('fishing-gear-panel'),log:q('fishing-log-panel'),close:q('fishing-close'),closeL:q('fishing-close-label'),dlg:q('fishing-dialog'),opts:q('fishing-dialog-options'),reply:q('fishing-reply-text'),card:q('fishing-card'),prev:q('fishing-prev'),next:q('fishing-next'),cName:q('fishing-card-name'),cSub:q('fishing-card-sub'),cIdx:q('fishing-card-index'),cState:q('fishing-card-state'),bubble:q('fishing-bubble'),ring:q('fishing-ring'),fwrap:q('fishing-fwrap'),fbtn:q('fishing-fbtn'),fbtnShell:q('fishing-fwrap')?.querySelector('.fishing-fbtn-shell'),fbtnHalo:q('fishing-fwrap')?.querySelector('.fishing-fbtn-halo'),fbL:q('fishing-fbtn-label'),fbS:q('fishing-fbtn-sub'),reel:q('fishing-reel-ui'),tens:q('fishing-tension'),prog:q('fishing-progress'),dist:q('fishing-distance'),bite:q('fishing-bite'),shr:q('fishing-shr'),msg:q('fishing-message'),res:q('fishing-result'),rK:q('fishing-result-kicker'),rN:q('fishing-result-name'),rS:q('fishing-result-size'),rL:q('fishing-result-line'),rB:q('fishing-result-button')};
     this.ui.close?.addEventListener('click',()=>this.closeContext());this.ui.prev?.addEventListener('click',()=>this.stepShop(-1));this.ui.next?.addEventListener('click',()=>this.stepShop(1));this.ui.gearBtn?.addEventListener('click',()=>this.openPanel('gear'));this.ui.logBtn?.addEventListener('click',()=>this.openPanel('log'));this.ui.rB?.addEventListener('click',()=>this.closeResult());
     const press=e=>{e?.preventDefault?.();e?.stopPropagation?.();this.pressFishing();};const release=()=>{this.releaseFishing();this.ui.fbtn?.classList.remove('down');this.updateFishButtonVisual();};
     this.ui.fbtn?.addEventListener('pointerdown',e=>{this.ui.fbtn.classList.add('down');press(e);});for(const ev of['pointerup','pointercancel','pointerleave'])this.ui.fbtn?.addEventListener(ev,release);
@@ -501,7 +504,7 @@ export class FishingV1System{
 
   greetLine(){if(!this.starter)return 'Want to try your luck? Start with the bamboo rod.';const n=Object.values(this.log).reduce((a,e)=>a+(e?.count||0),0);return n?['Back again? How are they biting?','Good day for it. What can I do for you?','Still smelling of fish, I see.'][Math.floor(Math.random()*3)]:'No luck yet? Try any shore. The whole lake bites, and the stream too.';}
   dialogOptions(){return this.starter?[['tip',"What's biting today?"],['boat',this.hasBoatAccess()?'About the boat…':'Can I take the boat out?'],['log','Show me my catches'],['look','Let me look at your gear'],['bye','See you']]:[['gift',"Sure, I'll give it a go"],['look','What else have you got?'],['bye','Maybe later']];}
-  renderDialog(){if(!this.ui.dlg)return;this.ui.dlg.innerHTML=this.dialogOptions().map(([k,t],i)=>`<button class="fishing-opt${k==='bye'?' quiet':''}" data-k="${k}"><span class="n">${i+1}</span>${t}</button>`).join('');this.ui.dlg.querySelectorAll('.fishing-opt').forEach(b=>b.addEventListener('click',()=>this.choose(b.dataset.k)));}
+  renderDialog(){const options=this.ui.opts||this.ui.dlg;if(!options)return;options.innerHTML=this.dialogOptions().map(([k,t],i)=>`<button class="fishing-opt${k==='bye'?' quiet':''}" data-k="${k}"><span class="n">${i+1}</span>${t}</button>`).join('');options.querySelectorAll('.fishing-opt').forEach(b=>b.addEventListener('click',()=>this.choose(b.dataset.k)));}
   choose(k){if(this.mode!=='greet')return;
     if(k==='bye'){this.say(this.starter?'Tight lines out there.':'The rod will be here.',2);this.closeShop();return;}
     if(k==='tip'){this.say(TIPS[Math.floor(Math.random()*TIPS.length)],5);this.markSigurdNod();return;}
@@ -518,7 +521,11 @@ export class FishingV1System{
   renderAll(){this.renderGear();this.renderLog();this.renderCard();}
   openPanel(p,force=false){const el=p==='gear'?this.ui.gear:this.ui.log,other=p==='gear'?this.ui.log:this.ui.gear;if(!el)return;other?.classList.remove('show');el.classList.toggle('show',force||!el.classList.contains('show'));}
   closePanels(){this.ui.gear?.classList.remove('show');this.ui.log?.classList.remove('show');}
-  say(t,d=2.8){if(!this.ui.bubble)return;this.ui.bubble.innerHTML='<b>Siv-Sigurd</b>'+t;this.ui.bubble.classList.add('show');this._bubbleTimer=d;}
+  say(t,d=2.8){
+    // R157B.1: persistent phone reply, while retaining the locked timed 3D speech bubble on desktop.
+    if(this.ui.reply)this.ui.reply.textContent=String(t);
+    if(!this.ui.bubble)return;this.ui.bubble.innerHTML='<b>Siv-Sigurd</b>'+t;this.ui.bubble.classList.add('show');this._bubbleTimer=d;
+  }
   sayTimer(d){this._bubbleTimer=Math.min(this._bubbleTimer,d);}
 
   enterFish(){const fromBoat=this.mode==='boat'&&this.boat.on;if(!this.starter){this.hud.showToast('You need a rod. Talk to Sigurd at the hatch.');return;}this._fishingFromBoat=fromBoat;this.mode='fishing';this.phase='ready';this.T=0;this.timer=0;this.holding=false;this.castPower=0;this.nibbles=[];this._nibbleIndex=0;this.clearReelFish();this.clearLandFish();this.closePanels();this.character.velocity.set(0,0,0);this.character.currentSpeed=0;
@@ -668,7 +675,9 @@ export class FishingV1System{
       this._dPos.copy(center).addScaledVector(front,dist);
     }
     else if(boardExit){this._dPos.copy(followCamera.position);this._dTgt.copy(followCamera.look);fov=camera.aspect<.8?58:48;}
-    else if(inShop){this.updateShopAnchors();this._dPos.copy(LOCAL.SHOP_POS);this._dTgt.copy(LOCAL.SHOP_TGT);const c=this.shopCenters[this.shopIndex];if(c)this._dTgt.lerp(c,portrait ? .25 : .5);this.overlayRoot.localToWorld(this._dPos);this.overlayRoot.localToWorld(this._dTgt);fov=portrait?74:52;}
+    else if(inShop){this.updateShopAnchors();this._dPos.copy(LOCAL.SHOP_POS);this._dTgt.copy(LOCAL.SHOP_TGT);const c=this.shopCenters[this.shopIndex];if(c)this._dTgt.lerp(c,portrait ? .25 : .5);this.overlayRoot.localToWorld(this._dPos);this.overlayRoot.localToWorld(this._dTgt);fov=portrait?74:52;
+      if(this.T<.12){this._camPos.copy(this._dPos);this._camTgt.copy(this._dTgt);} // R157B: cut into shop, not through its wall
+    }
     else if(atOut){
       // R13: keep Claude Design's exported camera node as the source of truth. The
       // integration GLB is parented under the canonical cabin transform, so this world
@@ -681,7 +690,16 @@ export class FishingV1System{
         const landFov=Number.isFinite(extras.fovDegLandscape)?extras.fovDegLandscape:(viewCam.fov||42);
         const portraitFov=Number.isFinite(extras.fovDegPortrait)?extras.fovDegPortrait:60;
         fov=camera.aspect<portraitCut?portraitFov:landFov;
-        camera.position.copy(this._dPos);camera.quaternion.copy(this._tmpQ);camera.fov=fov;
+        // R157B: preserve the authored shot whenever its sightline is clear. If the
+        // cabin wall sits between its camera node and Sigurd, place the camera just
+        // past the last obstructing surface and re-aim at the SAME authored target.
+        // This avoids the wall shot without changing the camera asset or NPC position.
+        const authoredPos=this._tmpC.copy(this._dPos);
+        this.correctGreetCamera(this._dPos,this._dTgt);
+        const occluded=authoredPos.distanceToSquared(this._dPos)>.0004;
+        camera.position.copy(this._dPos);
+        if(occluded)camera.lookAt(this._dTgt);else camera.quaternion.copy(this._tmpQ);
+        camera.fov=fov;
         camera.near=Number.isFinite(extras.near)?extras.near:(viewCam.near||.08);
         camera.far=Number.isFinite(extras.far)?extras.far:(viewCam.far||200);
         camera.updateProjectionMatrix();camera.updateMatrixWorld(true);
@@ -691,6 +709,12 @@ export class FishingV1System{
       // Defensive fallback only if the integration GLB is unavailable.
       this._dPos.copy(LOCAL.OUT_POS);this._dTgt.copy(LOCAL.OUT_TGT);
       this.overlayRoot.localToWorld(this._dPos);this.overlayRoot.localToWorld(this._dTgt);fov=portrait?60:42;
+      this.correctGreetCamera(this._dPos,this._dTgt);
+      // Hard-cut to the fallback shot: never interpolate through the cabin wall.
+      this._camPos.copy(this._dPos);this._camTgt.copy(this._dTgt);
+    }
+    else if(this.mode==='exit'){this._dPos.copy(followCamera.position);this._dTgt.copy(followCamera.look);fov=camera.aspect<.8?58:48;
+      this._camPos.copy(this._dPos);this._camTgt.copy(this._dTgt); // R157B: never fly back through the cabin on exit
     }
     else if(boating){this._dTgt.copy(followCamera.look);this._dPos.copy(followCamera.position).sub(followCamera.look).multiplyScalar(portrait?1.35:1.55).add(followCamera.look);fov=portrait?58:48;}
     else if(fishing){const c=this.castDir,pp=new V3(-c.z,0,c.x),p=this.character.position,b=this.bobber.position,mid=this._tmpB.copy(p).lerp(b,.5);let spd=3.2;

@@ -43,10 +43,10 @@ function blankProfile() {
     stats: { gathered: 0, crafted: 0, weeds: 0, snails: 0 },
     threat: { started: 0, lastSpawn: 0, lastSnail: 0, weeds: [] }, // overgrowth: [{ id, spot, bornAt }]
     perks: {},            // golden-seed perk id -> true
-    daily: { date: '', done: {}, progress: {}, streak: 0, lastDate: '' },
+    daily: { date: '', selection: [], done: {}, progress: {}, streak: 0, lastDate: '' },
     fishing: { starter: false, own: {}, log: {} },   // R58: Sigurd's gear + catch log (was memory-only)
     hotbar: { slots: Array(10).fill(null), selected: -1 }, // R101: persistent desktop quick-slot order + active slot
-    boat: { owned: false, trips: 0, waterfall: 0, lastReward: '' }, // R58 boat economy
+    boat: { owned: false, rented: false, trips: 0, waterfall: 0, lastReward: '' }, // R58 boat economy
     combat: { moles: {}, firstMole: false, pouches: [], mercyUntil: 0, giant: { defeatedAt: 0, wins: 0 }, bear: { defeatedAt: 0, wins: 0 } }, // R61/R63/R79 combat
     lakeRun: { best: 0, splits: [], ghost: [], runs: [], day: '', attempts: 0, golds: 0, weekGold: '' }, // R64 Lake Run
     story: { seed: '' },
@@ -111,6 +111,7 @@ function validProfile(p) {
   for (const [k, v] of Object.entries(p.perks || {})) if (v === true) out.perks[k] = true;
   const d = p.daily || {};
   if (typeof d.date === 'string') out.daily.date = d.date;
+  if (Array.isArray(d.selection)) out.daily.selection = [...new Set(d.selection.filter(id => typeof id === 'string' && /^[a-z_]{2,24}$/.test(id)))].slice(0, 3); // R157A
   if (typeof d.lastDate === 'string') out.daily.lastDate = d.lastDate;
   out.daily.streak = Math.max(0, d.streak | 0);
   for (const [k, v] of Object.entries(d.done || {})) if (v === true) out.daily.done[k] = true;
@@ -128,6 +129,7 @@ function validProfile(p) {
   for (const [k, v] of Object.entries(f.log || {})) if (v && Number.isFinite(v.count) && Number.isFinite(v.best)) out.fishing.log[k] = { count: Math.max(0, v.count | 0), best: Math.max(0, +v.best) };
   const b = p.boat || {};
   out.boat.owned = b.owned === true;
+  out.boat.rented = !out.boat.owned && b.rented === true; // R157A: paid trip survives reload
   out.boat.trips = Math.max(0, b.trips | 0);
   out.boat.waterfall = Math.max(0, b.waterfall | 0);
   if (typeof b.lastReward === 'string') out.boat.lastReward = b.lastReward;
@@ -211,12 +213,13 @@ export class SaveGame {
 
   // DEV: drop the shared wilds profile (R138: one game for every character); nothing is written afterwards (caller reloads).
   resetProfile() {
+    if (this.ephemeral || this.readOnly || this.canWrite?.() === false) return false;
     delete this.data.profiles[SHARED_ID]; this.deleted = true; this.flush(); this.ephemeral = true;
   }
 
   // Coalesce bursts of changes (gathering several nodes) into one write.
   persist() {
-    if (this.ephemeral) return;
+    if (this.ephemeral || this.readOnly || this.canWrite?.() === false) return;
     clearTimeout(this.timer);
     this.timer = setTimeout(() => this.flush(), 400);
   }
@@ -226,8 +229,8 @@ export class SaveGame {
   }
 
   flush() {
-    if (this.ephemeral || this.readOnly) return;   // R153: readOnly = another tab owns the game (TabGuard)
     clearTimeout(this.timer); this.timer = null;
+    if (this.ephemeral || this.readOnly || this.canWrite?.() === false) return; // R157A: no stale writes
     try {
       // First write of the session: keep the save we loaded as the last-known-good backup.
       if (!this.backedUp && this.loadedRaw) { localStorage.setItem(BACKUP_KEY, this.loadedRaw); this.backedUp = true; }
@@ -242,6 +245,7 @@ export class SaveGame {
   // DEV export/import (whole save, all characters).
   exportJSON() { return JSON.stringify(JSON.parse(this.serialize()), null, 2); }
   importJSON(text) {
+    if (this.readOnly || this.canWrite?.() === false) throw new Error('Another game tab owns the save');
     const parsed = JSON.parse(text);
     if (!parsed || typeof parsed !== 'object' || typeof parsed.profiles !== 'object') throw new Error('Not a Growing Wilds save');
     const data = migrate(parsed);

@@ -1,3 +1,4 @@
+import { layoutMapLabels } from './MapLabelLayout.js?build=GAMEPLAY-R157B-20261011A';
 // worldmap.js — in-game minimap + fullscreen world map (M). No dependencies.
 // World coords = SharedLandscape.js coords (x right/east, z down/south, metres). Heading h: forward = (sin h, cos h) = three.js rotation.y.
 let W0={x:60,z:-40},WL=-.9,HALF=250,WR=188;
@@ -126,13 +127,13 @@ export class WorldMap{
   _layout(){const s=this.o.size==='auto'?(this.mobile?110:176):this.o.size,m=this.mobile;this._ms=s;
     this.mini.style.width=this.mini.style.height=s+'px';this.mc.width=this.mc.height=s*this.dpr;this.mc.style.width=this.mc.style.height=s+'px';
     this._tag.style.display=m?'none':'block';this._tag.style.right=(16+s-20)+'px';this._tag.style.top=`calc(${16+s-20}px + env(safe-area-inset-top))`;
-    const ov=this.overlayMode;this.full.style.background=ov?'rgba(14,16,12,.35)':'#14160f';this.fc.style.opacity=ov?'.9':'1';this.full.style.pointerEvents=ov?'none':'auto';this.fc.style.pointerEvents='auto';
+    const ov=this.overlayMode;this.full.style.background=ov?'rgba(14,16,12,.35)':'#14160f';this.fc.style.opacity=ov?'.9':'1';this.full.style.pointerEvents='auto';this.fc.style.pointerEvents='auto'; /* R157B.1: map owns gestures even when transparent */
     this.lg.style.display=m?'none':'flex';}
   _buildDom(){const top='calc(16px + env(safe-area-inset-top))',btn=`border:0;border-radius:12px;background:${INK};color:${CREAM};font:700 13px/1 ${FONT};cursor:pointer;pointer-events:auto;`;
     const mini=this.mini=document.createElement('div');mini.style.cssText=`position:absolute;top:${top};right:16px;border-radius:50%;overflow:hidden;background:transparent;border:0;box-shadow:none;cursor:pointer;z-index:20;touch-action:manipulation;`;
     this.mc=document.createElement('canvas');this.mc.style.display='block';mini.appendChild(this.mc);mini.addEventListener('click',()=>this.open());
     const tag=this._tag=document.createElement('div');tag.textContent='M';tag.style.cssText=`position:absolute;width:24px;height:24px;border-radius:7px;background:${INK};color:${CREAM};font:700 11px/24px ${FONT};text-align:center;z-index:21;pointer-events:none;`;
-    const full=this.full=document.createElement('div');full.style.cssText=`position:absolute;inset:0;display:none;z-index:40;touch-action:none;`;
+    const full=this.full=document.createElement('div');full.style.cssText=`position:absolute;inset:0;display:none;z-index:80;touch-action:none;`; /* R157B.1: above game controls */
     this.fc=document.createElement('canvas');this.fc.style.cssText='position:absolute;inset:0;width:100%;height:100%;cursor:grab;touch-action:none;';full.appendChild(this.fc);
     const bar=document.createElement('div');bar.style.cssText=`position:absolute;left:16px;top:${top};display:flex;align-items:center;height:44px;padding:0 14px;border-radius:12px;background:${INK};color:${CREAM};font:700 13px/1 ${FONT};letter-spacing:.12em;text-transform:uppercase;pointer-events:none;`;bar.textContent='World map';full.appendChild(bar);
     const x=document.createElement('button');x.textContent='✕';x.setAttribute('aria-label','Close map');x.style.cssText=`position:absolute;right:16px;top:${top};width:44px;height:44px;font-size:16px;${btn}`;x.onclick=()=>this.close();full.appendChild(x);
@@ -143,7 +144,7 @@ export class WorldMap{
     this._fv={x:0,z:0,s:2};const pts=new Map();let G=null;
     const gest=()=>{const a=[...pts.values()];if(!a.length)return null;const mx=a.reduce((t,p)=>t+p.x,0)/a.length,my=a.reduce((t,p)=>t+p.y,0)/a.length,d=a.length>1?Math.hypot(a[0].x-a[1].x,a[0].y-a[1].y):0;return{mx,my,d,n:a.length};};
     const startG=()=>{const g=gest();G=g&&{...g,vx:this._fv.x,vz:this._fv.z,s:this._fv.s};};
-    this.fc.addEventListener('pointerdown',e=>{if(this.overlayMode&&this.mobile&&e.clientX<innerWidth*.48)return;this.fc.setPointerCapture(e.pointerId);pts.set(e.pointerId,{x:e.clientX,y:e.clientY});startG();this.follow=false;this.fc.style.cursor='grabbing';});
+    this.fc.addEventListener('pointerdown',e=>{this.fc.setPointerCapture(e.pointerId); /* R157B.1: pan from either screen half */pts.set(e.pointerId,{x:e.clientX,y:e.clientY});startG();this.follow=false;this.fc.style.cursor='grabbing';});
     this.fc.addEventListener('pointermove',e=>{if(!pts.has(e.pointerId)||!G)return;pts.set(e.pointerId,{x:e.clientX,y:e.clientY});const g=gest(),f=this._fv;
       if(g.n>1&&G.d>0){const r=this.fc.getBoundingClientRect(),ox=G.mx-r.left-r.width/2,oy=G.my-r.top-r.height/2,wx=G.vx+ox/G.s,wz=G.vz+oy/G.s;f.s=this._clampS(G.s*g.d/G.d);f.x=wx-(g.mx-r.left-r.width/2)/f.s;f.z=wz-(g.my-r.top-r.height/2)/f.s;}
       else{f.x=G.vx-(g.mx-G.mx)/f.s;f.z=G.vz-(g.my-G.my)/f.s;}this._clampView();});
@@ -192,8 +193,16 @@ export class WorldMap{
     const toS=(x,z)=>[W/2+(x-f.x)*k,H/2+(z-f.z)*k],[ex,ey]=toS(W0.x,W0.z);this._fog(g,ex,ey,k,W,H);
     g.strokeStyle='rgba(244,241,232,.18)';g.setLineDash([6*s,6*s]);g.lineWidth=1.5*s;g.beginPath();g.arc(ex,ey,WR*k,0,6.283);g.stroke();g.setLineDash([]);
     const names=f.s>=(this.mobile?2.4:1.9);
-    for(const[n,L]of LANDMARKS()){const[x,y]=toS(L.x,L.z);g.fillStyle=CREAM;g.strokeStyle=INK;g.lineWidth=2*s;g.beginPath();g.arc(x,y,3.5*s,0,6.283);g.fill();g.stroke();if(names)pill(g,n,x,y-17*s,s);}
-    for(const m of this.markers){const[x,y]=toS(m.x,m.z);drawMarker(g,m,x,y,s*1.3);if(m.label&&m.type!=='enemy'&&(names||m.type==='boss'||m.type==='quest'))pill(g,m.label,x,y+20*s,s,m.type==='quest'?GOLD:RED,INK);}
-    const[px,py]=toS(p.x,p.z);g.fillStyle='rgba(244,241,232,.3)';g.beginPath();g.arc(px,py,17*s,0,6.283);g.fill();drawArrow(g,px,py,Math.atan2(Math.cos(p.heading||0),Math.sin(p.heading||0)),s*1.2);}
+    // R157B: all icons stay anchored. Measure the labels once and lay them out as a
+    // group so quest/boss labels take precedence over lower-priority place names.
+    const labels=[],obstacles=[],dot=(x,y,r)=>obstacles.push({left:x-r,top:y-r,right:x+r,bottom:y+r});
+    for(const[n,L]of LANDMARKS()){const[x,y]=toS(L.x,L.z);g.fillStyle=CREAM;g.strokeStyle=INK;g.lineWidth=2*s;g.beginPath();g.arc(x,y,3.5*s,0,6.283);g.fill();g.stroke();
+      dot(x,y,5*s);if(names)labels.push({text:n,x,y,preferred:'above',priority:0,bg:INK,fg:CREAM});}
+    for(const m of this.markers){const[x,y]=toS(m.x,m.z);drawMarker(g,m,x,y,s*1.3);dot(x,y,12*s);
+      if(m.label&&m.type!=='enemy'&&(names||m.type==='boss'||m.type==='quest'))labels.push({text:m.label,x,y,preferred:'below',priority:m.type==='quest'?3:m.type==='boss'?2:1,bg:m.type==='quest'?GOLD:RED,fg:INK});}
+    const[px,py]=toS(p.x,p.z);dot(px,py,19*s);
+    g.font=`700 ${12*s}px ${FONT}`;
+    for(const l of layoutMapLabels(labels,W,H,s,text=>g.measureText(text).width,obstacles))pill(g,l.text,l.x,l.y,s,l.bg,l.fg);
+    g.fillStyle='rgba(244,241,232,.3)';g.beginPath();g.arc(px,py,17*s,0,6.283);g.fill();drawArrow(g,px,py,Math.atan2(Math.cos(p.heading||0),Math.sin(p.heading||0)),s*1.2);}
   dispose(){document.body.classList.remove('world-map-open');removeEventListener('keydown',this._key);removeEventListener('resize',this._rs);this.mini.remove();this._tag.remove();this.full.remove();}
 }

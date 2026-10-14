@@ -3,55 +3,55 @@ import * as THREE from 'three';
 import { AssetRegistry } from './AssetRegistry.js';
 import { CharacterController } from './CharacterController.js?build=MOBILE-GESTURE-R34B-20260930A';
 import { GameState } from './GameState.js';
-import { InputManager } from './InputManager.js?build=SAVE-R159-20261014A';
+import { InputManager } from './InputManager.js?build=UX-R157B1-20261011A';
 import { ThirdPersonCamera } from './ThirdPersonCamera.js?build=MOBILE-GESTURE-R34B-20260930A';
 import { CameraOcclusionSystem } from './CameraOcclusionSystem.js?build=NORTH-STABLE-R23O-20260929A';
 import { StructureVisibilitySystem } from '../visual/StructureVisibilitySystem.js?build=NORTH-STABLE-R23O-20260929A';
 import { characterCatalog, resourceCatalog, buildingCatalog } from '../data/assetCatalog.js';
-import { CollectibleSystem } from '../gameplay/CollectibleSystem.js?build=SAVE-R159-20261014A';
-import { MeaningfulChoiceSystem } from '../gameplay/MeaningfulChoiceSystem.js?build=SAVE-R159-20261014A';
-import { GreenhouseProgressionSystem } from '../gameplay/GreenhouseProgressionSystem.js?build=SAVE-R159-20261014A';
+import { CollectibleSystem } from '../gameplay/CollectibleSystem.js?build=UX-R157B1-20261011A';
+import { MeaningfulChoiceSystem } from '../gameplay/MeaningfulChoiceSystem.js?build=UX-R157B1-20261011A';
+import { GreenhouseProgressionSystem } from '../gameplay/GreenhouseProgressionSystem.js?build=UX-R157B1-20261011A';
 import { OrangeryHubSystem } from '../gameplay/OrangeryHubSystem.js?build=CAMERA-CUTAWAY-CONTEXT-R21D-20260928E';
-import { FishingV1System } from '../gameplay/FishingV1System.js?build=BAG-NIGHT-R84-20261006A';
+import { FishingV1System } from '../gameplay/FishingV1System.js?build=UX-R157B1-20261011A';
 import { ChoicePanel } from '../ui/ChoicePanel.js';
-import { Hud } from '../ui/Hud.js?build=SAVE-R159-20261014A';
-import { WorldMap } from '../ui/WorldMap.js?build=WORLD-MAP-R35B-20260930B';
+import { Hud } from '../ui/Hud.js?build=CORE-R158A-20261012A';
+import { WorldMap } from '../ui/WorldMap.js?build=UX-R157B1-20261011A';
 import { GardenEnvironment } from '../world/GardenEnvironment.js?build=WATER-VEG-R103-20261006A';
 import { WildlifeSystem } from '../world/WildlifeSystem.js?build=CAMERA-CUTAWAY-CONTEXT-R21D-20260928E';
-import { PlayerHomePortalSystem } from '../world/PlayerHomePortalSystem.js?build=SAVE-R159-20261014A';
-import { NorthStableSystem } from '../world/NorthStableSystem.js?build=SAVE-R159-20261014A';
-import { SaveGame, pickWinner } from './SaveGame.js?build=SAVE-R159-20261014A';
-import { SpecialSeeds } from '../gameplay/SpecialSeeds.js?build=SAVE-R159-20261014A';   // R149
-import { OrangeryTree } from '../gameplay/OrangeryTree.js?build=SAVE-R159-20261014A';   // R150
-import { installTabGuard } from './TabGuard.js?build=SAVE-R159-20261014A';   // R153
-import { Discovery } from '../gameplay/Discovery.js?build=SAVE-R159-20261014A';   // R154
-import { WildsLoopSystem } from '../gameplay/WildsLoopSystem.js?build=SAVE-R159-20261014A';
-import { WorkbenchPanel } from '../ui/WorkbenchPanel.js?build=SAVE-R159-20261014A';
-import { DevMenu, devMenuEnabled } from '../ui/DevMenu.js?build=SAVE-R159-20261014A';
+import { PlayerHomePortalSystem } from '../world/PlayerHomePortalSystem.js?build=UX-R157B1-20261011A';
+import { NorthStableSystem } from '../world/NorthStableSystem.js?build=UX-R157B1-20261011A';
+import { SaveGame, pickWinner } from './SaveGame.js?build=UX-R157B1-20261011A';
+import { SpecialSeeds } from '../gameplay/SpecialSeeds.js?build=UX-R157B1-20261011A';   // R149
+import { OrangeryTree } from '../gameplay/OrangeryTree.js?build=UX-R157B1-20261011A';   // R150
+import { installTabGuard } from './TabGuard.js?build=GUARD-R157C1-20261012B';   // R153
+import { Discovery } from '../gameplay/Discovery.js?build=UX-R157B1-20261011A';   // R154
+import { WildsLoopSystem } from '../gameplay/WildsLoopSystem.js?build=UX-R157B1-20261011A';
+import { WorkbenchPanel } from '../ui/WorkbenchPanel.js?build=CORE-R158A-20261012A';
+import { DevMenu, devMenuEnabled } from '../ui/DevMenu.js?build=UX-R157B1-20261011A';
 import { applyControlProfile, defaultProfile } from './ControlProfiles.js';
 import { PerfHud } from '../dev/PerfHud.js';
-import { QualityManager, QUALITY } from './Quality.js?build=SAVE-R159-20261014A';
-import { InteractionResolver } from './InteractionResolver.js?build=SAVE-R159-20261014A';
+import { QualityManager, QUALITY } from './Quality.js?build=UX-R157B1-20261011A';
+import { InteractionResolver, gardenInteractionSource } from './InteractionResolver.js?build=UX-R157B1-20261011A';
 import { log, warn } from '../dev/Log.js';
 import { LookPass } from '../visual/LookPass.js?build=BAG-NIGHT-R84-20261006A';
 import { DayNight } from '../visual/DayNight.js?build=BAG-NIGHT-R84-20261006A';   // R81
 import { TOOLS } from '../data/wildsCatalog.js';   // R124 Bag texts (the Workbench's own effect lines)
-import { WEAPONS } from '../data/combatCatalog.js?build=SAVE-R159-20261014A';   // R124 strike values
-import { VestVisual } from '../gameplay/VestVisual.js?build=SAVE-R159-20261014A';   // R125
-import { SpecialHold } from '../ui/SpecialHold.js?build=SAVE-R159-20261014A';   // R126
-import { GameMenu } from '../ui/GameMenu.js?build=SAVE-R159-20261014A';   // R121
-import { ControlTips } from '../ui/ControlTips.js?build=SAVE-R159-20261014A';   // R120
-import { Lantern } from '../gameplay/Lantern.js?build=SAVE-R159-20261014A';     // R81/R101
-import { BoatEconomySystem } from '../gameplay/BoatEconomySystem.js';
+import { WEAPONS } from '../data/combatCatalog.js?build=UX-R157B1-20261011A';   // R124 strike values
+import { VestVisual } from '../gameplay/VestVisual.js?build=UX-R157B1-20261011A';   // R125
+import { SpecialHold } from '../ui/SpecialHold.js?build=UX-R157B1-20261011A';   // R126
+import { GameMenu } from '../ui/GameMenu.js?build=UX-R157B1-20261011A';   // R121
+import { ControlTips } from '../ui/ControlTips.js?build=UX-R157B1-20261011A';   // R120
+import { Lantern } from '../gameplay/Lantern.js?build=UX-R157B1-20261011A';     // R81/R101
+import { BoatEconomySystem } from '../gameplay/BoatEconomySystem.js?build=UX-R157B1-20261011A';
 import { LakeRunSystem } from '../gameplay/LakeRunSystem.js';
 import { GardenBuildSystem } from '../gameplay/GardenBuildSystem.js';
 import { GardenBuildMode } from '../ui/GardenBuildMode.js';
-import { GardenVegetationMask } from '../world/GardenVegetationMask.js?build=SAVE-R159-20261014A';
-import { CombatSystem } from '../gameplay/CombatSystem.js?build=SAVE-R159-20261014A';
-import { isToolJob } from '../ui/actionIcons.js?build=SAVE-R159-20261014A';   // R142
-import { CharacterSwapSpot } from '../gameplay/CharacterSwapSpot.js?build=SAVE-R159-20261014A';   // R138
-import { ImpactFx } from '../gameplay/ImpactFx.js?build=SAVE-R159-20261014A';   // R129 FX layer
-import { EquippedToolVisual } from '../gameplay/EquippedToolVisual.js?build=SAVE-R159-20261014A';
+import { GardenVegetationMask } from '../world/GardenVegetationMask.js?build=RING-R163-20261014A';
+import { CombatSystem } from '../gameplay/CombatSystem.js?build=UX-R157B1-20261011A';
+import { isToolJob } from '../ui/actionIcons.js?build=UX-R157B1-20261011A';   // R142
+import { CharacterSwapSpot } from '../gameplay/CharacterSwapSpot.js?build=RING-R163-20261014A';   // R138
+import { ImpactFx } from '../gameplay/ImpactFx.js?build=UX-R157B1-20261011A';   // R129 FX layer
+import { EquippedToolVisual } from '../gameplay/EquippedToolVisual.js?build=UX-R157B1-20261011A';
 
 export class Game {
   async init({characterId='succulent',devMode=false}={}){
@@ -137,7 +137,12 @@ export class Game {
         this.camera.getWorldDirection(this._mapViewDir);
         return {x:this.character.position.x,z:this.character.position.z,heading:this.character.heading,view:Math.atan2(this._mapViewDir.x,this._mapViewDir.z)};
       },
-      onToggle:(open,overlay)=>{this.mapBlocking=!!(open&&!overlay);if(open)this.input.resetTouchPointers?.();}
+      onToggle:(open)=>{
+        // R157B.1: opening the map always pauses character input, also on phones.
+        this.mapBlocking=!!open;
+        this.input.resetTouchPointers?.();
+        this.input.actionPressed=false;this.input.hopPressed=false;this.input.strikePressed=false;
+      }
     });this.worldMap?.mini?.classList.add('tgw-minimap');this.worldMap?._tag?.classList.add('tgw-minimap-key');}catch(e){this.worldMap=null;this.failed.push('map');warn('MAP','map disabled',e);}   // R69a: styling hook only (no minimap logic touched)
 
     const fishingPromise=optional('fishing',()=>new FishingV1System(this.scene,{state:this.state,world:this.world,input:this.input,hud:this.hud,renderer:this.renderer,character:this.character}).init());
@@ -152,7 +157,7 @@ export class Game {
     // R60: placed structures (greenhouse, workshop, rain, shrine) come from the GardenBuildSystem.
     this.garden=new GardenBuildSystem({profile:this.save.profile,world:this.world});
     this.wilds=new WildsLoopSystem({world:this.world,state:this.state,save:this.save,hud:this.hud,greenhouse:null,garden:this.garden}).init();
-    this.workbenchPanel=new WorkbenchPanel({wilds:this.wilds,state:this.state});
+    this.workbenchPanel=new WorkbenchPanel({wilds:this.wilds,state:this.state,getGreenhouse:()=>this.greenhouse});
     try{this.combat=new CombatSystem(this);this.wilds.combat=this.combat;}catch(e){warn('COMBAT','combat disabled',e);this.failed.push('combat');}
     // R154: 'Reduce motion' (the start screen's setting, or the device's) is honoured in the game: no camera shake, hit-stop or flashes
     try{this.reduceMotion=localStorage.getItem('dymGame.entry.reduceMotion')==='1'||matchMedia('(prefers-reduced-motion: reduce)').matches;}catch{this.reduceMotion=false;}document.body.classList.toggle('reduce-motion',!!this.reduceMotion);
@@ -198,7 +203,7 @@ this.workbenchPanel.show();this.input.resetTouchPointers?.();};
       w.vest=!w.vest;this.save.persist();
       this.vest?.set(w.vest);this.hud.showToast?.(w.vest?'Life Vest on':'Life Vest off');};
     this.hud.onGearOpenChange=open=>{
-      if(!this.input?.isTouch)return;
+      // R158A: Bag on desktop also captures gameplay input until it closes.
       if(open){
         this.input.resetTouchPointers?.();
         this.input.actionPressed=false;this.input.hopPressed=false;this.input.strikePressed=false;
@@ -214,7 +219,7 @@ this.workbenchPanel.show();this.input.resetTouchPointers?.();};
     this.cameraOcclusion.setFreeRules(this.followCamera.profileId==='free'); // profile was applied before occlusion existed
     this.structureVisibility=new StructureVisibilitySystem({world:this.world,greenhouse:this.greenhouse,orangery:this.orangery,stable:this.stable,cameraOcclusion:this.cameraOcclusion});
     this.clock=new THREE.Clock();this.time=0;this.lastMoved=false;
-    addEventListener('resize',()=>this.resize());visualViewport?.addEventListener('resize',()=>this.resize());addEventListener('orientationchange',()=>setTimeout(()=>this.resize(),250));this.resize();this.homePortal?.prepareMoveInCamera?.(this.camera,this.character);this.renderer.setAnimationLoop(()=>this.frame());
+    addEventListener('resize',()=>this.resize());visualViewport?.addEventListener('resize',()=>this.resize());addEventListener('orientationchange',()=>setTimeout(()=>this.resize(),250));this.resize();this.homePortal?.prepareMoveInCamera?.(this.camera,this.character);if(!this.tabGuard||this.tabGuard.canWrite())this.renderer.setAnimationLoop(()=>this.frame());
     this.quality=new QualityManager(this,this.input.isTouch);
     // R55 lifecycle contract: hidden page → stop rendering + flush save; visible again → resume
     // without a delta-time jump (timestamp-based systems catch up on their own).
@@ -234,10 +239,10 @@ this.workbenchPanel.show();this.input.resetTouchPointers?.();};
     // Attach background systems as they arrive (each is optional; null when it failed).
     const attach=(promise,fn)=>promise.then(v=>{if(v)fn(v);return v;});
     const background=Promise.all([
-      attach(stablePromise,s=>{this.stable=s;this.world.stableCollisionResolver=(p,r)=>s.resolveCollisions(p,r);s.bindRuntime({character:this.character,renderer:this.renderer});s.bindRuntime({input:this.input,hud:this.hud,followCamera:this.followCamera});this.cameraOcclusion.stable=s;this.structureVisibility.stable=s;}),
+      attach(stablePromise,s=>{this.stable=s;this.tabGuard?.guardSaveMethod(s,'save');this.world.stableCollisionResolver=(p,r)=>s.resolveCollisions(p,r);s.bindRuntime({character:this.character,renderer:this.renderer});s.bindRuntime({input:this.input,hud:this.hud,followCamera:this.followCamera});this.cameraOcclusion.stable=s;this.structureVisibility.stable=s;}),
       attach(collectiblePromise,c=>{this.collectible=c;this.restoreSeedStory();}),
       attach(choicePromise,c=>{this.choiceWorld=c;this.restoreSeedStory();}),
-      attach(greenhousePromise,g=>{const gt=this.garden.transformOf('greenhouse');g.setPlacement(gt.x,gt.z,gt.rot);this.greenhouse=g;this.wilds.setGreenhouse(g);this.cameraOcclusion.greenhouse=g;this.structureVisibility.greenhouse=g;}),
+      attach(greenhousePromise,g=>{const gt=this.garden.transformOf('greenhouse');g.setPlacement(gt.x,gt.z,gt.rot);this.greenhouse=g;this.tabGuard?.guardSaveMethod(g,'persist');this.wilds.setGreenhouse(g);this.cameraOcclusion.greenhouse=g;this.structureVisibility.greenhouse=g;}),
       attach(orangeryPromise,o=>{this.orangery=o;this.cameraOcclusion.orangery=o;this.structureVisibility.orangery=o;}),
       attach(fishingPromise,f=>{this.fishing=f;if(this.vestWorn())this.vest?.set(true);this.refreshHotbar?.(true);try{this.boatEco=new BoatEconomySystem({fishing:f,wilds:this.wilds,hud:this.hud}).init();}catch(e){warn('BOAT','economy disabled',e);this.failed.push('boat');}try{this.lakeRun=new LakeRunSystem(this,f);}catch(e){warn('LAKERUN','lake run disabled',e);this.failed.push('lakerun');}})
     ]).then(()=>{mark('allSystemsReadyMs');this.vegetationMask?.apply();log('LOAD','background systems ready',this.startupMetrics);if(this.failed.length)this.hud.showToast?.(`Some parts could not load: ${this.failed.join(', ')}`);});
@@ -349,7 +354,7 @@ this.workbenchPanel.show();this.input.resetTouchPointers?.();};
   }
   // One place decides whether the frame loop runs: page visible and not gated by portrait.
   syncRun(why){
-    if(document.hidden||this.gated){this.renderer.setAnimationLoop(null);log('LIFE',`paused (${why})`);return;}
+    if(document.hidden||this.gated||(this.tabGuard&&!this.tabGuard.canWrite())){this.renderer.setAnimationLoop(null);log('LIFE',`paused (${why})`);return;}
     this.clock.getDelta();this.resize();this.renderer.setAnimationLoop(()=>this.frame());log('LIFE',`resumed (${why})`);
   }
   // R66: size from the fixed #app box and let CSS stretch the canvas (inset:0), not window.innerHeight px: iOS home-screen
@@ -372,6 +377,7 @@ this.workbenchPanel.show();this.input.resetTouchPointers?.();};
     this.perfHud?.tick();
   }
   frameStep(){
+    if (this.tabGuard && !this.tabGuard.canWrite()) { this.tabGuard.lose(); return; } // R157A: no progression in losing tab
     const rawDt=this.clock.getDelta();this.quality?.sample(rawDt);const dt=Math.min(rawDt,1/20)*(this.run('fxstop',()=>this.fx?.timeScale(rawDt))??1);   /* R129 hit-stop */this.time+=dt;this.uTime.value=this.time;this.input.update();
     if(this.input.moved&&!this.lastMoved){this.lastMoved=true;this.hud.markMoved();}
 
@@ -387,7 +393,7 @@ this.workbenchPanel.show();this.input.resetTouchPointers?.();};
     const fishingBusy=!gardenSpace&&(this.fishing?.isBusy?.()||false);
     const stableBusy=!gardenSpace&&(this.stable?.isBusy?.()||false);
     const specialBusy=fishingBusy||stableBusy;
-    const wildsPanel=(this.workbenchPanel?.open||this.devMenu?.open||this.menu?.open)||false;   // R121: the menu blocks movement and actions too
+    const wildsPanel=(this.workbenchPanel?.open||this.devMenu?.open||this.menu?.open||this.hud?.gear?.classList.contains('open'))||false; // R158A: Bag owns UI input while open   // R121: the menu blocks movement and actions too
     const building=!!this.buildMode?.active;
     const mapOpen=this.worldMap?.isOpen||false,mapOverlay=mapOpen&&(this.worldMap?.overlayMode||false);
     const touchLook=this.input.isTouch?this.input.consumeLook?.():null;
@@ -425,12 +431,14 @@ this.workbenchPanel.show();this.input.resetTouchPointers?.();};
 
     // R56: every system offers candidates; the resolver picks the single active interaction.
     const R=this.interactions;R.begin();
-    if(!this.state.choice.open&&!portalBusy&&!wildsPanel){
+    if(!this.state.choice.open&&!portalBusy&&!wildsPanel&&!mapOpen){
       if(gardenSpace){
         // Build mode: the garden keeps living, but nothing else can be used until Place/Cancel.
-        const gi=this.wilds?.update(dt,this.time,this.character,'garden').interaction;if(!building)R.offer('wilds',gi);
+        const gi=this.wilds?.update(dt,this.time,this.character,'garden').interaction;
+        if(!building)R.offer(gardenInteractionSource(gi),gi); // R157B: plant/water/harvest beats greenhouse upgrade only within pot reach
         if(seed.near&&!building)R.offer('first-seed',{type:'first-seed',label:'Collect Golden Seed'});
-        if(!building)R.offer('greenhouse',greenhouse.interaction);
+        // R157B.1: greenhouse upgrades live ONLY in Workbench → Home.
+        // Never trigger an upgrade while planting or watering near the building.
         if(!building&&!specialBusy)R.offer('home',this.swapSpot?.interaction?.(this.character.position));   // R138: gold SWITCH circle by the shed
       }
       if(!gardenSpace&&!specialBusy)R.offer('wilds',this.wilds?.update(dt,this.time,this.character,'world').interaction);
@@ -458,9 +466,10 @@ this.workbenchPanel.show();this.input.resetTouchPointers?.();};
       else if(['available','loading'].includes(this.collectible?.status))this.hud.setObjective?.('FIRST DISCOVERY',{title:'Find the Golden Seed',copy:'Follow the glow in your garden. It reacts when you get close.'});}
     // R156: phones peek at the quest card once the move-in has finished (its first peek played under the cutscene)
     if(this._portalWasBusy&&!portalBusy&&this.input.isTouch)this.hud.peek?.(this.hud.objective,5000);this._portalWasBusy=!!portalBusy;
-    const mainIdle=this.input.isTouch&&!this.state.choice.open&&!specialBusy&&!portalBusy&&!building&&!wildsPanel&&!this.lakeRun?.busy?.()&&!this.mapBlocking; // R75: persistent main button on phones
+    const mainIdle=this.input.isTouch&&!this.state.choice.open&&!specialBusy&&!portalBusy&&!building&&!wildsPanel&&!this.lakeRun?.busy?.()&&!mapOpen; // R75: persistent main button on phones
     this.hud.setActionVisible(!!interaction,interaction?.label||'Collect',interaction,mainIdle);this.hud.action.classList.toggle('locked',!!interaction?.locked);this.hud.action.classList.toggle('wilds-locked',!!(interaction?.disabled&&!interaction?.locked)); // R72: requirement missing = grey 'Locked'; other disabled states (growing) keep their text
     let action=this.input.consumeAction();const click=this.input.consumeStrike?.();
+    if(mapOpen)action=false; // R157B.1: no actions behind the open map
     // R76 desktop: left click on the game view strikes; E interacts. R142 (GO 09/10): tool work (chop, mine, dig, cut, weed, snail,
     // water) is a left click too, and E no longer does it on desktop (it says to click instead). Phones are unchanged.
     const toolJob=!this.input.isTouch&&isToolJob(interaction);

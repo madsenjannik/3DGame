@@ -1,7 +1,23 @@
 # THE GROWING WILDS — MASTER PROJECT DOCUMENT
 
+## R158A.1 — separate physical iPhone Safari preview (12/10/2026)
+- User confirmed successful live R157C.1 two-tab handoff on physical iPhone Safari, then requested the next step ("Videre"). Source baseline is live `83790499`, approved R158A.1 candidate is `7c803748` (PR #2), still **unmerged**.
+- Preview route `/3DGame/qa/r158a1/` contains the candidate source as a nested static Git tree; root production files are not replaced. Its first-page local/session storage sandbox copies selected existing progress **read-only once** and writes only to QA-prefixed keys; never copies the live ownership lease. A storage-override failure prevents gameplay startup. No source gameplay, save schema, input, model or camera changes.
+- Physical iPhone review must cover Workbench/Bag real GLB previews, icons, layout, text and controls. Old full-smoke R124 slot/vest assertions remain unresolved (issue #6), requiring separate follow-up. Do not visual-lock or merge PR #2 without approval.
+
+
+
+## R157C.1 — single-writer handoff under delayed WebGL execution (12/10/2026)
+- **Authorisation:** GO 12/10/2026 to fix the reproducible R157C handoff bug (issue #3). Dedicated fix PR #4; independent R158A.1 integration PR #5; no direct edits to production until gated QA.
+- **Symptom:** Two-tab Chromium check on PR #2 failed twice; the waiting tab briefly observed a transferred lease, reloaded with a new ID, and remained blocked while the initial writer held the active lease. Exact scheduling mechanism is not proven from logs alone.
+- **Mitigation:** `TabGuard` no longer interprets a stalled 12-second heartbeat as licence to take a live tab's save; a blocked tab's WebGL loop is paused and cannot be restarted by `Game.syncRun`; regular transfer still flushes the old snapshot synchronously and matches its ACK before reload/rehydration. The save-authority test remains `canWrite()` on every guarded save.
+- **Recovery and tradeoff:** A silent/crashed old tab can be recovered only after 120 seconds of owner inactivity and a deliberate second player click. Forced recovery cannot guarantee unflushed data from an abandoned tab. Never auto-reclaim merely because of throttled background timers.
+- **QA:** Original 65-second Chromium handoff deadline preserved (not relaxed); targeted simulated 3.1/24-second event delays, 25-second heartbeat stall, 120-second recovery; legacy R157A/B/B.1/R158A contracts. Check PR #4 and PR #5 for verified CI outcomes. Chromium emulation is not physical Safari verification.
+- **Protected:** no save migration format, Stable/Greenhouse internals, GLBs, existing movement/camera, economy or R158A.1 Workbench/Bag layout changes.
+
+
 **Status:** Canonical project guardrails + current baseline + backlog  
-**Date:** 01/10/2026  
+**Date:** 12/10/2026  
 **Purpose:** One durable project document for the active The Growing Wilds build chat. This document consolidates the current handover, locked systems, project rules, deferred work, current priorities, and the external technical review.
 
 > **Important:** This document is not permission to build. It is the source of truth for *how* the project must be handled.
@@ -9,7 +25,29 @@
 ---
 
 
-## CURRENT WORKING STATUS — 02/10/2026
+## R158A — Workbench & Bag UI implementation (12/10/2026)
+
+- **GO:** User approved `GO R158A`: implement the visually approved workbench and Bag direction, including genuine floating 3D previews of the existing building GLBs. Workshop L1–L3 walkable interiors explicitly deferred to R158B.
+- **Version candidate:** v0.8.161 `CORE-R158A-20261012A` on `feature/r158a-core-ui-glb-preview`, based on production v0.8.160 (until QA). Desktop first, iPhone landscape responsive.
+- **UI:** Workbench shows the existing five functional tabs, legitimate costs and unchanged buttons, one selected item/building detail; Home adds explicit independent model preview selectors. Bag uses existing gear, vest, lantern and seed equip data plus ten existing saved hotbar slots; material resource views are read-only. No fictional game inventory, no new gameplay economy.
+- **3D:** `WorkbenchPreview3D.js` lazy-loads exactly six in-repository `.glb` assets; one GPU renderer/model only, no mutations to game world, level geometry or save states. Idle floating and slow yaw, pausing and disposing while hidden, fail-soft if WebGL unavailable. Only a GLB showcase, never a building unlock.
+- **Regression strategy:** static/isolated R158A UI contract + full R157B.1 UI contract, actual Chromium game startup at 1440x900 and 844x390 (iPhone simulation), GLB load checks, screenshot artifacts; physical iPhone Safari sign-off still needed before UI lock. No changes to locked camera, movement or asset geometry.
+## R157C QA — 12/10/2026
+
+- **Late ACK hardening:** Second candidate run showed a genuine ACK can arrive >20 seconds late in headless Chromium with heavy GLB loading, so R157C must retain the pending handoff until a matching ACK or explicit safe retry. The 20-second timer only changes the user-facing hint, never abandons the request or steals another tab's save. The deterministic regression now includes a 24-second request delay. Final browser verification pending.
+
+- **Verified root cause + scoped runtime fix:** Chromium browser trace proved that the old tab flushed/relinquished the save lease but a 2-second timeout had already cleared the waiting tab's pending request before its matching ACK arrived roughly 4.5 seconds after the click. Extend the pending window to 20 seconds and check matching ACK upon lease notification; never grant write permission before reload. Both actual Chromium takeover and deterministic delayed notification tests passed (Actions 38219969521).
+- **Release planned/committed:** v0.8.160 (`GUARD-R157C-20261012A`), game/main entry and TabGuard import cache bust, no alteration to other gameplay, camera, 3D assets or save schema. Full browser smoke must still pass after release; original R157C run 59/60 with the handoff bug.
+- **R157B.1 accepted on iPhone:** v0.8.159 passed 3/3 iPhone QA scenarios on 12/10/2026. Do not re-open approved UX scope as part of R157C.
+
+- **Focused run follow-up:** waiting tab guard was observed on Chromium, but Playwright's locator.click on #tab-lost timed out (the runtime root cause was not demonstrated). The test now checks visibility and dispatches the button's click event synchronously to assert the actual handoff protocol, then verifies old tab cannot flush a save. QA-only test change, no runtime mutation.
+
+- **First CI result:** 59/60 full smoke checks passed (Actions #38212000935). One failed because the test's second tab used `?dev=1`, an ephemeral save that bypasses TabGuard by design. Corrected to a normal tab and added a focused Chromium two-tab test. The first failure does not establish a gameplay bug; QA rerun remains necessary.
+
+- **Approved scope:** QA automation on desktop first and phone emulation. No gameplay changes authorised. Introduce GitHub Actions Node 22 / Playwright Chromium full suite; replace stale R153 claim-message test with real two-tab lease/takeover test. Run remains unverified until GitHub Actions completes. Retain live v0.8.159 unchanged except QA files.
+- **Protection:** Do not claim iPhone Safari validation from Chromium emulation. Preserve R157B.1 user-accepted gameplay baseline, save schema, three greenhouse models and world controls.
+
+## CURRENT WORKING STATUS — 12/10/2026
 
 - **Active baseline: GitHub HEAD** of `madsenjannik/3DGame`, branch `claude/magical-lovelace-nuka97`, live at
   `https://madsenjannik.github.io/3DGame/`. `version.js` holds the version/build label. ZIP packages are no longer produced.
@@ -17,8 +55,32 @@
 - Previous lock: **R50.3 (v0.5.30, `CAMERA-R50.3-20261002A`)** (Jannik's plan, 02/10/2026):
   R46.2 start/splash, offline cleanup, wilds core loop (R47–R49), dev menu (R50), free camera everywhere (R50.3).
 - **R45 is historical** — a rollback reference only. New builds do **not** start from R45.
-- **Current build: v0.8.84 · R84 bag/resources + garden night + lantern reach (`BAG-NIGHT-R84-20261006A`, CANDIDATE, GO 06/10)** on top of Jannik's R83 mobile HUD; R81 day/night, R80 fishing grip, R79/R79.1 Root Bear before it: second boss in its own grove, see §16. HUD baseline = Test HUD D · Klassisk (R78–R78.3, Jannik 05/10: 'baseline nu', still to be polished).
+- **Verified R157A:** v0.8.157 (`SAVE-R157A-20261011A`) was published to the default branch and passed 6/6 iPhone QA scenarios (Jannik, 11/10/2026), with no reported errors. **R157B.1 candidate:** v0.8.159 (`UX-R157B1-20261011A`) on `fix/r157b1-workbench-dialog-map`, based on deployed v0.8.158. The iPhone test of R157B found three issues (accidental greenhouse upgrade while planting, hidden Sigurd answers, map touch moving the player); map label placement was accepted. R157B.1 directly fixes these; locked models/controls outside the map stay unchanged.
 - **In progress: gameplay C (section 31)**: Boat economy (R58) → combat foundation + Mole (R61) → snail (R62) → Wood Giant (R63) → Lake Run (R64) done → Thora next.
+### R157B.1 — Workbench Hub, Sigurd phone conversation and map input (11/10/2026)
+
+- **GO:** Jannik explicitly approved `GO R157B.1` following a failed R157B iPhone test. It authorizes the three UX corrections below; no new prices/assets/gameplay balance.
+- **Workbench:** The existing `WorkbenchPanel` Home tab is now the sole UI entry for `GreenhouseProgressionSystem.startUpgrade()`. The three existing levels, their `Unlock` animations, greenhouse sidecar storage, and zero material cost are preserved. The panel binds a late-resolving greenhouse getter and listens for start/level-changed events. The original greenhouse's in-world upgrade interaction is no longer offered by `Game` (prevents accidental upgrade when targeting a pot); pots remain plant/water/harvest-only. Goal and Tools hint now direct players to Workbench → Home.
+- **Sigurd:** `FishingV1System.say()` sends each answer to a persistent text-only reply container while preserving the desktop's timed speech bubble. The dialog option list has its own element and remains accessible. On iPhone landscape, a compact two-column panel presents reply and options concurrently. The reply remains until replaced by another line or the dialogue is closed. No dialogue logic or 3D camera changes.
+- **World map:** The existing semi-transparent phone map graphics and R157B labels are retained. When opened, the map container captures touch input on the entire screen, joystick/look handlers refuse map gestures, the game stops character movement and contextual actions, and the HUD touch controls are hidden. Map pans/pinches and the 'ME' button still work. Closing the map restores existing controls.
+- **QA:** new `tests/r157b1-ui.mjs` imported by smoke; full Playwright and physical iPhone landscape review required before visual lock. R157B iPhone review did **not** pass; its three issues are recorded rather than claiming success.
+
+### R157B — Interaction and camera/map corrections (11/10/2026)
+
+- **GO:** Jannik explicitly approved GO R157B after R157A iPhone QA 6/6 without errors.
+- **Garden:** `InteractionResolver.gardenInteractionSource` maps only **enabled** `wilds-pot` plant/water/harvest actions to a priority of 36, just above the existing greenhouse build/upgrade priority 35. A growing/paused pot remains wilds priority 10; home and other interactions keep their existing precedence. No greenhouse level, mesh, collision or placement edits.
+- **Sigurd:** `FishingV1System.applyCamera` now calls its existing line-of-sight raycast `correctGreetCamera` before rendering the authored greeting view. Unobstructed views retain the exact exported camera quaternion; obstructed ones move behind the occluding wall and look at the existing target. Shop/exit fallback shots cut directly instead of interpolating through the cabin. Fishing progression, boat movement and NPC models untouched.
+- **World map:** `MapLabelLayout.js` deterministically places quest labels first, boss labels second, and other location labels afterward. Labels can shift or be suppressed in crowded maps; map icons and landmark coordinates stay fixed. No general HUD or minimap art changes.
+- **QA:** `tests/r157b-gameplay.mjs` imported by `tests/smoke.mjs`. It exercises pot precedence, dense label placement in phone/desktop sizes, and authored vs obstructed Sigurd camera. Still requires full browser smoke and physical iPhone visual review before final lock.
+
+### R157A — Save and progression (11/10/2026; iPhone QA accepted)
+
+- Jannik approved GO R157A. It was fast-forwarded to the live GitHub Pages branch and passed all six iPhone QA scenarios on 11/10/2026.
+- Daily Requests: `profile.daily.selection` pins three shared task IDs per date. Midday R156 upgrades retain recorded completed/in-progress IDs; streak cannot increment twice in one day. Existing `done`, `progress`, `lastDate`, and `streak` remain intact.
+- Boat: additive `profile.boat.rented` persisted after payment, restored on reload and cleared when docking or buying. No FishingV1/camera modifications.
+- Tabs: localStorage single-owner lease with renewal; explicit handoff flushes the previous shared save before new owner reload. Losing tabs cannot write `tgw.save` or externally guarded `Stable.save()` / `Greenhouse.persist()`, and stop frame progression. Neither locked subsystem is modified. Browser storage remains local and may still be cleared by the OS/user.
+- QA: `tests/r157a-save.mjs` is imported by `tests/smoke.mjs` and exercises migration, persistence, rental and two-tab handoff/sidecar guards. Full Playwright/Chromium and physical desktop/iPhone QA still required before release.
+
 - Rules: no build without **GO**; every build updates HANDOVER + MASTER in the same commit (§1.7); never change the three greenhouse levels;
   building happens in the private garden.
 
@@ -1619,9 +1681,10 @@ are only touched where a measured hotspot requires it, minimally.
    failure. Must pass before every push (CLAUDE.md rule 5).
 
 **B status 02/10/2026: complete (R51–R57).** On-device check (iPhone, Jannik 02/10): 60 fps steady (frame max 20–24 ms), 217 draw calls / 370k tris in the garden, 363 / 433k at the lake, mobile-high, 1 WebGL context → no perf work needed before C.
-**R159 (v0.8.159):** experimental concept Sprouting Ring built new at 70 % on the east lawn (`?ring=premium`): oak, 9 pods, flagstone ring + lane, arch, lanterns; old Ring handed over and back; not approved, iPhone FPS unverified.
-**R158 (v0.8.158):** experimental premium garden look (`?ring=premium`): concept trees, shrubs, ground grade, haze, lantern stalks + arch instead of the pergola; restores fully; not approved, iPhone FPS unverified.
-**R157 (v0.8.157):** experimental Sprouting Ring premium look (`?ring=premium`, default classic): `RingSanctuary.js` with concept pods, ground, grass, ferns, flagstones, lanterns; local-only lighting, tiered budgets, merged meshes, fail soft. Not approved; iPhone FPS unverified.
+**R163 (v0.8.163):** Ring premium experiment (RP1–RP3, `?ring=premium` only) merged onto the live v0.8.161 line; only cache tags changed outside the Ring files.
+**RP3 Ring premium (in v0.8.163):** experimental concept Sprouting Ring built new at 70 % on the east lawn (`?ring=premium`): oak, 9 pods, flagstone ring + lane, arch, lanterns; old Ring handed over and back; not approved, iPhone FPS unverified.
+**RP2 Ring premium (in v0.8.163):** experimental premium garden look (`?ring=premium`): concept trees, shrubs, ground grade, haze, lantern stalks + arch instead of the pergola; restores fully; not approved, iPhone FPS unverified.
+**RP1 Ring premium (in v0.8.163):** experimental Sprouting Ring premium look (`?ring=premium`, default classic): `RingSanctuary.js` with concept pods, ground, grass, ferns, flagstones, lanterns; local-only lighting, tiered budgets, merged meshes, fail soft. Not approved; iPhone FPS unverified.
 **R156 (v0.8.156):** desktop keyboard (Enter/Space, Esc, Tab traps, inert hidden panels, focus) + first-session guidance fixes.
 **R155 (v0.8.155):** visual QA fixes (phone resource counts readable, workbench rows/padlocks/scroll fade, map hides HUD, desktop menu contrast, Bag buttons).
 **R154 (v0.8.154):** discoverability (first Golden Seed explained, tree + seen bosses on the map, golden count at the pot) + three R153 regressions fixed.

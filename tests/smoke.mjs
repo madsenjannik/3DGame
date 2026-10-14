@@ -6,6 +6,11 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { createRequire } from 'node:module';
 import { SNAPSHOT_SAVE, collectGardenSnapshot } from './garden-snapshot.mjs';
+import './r157a-save.mjs'; // R157A deterministic save/progression tests before browser smoke
+import './r157b-gameplay.mjs'; // R157B targeted pot, authored camera and label-placement regression tests
+import './r157b1-ui.mjs'; // R157B.1: Workbench, Sigurd mobile replies and full-map input regressions
+import './r157c-tabguard-delay.mjs'; // R157C: delayed real-browser handoff regression
+import './r158a-ui-contract.mjs'; // R158A: asset and UI action contracts
 
 const ROOT = path.resolve(path.dirname(new URL(import.meta.url).pathname), '..');
 const require = createRequire(import.meta.url);
@@ -861,15 +866,28 @@ try {
       const sg = g.orangery.root.getObjectByName('COMMUNITY_TREE_SIGN'); o.sign = !!sg?.visible && /Stage 0 · 0\/1 Golden Seeds/.test(sg?.userData.text); g.devMenu.teleport('world', c.x + 30, c.z, 0); for (let i = 0; i < 80 && sg?.visible; i++) await w(250); o.signFar = !sg?.visible;
       return o; });
     check('R152 guidance + Seeds tab: a seed in the Bag is the next step, Golden Seeds point to the tree, the Characters tab lists all six, the tree shows its progress sign nearby', ok && ['goal', 'tree', 'tab', 'after', 'sign', 'signFar'].every(k => r[k]) && !errors.length, errors[0] || JSON.stringify(r)); await ctx.close(); }
-  // 17v. R153 one tab owns the shared save: when another tab claims the game, this one stops saving and offers 'Play here'
+  // R157C: R157A deliberately retired R153's {claim} message. Test the *actual*
+  // ownership handoff between two browser pages, not a fabricated legacy broadcast.
   { const ctx = await context({ viewport: { width: 1280, height: 720 } }); const { p, errors, ok } = await startGame(ctx, 'cactus', { hud: 'desktop-e' }); let r = {};
-    if (ok) r = await p.evaluate(async () => { const g = window.__tgw, w = ms => new Promise(x => setTimeout(x, ms)), o = {};
-      g.save.flush(); o.owner = !g.save.readOnly && !document.getElementById('tab-lost');
-      new BroadcastChannel('tgw-tabs').postMessage({ claim: 'another-tab' }); await w(800);
-      const before = localStorage.getItem('tgw.save'); g.save.profile.inventory.wood = 4242; g.save.flush();
-      o.stopped = g.save.readOnly === true && localStorage.getItem('tgw.save') === before && !!document.getElementById('tab-lost');
-      return o; });
-    check('R153 tab guard: another tab claiming the game stops this tab saving and shows Play here', ok && r.owner && r.stopped && !errors.length, errors[0] || JSON.stringify(r)); await ctx.close(); }
+    if (ok) {
+      r.owner = await p.evaluate(() => !!window.__tgw?.tabGuard?.canWrite() && !window.__tgw.save.readOnly);
+      const q = await ctx.newPage(); const qErrors = []; q.on('pageerror', e => qErrors.push(e.message));
+      await q.goto(B + 'game.html?char=cactus', { waitUntil:'load' }); // R157C: real save-owning tab; dev=1 is ephemeral and has no TabGuard
+      const qReady = await q.waitForFunction(() => !!window.__tgw?.tabGuard && !!document.getElementById('tab-lost'), null, { timeout:240000 }).then(() => true, () => false);
+      r.blocked = qReady && await q.evaluate(() => window.__tgw.save.readOnly && !window.__tgw.tabGuard.canWrite());
+      if (qReady) {
+        r.buttonVisible = await q.evaluate(() => { const b=document.getElementById('tab-lost'); const rect=b?.getBoundingClientRect(); const style=b&&getComputedStyle(b); const shown=!!b&&style.display!=='none'&&style.visibility!=='hidden'&&rect.width>=44&&rect.height>=44; if(shown)b.click(); return shown; });
+        // R157C: use the real DOM click event; Playwright locator.click can outwait a synchronous takeover/reload.
+        r.handoff = await q.waitForFunction(() => !!window.__tgw?.tabGuard?.canWrite() && !window.__tgw.save.readOnly, null, {timeout:240000}).then(() => true, () => false);
+        r.previousStopped = await p.evaluate(() => window.__tgw.save.readOnly && !window.__tgw.tabGuard.canWrite() && !!document.getElementById('tab-lost'));
+        if (r.handoff && r.previousStopped) {
+          r.noStaleWrites = await p.evaluate(() => {const g=window.__tgw,before=localStorage.getItem('tgw.save');g.save.profile.inventory.wood=4242;g.save.flush();return localStorage.getItem('tgw.save')===before;});
+        }
+      }
+      r.noErrors=!qErrors.length;
+      await q.close();
+    }
+    check('R157C actual two-tab handoff: owner, blocked tab, safe takeover, old tab read-only, no stale writes', ok && ['owner','blocked','buttonVisible','handoff','previousStopped','noStaleWrites','noErrors'].every(k=>r[k]) && !errors.length, errors[0] || JSON.stringify(r)); await ctx.close(); }
   // 17w. R153 review fixes: reduce motion (no hit-stop/shake), the workbench opens on the tab that matters with a dot, the
   // workshop posts stand where the posts are (not stacked at the bench), nothing builds on the Ring, the vest stays on while
   // boating, a gold Lake Race time counts for the Spire Seed

@@ -22,7 +22,8 @@ export class BoatEconomySystem {
     // Hydrate: the saved profile wins over the fresh in-memory fishing state.
     if (fp.starter) f.starter = true;
     Object.assign(f.own, fp.own); Object.assign(f.log, fp.log);
-    if (this.p.boat.owned) f.setBoatAccess({ owned: true });
+    if (this.p.boat.owned) f.setBoatAccess({ owned: true, rented: false });
+    else if (this.p.boat.rented) f.setBoatAccess({ rented: true }); // R157A: restore paid trip
     f.renderAll?.();
     this.snap = this.key();
     const self = this, origOptions = f.dialogOptions.bind(f), origChoose = f.choose.bind(f);
@@ -36,6 +37,18 @@ export class BoatEconomySystem {
       if (this.mode === 'greet' && ['boat', 'vest', 'rent', 'buyboat'].includes(k)) return self.choose(k);
       return origChoose(k);
     };
+    // R157A: docking consumes rental synchronously, before pagehide can flush.
+    // No changes in FishingV1; this is only the R58 economy integration wrapper.
+    if (typeof f.dockNow === 'function') {
+      const origDock = f.dockNow.bind(f);
+      f.dockNow = function (...args) {
+        const wasOn = this.boat.on, result = origDock(...args);
+        if (wasOn && !this.boat.on && !self.p.boat.owned && self.p.boat.rented) {
+          self.p.boat.rented = false; self.persist();
+        }
+        return result;
+      };
+    }
     this.w.boatGoal = () => this.goal();
     return this;
   }
@@ -78,14 +91,14 @@ export class BoatEconomySystem {
         return say(`Not yet. First ${need.join(' and ')}.`, 5.5);
       }
       if (this.missing(BOAT.rentCost).length) return say(`A trip costs ${costText(BOAT.rentCost)}. For the oars and the tar.`, 5);
-      this.w.pay(BOAT.rentCost); f.setBoatAccess({ rented: true }); f.renderDialog();
+      this.w.pay(BOAT.rentCost); b.rented = true; f.setBoatAccess({ rented: true }); f.renderDialog(); this.persist();
       this.hud?.showToast(`Boat rented (−${costText(BOAT.rentCost)})`);
       return say('She is at the dock. Follow the stream to the waterfall, and tie her up when you are done.', 5.5);
     }
     if (k === 'buyboat') {
       if (!this.canBuy()) return say(`Take her to the waterfall a few more times first (${b.waterfall}/${BOAT.buyAfterTrips}).`, 4.5);
       if (this.missing(BOAT.buyCost).length) return say(`She is yours for ${costText(BOAT.buyCost)}.`, 6);
-      this.w.pay(BOAT.buyCost); b.owned = true; f.setBoatAccess({ owned: true }); f.renderDialog(); this.persist();
+      this.w.pay(BOAT.buyCost); b.owned = true; b.rented = false; f.setBoatAccess({ owned: true, rented: false }); f.renderDialog(); this.persist();
       this.hud?.showToast('The boat is yours. No more rent.');
       return say('Take good care of her. She has more lakes in her than I do.', 5.5);
     }
@@ -104,7 +117,7 @@ export class BoatEconomySystem {
       if (this.canBuy()) setTimeout(() => this.hud?.showToast('Sigurd might sell you the boat now'), 4200);
       this.persist();
     }
-    if (!B.on && this.wasOn) { b.trips++; this.persist(); }
+    if (!B.on && this.wasOn) { b.trips++; if (!b.owned) b.rented = false; this.persist(); } // R157A: docking consumes rental
     this.wasOn = B.on; this.wasFall = B.on && B.reachedWaterfall;
     if (++this.tick % 30) return;           // catch-log diff ~2×/s is plenty
     const k = this.key(); if (k !== this.snap) { this.snap = k; this.persist(); }

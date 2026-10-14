@@ -7,13 +7,13 @@
 import * as THREE from 'three';
 import { damp, radialTexture } from '../visual/VisualKit.js';
 import { MATERIALS, NODE_KINDS, TOOLS, HOME_UPGRADES, RULES, PASSIVES, PERKS, GOLDEN_CACHES } from '../data/wildsCatalog.js';
-import { WildsThreatSystem } from './WildsThreatSystem.js?build=SAVE-R159-20261014A';
-import { DailyRequests } from './DailyRequests.js';
-import { GardenPotsSystem } from './GardenPotsSystem.js?build=SAVE-R159-20261014A';
+import { WildsThreatSystem } from './WildsThreatSystem.js?build=SAVE-R157A-20261011A';
+import { DailyRequests } from './DailyRequests.js?build=SAVE-R157A-20261011A';
+import { GardenPotsSystem } from './GardenPotsSystem.js?build=SAVE-R157A-20261011A';
 import { loadWildsModels, loadGardenModels, WildsModel } from './WildsModels.js';
-import { WORKSHOP_UPGRADES, WORKSHOP_FILES, WORKSHOP_SCALE } from '../data/workshopCatalog.js?build=SAVE-R159-20261014A';   // R144
+import { WORKSHOP_UPGRADES, WORKSHOP_FILES, WORKSHOP_SCALE } from '../data/workshopCatalog.js?build=SAVE-R157A-20261011A';   // R144
 import { loadGLTF } from '../core/AssetManager.js';
-import { perkPrice } from '../data/economyCatalog.js?build=SAVE-R159-20261014A';   // R148
+import { perkPrice } from '../data/economyCatalog.js?build=SAVE-R157A-20261011A';   // R148
 import { FIXED_HEDGE as HEDGE } from '../data/gardenCatalog.js';
 
 const HOME = { x: 0, z: 4.7 };
@@ -137,7 +137,7 @@ export class WildsLoopSystem {
     const seed = this.seedGoal?.(); if (seed) return seed;   // R152: a Special Seed in the Bag is the most useful next step (set by Game)
     if (!Object.keys(p.inventory).length && !this.has('axe')) return g('Gather natural materials', 'Out in the wilds · Gather Wood, Stone and Fiber from the things that glint.');   // R156: the axe needs no Clay
     if (!this.has('axe')) { const axe = TOOLS.find(t => t.id === 'axe'); return g('Craft your first tool', `Workbench in your garden · Requires ${costText(axe?.cost)}. Craft the Stone Axe.`); }
-    if (!pots?.available()) return g('Build your greenhouse', 'At the back of your garden. Pots and plants live there.');
+    if (!pots?.available()) return g('Build your greenhouse', 'Workbench → Home → Greenhouse. Build it there; plant and water directly at the pots.');
     if (pots.owned() < 1) return g('Craft a pot', 'Workbench → Tools → Terracotta Pot. It goes straight onto the greenhouse shelf.');
     if (!this.has('can')) { const can = TOOLS.find(t => t.id === 'can'); return g('Craft a Watering Can', `Workbench in your garden · Requires ${costText(can?.cost)}. Fill it at the garden pond.`); }
     const slots = p.pots.slots;
