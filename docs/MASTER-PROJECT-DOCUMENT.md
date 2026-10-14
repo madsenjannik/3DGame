@@ -1681,7 +1681,7 @@ are only touched where a measured hotspot requires it, minimally.
    failure. Must pass before every push (CLAUDE.md rule 5).
 
 **B status 02/10/2026: complete (R51–R57).** On-device check (iPhone, Jannik 02/10): 60 fps steady (frame max 20–24 ms), 217 draw calls / 370k tris in the garden, 363 / 433k at the lake, mobile-high, 1 WebGL context → no perf work needed before C.
-**R163 (v0.8.163):** Ring premium experiment (RP1–RP3, `?ring=premium` only) merged onto the live v0.8.161 line; only cache tags changed outside the Ring files.
+**R163 (v0.8.163):** Ring premium experiment (RP1–RP3, `?ring=premium` only) merged onto the live v0.8.161 line; only cache tags changed outside the Ring files. The `?ring=` flag is stored by every entry page (index, selector, game).
 **RP3 Ring premium (in v0.8.163):** experimental concept Sprouting Ring built new at 70 % on the east lawn (`?ring=premium`): oak, 9 pods, flagstone ring + lane, arch, lanterns; old Ring handed over and back; not approved, iPhone FPS unverified.
 **RP2 Ring premium (in v0.8.163):** experimental premium garden look (`?ring=premium`): concept trees, shrubs, ground grade, haze, lantern stalks + arch instead of the pergola; restores fully; not approved, iPhone FPS unverified.
 **RP1 Ring premium (in v0.8.163):** experimental Sprouting Ring premium look (`?ring=premium`, default classic): `RingSanctuary.js` with concept pods, ground, grass, ferns, flagstones, lanterns; local-only lighting, tiered budgets, merged meshes, fail soft. Not approved; iPhone FPS unverified.

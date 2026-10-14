@@ -2,7 +2,7 @@
 
 ## Ring premium experiment — v0.8.163 `RING-R163-20261014A` (14/10/2026; only with `?ring=premium`)
 - **What:** Jannik's 'Sprouting Ring Concept Scene' (Claude Design) built into the real game: RP1 pods at the old Ring, RP2 the whole visible garden in the concept look (trees, shrubs, ground grade, haze, flagstones), RP3 the concept's Ring built new at 70 % on the east lawn (oak in the middle, 9 pods, flagstone ring + lane, arch, lanterns; the old spot is too tight: house 4.0 m, Perk Shrine 2.7 m). Code: `js/visual/RingSanctuary.js`, hooks in `js/gameplay/CharacterSwapSpot.js`, `R157_|R158_` skip in `GardenVegetationMask.js`, smoke 17r2.
-- **Switch:** `?ring=premium` turns it on (remembered in `tgw.ring`), `?ring=classic` turns it off. Default players see nothing new. Any failure hands everything back to the classic Ring.
+- **Switch:** `?ring=premium` turns it on (remembered in `tgw.ring`, also from `index.html`/`selector.html`, since the selector drops the query on its way to the game), `?ring=classic` turns it off. Default players see nothing new. Any failure hands everything back to the classic Ring.
 - **Not approved:** design waits for Jannik's GO; **Mangler:** iPhone FPS (headless software render: desktop 3.1x, phone profile 2.0x the classic garden's frame time).
 
 ## R158A.1 physical Safari QA preview (12/10/2026)
