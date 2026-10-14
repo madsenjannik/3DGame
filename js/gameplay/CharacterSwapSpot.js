@@ -99,7 +99,7 @@ export class CharacterSwapSpot {
   // (it does not fit at the old spot). The old Ring stays loaded but hidden; its colliders, mound, clearing and the
   // interaction point hand over to the new one, and restoreClassic() hands everything back (also on any failure).
   loadPremium() {
-    import('../visual/RingSanctuary.js?build=RING-R166-20261014A').then(({ RingSanctuary, laneRect }) => {
+    import('../visual/RingSanctuary.js?build=RING-R167-20261014A').then(({ RingSanctuary, laneRect }) => {
       const W = this.g.world, vm = this.g.vegetationMask, sp = this.g.homePortal.gardenSpawn(), center = { x: sp.x + EAST_DX, z: sp.z + EAST_DZ };
       const px = W.pathX?.(center.z) ?? 0, yaw = Math.atan2(px - center.x, 0);   // the lane (+z) points at the garden path
       this.prev = { spot: { ...this.spot }, height: W.gardenHeight, extra: this.g.wilds?.extraProps, oldClear: vm?.fixed?.find(c => c.cx === this.spot.x && c.cz === this.spot.z) };

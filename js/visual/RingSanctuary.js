@@ -154,9 +154,11 @@ export class RingSanctuary {
     this.clearR = RT * K; this.stoneC = new V3(laneX(RING), 0, RING);
     this.mats(); this.terrain(); this.flagstones(); this.oak(); this.podsBuild(); this.lanterns(); this.arch(); this.hedge(); this.understory(); this.instanced(); this.grass(); this.atmosphere(); this.stone(); for (const g of this.hedgeStems) this.add(g, this.m.bark, true, true); this.hedgeStems = []; this.batch();
     this.solid();
+    this.lane = laneRect(center, yaw);
     try { this.env = new RingEnvironment(this); } catch (e) { console.warn('[TGW] ring environment failed; garden kept', e); try { this.env?.restore(); } catch {} this.g.world.privateRoot.getObjectByName('R158_RING_ENVIRONMENT')?.removeFromParent(); this.env = null; }
     try { this.warmth(); } catch (e) { console.warn('[TGW] ring warmth failed', e); }
     this.setTier(this.tierId); this.buildMs = performance.now() - this.t0;
+    this.warm();
   }
   // ---------- concept-space helpers ----------
   Hc(x, z) { const r = Math.hypot(x, z), fade = 1 - ss(RT - 1.4, RT - .1, r); let h = .38 * Math.exp(-(r * r) / (1.7 * 1.7));
@@ -279,9 +281,11 @@ export class RingSanctuary {
     this.stoneLight = L('#ffc46a', 7, new V3(sc.x, sy + 1.1, sc.z), 5.5);
     (this.bulbs || []).filter((b, i) => i % 2 === 1).forEach(b => L('#ffad55', 4, b, 4.5));
     Promise.all(['EffectComposer', 'RenderPass', 'UnrealBloomPass', 'OutputPass', 'ShaderPass'].map(n => import(`three/addons/postprocessing/${n}.js`)))
-      .then(mods => { if (!this.root.parent) return; const m = Object.assign({}, ...mods); this.post = new RingPost(this.g, m); this.g.postFx = this.post; })
+      .then(mods => { if (!this.root.parent) return; const m = Object.assign({}, ...mods); this.post = new RingPost(this.g, m); this.g.postFx = this.post; this.warm(); })
       .catch(e => console.warn('[TGW] ring bloom unavailable; plain render kept', e));
   }
+  // R167: the 'hitch the first time you come near the Ring' was the GPU compiling the new shaders on first sight; compile them all now
+  warm() { try { const r = this.g.renderer, p = r.compileAsync ? r.compileAsync(this.g.scene, this.g.camera) : (r.compile(this.g.scene, this.g.camera), null); p?.catch?.(() => {}); } catch {} }
   glowUpdate(t, dt) {
     if (!this.colMat) return; const calling = !!this.g.specialSeeds?.inBag?.().length; this.callK = (this.callK || 0) + ((calling ? 1 : 0) - (this.callK || 0)) * Math.min(1, dt * 2);
     const c = this.callK, br = .5 + .5 * Math.sin(t * 1.7), day = this.U.day.value; this.colMat.uniforms.uT.value = t; this.colMat.uniforms.uK.value = .22 + .12 * br + .45 * c;
@@ -459,20 +463,22 @@ export function gradeGround(c, x, z) {
   else { const t = C('#4a6327').lerp(C('#3a5220'), ss(.45, .7, n1)).lerp(C('#45311f'), ss(.62, .82, n2) * .55); c.lerp(t, .85); }
   return c.multiplyScalar(.74 + .22 * n2);
 }
+const _m4 = new THREE.Matrix4();
+function m4set(im, i, p, q, sc) { _m4.compose(p, q, sc); im.setMatrixAt(i, _m4); }
 const LEAF_BUDGET = { 'desktop': 1, 'mobile-high': .4, 'mobile-low': .25 };
 
 export class RingEnvironment {
   constructor(sanctuary) {
     this.S = sanctuary; this.g = sanctuary.g; this.W = this.g.world; this.undo = []; rnd = rng(23);
     this.root = new THREE.Group(); this.root.name = 'R158_RING_ENVIRONMENT'; this.W.privateRoot.add(this.root);
-    this.leaves = []; this.bark = []; this.birch = [];
+    this.leaves = []; this.bark = []; this.birch = []; this.reeds = []; this.cattails = []; this.rocksAt = []; this.ferns = [];
     this.tier = sanctuary.tierId; const k = LEAF_BUDGET[this.tier] ?? 1; this.leafK = k; this.leafSize = 1 / Math.sqrt(Math.max(.3, k));
     this.M = {
       bark: new THREE.MeshStandardMaterial({ color: '#6e5038', map: sanctuary.T.bark, bumpMap: sanctuary.T.barkBump, bumpScale: 3, roughness: .92 }),
       birch: new THREE.MeshStandardMaterial({ color: '#d9d2bf', map: sanctuary.T.bark, bumpMap: sanctuary.T.barkBump, bumpScale: 1.5, roughness: .85 }),
       leaf: leafMaterial(sanctuary.T, sanctuary.U, sanctuary.tierId)
     };
-    this.trees(); this.backdrop(); this.shrubs(); this.ground(); this.stones(); this.rocks(); this.fence(); this.homeTrees(); this.grassTint(); this.finish();
+    this.trees(); this.backdrop(); this.shrubs(); this.pond(); this.ground(); this.stones(); this.rocks(); this.fence(); this.homeTrees(); this.meadow(); this.finish();
   }
   H(x, z) { return this.W.groundHeight?.(x, z) || 0; }
   hide(o) { if (!o || !o.visible) return; o.visible = false; this.undo.push(() => { o.visible = true; }); }
@@ -486,6 +492,9 @@ export class RingEnvironment {
       this.leaves.push({ p, q, sx: s * .7, sy: s, c }); } }
   tube(list, pts, r0, r1, o) { list.push(taperTube(pts, r0, r1, o)); }
 
+  fernAt(x, z, sc) { const y = this.H(x, z), n = 7, Z = new V3(0, 0, 1); for (let f = 0; f < n; f++) { const a = f / n * 6.28 + R(-.3, .3), dir = new V3(Math.cos(a), 0, Math.sin(a)), L = R(.5, .75) * sc, up = R(.35, .55) * sc, side = new V3(-dir.z, 0, dir.x);
+    for (let i = 1; i < 10; i++) { const t = i / 10, P = new V3(x, y, z).addScaledVector(dir, L * t).add(new V3(0, up * Math.sin(Math.PI * t * .85), 0));
+      for (const sd of [-1, 1]) { const n2 = new V3(0, 1, 0).addScaledVector(dir, -.4 + t * .9).addScaledVector(side, sd * .3).normalize(), q = new THREE.Quaternion().setFromUnitVectors(Z, n2), lf = (1 - t * .65) * sc; q.premultiply(new THREE.Quaternion().setFromAxisAngle(n2, Math.atan2(sd, 1) + sd * 1.2)); this.leaves?.push({ p: P.clone().addScaledVector(side, sd * .02 * sc), q, sx: .05 * lf * this.leafSize, sy: .16 * lf * this.leafSize, c: C('#456a28').lerp(C('#8aa448'), t * .6 + rnd() * .2) }); } } } }
   // ---------- the garden's eight trees -> concept oaks (round) and birches at their own spots; the one behind the Ring is the hero ----------
   trees() {
     const defs = this.W.treeDefs || [], ring = this.S.center, kids = this.W.privateRoot.children;
@@ -539,7 +548,11 @@ export class RingEnvironment {
   ground() {
     const mesh = this.W.privateRoot.children.find(o => o.isMesh && o.geometry?.type === 'PlaneGeometry' && o.geometry.parameters?.width === 36 && o.material?.vertexColors);
     if (!mesh) return; const col = mesh.geometry.attributes.color, pos = mesh.geometry.attributes.position, orig = col.array.slice(), c = new THREE.Color();
-    for (let i = 0; i < col.count; i++) { c.fromBufferAttribute(col, i); gradeGround(c, pos.getX(i), pos.getZ(i)); col.setXYZ(i, c.r, c.g, c.b); }
+    const mud = C('#3b3022'), bed = C('#1d2a22'), moss = C('#3a5220');
+    for (let i = 0; i < col.count; i++) { c.fromBufferAttribute(col, i); const x = pos.getX(i), z = pos.getZ(i), q = this.pondQ ? this.pondQ(x, z) : 9;
+      if (q < 1.45) { if (q < .98) c.copy(bed); else c.copy(mud).lerp(moss, ss(1.08, 1.45, q)).multiplyScalar(.85 + .25 * fbm(x * 2, z * 2)); }   // R167: the new shore's mud and mossy bank
+      else gradeGround(c, x, z);
+      col.setXYZ(i, c.r, c.g, c.b); }
     col.needsUpdate = true; this.undo.push(() => { col.array.set(orig); col.needsUpdate = true; });
   }
   // the garden path's flat grey stepping stones become the concept's flagstones on the same spots; boulders get its warm sandstone
@@ -584,7 +597,63 @@ export class RingEnvironment {
       for (const o of list) this.hide(o); const x = ctr.x, z = ctr.z;
       if (size.y / Math.max(size.x, size.z) > 1.9) this.birchTree(x, z, size.y / 4.9); else this.oak(x, z, size.y / 6, false); }
   }
-  // the garden's meadow grass toward the concept's olive-gold tint
+  // ---------- R167: the pond, asymmetric (Jannik: 'not just round'), dark and still, with lily pads, reeds and mossy stones ----------
+  // Its shoreline uses the garden's own water-body rule (organic ellipse + harmonics) with new harmonics, so walking stops at
+  // the new edge; it stays inside the pond's build reservation (2.15 x 2.85) and the shore path point stays dry.
+  pond() {
+    const W = this.W, body = (W.localWaterBodies || []).find(b => b.kind === 'organic-ellipse'); if (!body) return;
+    const keep = { base: body.base, waveA: body.waveA, freqA: body.freqA, waveB: body.waveB, freqB: body.freqB, phaseB: body.phaseB };
+    Object.assign(body, { base: .96, waveA: .13, freqA: 1, waveB: .08, freqB: 2, phaseB: 1.1 }); this.undo.push(() => Object.assign(body, keep));
+    const edge = a => body.base + body.waveA * Math.sin(a * body.freqA) + body.waveB * Math.sin(a * body.freqB + body.phaseB); this.pondQ = (x, z) => { const ux = (x - body.cx) / body.rx, uz = (z - body.cz) / body.rz; return Math.hypot(ux, uz) / edge(Math.atan2(uz, ux)); };
+    // the garden ground: a basin under the new shore (the old one is put back on restore)
+    const gm = W.privateRoot.children.find(o => o.isMesh && o.geometry?.type === 'PlaneGeometry' && o.geometry.parameters?.width === 36 && o.material?.vertexColors);
+    if (gm) { const pos = gm.geometry.attributes.position, orig = pos.array.slice();
+      for (let i = 0; i < pos.count; i++) { const x = pos.getX(i), z = pos.getZ(i); if (Math.hypot((x - body.cx) / body.rx, (z - body.cz) / body.rz) > 1.6) continue; const q = this.pondQ(x, z); pos.setY(i, -.24 * (1 - ss(.75, 1.22, q))); }
+      pos.needsUpdate = true; gm.geometry.computeVertexNormals(); this.undo.push(() => { pos.array.set(orig); pos.needsUpdate = true; gm.geometry.computeVertexNormals(); }); }
+    const water = W.privateRoot.getObjectByName('POND_WATER_SINGLE_SURFACE'); this.hide(water);
+    const seg = 96, P = [body.cx, -.06, body.cz], I = []; for (let i = 0; i < seg; i++) { const a = i / seg * Math.PI * 2, e = edge(a) * 1.02; P.push(body.cx + Math.cos(a) * body.rx * e, -.06, body.cz + Math.sin(a) * body.rz * e); }
+    for (let i = 0; i < seg; i++) I.push(0, 1 + (i + 1) % seg, 1 + i);
+    const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(P, 3)); g.setIndex(I); g.computeVertexNormals();
+    const wm = new THREE.Mesh(g, new THREE.MeshPhysicalMaterial({ color: '#21403c', roughness: .06, metalness: 0, clearcoat: .6, clearcoatRoughness: .05, envMapIntensity: 1.1 })); wm.name = 'R167_POND'; wm.receiveShadow = true; this.root.add(wm);
+    const at = (a, e) => new V3(body.cx + Math.cos(a) * body.rx * edge(a) * e, 0, body.cz + Math.sin(a) * body.rz * edge(a) * e);
+    // lily pads (some in flower), reeds and cattails at the shore, mossy stones and ferns on the bank
+    const padGeo = new THREE.CircleGeometry(1, 18, .35, Math.PI * 2 - .7).rotateX(-Math.PI / 2), pads = new THREE.InstancedMesh(padGeo, new THREE.MeshStandardMaterial({ color: '#4d7a2c', roughness: .55, side: THREE.DoubleSide }), 16), m4 = new THREE.Matrix4(), q = new THREE.Quaternion();
+    for (let i = 0; i < 16; i++) { const p = at(R(0, 6.28), Math.sqrt(rnd()) * .78); q.setFromAxisAngle(new V3(0, 1, 0), R(0, 6.28)); const s = R(.12, .24); m4.compose(new V3(p.x, -.045, p.z), q, new V3(s, 1, s)); pads.setMatrixAt(i, m4); pads.setColorAt(i, C('#ffffff').multiplyScalar(R(.75, 1.1))); }
+    this.root.add(pads); for (let i = 0; i < 5; i++) { const p = at(R(0, 6.28), R(.25, .7)); this.cluster(p.x, .0, p.z, .06, 9, '#f4b8c8', '#fff0f4', .07, .5); }
+    for (let i = 0; i < 26; i++) { const a = R(0, 6.28), p = at(a, R(.95, 1.12)), n = 5 + (rnd() * 6 | 0); for (let k = 0; k < n; k++) { const h = R(.45, 1.0), x = p.x + R(-.15, .15), z = p.z + R(-.15, .15); this.tube(this.reeds, [new V3(x, -.05, z), new V3(x + R(-.05, .05), h * .6, z + R(-.05, .05)), new V3(x + R(-.12, .12), h, z + R(-.12, .12))], .014, .003, { radial: 4, seg: 4, lump: 0 }); if (rnd() < .18) { const c = new V3(x, h * .8, z); this.cattails.push(c); } } }
+    for (let i = 0; i < 14; i++) { const p = at(R(0, 6.28), R(1.05, 1.3)); this.rocksAt.push([p.x, p.z, R(.12, .3)]); }
+    for (let i = 0; i < 8; i++) { const p = at(R(0, 6.28), R(1.2, 1.45)); this.ferns.push([p.x, p.z, R(.6, .9)]); }
+    // the low-poly 'Pure Poly' tree and grass tufts beside it give way to a concept tree and the meadow below
+    const pp = W.privateRoot.getObjectByName('Pure Poly import sample'); if (pp) { pp.traverse(o => { if (o.name === 'PP_Tree_02') { this.hide(o); this.oak(o.position.x, o.position.z, .55, false); } else if (o.name === 'PP_Grass_11') this.hide(o); }); }
+  }
+  // ---------- R167: the garden's meadow becomes the concept's sculpted grass everywhere (it bends away from the player like before) ----------
+  meadow() {
+    const W = this.W; for (const o of [...W.privateRoot.children]) if (o.isInstancedMesh && ['grass', 'wisp', 'tall'].includes(o.userData?.calmType)) this.hide(o);
+    const seg = 4, pos = [], col = [], nor = [], idx = []; for (let i = 0; i <= seg; i++) { const t = i / seg, w = .5 * (1 - t) + .04, c = C('#2a4219').lerp(C('#a8c460'), Math.pow(t, 1.1)); pos.push(-w, t, .3 * t * t, w, t, .3 * t * t); col.push(c.r, c.g, c.b, c.r, c.g, c.b); nor.push(-.15, 1, .25, .15, 1, .25); }
+    for (let i = 0; i < seg; i++) idx.push(2 * i, 2 * i + 1, 2 * i + 2, 2 * i + 1, 2 * i + 3, 2 * i + 2);
+    const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute('color', new THREE.Float32BufferAttribute(col, 3)); g.setAttribute('normal', new THREE.Float32BufferAttribute(nor, 3)); g.setIndex(idx);
+    const S = this.S, ring = S.center, rr = S.clearR, lane = S.lane, max = 70000, items = [];
+    for (let a = 0; a < max * 3 && items.length < max; a++) { const x = R(-12.45, 12.45), z = R(-13.35, 11.75);
+      if (W.vegetationBlocked?.(x, z, .02) || Math.hypot(x - ring.x, z - ring.z) < rr - .2 || (lane && x > lane.x0 && x < lane.x1 && z > lane.z0 && z < lane.z1) || (this.pondQ && this.pondQ(x, z) < 1.08)) continue;
+      let d = (W.grassReadabilityDensity?.(x, z) ?? 1) * (ss(.3, .62, fbm(x * .35 + 3, z * .35)) * .8 + .2); if (rnd() > d) continue; items.push([x, z, rnd()]); }
+    items.sort((a, b) => a[2] - b[2]);
+    const mat = patch(new THREE.MeshStandardMaterial({ vertexColors: true, side: THREE.DoubleSide, roughness: .78 }), { translucency: this.tier === 'desktop' ? .45 : 0, lift: .03, U: S.U });
+    const inner = mat.onBeforeCompile; mat.onBeforeCompile = sh => { inner(sh); sh.uniforms.uPlayer = W.uPlayer; sh.uniforms.uTime = S.U.time;
+      sh.vertexShader = 'uniform vec3 uPlayer;\n' + sh.vertexShader.replace('uniform float uTime;\n', '').replace('#include <project_vertex>', `
+ vec4 gw = modelMatrix * instanceMatrix * vec4(transformed, 1.0); float hh = max(position.y, 0.0); hh *= hh;
+ float wv = sin(uTime * 1.6 + gw.x * .35 + gw.z * .25) * .6 + sin(uTime * 2.7 + gw.x * .9 - gw.z * .7) * .25 + .35; gw.x += wv * .07 * hh; gw.z += wv * .045 * hh;
+ vec2 dp = gw.xz - uPlayer.xz; float dl = length(dp), push = (1.0 - smoothstep(0.0, .78, dl)) * .34 * hh; gw.xz += normalize(dp + vec2(1e-4)) * push; gw.y -= push * .55;
+ vec4 mvPosition = viewMatrix * gw; gl_Position = projectionMatrix * mvPosition;`);
+      if (!/uniform float uTime/.test(sh.vertexShader)) sh.vertexShader = 'uniform float uTime;\n' + sh.vertexShader; };
+    mat.customProgramCacheKey = () => `r167-meadow-${this.tier}`;
+    const im = new THREE.InstancedMesh(g, mat, items.length), q = new THREE.Quaternion(), e = new THREE.Euler();
+    items.forEach(([x, z], i) => { const h = R(.16, .38) * (1 + .35 * ss(.5, .75, fbm(x * .2, z * .2))); e.set(R(-.2, .2), R(0, 6.28), R(-.2, .2)); q.setFromEuler(e); m4set(im, i, new V3(x, this.H(x, z) - .01, z), q, new V3(R(.035, .055), h, h));
+      im.setColorAt(i, C('#ffffff').lerp(C('#e6dd96'), fbm(x * .3 + 9, z * .3) * .55).multiplyScalar(R(.72, 1.08))); });
+    im.receiveShadow = true; im.name = 'R167_MEADOW'; im.frustumCulled = false; this.meadowMesh = im; this.meadowAll = items.length;
+    const grp = new THREE.Group(); grp.name = 'R167_MEADOW_ROOT'; grp.add(im); W.privateRoot.add(grp); this.undo.push(() => grp.removeFromParent());
+    this.setTier(this.tier);
+    try { this.g.vegetationMask?.apply?.(); } catch {}   // grass under a moved structure is hidden like the garden's own
+  }
   grassTint() {
     this.W.privateRoot.traverse(o => { if (o.userData?.calmType !== 'grass' || !o.material?.color) return; const m = o.material, c0 = m.color.clone(); m.color.set('#bdb87c'); this.undo.push(() => m.color.copy(c0)); });
   }
@@ -592,12 +661,16 @@ export class RingEnvironment {
   finish() {
     const add = (list, mat, cast) => { if (!list.length) return; const g = mergeGeometries(list, false); list.forEach(x => x.dispose()); const m = new THREE.Mesh(g, mat); m.castShadow = cast; m.receiveShadow = true; this.root.add(m); };
     add(this.bark, this.M.bark, this.tier === 'desktop'); add(this.birch, this.M.birch, this.tier === 'desktop');   // R166: phones keep the Ring's own casters only
+    add(this.reeds, new THREE.MeshStandardMaterial({ color: '#5f7a34', roughness: .8 }), false);
+    if (this.cattails.length) { const ct = new THREE.InstancedMesh(new THREE.CapsuleGeometry(.025, .12, 3, 6), new THREE.MeshStandardMaterial({ color: '#5a3a22', roughness: .9 }), this.cattails.length); this.cattails.forEach((c, i) => m4set(ct, i, c, new THREE.Quaternion(), new V3(1, 1, 1))); this.root.add(ct); }
+    const geos = this.S.rockGeos; if (geos?.length && this.rocksAt.length) { const ri = new THREE.InstancedMesh(geos[0], this.S.m.rock, this.rocksAt.length), qq = new THREE.Quaternion(); this.rocksAt.forEach(([x, z, sz], i) => { qq.setFromEuler(new THREE.Euler(R(-.3, .3), R(0, 6), R(-.3, .3))); m4set(ri, i, new V3(x, this.H(x, z) - sz * .25, z), qq, new V3(sz * R(1, 1.4), sz * .6, sz)); }); ri.receiveShadow = true; this.root.add(ri); }
+    for (const [x, z, sc] of this.ferns) this.fernAt(x, z, sc);
     const ls = this.leaves; ls.forEach(l => l.rank = rnd()); ls.sort((a, b) => a.rank - b.rank);
     const g = leafGeometry(PHONE(this.tier)), m4 = new THREE.Matrix4(), im = new THREE.InstancedMesh(g, this.M.leaf, Math.max(1, ls.length));
     ls.forEach((l, i) => { m4.compose(l.p, l.q, new V3(l.sx, l.sy, 1)); im.setMatrixAt(i, m4); im.setColorAt(i, l.c); });
     im.castShadow = this.tier === 'desktop'; im.receiveShadow = true; this.leafMesh = im; this.leafAll = ls.length; this.root.add(im); this.leaves = null;
   }
-  setTier(id) { if (!this.leafMesh) return; const k = (LEAF_BUDGET[id] ?? 1) / this.leafK; this.leafMesh.count = Math.max(1, Math.floor(this.leafAll * Math.min(1, k))); this.leafMesh.castShadow = id === 'desktop'; }
+  setTier(id) { if (this.meadowMesh) this.meadowMesh.count = Math.floor(this.meadowAll * ({ 'desktop': 1, 'mobile-high': .3, 'mobile-low': .18 }[id] ?? 1)); if (!this.leafMesh) return; const k = (LEAF_BUDGET[id] ?? 1) / this.leafK; this.leafMesh.count = Math.max(1, Math.floor(this.leafAll * Math.min(1, k))); this.leafMesh.castShadow = id === 'desktop'; }
 
   // the concept's morning grade over the garden's day light (DayNight re-applies its own values first, every frame)
   mood() {
