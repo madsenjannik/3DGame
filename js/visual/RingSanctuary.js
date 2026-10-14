@@ -478,7 +478,7 @@ export class RingEnvironment {
       birch: new THREE.MeshStandardMaterial({ color: '#d9d2bf', map: sanctuary.T.bark, bumpMap: sanctuary.T.barkBump, bumpScale: 1.5, roughness: .85 }),
       leaf: leafMaterial(sanctuary.T, sanctuary.U, sanctuary.tierId)
     };
-    this.trees(); this.backdrop(); this.shrubs(); this.pond(); this.ground(); this.stones(); this.rocks(); this.fence(); this.homeTrees(); this.meadow(); this.finish();
+    this.trees(); this.backdrop(); this.shrubs(); this.pond(); this.ground(); this.stones(); this.rocks(); this.oldStones(); this.fence(); this.homeTrees(); this.meadow(); this.finish();
   }
   H(x, z) { return this.W.groundHeight?.(x, z) || 0; }
   hide(o) { if (!o || !o.visible) return; o.visible = false; this.undo.push(() => { o.visible = true; }); }
@@ -575,6 +575,15 @@ export class RingEnvironment {
       if (o.isMesh && o.scale.y > .07) { o.updateWorldMatrix(true, false); list[(rnd() * geos.length) | 0].push(o.matrixWorld.clone()); this.hide(o); } });
     list.forEach((L, k) => { if (!L.length) return; const im = new THREE.InstancedMesh(geos[k], this.S.m.rock, L.length); L.forEach((mm, i) => im.setMatrixAt(i, mm)); im.castShadow = this.tier === 'desktop'; im.receiveShadow = true; this.root.add(im); });
   }
+  // R168: the older 'foundation sample' grey stones (icosahedrons) by the pond and the side path: big -> concept rocks, flat -> flagstones
+  oldStones() {
+    const fs = this.W.privateRoot.getObjectByName('World foundation sample'), geos = this.S.rockGeos, vars = this.S.flagVariants; if (!fs || !geos?.length) return;
+    const rocks = [], flats = [], v = new V3();
+    for (const o of [...fs.children]) { if (!o.isMesh || o.geometry?.type !== 'IcosahedronGeometry' || o.material?.color?.getHex?.() !== 0x777b75 || !o.visible) continue; o.updateWorldMatrix(true, false); o.getWorldPosition(v);
+      if (o.scale.y > .1) rocks.push(o.matrixWorld.clone()); else flats.push([v.x, v.z, Math.max(o.scale.x, o.scale.z) * .95, o.rotation.y]); this.hide(o); }
+    if (rocks.length) { const im = new THREE.InstancedMesh(geos[1 % geos.length], this.S.m.rock, rocks.length); rocks.forEach((m, i) => im.setMatrixAt(i, m)); im.castShadow = this.tier === 'desktop'; im.receiveShadow = true; this.root.add(im); }
+    if (flats.length && vars?.length) { const im = new THREE.InstancedMesh(vars[0].g, this.S.m.stone, flats.length), q = new THREE.Quaternion(); flats.forEach(([x, z, sz, ry], i) => { q.setFromEuler(new THREE.Euler(0, ry, 0)); m4set(im, i, new V3(x, this.H(x, z) - .04, z), q, new V3(sz, .13, sz)); }); im.receiveShadow = true; this.root.add(im); }
+  }
   // R165: the garden fence in the concept's rustic wood (bark posts, sagging rails, ivy) on its own line; its collision is the garden's
   fence() {
     const posts = [];
@@ -603,7 +612,7 @@ export class RingEnvironment {
   pond() {
     const W = this.W, body = (W.localWaterBodies || []).find(b => b.kind === 'organic-ellipse'); if (!body) return;
     const keep = { base: body.base, waveA: body.waveA, freqA: body.freqA, waveB: body.waveB, freqB: body.freqB, phaseB: body.phaseB };
-    Object.assign(body, { base: .96, waveA: .13, freqA: 1, waveB: .08, freqB: 2, phaseB: 1.1 }); this.undo.push(() => Object.assign(body, keep));
+    const keep2 = { rx: body.rx, rz: body.rz }; Object.assign(body, { base: .96, waveA: .1, freqA: 1, waveB: .05, freqB: 2, phaseB: 1.1, rx: body.rx * 1.1, rz: body.rz * 1.1 }); this.undo.push(() => Object.assign(body, keep, keep2));   // R168: 10 % larger
     const edge = a => body.base + body.waveA * Math.sin(a * body.freqA) + body.waveB * Math.sin(a * body.freqB + body.phaseB); this.pondQ = (x, z) => { const ux = (x - body.cx) / body.rx, uz = (z - body.cz) / body.rz; return Math.hypot(ux, uz) / edge(Math.atan2(uz, ux)); };
     // the garden ground: a basin under the new shore (the old one is put back on restore)
     const gm = W.privateRoot.children.find(o => o.isMesh && o.geometry?.type === 'PlaneGeometry' && o.geometry.parameters?.width === 36 && o.material?.vertexColors);
@@ -624,8 +633,14 @@ export class RingEnvironment {
     for (let i = 0; i < 14; i++) { const p = at(R(0, 6.28), R(1.05, 1.3)); this.rocksAt.push([p.x, p.z, R(.12, .3)]); }
     for (let i = 0; i < 8; i++) { const p = at(R(0, 6.28), R(1.2, 1.45)); this.ferns.push([p.x, p.z, R(.6, .9)]); }
     // the low-poly 'Pure Poly' tree and grass tufts beside it give way to a concept tree and the meadow below
-    const pp = W.privateRoot.getObjectByName('Pure Poly import sample'); if (pp) { pp.traverse(o => { if (o.name === 'PP_Tree_02') { this.hide(o); this.oak(o.position.x, o.position.z, .55, false); } else if (o.name === 'PP_Grass_11') this.hide(o); }); }
+    const ppTree = (W.obstacles || []).find(o => o.kind === 'purepoly-tree'); if (ppTree) this.oak(ppTree.x, ppTree.z, .55, false);
+    this.lateHide();
   }
+  // R168: the 'Pure Poly' sample (its pine, its grass tufts) loads after the garden is built; hide it whenever it is there
+  lateHide() { const pp = this.W.privateRoot.getObjectByName('Pure Poly import sample'); if (!pp || this.ppDone) return; let found = false;
+    const hit = []; pp.traverse(o => { if (o.name === 'PP_Tree_02' || o.name === 'PP_Grass_11') hit.push(o); });
+    for (const o of hit) { const par = o.parent; if (!par) continue; o.removeFromParent(); this.undo.push(() => par.add(o)); found = true; }   // taken out, not just hidden: another system turns its visibility back on
+    if (found) this.ppDone = true; }
   // ---------- R167: the garden's meadow becomes the concept's sculpted grass everywhere (it bends away from the player like before) ----------
   meadow() {
     const W = this.W; for (const o of [...W.privateRoot.children]) if (o.isInstancedMesh && ['grass', 'wisp', 'tall'].includes(o.userData?.calmType)) this.hide(o);
@@ -677,6 +692,7 @@ export class RingEnvironment {
     const g = this.g, w = this.W, s = g.scene, dn = g.dayNight, u = w.sky?.material?.uniforms;
     if (!dn || !s.fog || !w.hemi || !w.sun) return;
     dn.lastN = null; if (w.space !== 'garden') return;
+    if (!this.ppDone && performance.now() - (this.ppAt || 0) > 500) { this.ppAt = performance.now(); this.lateHide(); }
     const k = Math.max(0, 1 - (dn.n || 0) * 2), t = new THREE.Color();   // the morning grade fades out through dusk; the night stays DayNight's
     s.fog.color.lerp(MOOD.fog, k); s.background?.copy?.(s.fog.color); g.renderer.setClearColor(s.fog.color, 1); if (u?.uH) u.uH.value.copy(s.fog.color); if (u?.uZ) u.uZ.value.lerp(MOOD.zenith, k);
     s.fog.near = lerp(s.fog.near, MOOD.near, k); s.fog.far = lerp(s.fog.far, MOOD.far, k);
