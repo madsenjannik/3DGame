@@ -816,6 +816,8 @@ try {
       o.calls = R.stats().draws < 220;
       const E = R.env, gm = W.privateRoot.children.find(x => x.isMesh && x.geometry?.type === 'PlaneGeometry' && x.geometry.parameters?.width === 36), c0 = gm && Array.from(gm.geometry.attributes.color.array.slice(0, 3));
       o.env = !!E && (E.stats().leaves > 5000 || (E.stats().plants?.placed || 0) > 100) && E.stats().hidden > 10 && kind('ring-arch') === 2;
+      const WE = R.wenv, SL = W.sharedLandscape;   // R179/R180: the premium world look (GLB trees on the world's tree spots, concept rocks, chunked grass)
+      o.world = !!WE && WE.stats().trees > 500 && WE.stats().rocks > 50 && !!SL?.root?.getObjectByName('R179_WORLD_GRASS') && (SL.forestMeshes || []).every(m => !m || !m.visible);
       g.devMenu.teleport('garden', s.x, s.z, 0); await w(600); o.swap = sw.interaction({ x: s.x, z: s.z })?.type === 'home-swap' && !sw.interaction({ x: old.x, z: old.z });
       g.save.profile.combat.giant.wins = 1; for (let i = 0; i < 40 && S.s.tulip !== 1; i++) await w(250);
       o.offer = sw.interaction({ x: s.x, z: s.z })?.label === 'Plant Tulip Seed';
@@ -824,10 +826,11 @@ try {
       R.update = () => { throw new Error('test'); }; for (let i = 0; i < 40 && sw.sanctuary; i++) await w(250); await w(500);   // fails soft: the classic Ring comes back whole
       const c1 = gm && Array.from(gm.geometry.attributes.color.array.slice(0, 3));
       o.soft = !sw.sanctuary && sw.m.visible && !W.privateRoot.getObjectByName('R157_RING_SANCTUARY') && !W.privateRoot.getObjectByName('R158_RING_ENVIRONMENT') && kind('ring-pod') === 0 && kind('ring-arch') === 0 && kind('ring-hedge') === 0 && kind('ring-pot') >= 14
-        && sw.spot.x === old.x && Math.abs(W.gardenHeight(old.x, old.z) - .47) < .01 && !!c1 && c1.join() !== c0.join() && sw.interaction({ x: old.x, z: old.z })?.type === 'home-swap';
+        && sw.spot.x === old.x && Math.abs(W.gardenHeight(old.x, old.z) - .47) < .01 && !!c1 && c1.join() !== c0.join() && sw.interaction({ x: old.x, z: old.z })?.type === 'home-swap'
+        && !SL?.root?.getObjectByName('R179_WORLD_GRASS') && (SL?.forestMeshes || []).some(m => m && m.visible);   // R179: the world comes back whole too
       return o; });
     const back = ok && await p.goto(p.url().replace(/\?.*$/, '?char=cactus&ring=classic')).then(() => p.waitForFunction(() => window.__tgw?.swapSpot?.model, null, { timeout: 240000 })).then(() => p.waitForTimeout(3000)).then(() => p.evaluate(() => !window.__tgw.swapSpot.sanctuary && localStorage.getItem('tgw.ring') === 'classic' && window.__tgw.swapSpot.model.getObjectByName('Pot_tulip_Body').visible), () => false);
-    check('R157-R164 Ring premium (?ring=premium): concept Ring new on the east lawn (oak, 9 pods = unlocks, stone, hedge with the arch as the only way in), old Ring hidden + colliders/mound handed over, garden in the concept look, own grass unmasked, < 220 objects, swap + plant at the stone, the pod blooms, a failure hands everything back; ?ring=classic turns it off', ok && ['built', 'fence', 'solid', 'grass', 'calls', 'env', 'swap', 'offer', 'planted', 'bloom', 'soft'].every(k => r[k]) && back && !errors.length, errors[0] || JSON.stringify(r) + ' back=' + back); await ctx.close(); }
+    check('R157-R181 Ring premium (?ring=premium): concept Ring new on the east lawn (oak, 9 pods = unlocks, stone, hedge with the arch as the only way in), old Ring hidden + colliders/mound handed over, garden in the concept look, own grass unmasked, < 220 objects, swap + plant at the stone, the pod blooms, a failure hands everything back; ?ring=classic turns it off', ok && ['built', 'fence', 'solid', 'grass', 'calls', 'env', 'world', 'swap', 'offer', 'planted', 'bloom', 'soft'].every(k => r[k]) && back && !errors.length, errors[0] || JSON.stringify(r) + ' back=' + back); await ctx.close(); }
   // 17s. R150 Orangery tree (Jannik 09/10): the community tree starts as soil (stage 0); E feeds a Golden Seed; enough seeds
   // (1, 1, 2, ...) grow it a stage; no seed = Locked with the progress; saved on the shared profile
   { const ctx = await context({ viewport: { width: 1280, height: 720 } }); const { p, errors, ok } = await startGame(ctx, 'cactus', { hud: 'desktop-e' }); let r = {};
