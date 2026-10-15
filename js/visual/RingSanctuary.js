@@ -660,7 +660,8 @@ export class RingEnvironment {
   // R165 (Jannik: yes): the character home's own swaying trees (its pine and round tree) become concept trees on their spots; the house stays
   homeTrees() {
     const home = this.g.scene.getObjectByProperty?.('name', `PLAYER_HOME_GARDEN_${this.g.homePortal?.characterId}`) || (() => { let f = null; this.g.scene.traverse(o => { if (!f && /^PLAYER_HOME_GARDEN_/.test(o.name)) f = o; }); return f; })();
-    if (!home) return; home.updateMatrixWorld(true); const groups = new Map();
+    if (!home) return; if (home.getObjectByProperty?.('name', 'Aloe_v2') || (() => { let v = false; home.traverse(o => { if (/_v2$/.test(o.name)) v = true; }); return v; })()) return;   // R177: a v2 (concept-look) home has no old trees; its Sway groups are its own roof leaves
+    home.updateMatrixWorld(true); const groups = new Map();
     home.traverse(o => { if (!o.isMesh) return; let n = null; for (let q = o; q && q !== home; q = q.parent) { const m = /(Sway\d+)/.exec(q.name); if (m) { n = m[1]; break; } } if (n) (groups.get(n) || groups.set(n, []).get(n)).push(o); });
     const box = new THREE.Box3(), size = new V3(), ctr = new V3(), trees = [];
     // R172: one tree sways in several parts (Sway1/2/3); parts whose centres are within 1.2 m are one tree, not three stacked ones

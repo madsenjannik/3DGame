@@ -9,6 +9,7 @@ const DOOR_RADIUS=2.15;
 const HOME_STRUCTURAL_HALF_SIZE=2.0;
 const MOVE_IN_STORAGE_VERSION='v1';
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+const V2_SHEDS=new Set(['aloe']);   // R177
 const PREFIX={tulip:'Tulip',daisy:'Daisy',hyacinth:'Hyacinth',cactus:'Cactus',fern:'Fern',succulent:'Succulent',spire:'Spire',swamp:'Swamp',aloe:'Aloe'};
 
 function setShadows(root){root.traverse(o=>{if(o.isMesh){o.castShadow=true;o.receiveShadow=true;}});}
@@ -104,7 +105,9 @@ export class PlayerHomePortalSystem{
     this.fade=this.createFade();
   }
 
-  assetUrl(){return `./assets/homes/shed_${this.characterId}.glb`;}
+  // R177 (Jannik GO 15/10): with ?ring=premium a character with a concept-look home (Jannik's v2 shed, same node/clip contract:
+  // <Prefix>_Shed / _Yard / _Door, Idle, Door_Open, Door_Close, MoveIn) gets it; everyone else keeps the current one.
+  assetUrl(){let v2=false;try{v2=localStorage.getItem('tgw.ring')==='premium'&&V2_SHEDS.has(this.characterId);}catch{}return `./assets/homes/shed_${this.characterId}${v2?'_v2':''}.glb`;}
   hasMovedIn(){try{return localStorage.getItem(this.moveInKey)==='1';}catch{return false;}}
   markMovedIn(){try{localStorage.setItem(this.moveInKey,'1');}catch(e){console.warn('[TGW] MoveIn state could not be saved',e);}}
   usesMoveInCamera(){return this.moveInActive;}
