@@ -5,9 +5,11 @@
 // behind the character. The follow camera keeps running underneath, so the way back is a blend, never a jump. Any key or click
 // skips. Movement waits while it plays; input pressed during it is dropped at the end. Garden only. Fails soft (no target = no shot).
 // R175 (Jannik 15/10): the build itself (run) starts only once the camera has arrived, and the shot sits closer.
+// R176 (Jannik 15/10: 'just the workbench in focus and a little pan, nothing else'): no orbit. The camera stands in front of the
+// structure, framed so the whole of it fits the view, and pans 8 degrees across its front during the shot.
 import * as THREE from 'three';
 
-const IN = .7, OUT = .7, HOLD = .8, ORBIT = .1, RUN = IN + .1;   // seconds, seconds, seconds, radians per second, when run() fires
+const IN = .7, OUT = .7, HOLD = .8, RUN = IN + .1, PAN0 = .2, PAN = .14;   // seconds; when run() fires; start angle off the front and pan width (rad)
 const ss = x => { x = Math.min(1, Math.max(0, x)); return x * x * (3 - 2 * x); };
 
 export class UpgradeShowcase {
@@ -27,7 +29,7 @@ export class UpgradeShowcase {
     size = size || Math.max(2, Math.min(8, Math.max(s.x, s.z))); height = height || Math.max(1.5, Math.min(6, s.y));
     const f = new THREE.Vector3(0, 0, 1).transformDirection(target.matrixWorld); f.y = 0; if (f.lengthSq() < 1e-4) f.set(0, 0, 1); f.normalize();
     const gy = this.g.world?.groundHeight?.(c.x, c.z) || 0;
-    Object.assign(this, { c: new THREE.Vector3(c.x, gy, c.z), yaw0: Math.atan2(f.x, f.z), dist: Math.min(10, Math.max(4.5, size * .95 + 2.6)), h: height * .5 + 1.2, lookY: height * .42,
+    Object.assign(this, { c: new THREE.Vector3(c.x, gy, c.z), yaw0: Math.atan2(f.x, f.z), size, height, h: height * .45 + .7, lookY: height * .42,
       run, done, min, max, t: 0, doneAt: null, end: Infinity, active: true });
     return true;
   }
@@ -40,8 +42,10 @@ export class UpgradeShowcase {
     if (this.doneAt !== null && this.end === Infinity) this.end = this.doneAt + HOLD;
     if (this.t >= this.end + OUT) { this.stop(); return; }
     const w = ss(this.t / IN) * (1 - ss((this.t - this.end) / OUT));
-    const a = this.yaw0 + .6 - ORBIT * this.t;   // starts 34 deg off the front, drifts across it
-    this.pos.set(this.c.x + Math.sin(a) * this.dist, this.c.y + this.h, this.c.z + Math.cos(a) * this.dist);
+    // framed to fit: the larger of width and height fills ~80 % of the view at the camera's own field of view
+    const half = THREE.MathUtils.degToRad((cam.fov || 50) / 2), fitW = (this.size / 2) / (Math.tan(half) * (cam.aspect || 1.6)), fitH = (this.height / 2) / Math.tan(half), dist = Math.max(3.5, Math.max(fitW, fitH) * 1.25 + this.size * .5);
+    const p = this.end === Infinity ? Math.min(1, this.t / Math.max(this.min, 4)) : Math.min(1, this.end / Math.max(this.min, 4)), a = this.yaw0 + PAN0 - PAN * ss(p);   // 11 deg off the front, pans 8 deg
+    this.pos.set(this.c.x + Math.sin(a) * dist, this.c.y + this.h, this.c.z + Math.cos(a) * dist);
     this.look.set(this.c.x, this.c.y + this.lookY, this.c.z);
     this.m.lookAt(this.pos, this.look, cam.up); this.q.setFromRotationMatrix(this.m);
     cam.position.lerp(this.pos, w); cam.quaternion.slerp(this.q, w); cam.updateMatrixWorld();

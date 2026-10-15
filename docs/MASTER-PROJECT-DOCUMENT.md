@@ -1681,6 +1681,7 @@ are only touched where a measured hotspot requires it, minimally.
    failure. Must pass before every push (CLAUDE.md rule 5).
 
 **B status 02/10/2026: complete (R51–R57).** On-device check (iPhone, Jannik 02/10): 60 fps steady (frame max 20–24 ms), 217 draw calls / 370k tris in the garden, 363 / 433k at the lake, mobile-high, 1 WebGL context → no perf work needed before C.
+**R176 (v0.8.176):** Ring premium: upgrade camera = framed front view + 8° pan, no orbit; runs after the greenhouse's own pull-back camera.
 **R175 (v0.8.175):** Ring premium: the build starts when the upgrade camera has arrived; closer shot (greenhouse 8.3 m).
 **R174 (v0.8.174):** Ring premium: upgrade camera (`UpgradeShowcase`) for every build/upgrade (workshop, greenhouse, home upgrades, perks); panel closes, 3/4 orbit while the clip plays, blend back, skippable.
 **R173 (v0.8.173):** Ring premium: Jannik's concept-look workshop (`workshop_v2_l0..l3`, scale 1; L0 = bench), one collider per post split from the merged posts mesh, L3 tower and anvil solid; preview in the Workbench panel.
