@@ -1,6 +1,6 @@
 // @ts-nocheck
 import * as THREE from 'three';
-import { AssetRegistry } from './AssetRegistry.js?build=RING-R179-20261016A';
+import { AssetRegistry } from './AssetRegistry.js?build=RING-R181-20261016A';
 import { CharacterController } from './CharacterController.js?build=MOBILE-GESTURE-R34B-20260930A';
 import { GameState } from './GameState.js';
 import { InputManager } from './InputManager.js?build=UX-R157B1-20261011A';
@@ -18,14 +18,14 @@ import { Hud } from '../ui/Hud.js?build=CORE-R158A-20261012A';
 import { WorldMap } from '../ui/WorldMap.js?build=UX-R157B1-20261011A';
 import { GardenEnvironment } from '../world/GardenEnvironment.js?build=WATER-VEG-R103-20261006A';
 import { WildlifeSystem } from '../world/WildlifeSystem.js?build=CAMERA-CUTAWAY-CONTEXT-R21D-20260928E';
-import { PlayerHomePortalSystem } from '../world/PlayerHomePortalSystem.js?build=RING-R179-20261016A';
+import { PlayerHomePortalSystem } from '../world/PlayerHomePortalSystem.js?build=RING-R181-20261016A';
 import { NorthStableSystem } from '../world/NorthStableSystem.js?build=UX-R157B1-20261011A';
 import { SaveGame, pickWinner } from './SaveGame.js?build=UX-R157B1-20261011A';
 import { SpecialSeeds } from '../gameplay/SpecialSeeds.js?build=UX-R157B1-20261011A';   // R149
 import { OrangeryTree } from '../gameplay/OrangeryTree.js?build=UX-R157B1-20261011A';   // R150
 import { installTabGuard } from './TabGuard.js?build=GUARD-R157C1-20261012B';   // R153
 import { Discovery } from '../gameplay/Discovery.js?build=UX-R157B1-20261011A';   // R154
-import { WildsLoopSystem } from '../gameplay/WildsLoopSystem.js?build=RING-R179-20261016A';
+import { WildsLoopSystem } from '../gameplay/WildsLoopSystem.js?build=RING-R181-20261016A';
 import { WorkbenchPanel } from '../ui/WorkbenchPanel.js?build=CORE-R158A-20261012A';
 import { DevMenu, devMenuEnabled } from '../ui/DevMenu.js?build=UX-R157B1-20261011A';
 import { applyControlProfile, defaultProfile } from './ControlProfiles.js';
@@ -35,7 +35,7 @@ import { InteractionResolver, gardenInteractionSource } from './InteractionResol
 import { log, warn } from '../dev/Log.js';
 import { LookPass } from '../visual/LookPass.js?build=BAG-NIGHT-R84-20261006A';
 import { DayNight } from '../visual/DayNight.js?build=BAG-NIGHT-R84-20261006A';   // R81
-import { UpgradeShowcase } from '../visual/UpgradeShowcase.js?build=RING-R179-20261016A';   // R174
+import { UpgradeShowcase } from '../visual/UpgradeShowcase.js?build=RING-R181-20261016A';   // R174
 import { TOOLS } from '../data/wildsCatalog.js';   // R124 Bag texts (the Workbench's own effect lines)
 import { WEAPONS } from '../data/combatCatalog.js?build=UX-R157B1-20261011A';   // R124 strike values
 import { VestVisual } from '../gameplay/VestVisual.js?build=UX-R157B1-20261011A';   // R125
@@ -47,12 +47,12 @@ import { BoatEconomySystem } from '../gameplay/BoatEconomySystem.js?build=UX-R15
 import { LakeRunSystem } from '../gameplay/LakeRunSystem.js';
 import { GardenBuildSystem } from '../gameplay/GardenBuildSystem.js';
 import { GardenBuildMode } from '../ui/GardenBuildMode.js';
-import { GardenVegetationMask } from '../world/GardenVegetationMask.js?build=RING-R179-20261016A';
+import { GardenVegetationMask } from '../world/GardenVegetationMask.js?build=RING-R181-20261016A';
 import { CombatSystem } from '../gameplay/CombatSystem.js?build=UX-R157B1-20261011A';
 import { isToolJob } from '../ui/actionIcons.js?build=UX-R157B1-20261011A';   // R142
-import { CharacterSwapSpot } from '../gameplay/CharacterSwapSpot.js?build=RING-R179-20261016A';   // R138
+import { CharacterSwapSpot } from '../gameplay/CharacterSwapSpot.js?build=RING-R181-20261016A';   // R138
 import { ImpactFx } from '../gameplay/ImpactFx.js?build=UX-R157B1-20261011A';   // R129 FX layer
-import { EquippedToolVisual } from '../gameplay/EquippedToolVisual.js?build=RING-R179-20261016A';
+import { EquippedToolVisual } from '../gameplay/EquippedToolVisual.js?build=RING-R181-20261016A';
 
 export class Game {
   async init({characterId='succulent',devMode=false}={}){

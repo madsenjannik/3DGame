@@ -513,7 +513,9 @@ export class RingSanctuary {
 // Mood: after DayNight sets the garden's light each frame, the concept's morning grade (haze, hemisphere, sun, sky) is
 // blended over the day part; DayNight is asked to re-apply every frame so nothing accumulates. Garden space only.
 // ======================================================================================================================
-const MOOD = { fog: C('#c8d3c3'), near: 6, far: 46, zenith: C('#86abc4'), hemiSky: C('#c6d8e2'), hemiGround: C('#5e4c2e'), hemiI: 1.05, sunC: C('#fff0d6'), sunI: 3.0, exposure: .98, env: .55 };
+// R180 (Jannik 15/10: 'more like this, with the fog', option B as no concept values came): the garden's haze is denser,
+// near 4 / far 34 (was 6 / 46, the Ring concept's FogExp2 .03 equivalent): ~53 % haze at 20 m instead of ~35 %.
+const MOOD = { fog: C('#c8d3c3'), near: 4, far: 34, zenith: C('#86abc4'), hemiSky: C('#c6d8e2'), hemiGround: C('#5e4c2e'), hemiI: 1.05, sunC: C('#fff0d6'), sunI: 3.0, exposure: .98, env: .55 };
 // the garden ground's colour graded to the concept's loam, moss and trodden paths (water keeps its colour); shared with the Ring's ground edge
 export function gradeGround(c, x, z) {
   if (c.b > c.r * .95 && c.b > .25) return c;
@@ -804,7 +806,7 @@ export class WorldEnvironment {
   constructor(S) {
     this.S = S; this.g = S.g; this.W = this.g.world; this.L = this.W.sharedLandscape; this.undo = [];
     if (!this.L?.forestItems?.length || !S.plants) throw Error('no world forest or plants');
-    this.forest(); this.ground();
+    this.forest(); this.ground(); this.stones(); this.water(); this.motes();
     try { this.grass = new WorldGrass(this); } catch (e) { console.warn('[TGW] world grass failed; world without it', e); this.grass?.dispose?.(); this.grass = null; }
   }
   forest() {
@@ -819,6 +821,39 @@ export class WorldEnvironment {
     }
     for (const m of L.forestMeshes || []) if (m && m.visible) { m.visible = false; this.undo.push(() => { m.visible = true; }); }
     f.build(L.root); this.undo.push(() => f.root.removeFromParent());
+  }
+  // the dry-stone walls and the viewpoint's boulders become the concept's rounded, moss-capped rocks on the same transforms
+  stones() {
+    const geos = this.S.rockGeos; if (!geos?.length) return; const list = geos.map(() => []), m4 = new THREE.Matrix4(), sc = new THREE.Matrix4(), r = rng(29);
+    this.L.root.traverse(o => {
+      if (o.isInstancedMesh && o.name === 'WORLD_V2_CLAUDE_DRY_STONE_WALLS' && o.visible) { const gs = o.geometry.boundingSphere || (o.geometry.computeBoundingSphere(), o.geometry.boundingSphere), k0 = gs.radius * .8; sc.makeScale(k0, k0, k0);
+        for (let i = 0; i < o.count; i++) { o.getMatrixAt(i, m4); if (Math.hypot(m4.elements[0], m4.elements[1], m4.elements[2]) < .01) continue; list[(r() * geos.length) | 0].push(m4.clone().multiply(sc).premultiply(o.matrixWorld)); }
+        o.visible = false; this.undo.push(() => { o.visible = true; }); }
+      else if (o.isMesh && !o.isInstancedMesh && o.geometry?.type === 'IcosahedronGeometry' && o.material?.color?.getHex?.() === 0x8e8a7e && o.visible) { o.updateWorldMatrix(true, false); const rad = o.geometry.parameters.radius || 1; list[(r() * geos.length) | 0].push(o.matrixWorld.clone().multiply(sc.makeScale(rad, rad, rad))); o.visible = false; this.undo.push(() => { o.visible = true; }); } });
+    const grp = new THREE.Group(); grp.name = 'R180_WORLD_ROCKS';
+    list.forEach((Lm, k) => { if (!Lm.length) return; const im = new THREE.InstancedMesh(geos[k], this.S.m.rock, Lm.length); Lm.forEach((mm, i) => im.setMatrixAt(i, mm)); im.castShadow = this.S.tierId === 'desktop'; im.receiveShadow = true; grp.add(im); });
+    this.L.root.add(grp); this.undo.push(() => grp.removeFromParent()); this.rockCount = list.reduce((a, b) => a + b.length, 0);
+  }
+  // the lake, pond and river in the concept's dark, still water (the garden pond's look)
+  water() {
+    const w = this.L.water?.material; if (!w) return; const k = { c: w.color.clone(), o: w.opacity, r: w.roughness, e: w.envMapIntensity };
+    w.color.set('#2f4a46'); w.opacity = .92; w.roughness = .05; w.envMapIntensity = 1.1; w.needsUpdate = true;
+    this.undo.push(() => { w.color.copy(k.c); w.opacity = k.o; w.roughness = k.r; w.envMapIntensity = k.e; w.needsUpdate = true; });
+  }
+  // warm pollen motes drifting around the player (the garden has them at the Ring); each one that falls 14 m behind is reborn ahead
+  motes() {
+    const n = this.S.tierId === 'desktop' ? 260 : 110, pos = new Float32Array(n * 3), r = rng(41); this.mv = new Float32Array(n * 3);
+    for (let i = 0; i < n; i++) { pos[i * 3] = (r() - .5) * 26; pos[i * 3 + 1] = .4 + r() * 3.2; pos[i * 3 + 2] = (r() - .5) * 26; this.mv[i * 3] = (r() - .5) * .25; this.mv[i * 3 + 1] = (r() - .5) * .08; this.mv[i * 3 + 2] = (r() - .5) * .25; }
+    const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.BufferAttribute(pos, 3)); g.boundingSphere = new THREE.Sphere(new V3(), 1e5);
+    const pts = this.motePts = new THREE.Points(g, new THREE.PointsMaterial({ size: .05, map: this.S.T.radial, color: '#ffe2a0', transparent: true, opacity: .8, depthWrite: false, blending: THREE.AdditiveBlending }));
+    pts.renderOrder = 5; pts.frustumCulled = false; pts.name = 'R180_WORLD_MOTES'; this.L.root.add(pts); this.undo.push(() => pts.removeFromParent()); this.moteInit = false;
+  }
+  moteUpdate(dt) {
+    const pts = this.motePts, p = this.g.character?.position; if (!pts || !p) return; const a = pts.geometry.attributes.position, A = a.array, v = this.mv, t = performance.now() / 1000, day = Math.max(0, 1 - (this.g.dayNight?.n || 0) * 1.5);
+    if (!this.moteInit) { for (let i = 0; i < a.count; i++) { A[i * 3] += p.x; A[i * 3 + 2] += p.z; A[i * 3 + 1] += this.L.groundHeight(A[i * 3], A[i * 3 + 2]); } this.moteInit = true; }
+    for (let i = 0; i < a.count; i++) { const j = i * 3; A[j] += (v[j] + Math.sin(t * .7 + i) * .08) * dt; A[j + 1] += (v[j + 1] + Math.sin(t * 1.3 + i * 1.7) * .05) * dt; A[j + 2] += (v[j + 2] + Math.cos(t * .6 + i) * .08) * dt;
+      const dx = A[j] - p.x, dz = A[j + 2] - p.z; if (dx * dx + dz * dz > 196) { A[j] = p.x - dx * .85; A[j + 2] = p.z - dz * .85; A[j + 1] = this.L.groundHeight(A[j], A[j + 2]) + .4 + Math.random() * 3.2; } }
+    a.needsUpdate = true; pts.material.opacity = .8 * day; pts.visible = day > .02;
   }
   // the terrain's vertex colours in the concept palette: moss and loam on the grass, trodden loam on the paths, water/shore kept
   ground() {
@@ -843,9 +878,9 @@ export class WorldEnvironment {
     w.sun.color.lerp(MOOD.sunC, k); w.sun.intensity = lerp(w.sun.intensity, MOOD.sunI, k);
     g.renderer.toneMappingExposure = lerp(g.renderer.toneMappingExposure, MOOD.exposure, k); if (s.environmentIntensity !== undefined) s.environmentIntensity = lerp(s.environmentIntensity, MOOD.env, k);
   }
-  update(dt) { this.mood(); this.field?.update(dt); this.grass?.update(dt); }
+  update(dt) { this.mood(); this.field?.update(dt); this.grass?.update(dt); this.moteUpdate(Math.min(dt, .1)); }
   restore() { try { this.grass?.dispose(); } catch {} this.grass = null; for (const f of this.undo.splice(0).reverse()) try { f(); } catch {} if (this.g.dayNight) this.g.dayNight.lastN = null; }
-  stats() { return { trees: this.field?.items.length || 0, drawn: this.field?.stats().drawn || 0, grass: this.grass?.stats() }; }
+  stats() { return { trees: this.field?.items.length || 0, drawn: this.field?.stats().drawn || 0, rocks: this.rockCount || 0, grass: this.grass?.stats() }; }
 }
 function S_P(S) { return S.plants.P; }
 
