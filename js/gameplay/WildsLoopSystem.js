@@ -11,7 +11,7 @@ import { WildsThreatSystem } from './WildsThreatSystem.js?build=SAVE-R157A-20261
 import { DailyRequests } from './DailyRequests.js?build=SAVE-R157A-20261011A';
 import { GardenPotsSystem } from './GardenPotsSystem.js?build=SAVE-R157A-20261011A';
 import { loadWildsModels, loadGardenModels, WildsModel } from './WildsModels.js';
-import { WORKSHOP_UPGRADES, WORKSHOP_FILES, WORKSHOP_SCALE, WORKSHOP_V2_FILES, WORKSHOP_V2_SCALE, workshopV2 } from '../data/workshopCatalog.js?build=RING-R174-20261015A';   // R144, R173
+import { WORKSHOP_UPGRADES, WORKSHOP_FILES, WORKSHOP_SCALE, WORKSHOP_V2_FILES, WORKSHOP_V2_SCALE, workshopV2 } from '../data/workshopCatalog.js?build=RING-R175-20261015A';   // R144, R173
 import { loadGLTF } from '../core/AssetManager.js';
 import { perkPrice } from '../data/economyCatalog.js?build=SAVE-R157A-20261011A';   // R148
 import { FIXED_HEDGE as HEDGE } from '../data/gardenCatalog.js';
@@ -322,8 +322,8 @@ export class WildsLoopSystem {
     // R148 (Jannik 09/10): perks are bought with amber at the Perk Shrine; each one costs more than the last
     if (!perk || this.profile.perks[perkId] || this.profile.homeLevel < 2 || !this.pay({ amber: this.perkPrice() })) return false;
     this.profile.perks[perkId] = true; this.save.persist(); this.hud?.showToast(`${perk.name} takes root`); this.emit();
-    if (this.shrineModel) { this.shrineModel.play(['Plant'], () => this.shrineModel.loop('Idle')); this.syncPerks(perkId); }
-    this.state.events?.emit?.('showcase', { target: this.upgradeL2, done: () => !this.shrineModel?.busy?.() && !this.perkModels?.[perkId]?.busy?.() });   // R174
+    this.showcase({ target: this.upgradeL2, run: () => { if (this.shrineModel) { this.shrineModel.play(['Plant'], () => this.shrineModel.loop('Idle')); this.syncPerks(perkId); } },   // R174/R175
+      done: () => !this.shrineModel?.busy?.() && !this.perkModels?.[perkId]?.busy?.() });
     return true;
   }
   mapMarkers() {
@@ -449,12 +449,14 @@ export class WildsLoopSystem {
     for (const n of ['Tower', 'Anvil']) { const o = m.root.getObjectByName(`Workshop_L${lvl}_${n}`); if (!o) continue; box.setFromObject(o); box.getCenter(v); box.getSize(size);
       this.workshopPosts.push(this.gardenObstacle(v.x, v.z, Math.max(.2, (size.x + size.z) / 4), `workshop-${n.toLowerCase()}`)); }
   }
+  // R175: ask the upgrade camera (R174, ?ring=premium) to show a build; it calls run() once it is in place. Nobody listening = run now.
+  showcase(o) { const p = { ...o, handled: false }; try { this.state.events?.emit?.('showcase', p); } catch {} if (!p.handled) o.run?.(); }
   upgradeWorkshop() {
     const next = WORKSHOP_UPGRADES[this.profile.workshop | 0];
     if (!next || !this.pay(next.cost)) return false;
     this.profile.workshop = next.level; this.save.persist();
-    this.applyWorkshop(true); this.hud?.showToast(`${next.name} built`); this.emit();
-    this.state.events?.emit?.('showcase', { target: this.workbench?.root, size: 3.2, height: 3.1, done: () => !this.workshopBuilding });   // R174
+    this.workshopBuilding = true; this.hud?.showToast(`${next.name} built`); this.emit();
+    this.showcase({ target: this.workbench?.root, size: 3.2, height: 3.1, run: () => this.applyWorkshop(true), done: () => !this.workshopBuilding });   // R174/R175
     return true;
   }
 
@@ -462,9 +464,8 @@ export class WildsLoopSystem {
     const next = HOME_UPGRADES[this.profile.homeLevel];
     if (!next || !this.pay(next.cost)) return false;
     this.profile.homeLevel = next.level; this.save.persist();
-    this.applyHomeLevel(true); this.emit();
-    { const l = this.profile.homeLevel, models = l === 1 ? [this.barrelModel] : l === 2 ? [this.shrineModel] : (this.hedgeModels || []);   // R174
-      this.state.events?.emit?.('showcase', { target: [null, this.upgradeL1, this.upgradeL2, this.upgradeL3][l], done: () => !models.some(m => m?.busy?.()) }); }
+    { const l = this.profile.homeLevel, models = () => l === 1 ? [this.barrelModel] : l === 2 ? [this.shrineModel] : (this.hedgeModels || []);   // R174/R175
+      this.showcase({ target: [null, this.upgradeL1, this.upgradeL2, this.upgradeL3][l], run: () => { this.applyHomeLevel(true); this.emit(); }, done: () => !models().some(m => m?.busy?.()) }); }
     return true;
   }
 

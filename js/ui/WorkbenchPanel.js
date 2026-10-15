@@ -1,6 +1,6 @@
 // @ts-nocheck
 import { MATERIALS, TOOLS, HOME_UPGRADES, PERKS, POTS } from '../data/wildsCatalog.js';
-import { WORKSHOP_UPGRADES } from '../data/workshopCatalog.js?build=RING-R174-20261015A';   // R144
+import { WORKSHOP_UPGRADES } from '../data/workshopCatalog.js?build=RING-R175-20261015A';   // R144
 
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 
@@ -45,7 +45,12 @@ export class WorkbenchPanel {
       // R157B.1: explicit tap here is the only way to build/upgrade the greenhouse.
       if (e.target.closest('[data-greenhouse-upgrade]')) {
         const gh=this.getGreenhouse?.();
-        if (gh && !gh.anim && gh.level < 3 && gh.startUpgrade?.()) this.render();
+        if (gh && !gh.anim && gh.level < 3) {
+          // R175 (?ring=premium): the upgrade camera starts the greenhouse's own upgrade once it has arrived; nobody listening = at once
+          const p = { target: gh.entries?.get?.(gh.level + 1)?.root, size: 6, height: 4, run: () => gh.startUpgrade?.(), done: () => !gh.anim, handled: false };
+          try { this.state.events?.emit?.('showcase', p); } catch {}
+          if (p.handled || gh.startUpgrade?.()) this.render();
+        }
         return;
       }
       const plant = e.target.closest('[data-plant]'); if (plant) { this.wilds.plantSeed(plant.dataset.plant); return; }
@@ -206,7 +211,7 @@ export class WorkbenchPanel {
     const canvas=this.el.querySelector('.r158a-preview canvas');if(canvas?.tagName!=='CANVAS')return;
     if(!this.preview){
       if(this.previewLoading)return;this.previewLoading=true;
-      try{const {WorkbenchPreview3D}=await import('./WorkbenchPreview3D.js?build=RING-R174-20261015A');
+      try{const {WorkbenchPreview3D}=await import('./WorkbenchPreview3D.js?build=RING-R175-20261015A');
         if(!this.open||this.tab!=='home')return;
         this.preview=new WorkbenchPreview3D(canvas,this.el.querySelector('.r158a-preview-status'));
       }catch(e){console.warn('[R158A] Optional preview unavailable',e);const st=this.el.querySelector('.r158a-preview-status');if(st){st.hidden=false;st.textContent='3D preview unavailable';}}
