@@ -44,10 +44,13 @@ const dot=(()=>{const cv=document.createElement('canvas');cv.width=cv.height=64;
 const motes=new THREE.Points(mg,new THREE.PointsMaterial({size:.07,map:dot,color:0xffe2a0,transparent:true,opacity:.85,depthWrite:false,blending:THREE.AdditiveBlending}));s.add(motes);
 // the old scene's wildlife (squirrel, hare, butterfly)
 if(wildG){const w=wildG.scene;shadows(w);w.scale.setScalar(.72);const want=new Set(['Animal_01_squirrel','Animal_03_hare','Animal_10_butterfly']);w.traverse(o=>{if(o.name?.startsWith('Animal_'))o.visible=want.has(o.name)});const sq=w.getObjectByName('Animal_01_squirrel');if(sq){sq.position.set(-8,0,4.6);sq.rotation.y=.8}const hare=w.getObjectByName('Animal_03_hare');if(hare){hare.position.set(-5.6,0,6.4);hare.rotation.y=.35}const bf=w.getObjectByName('Animal_10_butterfly');if(bf){bf.position.set(-2.6,3.4,1.2);bf.scale.setScalar(1.25)}s.add(w);const wm=new THREE.AnimationMixer(w);for(const k of ['squirrel_Idle','hare_Idle','butterfly_Flight']){const cl=wildG.animations.find(a=>a.name===k);if(cl)wm.clipAction(cl).play()}mixers.push(wm)}
+const CAM=(new URLSearchParams(location.search).get('cam')||'').split(',').map(Number).filter(v=>!isNaN(v)).length===6?new URLSearchParams(location.search).get('cam').split(',').map(Number):null;   // R183: a fixed camera for stills (cam=x,y,z,lx,ly,lz)
+if(new URLSearchParams(location.search).get('bare')==='1'){shed.visible=false;ch.visible=false;s.traverse(o=>{if(/^Animal_/.test(o.name||''))o.visible=false})}   // R183: stills of the meadow alone
+window.__still=(w,h,q)=>{r.setSize(w,h,false);c.aspect=w/h;c.updateProjectionMatrix();r.render(s,c);return r.domElement.toDataURL('image/webp',q||.86)};
 const clock=new THREE.Clock();let t=0,shown=false;
 function frame(){const dt=Math.min(.05,clock.getDelta());t+=dt;uTime.value=t;mixers.forEach(m=>m.update(dt));
  const A=mg.attributes.position.array;for(let i=0;i<MN;i++){A[i*3]+=Math.sin(t*.5+i)*.004;A[i*3+1]+=Math.sin(t*.8+i*1.7)*.003;A[i*3+2]+=Math.cos(t*.4+i)*.004}mg.attributes.position.needsUpdate=true;
- c.position.x=9.5+Math.sin(t*.16)*.35;c.position.y=4.6+Math.sin(t*.12)*.08;c.lookAt(LX,2.0,0);r.render(s,c);if(!shown){shown=true;requestAnimationFrame(()=>r.domElement.classList.add('on'))}}
+ if(CAM){c.position.set(CAM[0],CAM[1],CAM[2]);c.lookAt(CAM[3],CAM[4],CAM[5])}else{c.position.x=9.5+Math.sin(t*.16)*.35;c.position.y=4.6+Math.sin(t*.12)*.08;c.lookAt(LX,2.0,0)}r.render(s,c);if(!shown){shown=true;requestAnimationFrame(()=>r.domElement.classList.add('on'))}}
 r.setAnimationLoop(frame);
 let LX=2.2;const fit=()=>{r.setSize(innerWidth,innerHeight);c.aspect=innerWidth/innerHeight;c.fov=c.aspect<.8?56:42;LX=c.aspect<.8?4.6:2.2;c.updateProjectionMatrix()};   // portrait phones look more towards the homefit();addEventListener('resize',fit);
 addEventListener('message',e=>{if(e.data?.t==='hop'&&hop){hop.reset().play()}if(e.data?.t==='skip'){document.getAnimations().forEach(a=>{try{a.finish()}catch{}})}});
