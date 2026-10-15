@@ -100,7 +100,7 @@ export class CharacterSwapSpot {
   // interaction point hand over to the new one, and restoreClassic() hands everything back (also on any failure).
   loadPremium() {
     const PLANTS = ['bush_a', 'bush_b', 'bush_c', 'tree_a', 'tree_b', 'tree_c', 'fern_a', 'fern_b'];   // R169: Jannik's GLB plants (each fails soft to the code plants)
-    Promise.all([import('../visual/RingSanctuary.js?build=RING-R178-20261016A'), ...PLANTS.map(k => loadGLTF(`./assets/garden/plants/${k}.glb`).then(g => [k, g], e => { console.warn('[TGW] plant', k, e); return null; }))]).then(([{ RingSanctuary, laneRect }, ...pl]) => {
+    Promise.all([import('../visual/RingSanctuary.js?build=RING-R179-20261016A'), ...PLANTS.map(k => loadGLTF(`./assets/garden/plants/${k}.glb`).then(g => [k, g], e => { console.warn('[TGW] plant', k, e); return null; }))]).then(([{ RingSanctuary, laneRect }, ...pl]) => {
       const gltfPlants = Object.fromEntries(pl.filter(Boolean));
       const W = this.g.world, vm = this.g.vegetationMask, sp = this.g.homePortal.gardenSpawn(), center = { x: sp.x + EAST_DX, z: sp.z + EAST_DZ };
       const px = W.pathX?.(center.z) ?? 0, yaw = Math.atan2(px - center.x, 0);   // the lane (+z) points at the garden path
@@ -169,7 +169,7 @@ export class CharacterSwapSpot {
   }
   update(t, dt) {
     if (!this.spot) { if (this.g.homePortal?.gardenHome) this.build(); return; }
-    const vis = this.g.world?.space === 'garden'; this.m.visible = vis && !this.sanctuary; if (!vis) { this.sanctuary?.leaveGarden?.(); return; }   // R166: shadows/resolution back to normal outside the garden
+    const vis = this.g.world?.space === 'garden'; this.m.visible = vis && !this.sanctuary; if (!vis) { this.sanctuary?.leaveGarden?.(); if (this.g.world?.space === 'world') this.sanctuary?.worldUpdate?.(dt); return; }   // R179: the premium world look runs in the world   // R166: shadows/resolution back to normal outside the garden
     this.mixer?.update(dt); this.holo?.update(t, dt); if (this.sanctuary) try { this.sanctuary.update(dt, this.g.camera); } catch (e) { console.warn('[TGW] ring premium update failed; classic Ring back', e); this.restoreClassic(); }
     // R153: the agreed 'calling' beacon: while a Special Seed waits in the Bag, a gold light rises from the stone
     const calling = !!this.g.specialSeeds?.inBag?.().length;

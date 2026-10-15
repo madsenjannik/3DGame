@@ -136,18 +136,18 @@ function preparePlants(gltfs, U) {
   return out;
 }
 class PlantField {
-  constructor(g, P, tier) { this.g = g; this.P = P; this.tier = tier; this.items = []; this.ims = {}; this.root = new THREE.Group(); this.root.name = 'R158_PLANTS'; this.t = 1; this.cam = new V3(); }
+  constructor(g, P, tier, opt = {}) { this.opt = opt; this.g = g; this.P = P; this.tier = tier; this.items = []; this.ims = {}; this.root = new THREE.Group(); this.root.name = 'R158_PLANTS'; this.t = 1; this.cam = new V3(); }
   has(k) { return !!this.P[k]; } h(k) { return this.P[k].h; } w(k) { return this.P[k].w; }
-  add(kind, x, y, z, ry, s) { if (!this.P[kind]) return false; this.items.push({ kind, p: new V3(x, y, z), m: new THREE.Matrix4().compose(new V3(x, y, z), new THREE.Quaternion().setFromAxisAngle(new V3(0, 1, 0), ry), new V3(s, s, s)), big: this.P[kind].h * s > 3 }); return true; }
+  add(kind, x, y, z, ry, s, ref = null) { if (!this.P[kind]) return false; this.items.push({ kind, ref, p: new V3(x, y, z), m: new THREE.Matrix4().compose(new V3(x, y, z), new THREE.Quaternion().setFromAxisAngle(new V3(0, 1, 0), ry), new V3(s, s, s)), big: this.P[kind].h * s > 3 }); return true; }
   build(parent) {
     const n = {}; for (const it of this.items) n[it.kind] = (n[it.kind] || 0) + 1; const desk = this.tier === 'desktop';
-    for (const [kind, cnt] of Object.entries(n)) { const P = this.P[kind]; this.ims[kind] = P.lod.map(parts => parts.map(pt => { const im = new THREE.InstancedMesh(pt.geometry, pt.material, cnt); im.count = 0; im.frustumCulled = false; im.receiveShadow = true; im.castShadow = desk && P.type !== 'fern'; this.root.add(im); return im; })); }
+    for (const [kind, cnt] of Object.entries(n)) { const P = this.P[kind]; this.ims[kind] = P.lod.map((parts, L) => parts.map(pt => { const im = new THREE.InstancedMesh(pt.geometry, pt.material, cnt); im.count = 0; im.frustumCulled = false; im.receiveShadow = true; im.castShadow = desk && P.type !== 'fern' && !(this.opt.nearShadowOnly && L > 0); this.root.add(im); return im; })); }
     parent.add(this.root); this.refresh();
   }
   refresh() {
     const cam = this.g.camera; if (cam) cam.getWorldPosition(this.cam); const c = {};
     for (const kind of Object.keys(this.ims)) c[kind] = [0, 0];
-    for (const it of this.items) { const L = it.p.distanceTo(this.cam) < PLANT_NEAR[this.P[it.kind].type] * (it.big ? 1.3 : 1) ? 0 : 1, k = c[it.kind][L]++; for (const im of this.ims[it.kind][L]) im.setMatrixAt(k, it.m); }
+    for (const it of this.items) { if (it.ref?.hidden) continue; const L = it.p.distanceTo(this.cam) < PLANT_NEAR[this.P[it.kind].type] * (it.big ? 1.3 : 1) ? 0 : 1, k = c[it.kind][L]++; for (const im of this.ims[it.kind][L]) im.setMatrixAt(k, it.m); }
     for (const [kind, arr] of Object.entries(this.ims)) arr.forEach((parts, L) => parts.forEach(im => { im.count = c[kind][L]; im.instanceMatrix.needsUpdate = true; }));
   }
   update(dt) { this.t += dt; if (this.t < .25) return; this.t = 0; this.refresh(); }
@@ -173,7 +173,7 @@ class RingPost {
     c.addPass(new M.OutputPass());
   }
   render() {
-    if (!this.on || this.g.world?.space !== 'garden') return false;
+    if (!this.on || (this.g.world?.space !== 'garden' && !(this.world && this.g.world?.space === 'world'))) return false;   // R179: the premium world gets it too
     const sz = this.g.renderer.getDrawingBufferSize(new THREE.Vector2()); if (sz.x !== this.w || sz.y !== this.h) { this.w = sz.x; this.h = sz.y; this.c.setSize(sz.x, sz.y); }
     this.c.render(); return true;
   }
@@ -211,6 +211,7 @@ export class RingSanctuary {
     this.lane = laneRect(center, yaw);
     try { this.env = new RingEnvironment(this); } catch (e) { console.warn('[TGW] ring environment failed; garden kept', e); try { this.env?.restore(); } catch {} this.g.world.privateRoot.getObjectByName('R158_RING_ENVIRONMENT')?.removeFromParent(); this.env = null; }
     try { this.plants?.build(this.g.world.privateRoot); } catch (e) { console.warn('[TGW] plant field failed', e); this.plants?.root.removeFromParent(); }
+    try { if (this.plants) this.wenv = new WorldEnvironment(this); } catch (e) { console.warn('[TGW] world premium look failed; world kept', e); try { this.wenv?.restore(); } catch {} this.wenv = null; }   // R179
     try { this.warmth(); } catch (e) { console.warn('[TGW] ring warmth failed', e); }
     this.setTier(this.tierId); this.buildMs = performance.now() - this.t0;
     this.warm();
@@ -336,7 +337,7 @@ export class RingSanctuary {
     this.stoneLight = L('#ffc46a', 7, new V3(sc.x, sy + 1.1, sc.z), 5.5);
     (this.bulbs || []).filter((b, i) => i % 2 === 1).forEach(b => L('#ffad55', 4, b, 4.5));
     Promise.all(['EffectComposer', 'RenderPass', 'UnrealBloomPass', 'OutputPass', 'ShaderPass'].map(n => import(`three/addons/postprocessing/${n}.js`)))
-      .then(mods => { if (!this.root.parent) return; const m = Object.assign({}, ...mods); this.post = new RingPost(this.g, m); this.g.postFx = this.post; this.warm(); })
+      .then(mods => { if (!this.root.parent) return; const m = Object.assign({}, ...mods); this.post = new RingPost(this.g, m); this.post.world = !!this.wenv; this.g.postFx = this.post; this.warm(); })
       .catch(e => console.warn('[TGW] ring bloom unavailable; plain render kept', e));
   }
   // R167: the 'hitch the first time you come near the Ring' was the GPU compiling the new shaders on first sight; compile them all now
@@ -498,7 +499,9 @@ export class RingSanctuary {
   bloom(id) { const P = this.pods.get(id); if (!P) return; P.k = 0; P.target = 1; P.anim = true; this.applyPod(P);
     try { this.g.fx?.burst?.(this.podWorld(id), 0xffb35a, 18, 1.4); } catch {} }
   podWorld(id) { const P = this.pods.get(id); const v = new V3(); P?.g.getWorldPosition(v); v.y += .5; return v; }
-  dispose() { try { this.plants?.root.removeFromParent(); } catch {} try { this.leaveGarden(); } catch {} try { this.env?.restore(); } catch {} this.env = null; if (this.g.postFx === this.post) this.g.postFx = null; try { this.post?.dispose(); } catch {} const W = this.g.world; for (const c of this.cols) { const i = W.colliders.indexOf(c); if (i >= 0) W.colliders.splice(i, 1); } this.cols = []; this.root.removeFromParent(); }
+  // R179: called by the swap spot every frame while the player is in the shared world
+  worldUpdate(dt) { if (!this.wenv) return; try { this.U.time.value = (performance.now() - this.t0) / 1000; this.wenv.update(dt); } catch (e) { console.warn('[TGW] world premium look failed; world restored', e); try { this.wenv.restore(); } catch {} this.wenv = null; if (this.post) this.post.world = false; } }
+  dispose() { try { this.wenv?.restore(); } catch {} this.wenv = null; try { this.plants?.root.removeFromParent(); } catch {} try { this.leaveGarden(); } catch {} try { this.env?.restore(); } catch {} this.env = null; if (this.g.postFx === this.post) this.g.postFx = null; try { this.post?.dispose(); } catch {} const W = this.g.world; for (const c of this.cols) { const i = W.colliders.indexOf(c); if (i >= 0) W.colliders.splice(i, 1); } this.cols = []; this.root.removeFromParent(); }
   stats() { let tris = 0, draws = 0; this.root.traverse(o => { if (!o.visible || !o.geometry) return; draws++; const n = (o.geometry.index ? o.geometry.index.count : o.geometry.attributes.position.count) / 3; tris += n * (o.isInstancedMesh ? o.count : 1); }); return { draws, tris: Math.round(tris), buildMs: Math.round(this.buildMs) }; }
 }
 
@@ -786,4 +789,127 @@ export class RingEnvironment {
   }
   restore() { this.root.removeFromParent(); for (const f of this.undo.splice(0).reverse()) try { f(); } catch {} if (this.g.dayNight) this.g.dayNight.lastN = null; }
   stats() { return { leaves: this.leafMesh?.count || 0, hidden: this.undo.length, plants: this.S.plants?.stats?.(), treeCols: this.treeCols || 0 }; }
+}
+
+// ======================================================================================================================
+// R179 (Jannik's overnight GO 16/10: 'expand, add, fix; make it WOW'): the shared world in the concept look while
+// ?ring=premium is on, the same way the garden got it (R158): nothing is moved. The world's 1,200 low-poly conifers and
+// round trees become Jannik's GLB trees on their own spots (instanced, near/far LOD, the Root Bear grove's cleared core
+// stays clear), their colliders shrink to the new trunks, the terrain is graded to the concept's loam and moss (paths and
+// water kept), and the concept's morning grade lies over DayNight with a longer view than the garden's. restore() puts
+// every original back. Fails soft: any error restores the world.
+// ======================================================================================================================
+const WMOOD = { near: 12, far: 118 };
+export class WorldEnvironment {
+  constructor(S) {
+    this.S = S; this.g = S.g; this.W = this.g.world; this.L = this.W.sharedLandscape; this.undo = [];
+    if (!this.L?.forestItems?.length || !S.plants) throw Error('no world forest or plants');
+    this.forest(); this.ground();
+    try { this.grass = new WorldGrass(this); } catch (e) { console.warn('[TGW] world grass failed; world without it', e); this.grass?.dispose?.(); this.grass = null; }
+  }
+  forest() {
+    const L = this.L, P = S_P(this.S), sc = new V3(), f = this.field = new PlantField(this.g, P, this.S.tierId, { nearShadowOnly: true });
+    const kinds = { conifer: ['tree_b', 'tree_c'], round: ['tree_a', 'tree_c'] }, trunk = {};
+    const trunkR = k => { if (trunk[k] != null) return trunk[k]; const h = P[k].h, rs = []; for (const pt of P[k].lod[0]) { if (!/bark/i.test(pt.material?.name || '')) continue; const a = pt.geometry.attributes.position; for (let i = 0; i < a.count; i++) { const y = a.getY(i) / h; if (y >= .05 && y < .1) rs.push(Math.hypot(a.getX(i), a.getZ(i))); } } rs.sort((a, b) => a - b); return (trunk[k] = rs.length ? rs[(rs.length * .9) | 0] : .4); };
+    for (const it of L.forestItems) {
+      const list = it.k < 4 ? kinds.conifer : kinds.round, k = list[(it.i + it.k) % 2]; if (!P[k]) continue;
+      const height = 3.6 * it.s * 1.25, s = height / P[k].h;
+      f.add(k, it.x, it.y + .1, it.z, it.ry, s, it);
+      if (it.o) { const r0 = it.o.r; it.o.r = Math.max(.3, trunkR(k) * s); this.undo.push(() => { it.o.r = r0; }); }
+    }
+    for (const m of L.forestMeshes || []) if (m && m.visible) { m.visible = false; this.undo.push(() => { m.visible = true; }); }
+    f.build(L.root); this.undo.push(() => f.root.removeFromParent());
+  }
+  // the terrain's vertex colours in the concept palette: moss and loam on the grass, trodden loam on the paths, water/shore kept
+  ground() {
+    const t = this.L.terrain; if (!t?.geometry?.attributes?.color) return;
+    const col = t.geometry.attributes.color, pos = t.geometry.attributes.position, orig = col.array.slice(), c = new THREE.Color(), path = C('#6e5c40'), path2 = C('#8a7656');
+    for (let i = 0; i < col.count; i++) { c.fromBufferAttribute(col, i); const x = pos.getX(i), z = pos.getZ(i);
+      if (c.b > c.r * .95 && c.b > .25) continue;   // water bed / wet shore
+      const pd = this.L.pathDistance(x, z);
+      if (pd < 2.6) { const n = fbm(x * .4, z * .4); c.copy(path).lerp(path2, n * .7).multiplyScalar(.82 + .25 * fbm(x * 1.3 + 3, z * 1.3)); if (pd > 1.6) { const g = gradeGround(new THREE.Color().fromBufferAttribute(col, i), x, z); c.lerp(g, ss(1.6, 2.6, pd)); } }
+      else gradeGround(c, x, z);
+      col.setXYZ(i, c.r, c.g, c.b); }
+    col.needsUpdate = true; this.undo.push(() => { col.array.set(orig); col.needsUpdate = true; });
+  }
+  // after DayNight: the concept's morning grade over the day part, with the world's longer view (the night stays DayNight's)
+  mood() {
+    const g = this.g, w = this.W, s = g.scene, dn = g.dayNight, u = w.sky?.material?.uniforms;
+    if (!dn || !s.fog || !w.hemi || !w.sun) return; dn.lastN = null;
+    const k = Math.max(0, 1 - (dn.n || 0) * 2);
+    s.fog.color.lerp(MOOD.fog, k); s.background?.copy?.(s.fog.color); g.renderer.setClearColor(s.fog.color, 1); if (u?.uH) u.uH.value.copy(s.fog.color); if (u?.uZ) u.uZ.value.lerp(MOOD.zenith, k);
+    s.fog.near = lerp(s.fog.near, WMOOD.near, k); s.fog.far = lerp(s.fog.far, WMOOD.far, k);
+    w.hemi.color.lerp(MOOD.hemiSky, k); w.hemi.groundColor.lerp(MOOD.hemiGround, k); w.hemi.intensity = lerp(w.hemi.intensity, MOOD.hemiI, k);
+    w.sun.color.lerp(MOOD.sunC, k); w.sun.intensity = lerp(w.sun.intensity, MOOD.sunI, k);
+    g.renderer.toneMappingExposure = lerp(g.renderer.toneMappingExposure, MOOD.exposure, k); if (s.environmentIntensity !== undefined) s.environmentIntensity = lerp(s.environmentIntensity, MOOD.env, k);
+  }
+  update(dt) { this.mood(); this.field?.update(dt); this.grass?.update(dt); }
+  restore() { try { this.grass?.dispose(); } catch {} this.grass = null; for (const f of this.undo.splice(0).reverse()) try { f(); } catch {} if (this.g.dayNight) this.g.dayNight.lastN = null; }
+  stats() { return { trees: this.field?.items.length || 0, drawn: this.field?.stats().drawn || 0, grass: this.grass?.stats() }; }
+}
+function S_P(S) { return S.plants.P; }
+
+// R179: the concept's sculpted grass in the shared world, in 8 m chunks around the player (the world is 500 m wide, so it
+// cannot be one field like the garden's). Each chunk is built once at full density with its blades in random order and
+// cached; how many of them are drawn falls off with the chunk's ring (dense at the feet, sparse into the haze). New chunks
+// are built a few per frame, so walking never stalls. Grass only grows where the world's own ground colour is grass (paths,
+// gravel, sand, soil, water stay clear), never on decks/floors, inside solid buildings, or in the home's yard.
+const GC = 8;
+class WorldGrass {
+  constructor(E) {
+    this.E = E; this.g = E.g; this.W = E.W; this.L = E.L; this.S = E.S; const desk = this.S.tierId === 'desktop';
+    this.R = desk ? 3 : 2; this.max = Math.round(GC * GC * (desk ? 70 : 34)); this.dens = desk ? [1, .42, .14, .06] : [1, .32, .1];
+    this.root = new THREE.Group(); this.root.name = 'R179_WORLD_GRASS'; this.L.root.add(this.root);
+    this.cache = new Map(); this.live = new Map(); this.pool = []; this.queue = []; this.cx = null; this.cz = null; this.tmpC = new THREE.Color();
+    const seg = 4, pos = [], col = [], nor = [], idx = []; for (let i = 0; i <= seg; i++) { const t = i / seg, w = .5 * (1 - t) + .04, c = C('#2a4219').lerp(C('#a8c460'), Math.pow(t, 1.1)); pos.push(-w, t, .3 * t * t, w, t, .3 * t * t); col.push(c.r, c.g, c.b, c.r, c.g, c.b); nor.push(-.15, 1, .25, .15, 1, .25); }
+    for (let i = 0; i < seg; i++) idx.push(2 * i, 2 * i + 1, 2 * i + 2, 2 * i + 1, 2 * i + 3, 2 * i + 2);
+    const g = this.geo = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute('color', new THREE.Float32BufferAttribute(col, 3)); g.setAttribute('normal', new THREE.Float32BufferAttribute(nor, 3)); g.setIndex(idx);
+    const S = this.S, W = this.W, mat = this.mat = patch(new THREE.MeshStandardMaterial({ vertexColors: true, side: THREE.DoubleSide, roughness: .78 }), { translucency: desk ? .45 : 0, lift: .03, U: S.U });
+    const inner = mat.onBeforeCompile; mat.onBeforeCompile = sh => { inner(sh); sh.uniforms.uPlayer = W.uPlayer; sh.uniforms.uTime = S.U.time;
+      sh.vertexShader = 'uniform vec3 uPlayer;\n' + sh.vertexShader.replace('uniform float uTime;\n', '').replace('#include <project_vertex>', `
+ vec4 gw = modelMatrix * instanceMatrix * vec4(transformed, 1.0); float hh = max(position.y, 0.0); hh *= hh;
+ float wv = sin(uTime * 1.6 + gw.x * .35 + gw.z * .25) * .6 + sin(uTime * 2.7 + gw.x * .9 - gw.z * .7) * .25 + .35; gw.x += wv * .07 * hh; gw.z += wv * .045 * hh;
+ vec2 dp = gw.xz - uPlayer.xz; float dl = length(dp), push = (1.0 - smoothstep(0.0, .78, dl)) * .34 * hh; gw.xz += normalize(dp + vec2(1e-4)) * push; gw.y -= push * .55;
+ vec4 mvPosition = viewMatrix * gw; gl_Position = projectionMatrix * mvPosition;`);
+      if (!/uniform float uTime/.test(sh.vertexShader)) sh.vertexShader = 'uniform float uTime;\n' + sh.vertexShader; };
+    mat.customProgramCacheKey = () => `r179-world-grass-${S.tierId}`;
+    const home = this.g.homePortal?.worldHome; this.homeBox = home ? new THREE.Box3().setFromObject(home).expandByScalar(.4) : null;
+  }
+  ok(x, z, y) {
+    const L = this.L, c = this.tmpC;
+    if (y < L.WL + .18) return false;
+    if (L.groundHeight(x, z) - y > .03) return false;   // a deck, floor or bridge
+    if (this.homeBox && x > this.homeBox.min.x && x < this.homeBox.max.x && z > this.homeBox.min.z && z < this.homeBox.max.z) return false;
+    for (const r of L.solidRects || []) if (x > r.minX - .3 && x < r.maxX + .3 && z > r.minZ - .3 && z < r.maxZ + .3) return false;
+    L.worldColor(x, z, y, c); return c.g > c.r * 1.06 && c.g > c.b * 1.2;   // the world's own colour says grass
+  }
+  build(key, cx, cz) {
+    // heights and the grass test on a 0.5 m grid (17 x 17 per chunk), blades interpolate it: ~20x cheaper than per blade
+    const L = this.L, out = [], r = rng((cx * 73856093) ^ (cz * 19349663)), x0 = cx * GC, z0 = cz * GC, N = 17, st = GC / (N - 1), hy = new Float32Array(N * N), okg = new Uint8Array(N * N);
+    for (let j = 0; j < N; j++) for (let i = 0; i < N; i++) { const x = x0 + i * st, z = z0 + j * st, y = L.terrainHeight(x, z); hy[j * N + i] = y; okg[j * N + i] = this.ok(x, z, y) ? 1 : 0; }
+    for (let a = 0; a < this.max * 1.6 && out.length < this.max; a++) { const fx = r() * (N - 1), fz = r() * (N - 1), i = Math.min(N - 2, fx | 0), j = Math.min(N - 2, fz | 0), u = fx - i, v = fz - j, k = j * N + i;
+      if (!(okg[k] && okg[k + 1] && okg[k + N] && okg[k + N + 1])) continue;
+      const x = x0 + fx * st, z = z0 + fz * st; if (r() > ss(.2, .55, fbm(x * .3 + 3, z * .3)) * .85 + .15) continue;
+      const y = (hy[k] * (1 - u) + hy[k + 1] * u) * (1 - v) + (hy[k + N] * (1 - u) + hy[k + N + 1] * u) * v; out.push([x, y, z]); }
+    const m = new Float32Array(out.length * 16), col = new Float32Array(out.length * 3), q = new THREE.Quaternion(), e = new THREE.Euler(), M = new THREE.Matrix4(), c = new THREE.Color();
+    out.forEach(([x, y, z], i) => { const h = (.16 + r() * .22) * (1 + .35 * ss(.5, .75, fbm(x * .2, z * .2))), w = .035 + r() * .02; e.set((r() - .5) * .4, r() * 6.28, (r() - .5) * .4); q.setFromEuler(e);
+      M.compose(new V3(x, y - .01, z), q, new V3(w, h, h)); M.toArray(m, i * 16); c.set('#ffffff').lerp(C('#e6dd96'), fbm(x * .3 + 9, z * .3) * .55).multiplyScalar(.72 + r() * .36); c.toArray(col, i * 3); });
+    const d = { m, col, n: out.length }; this.cache.set(key, d); if (this.cache.size > 160) this.cache.delete(this.cache.keys().next().value); return d;
+  }
+  mesh() { let im = this.pool.pop(); if (!im) { im = new THREE.InstancedMesh(this.geo, this.mat, this.max); im.instanceColor = new THREE.InstancedBufferAttribute(new Float32Array(this.max * 3), 3); im.frustumCulled = false; im.receiveShadow = true; im.count = 0; this.root.add(im); } im.visible = true; return im; }
+  fill(im, d) { im.instanceMatrix.array.set(d.m); im.instanceColor.array.set(d.col); im.instanceMatrix.needsUpdate = true; im.instanceColor.needsUpdate = true; im.userData.n = d.n;
+    if (d.n) { im.geometry.boundingSphere = null; } }
+  update() {
+    const p = this.g.character?.position; if (!p) return; const cx = Math.floor(p.x / GC), cz = Math.floor(p.z / GC);
+    if (cx !== this.cx || cz !== this.cz) { this.cx = cx; this.cz = cz; const want = new Map();
+      for (let dz = -this.R; dz <= this.R; dz++) for (let dx = -this.R; dx <= this.R; dx++) want.set(`${cx + dx},${cz + dz}`, [cx + dx, cz + dz, Math.max(Math.abs(dx), Math.abs(dz))]);
+      for (const [k, im] of this.live) if (!want.has(k)) { im.visible = false; im.count = 0; this.pool.push(im); this.live.delete(k); }
+      this.queue = [...want].filter(([k]) => !this.live.has(k)).sort((a, b) => a[1][2] - b[1][2]);
+      for (const [k, [, , ring]] of want) { const im = this.live.get(k); if (im) im.count = Math.round((im.userData.n || 0) * this.dens[ring]); } }
+    const t0 = performance.now();   // build new chunks for up to ~3 ms a frame (at least one); cached ones cost nothing
+    while (this.queue.length && (performance.now() - t0 < 3 || t0 === performance.now())) { const [k, [x, z, ring]] = this.queue.shift(); let d = this.cache.get(k); if (!d) d = this.build(k, x, z);
+      const im = this.mesh(); this.fill(im, d); im.count = Math.round(d.n * this.dens[ring]); this.live.set(k, im); }
+  }
+  dispose() { this.root.removeFromParent(); for (const im of [...this.live.values(), ...this.pool]) im.dispose?.(); this.geo.dispose(); this.mat.dispose(); }
+  stats() { let n = 0; for (const im of this.live.values()) n += im.count; return { chunks: this.live.size, blades: n, queued: this.queue.length }; }
 }
