@@ -1681,6 +1681,7 @@ are only touched where a measured hotspot requires it, minimally.
    failure. Must pass before every push (CLAUDE.md rule 5).
 
 **B status 02/10/2026: complete (R51–R57).** On-device check (iPhone, Jannik 02/10): 60 fps steady (frame max 20–24 ms), 217 draw calls / 370k tris in the garden, 363 / 433k at the lake, mobile-high, 1 WebGL context → no perf work needed before C.
+**R183 (v0.8.183):** Ring premium: character select in the concept look (world_v2 background, meadow_v2 cards, v2 portraits).
 **R182 (v0.8.182):** Ring premium: character switch at the Ring's capsules in the game (ceremony + arrival at the Ring), the selector is not used there.
 **R181 (v0.8.181):** Ring premium: concept-look start screen `premium-home.html` (Aloe v2 at its v2 home).
 **R180 (v0.8.180):** Ring premium: world walls/boulders as concept rocks, dark still water, pollen motes; denser garden haze (near 4 / far 34).

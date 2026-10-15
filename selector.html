@@ -17,7 +17,7 @@
       if(document.body)for(var e of document.body.querySelectorAll('*')){if(e.closest('.cs-bgclip,#cs-debug'))continue;var r=e.getBoundingClientRect();if(r.width&&r.right>W+1&&r.right>o.right_){o.right_=r.right;o.over=e.tagName.toLowerCase()+(e.id?'#'+e.id:'')+(e.classList[0]?'.'+e.classList[0]:'')+' R'+Math.round(r.right)+'/'+W;o.at=Math.round(performance.now()-t0);}}
       if(performance.now()-t0<2500)requestAnimationFrame(probe);}
     o.right_=0;f();addEventListener('resize',f);addEventListener('orientationchange',function(){setTimeout(f,300);});requestAnimationFrame(probe);})();</script>
-  <script src="./version.js?v=RING-R182-20261016A"></script>
+  <script src="./version.js?v=RING-R183-20261016A"></script>
   <script>/* R163: ?ring=premium|classic is remembered from any entry page (the selector drops the query on its way to the game) */try{var __r=new URLSearchParams(location.search).get('ring');if(__r==='premium'||__r==='classic')localStorage.setItem('tgw.ring',__r)}catch(e){}</script>
   <script>/* R183 */try{if(localStorage.getItem('tgw.ring')==='premium')document.documentElement.classList.add('tgw-premium');}catch(e){}</script>
   <script src="./character-roster.js?v=CORE-R158A-20261012A"></script>
@@ -35,6 +35,7 @@
     /* R183: with ?ring=premium the select screen shows the concept-look world (renders of the premium world / meadow) */
     html.tgw-premium .cs-card{background-image:url(./assets/ui/selector/meadow_v2.webp?v=R183)}
     html.tgw-premium .cs-shade{background:radial-gradient(85% 75% at 50% 42%,rgba(30,38,26,0) 38%,rgba(30,38,26,.42) 100%),linear-gradient(180deg,rgba(200,211,195,.18),rgba(200,211,195,0) 30%,rgba(30,38,26,.22))}
+    html.tgw-premium .cs-bg{background-image:url(./assets/ui/selector/world_v2.webp?v=R183);filter:blur(2px) saturate(1.02)}
     .cs-shade{position:fixed;inset:0;pointer-events:none;background:radial-gradient(85% 75% at 50% 42%,rgba(20,26,12,0) 35%,rgba(20,26,12,.5) 100%),linear-gradient(180deg,rgba(20,26,12,.18),rgba(20,26,12,0) 30%,rgba(20,26,12,.25))}
     .cs-frame{position:fixed;inset:max(10px,env(safe-area-inset-top)) max(12px,env(safe-area-inset-right)) max(10px,env(safe-area-inset-bottom)) max(12px,env(safe-area-inset-left));border-radius:22px;box-shadow:inset 0 0 0 3px rgba(255,248,230,.55),inset 0 0 0 6px rgba(59,47,34,.35);pointer-events:none}
     .cs-logo{position:fixed;left:calc(max(12px,env(safe-area-inset-left)) + 26px);top:calc(max(10px,env(safe-area-inset-top)) + 14px);width:clamp(150px,19vw,290px);text-align:center}
@@ -152,7 +153,7 @@
     <button id="cs-play" type="button"></button>
   </section>
   <script type="module">
-    import { mountCharacterSelect } from './js/ui/CharacterSelect.js?build=RING-R182-20261016A';
+    import { mountCharacterSelect } from './js/ui/CharacterSelect.js?build=RING-R183-20261016A';
     mountCharacterSelect();
   </script>
 </body>
