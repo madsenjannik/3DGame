@@ -201,7 +201,7 @@ export class CharacterSwapSpot {
     const g = this.g, t0 = performance.now();
     // the Ring's spot is known before it is built (same rule as loadPremium), so the arrival never waits for it
     const go = () => { const W0 = g.world, sp = g.homePortal?.gardenSpawn?.(); if (!sp) { if (performance.now() - t0 < 30000) return setTimeout(go, 250); lift(); return; }
-      try { const c = this.sanctuary?.center || { x: sp.x + EAST_DX, z: sp.z + EAST_DZ }, y = this.sanctuary ? this.sanctuary.root.rotation.y : Math.atan2((W0.pathX?.(c.z) ?? 0) - c.x, 0), d = 4.9,   // just outside the arch, looking in x = c.x + Math.sin(y) * d, z = c.z + Math.cos(y) * d, h = Math.atan2(c.x - x, c.z - z), W = g.world;
+      try { const c = this.sanctuary?.center || { x: sp.x + EAST_DX, z: sp.z + EAST_DZ }, y = this.sanctuary ? this.sanctuary.root.rotation.y : Math.atan2((W0.pathX?.(c.z) ?? 0) - c.x, 0), d = 4.9,   /* just outside the arch, looking in */ x = c.x + Math.sin(y) * d, z = c.z + Math.cos(y) * d, h = Math.atan2(c.x - x, c.z - z), W = g.world;
         if (W.space !== 'garden') { W.setSpace('garden'); g.homePortal?.onSpaceChanged?.('garden'); g.wildlife?.setActive?.(false); }
         const C = g.character; C.position.set(x, W.groundHeight(x, z), z); C.root.position.copy(C.position); C.heading = h; C.root.rotation.y = h; C.velocity?.set?.(0, 0, 0); C.currentSpeed = 0;
         g.state.player.position = { x, y: C.position.y, z }; g.followCamera?.snap?.();
