@@ -1681,6 +1681,7 @@ are only touched where a measured hotspot requires it, minimally.
    failure. Must pass before every push (CLAUDE.md rule 5).
 
 **B status 02/10/2026: complete (R51–R57).** On-device check (iPhone, Jannik 02/10): 60 fps steady (frame max 20–24 ms), 217 draw calls / 370k tris in the garden, 363 / 433k at the lake, mobile-high, 1 WebGL context → no perf work needed before C.
+**R170 (v0.8.170):** Ring premium: Jannik's GLB plants (3 bushes, 3 trees, 2 ferns, LOD + wind) replace all code plants; the new Cactus (cactus_v2) under `?ring=premium`.
 **R168 (v0.8.168):** Ring premium: pond 10 % larger, Pure Poly pine/tufts removed (late load), old grey stones become concept rocks/flagstones.
 **R167 (v0.8.167):** Ring premium: shader warm-up (no first-sight hitch), concept meadow in the whole garden, asymmetric pond with lily pads/reeds/stones.
 **R166 (v0.8.166):** Ring premium phone budget: opaque leaf polygons, shadows every 2nd/3rd frame, FPS-driven resolution, no back-light on phones.

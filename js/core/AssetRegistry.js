@@ -65,7 +65,10 @@ export class AssetRegistry {
 
     if (def.source.type === 'gltf') {
       const { GLTFLoader } = await import('three/addons/loaders/GLTFLoader.js');
-      const gltf = await new GLTFLoader().loadAsync(def.source.url);
+      // R170 (Jannik 15/10 GO): the new Cactus (cactus_v2.glb, same rig contract: Hips/Spine/Head/Arms/Hands/Sockets/Legs + the 7 clips)
+      // is used only with ?ring=premium; everyone else keeps the current Cactus.
+      let v2 = false; try { v2 = def.id === 'cactus' && localStorage.getItem('tgw.ring') === 'premium'; } catch {}
+      const gltf = await new GLTFLoader().loadAsync(v2 ? './assets/characters/cactus_v2.glb' : def.source.url);
       const visualRoot = gltf.scene;
       visualRoot.scale.setScalar((def.source.scale || 1) * GAMEPLAY_CHARACTER_SCALE_MULTIPLIER);
       visualRoot.traverse(o => {
@@ -95,6 +98,7 @@ export class AssetRegistry {
       };
       return {
         definition: def,
+        modelKey: v2 ? 'cactus_v2' : def.id,
         root,
         // Play an overlay clip once (or looped); returns its length in seconds (0 when the clip is missing).
         playOverlay(name,{loop=false,timeScale=1}={}){const a=overlay(name);if(!a)return 0;a.stop();a.reset();a.enabled=true;a.setLoop(loop?THREE.LoopRepeat:THREE.LoopOnce,loop?Infinity:1);a.clampWhenFinished=false;a.setEffectiveWeight(1);a.setEffectiveTimeScale(timeScale);a.play();return a.getClip().duration/timeScale;},

@@ -99,14 +99,16 @@ export class CharacterSwapSpot {
   // (it does not fit at the old spot). The old Ring stays loaded but hidden; its colliders, mound, clearing and the
   // interaction point hand over to the new one, and restoreClassic() hands everything back (also on any failure).
   loadPremium() {
-    import('../visual/RingSanctuary.js?build=RING-R168-20261014A').then(({ RingSanctuary, laneRect }) => {
+    const PLANTS = ['bush_a', 'bush_b', 'bush_c', 'tree_a', 'tree_b', 'tree_c', 'fern_a', 'fern_b'];   // R169: Jannik's GLB plants (each fails soft to the code plants)
+    Promise.all([import('../visual/RingSanctuary.js?build=RING-R170-20261015A'), ...PLANTS.map(k => loadGLTF(`./assets/garden/plants/${k}.glb`).then(g => [k, g], e => { console.warn('[TGW] plant', k, e); return null; }))]).then(([{ RingSanctuary, laneRect }, ...pl]) => {
+      const gltfPlants = Object.fromEntries(pl.filter(Boolean));
       const W = this.g.world, vm = this.g.vegetationMask, sp = this.g.homePortal.gardenSpawn(), center = { x: sp.x + EAST_DX, z: sp.z + EAST_DZ };
       const px = W.pathX?.(center.z) ?? 0, yaw = Math.atan2(px - center.x, 0);   // the lane (+z) points at the garden path
       this.prev = { spot: { ...this.spot }, height: W.gardenHeight, extra: this.g.wilds?.extraProps, oldClear: vm?.fixed?.find(c => c.cx === this.spot.x && c.cz === this.spot.z) };
       try {
         if (vm?.fixed) { if (this.prev.oldClear) vm.fixed.splice(vm.fixed.indexOf(this.prev.oldClear), 1); this.premiumClear = { cx: center.x, cz: center.z, r: 6.6 * .7, colliders: true }; this.premiumLane = laneRect(center, yaw); vm.fixed.push(this.premiumClear, this.premiumLane); vm.apply(); }   // R164: the lane to the arch is clear too
         for (const c of this.potColliders) { const i = W.colliders.indexOf(c); if (i >= 0) W.colliders.splice(i, 1); }
-        const S = this.sanctuary = new RingSanctuary(this, IDS, center, yaw);
+        const S = this.sanctuary = new RingSanctuary(this, IDS, center, yaw, gltfPlants);
         W.gardenHeight = (x, z) => S.height(x, z); this.spot = { ...S.stoneWorld };
         this.premiumTree = { x: center.x, z: center.z, r: S.clearR + .2, id: 'Sprouting Ring' }; this.g.garden?.trees?.push(this.premiumTree);
         if (this.g.wilds) { this.g.wilds.extraProps = () => [{ x: center.x, z: center.z, r: S.clearR + .3 }]; this.g.wilds.threat?.relayout?.(); }

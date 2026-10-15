@@ -815,7 +815,7 @@ try {
       const m4 = Array.from(R.grassMesh.instanceMatrix.array.slice(0, 16)); o.grass = R.grassMesh.count > 1000 && Math.abs(m4[5]) > 0;   // never masked by the garden's vegetation mask
       o.calls = R.stats().draws < 220;
       const E = R.env, gm = W.privateRoot.children.find(x => x.isMesh && x.geometry?.type === 'PlaneGeometry' && x.geometry.parameters?.width === 36), c0 = gm && Array.from(gm.geometry.attributes.color.array.slice(0, 3));
-      o.env = !!E && E.stats().leaves > 5000 && E.stats().hidden > 10 && kind('ring-arch') === 2;
+      o.env = !!E && (E.stats().leaves > 5000 || (E.stats().plants?.placed || 0) > 100) && E.stats().hidden > 10 && kind('ring-arch') === 2;
       g.devMenu.teleport('garden', s.x, s.z, 0); await w(600); o.swap = sw.interaction({ x: s.x, z: s.z })?.type === 'home-swap' && !sw.interaction({ x: old.x, z: old.z });
       g.save.profile.combat.giant.wins = 1; for (let i = 0; i < 40 && S.s.tulip !== 1; i++) await w(250);
       o.offer = sw.interaction({ x: s.x, z: s.z })?.label === 'Plant Tulip Seed';

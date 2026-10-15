@@ -107,6 +107,53 @@ function pathMaskC(x, z) { const r = Math.hypot(x, z), ring = 1 - ss(.38, .62, M
 export function laneRect(center, yaw) { const w = (x, z) => new V3(x * K, 0, z * K).applyAxisAngle(new V3(0, 1, 0), yaw).add(new V3(center.x, 0, center.z));
   const a = w(-GATE - .3, HEDGE - .2), b = w(GATE + .3, LANE_END + .3); return { x0: Math.min(a.x, b.x), x1: Math.max(a.x, b.x), z0: Math.min(a.z, b.z), z1: Math.max(a.z, b.z), colliders: true }; }
 
+// R169: Jannik's GLB plants (assets/garden/plants: bush_a-c, tree_a-c, fern_a-b; <Name>_LOD0/_LOD1, materials Bark/Leaves,
+// COLOR_0.r = wind weight). Each plant is drawn instanced per (kind, LOD, material); every 0.25 s each placement takes LOD0 near
+// the camera and LOD1 further away. Wind comes from the plant's own vertex weight (material.vertexColors stays off).
+const PLANT_NEAR = { tree: 30, bush: 15, fern: 10 }, PLANT_AMP = { tree: .14, bush: .05, fern: .05 };
+const plantType = k => k.startsWith('tree') ? 'tree' : k.startsWith('bush') ? 'bush' : 'fern';
+function preparePlants(gltfs, U) {
+  const out = {};
+  for (const [kind, gltf] of Object.entries(gltfs || {})) { try {
+    const sc = gltf.scene; sc.updateMatrixWorld(true); const lod = [[], []], mats = new Set(); let box = new THREE.Box3();
+    sc.traverse(o => { if (!o.isMesh) return; let L = -1; for (let q = o; q; q = q.parent) { if (/_LOD0$/.test(q.name)) { L = 0; break; } if (/_LOD1$/.test(q.name)) { L = 1; break; } } if (L < 0) return;
+      const g = o.geometry.clone().applyMatrix4(o.matrixWorld); if (L === 0) { g.computeBoundingBox(); box.union(g.boundingBox); } lod[L].push({ geometry: g, material: o.material }); mats.add(o.material); });
+    if (!lod[0].length) continue; if (!lod[1].length) lod[1] = lod[0];
+    const amp = PLANT_AMP[plantType(kind)];
+    for (const m of mats) { m.vertexColors = false; m.onBeforeCompile = sh => { sh.uniforms.uTime = U.time;
+      sh.vertexShader = 'uniform float uTime;\nattribute vec3 color;\n' + sh.vertexShader.replace('#include <begin_vertex>', `#include <begin_vertex>
+ #ifdef USE_INSTANCING
+ vec2 wp = vec2(instanceMatrix[3][0], instanceMatrix[3][2]);
+ #else
+ vec2 wp = vec2(0.0);
+ #endif
+ float wk = color.r * ${amp.toFixed(3)};
+ transformed.x += sin(uTime * 1.6 + wp.x * 1.3 + wp.y * .7 + position.y * .6) * wk;
+ transformed.z += cos(uTime * 1.2 + wp.y * 1.1 + position.y * .4) * wk * .6;`); };
+      m.customProgramCacheKey = () => `r169-plant-${amp}`; }
+    const size = box.getSize(new V3()); out[kind] = { lod, h: size.y || 1, w: Math.max(size.x, size.z) || 1, type: plantType(kind) };
+  } catch (e) { console.warn('[TGW] plant prepare failed', kind, e); } }
+  return out;
+}
+class PlantField {
+  constructor(g, P, tier) { this.g = g; this.P = P; this.tier = tier; this.items = []; this.ims = {}; this.root = new THREE.Group(); this.root.name = 'R158_PLANTS'; this.t = 1; this.cam = new V3(); }
+  has(k) { return !!this.P[k]; } h(k) { return this.P[k].h; } w(k) { return this.P[k].w; }
+  add(kind, x, y, z, ry, s) { if (!this.P[kind]) return false; this.items.push({ kind, p: new V3(x, y, z), m: new THREE.Matrix4().compose(new V3(x, y, z), new THREE.Quaternion().setFromAxisAngle(new V3(0, 1, 0), ry), new V3(s, s, s)), big: this.P[kind].h * s > 3 }); return true; }
+  build(parent) {
+    const n = {}; for (const it of this.items) n[it.kind] = (n[it.kind] || 0) + 1; const desk = this.tier === 'desktop';
+    for (const [kind, cnt] of Object.entries(n)) { const P = this.P[kind]; this.ims[kind] = P.lod.map(parts => parts.map(pt => { const im = new THREE.InstancedMesh(pt.geometry, pt.material, cnt); im.count = 0; im.frustumCulled = false; im.receiveShadow = true; im.castShadow = desk && P.type !== 'fern'; this.root.add(im); return im; })); }
+    parent.add(this.root); this.refresh();
+  }
+  refresh() {
+    const cam = this.g.camera; if (cam) cam.getWorldPosition(this.cam); const c = {};
+    for (const kind of Object.keys(this.ims)) c[kind] = [0, 0];
+    for (const it of this.items) { const L = it.p.distanceTo(this.cam) < PLANT_NEAR[this.P[it.kind].type] * (it.big ? 1.3 : 1) ? 0 : 1, k = c[it.kind][L]++; for (const im of this.ims[it.kind][L]) im.setMatrixAt(k, it.m); }
+    for (const [kind, arr] of Object.entries(this.ims)) arr.forEach((parts, L) => parts.forEach(im => { im.count = c[kind][L]; im.instanceMatrix.needsUpdate = true; }));
+  }
+  update(dt) { this.t += dt; if (this.t < .25) return; this.t = 0; this.refresh(); }
+  stats() { let n = 0; for (const arr of Object.values(this.ims)) for (const parts of arr) n += parts[0]?.count || 0; return { placed: this.items.length, drawn: n }; }
+}
+
 // R165: the concept's bloom (strength .32, radius .45, threshold 2.1: only the glow blooms) + a soft vignette, desktop only, garden only.
 // Game.frame() asks g.postFx.render() first and draws plainly when it returns false.
 class RingPost {
@@ -144,7 +191,7 @@ function leafMaterial(T, U, tier) {
 
 export class RingSanctuary {
   // spot: the CharacterSwapSpot; center: world {x, z} of the new Ring; facing: world yaw so the lane (+z) points at the garden path
-  constructor(spot, ids, center, yaw) {
+  constructor(spot, ids, center, yaw, gltfPlants) {
     this.s = spot; this.g = spot.g; this.ids = ids; rnd = rng(11); this.t0 = performance.now(); this.center = center;
     this.tierId = TIERS[this.g.quality?.id] ? this.g.quality.id : (this.g.input?.isTouch ? 'mobile-high' : 'desktop');
     this.T = makeTextures(); this.U = { sunView: { value: new V3(0, 1, 0) }, sunCol: { value: C('#ffe3b8').multiplyScalar(.9) }, time: { value: 0 }, day: { value: 1 } }; this.sunBase = 2.7; this.sunCol0 = this.U.sunCol.value.clone();
@@ -152,10 +199,12 @@ export class RingSanctuary {
     this.g.world.privateRoot.add(this.root); this.root.updateMatrixWorld(true); this.inv = this.root.matrixWorld.clone().invert();
     this.pods = new Map(); this.cast = []; this.glows = []; this.seams = []; this.cols = []; this.leaves = []; this.rocks = []; this.shrooms = []; this.hedgeStems = []; this.lights = [];
     this.clearR = RT * K; this.stoneC = new V3(laneX(RING), 0, RING);
+    try { const P = preparePlants(gltfPlants, this.U); if (Object.keys(P).length) this.plants = new PlantField(this.g, P, this.tierId); } catch (e) { console.warn('[TGW] plants unavailable; code plants kept', e); }
     this.mats(); this.terrain(); this.flagstones(); this.oak(); this.podsBuild(); this.lanterns(); this.arch(); this.hedge(); this.understory(); this.instanced(); this.grass(); this.atmosphere(); this.stone(); for (const g of this.hedgeStems) this.add(g, this.m.bark, true, true); this.hedgeStems = []; this.batch();
     this.solid();
     this.lane = laneRect(center, yaw);
     try { this.env = new RingEnvironment(this); } catch (e) { console.warn('[TGW] ring environment failed; garden kept', e); try { this.env?.restore(); } catch {} this.g.world.privateRoot.getObjectByName('R158_RING_ENVIRONMENT')?.removeFromParent(); this.env = null; }
+    try { this.plants?.build(this.g.world.privateRoot); } catch (e) { console.warn('[TGW] plant field failed', e); this.plants?.root.removeFromParent(); }
     try { this.warmth(); } catch (e) { console.warn('[TGW] ring warmth failed', e); }
     this.setTier(this.tierId); this.buildMs = performance.now() - this.t0;
     this.warm();
@@ -192,7 +241,7 @@ export class RingSanctuary {
   cluster(cx, cy, cz, rad, n, base, vr, size, flat = .75) { for (let i = 0; i < n; i++) { const d = new V3(R(-1, 1), R(-1, 1) * flat, R(-1, 1)); if (d.length() > 1) { i--; continue; } const p = new V3(cx, cy, cz).addScaledVector(d, rad), nrm = d.clone().normalize().add(new V3(R(-.6, .6), R(-.3, .6), R(-.6, .6)));
     const c = C(base).lerp(C(vr), rnd() * rnd()); c.multiplyScalar(lerp(.6, 1.2, d.length() * (.5 + .5 * Math.max(0, d.y)))); const s = size * R(.75, 1.25); this.addLeaf(p, nrm, s * .7, s, c); } }
   rock(x, z, s, sy = .6, sink = .35) { this.rocks.push([x, z, s, sy, sink]); }
-  fern(x, z, s) { const y = this.Hc(x, z), n = 7 + (rnd() * 3 | 0); for (let f = 0; f < n; f++) { const a = f / n * 6.28 + R(-.3, .3), dir = new V3(Math.cos(a), 0, Math.sin(a)), L = R(.5, .75) * s, up = R(.35, .55) * s, side = new V3(-dir.z, 0, dir.x);
+  fern(x, z, s) { if (this.plants) { const w = this.toWorld(x, this.Hc(x, z), z), k = rnd() < .5 ? 'fern_a' : 'fern_b'; if (this.plants.add(k, w.x, w.y, w.z, R(0, 6.28), s * K * 1.05)) return; } const y = this.Hc(x, z), n = 7 + (rnd() * 3 | 0); for (let f = 0; f < n; f++) { const a = f / n * 6.28 + R(-.3, .3), dir = new V3(Math.cos(a), 0, Math.sin(a)), L = R(.5, .75) * s, up = R(.35, .55) * s, side = new V3(-dir.z, 0, dir.x);
     for (let i = 1; i < 12; i++) { const t = i / 12, P = new V3(x, y, z).addScaledVector(dir, L * t).add(new V3(0, up * Math.sin(Math.PI * t * .85), 0));
       for (const sd of [-1, 1]) { const pp = P.clone().addScaledVector(side, sd * .02 * s), n2 = new V3(0, 1, 0).addScaledVector(dir, -.4 + t * .9).addScaledVector(side, sd * .3), lf = (1 - t * .65) * s; this.addLeaf(pp, n2, .05 * lf, .16 * lf, C('#456a28').lerp(C('#8aa448'), t * .6 + rnd() * .2), Math.atan2(sd, 1) + sd * 1.2); } } } }
   toad(x, z) { for (let i = 0; i < 3 + (rnd() * 3 | 0); i++) this.shrooms.push([x + R(-.25, .25), z + R(-.25, .25), R(.12, .26)]); }
@@ -339,6 +388,7 @@ export class RingSanctuary {
     const step = .55, n = Math.round(Math.PI * 2 * HEDGE / step);
     for (let i = 0; i < n; i++) { const a = i / n * Math.PI * 2 + R(-.03, .03), rr = HEDGE + R(-.22, .3), x = Math.sin(a) * rr, z = Math.cos(a) * rr; if (Math.cos(a) > 0 && Math.abs(Math.sin(a) * HEDGE) < GATE + .3) continue;
       const y = this.Hc(x, z), wave = .5 + .5 * Math.sin(a * 5 + 1.3) * Math.sin(a * 2.3), hgt = lerp(.7, 1.6, wave) * R(.85, 1.15), rad = R(.45, .75);
+      if (this.plants) { const k = ['bush_a', 'bush_b', 'bush_c'][(rnd() * 3) | 0], w = this.toWorld(x, y, z); if (this.plants.add(k, w.x, w.y, w.z, R(0, 6.28), hgt * K * 1.1 / this.plants.h(k))) { this.collider(x, z, .5, 'ring-hedge'); continue; } }
       const tone = rnd(), base = tone < .3 ? '#2a4220' : tone < .8 ? '#2f4a24' : '#3b5a28', hi = tone < .3 ? '#5f7a34' : '#7a9640';
       this.cluster(x, y + hgt * .5, z, rad, Math.round(110 * rad / .6), base, hi, .2, hgt / (2 * rad) * .9);
       if (rnd() < .45) this.cluster(x + R(-.25, .25), y + hgt * R(.85, 1.05), z + R(-.25, .25), R(.3, .5), 60, '#36522a', '#86a042', .18, .8);
@@ -434,7 +484,7 @@ export class RingSanctuary {
     const sd = this.g.world?.sunDir; if (sd && camera) this.U.sunView.value.copy(sd).transformDirection(camera.matrixWorldInverse);
     for (const P of this.pods.values()) { if (P.k !== P.target) { P.k += Math.sign(P.target - P.k) * Math.min(Math.abs(P.target - P.k), Math.min(dt, .1) / 1.6); if (P.k === P.target) P.anim = false; this.applyPod(P); }
       if (P.sway && P.open.visible) P.sway.rotation.z = Math.sin(t * 1.3 + P.ph) * .07; }
-    this.glowUpdate(t, dt); this.phoneBudget(dt);
+    this.glowUpdate(t, dt); this.phoneBudget(dt); this.plants?.update(dt);
     const br = .5 + .5 * Math.sin(t * 2.1); this.m.ember.emissiveIntensity = 2 + 1.5 * br; for (const gl of this.glows) gl.material.opacity = (gl.isSprite ? .4 : .24) + .12 * br;
     if (this.motes) this.motes.rotation.y = t * .02;
     if (sd && this.shafts) for (const m of this.shafts) { if (!m.visible) continue; m.position.copy(m.userData.g).addScaledVector(sd, 3.6); m.quaternion.setFromUnitVectors(new V3(0, 1, 0), sd); }
@@ -442,7 +492,7 @@ export class RingSanctuary {
   bloom(id) { const P = this.pods.get(id); if (!P) return; P.k = 0; P.target = 1; P.anim = true; this.applyPod(P);
     try { this.g.fx?.burst?.(this.podWorld(id), 0xffb35a, 18, 1.4); } catch {} }
   podWorld(id) { const P = this.pods.get(id); const v = new V3(); P?.g.getWorldPosition(v); v.y += .5; return v; }
-  dispose() { try { this.leaveGarden(); } catch {} try { this.env?.restore(); } catch {} this.env = null; if (this.g.postFx === this.post) this.g.postFx = null; try { this.post?.dispose(); } catch {} const W = this.g.world; for (const c of this.cols) { const i = W.colliders.indexOf(c); if (i >= 0) W.colliders.splice(i, 1); } this.cols = []; this.root.removeFromParent(); }
+  dispose() { try { this.plants?.root.removeFromParent(); } catch {} try { this.leaveGarden(); } catch {} try { this.env?.restore(); } catch {} this.env = null; if (this.g.postFx === this.post) this.g.postFx = null; try { this.post?.dispose(); } catch {} const W = this.g.world; for (const c of this.cols) { const i = W.colliders.indexOf(c); if (i >= 0) W.colliders.splice(i, 1); } this.cols = []; this.root.removeFromParent(); }
   stats() { let tris = 0, draws = 0; this.root.traverse(o => { if (!o.visible || !o.geometry) return; draws++; const n = (o.geometry.index ? o.geometry.index.count : o.geometry.attributes.position.count) / 3; tris += n * (o.isInstancedMesh ? o.count : 1); }); return { draws, tris: Math.round(tris), buildMs: Math.round(this.buildMs) }; }
 }
 
@@ -492,7 +542,7 @@ export class RingEnvironment {
       this.leaves.push({ p, q, sx: s * .7, sy: s, c }); } }
   tube(list, pts, r0, r1, o) { list.push(taperTube(pts, r0, r1, o)); }
 
-  fernAt(x, z, sc) { const y = this.H(x, z), n = 7, Z = new V3(0, 0, 1); for (let f = 0; f < n; f++) { const a = f / n * 6.28 + R(-.3, .3), dir = new V3(Math.cos(a), 0, Math.sin(a)), L = R(.5, .75) * sc, up = R(.35, .55) * sc, side = new V3(-dir.z, 0, dir.x);
+  fernAt(x, z, sc) { const P = this.S.plants; if (P && P.add(rnd() < .5 ? 'fern_a' : 'fern_b', x, this.H(x, z), z, R(0, 6.28), sc * .8)) return; const y = this.H(x, z), n = 7, Z = new V3(0, 0, 1); for (let f = 0; f < n; f++) { const a = f / n * 6.28 + R(-.3, .3), dir = new V3(Math.cos(a), 0, Math.sin(a)), L = R(.5, .75) * sc, up = R(.35, .55) * sc, side = new V3(-dir.z, 0, dir.x);
     for (let i = 1; i < 10; i++) { const t = i / 10, P = new V3(x, y, z).addScaledVector(dir, L * t).add(new V3(0, up * Math.sin(Math.PI * t * .85), 0));
       for (const sd of [-1, 1]) { const n2 = new V3(0, 1, 0).addScaledVector(dir, -.4 + t * .9).addScaledVector(side, sd * .3).normalize(), q = new THREE.Quaternion().setFromUnitVectors(Z, n2), lf = (1 - t * .65) * sc; q.premultiply(new THREE.Quaternion().setFromAxisAngle(n2, Math.atan2(sd, 1) + sd * 1.2)); this.leaves?.push({ p: P.clone().addScaledVector(side, sd * .02 * sc), q, sx: .05 * lf * this.leafSize, sy: .16 * lf * this.leafSize, c: C('#456a28').lerp(C('#8aa448'), t * .6 + rnd() * .2) }); } } } }
   // ---------- the garden's eight trees -> concept oaks (round) and birches at their own spots; the one behind the Ring is the hero ----------
@@ -504,7 +554,9 @@ export class RingEnvironment {
     for (const d of defs) { if (Math.hypot(d.x - ring.x, d.z - ring.z) < this.S.clearR + .8) continue;   // the Ring's own oak stands there now
       d.t === 'birch' ? this.birchTree(d.x, d.z, d.s) : this.oak(d.x, d.z, d.s * .82, false); }
   }
+  plantTree(x, z, height, kind) { const P = this.S.plants; if (!P?.has(kind)) return false; return P.add(kind, x, this.H(x, z), z, R(0, 6.28), height / P.h(kind)); }
   oak(x, z, sc, hero) {
+    if (!hero && this.plantTree(x, z, 6.1 * sc, (this.tk = (this.tk || 0) + 1) % 2 ? 'tree_a' : 'tree_c')) return;
     const y = this.H(x, z), P = (dx, dy, dz) => new V3(x + dx * sc, y + dy * sc, z + dz * sc);
     this.tube(this.bark, [P(0, -.4, 0), P(.08, .9, .04), P(-.06, 1.8, .1), P(.12, 2.6, 0), P(.05, 3.1, -.05)], .5 * sc, .24 * sc, { radial: hero ? 14 : 10, seg: hero ? 26 : 16, lump: .16, flare: .9 });
     const nr = hero ? 7 : 5; for (let i = 0; i < nr; i++) { const a = i / nr * 6.28 + R(-.25, .25), L = R(1.2, 1.9), c = Math.cos(a), s = Math.sin(a);
@@ -515,6 +567,7 @@ export class RingEnvironment {
     for (let i = 0; i < 5; i++) { const a = R(0, 6.28), d = R(.5, 1.6) * sc; this.cluster(x + Math.cos(a) * d, y + R(4.3, 4.9) * sc, z + Math.sin(a) * d, 1.2 * sc, hero ? 650 : 380, '#3a5426', '#86a042', .28 * sc, .55); }
   }
   birchTree(x, z, sc) {
+    if (this.plantTree(x, z, 4.9 * sc, 'tree_b')) return;
     const y = this.H(x, z), P = (dx, dy, dz) => new V3(x + dx * sc, y + dy * sc, z + dz * sc);
     this.tube(this.birch, [P(0, -.2, 0), P(.06, 1.4, .03), P(-.05, 2.8, .06), P(.04, 4.0, 0)], .17 * sc, .07 * sc, { radial: 9, seg: 16, lump: .1, flare: .5 });
     for (let i = 0; i < 6; i++) { const a = i / 6 * 6.28 + R(-.3, .3), y0 = R(1.8, 3.3), L = R(.7, 1.2), c = Math.cos(a), s = Math.sin(a), e = P(c * L, y0 + .7, s * L);
@@ -530,7 +583,7 @@ export class RingEnvironment {
       if (o.geometry?.type === 'ConeGeometry' && p.radius === 1 && p.height === 1.5) { if (!spots) { spots = []; for (let i = 0; i < o.count; i++) { o.getMatrixAt(i, m4); m4.decompose(v, q, sc); spots.push([v.x, v.z, sc.x / 1.12]); } } this.hide(o); }
       else if (o.geometry?.type === 'CylinderGeometry' && p.radiusTop === .08 && p.radiusBottom === .12) this.hide(o); }
     const ctx = this.W.privateRoot.getObjectByName('PRIVATE_GARDEN_WORLD_CONTEXT_BACKDROP'); if (ctx) for (const o of ctx.children) if (o.isInstancedMesh && /Cone|Cylinder/.test(o.geometry?.type)) this.hide(o);
-    for (const [x, z, s] of spots || []) { const y = this.H(x, z), ht = R(4.5, 6.5) * s;
+    for (const [x, z, s] of spots || []) { const y = this.H(x, z), ht = R(4.5, 6.5) * s; if (this.plantTree(x, z, ht + 1.2, rnd() < .5 ? 'tree_b' : 'tree_c')) continue;
       this.tube(this.bark, [new V3(x, y - .3, z), new V3(x + R(-.3, .3), y + ht * .5, z + R(-.3, .3)), new V3(x + R(-.4, .4), y + ht, z + R(-.4, .4))], R(.28, .4) * s, .1 * s, { radial: 7, seg: 10, lump: .15, flare: .6 });
       this.cluster(x, y + ht + .3, z, R(1.8, 2.4) * s, 260, '#2f4a26', '#5d7a34', .5, .65); this.cluster(x + R(-.8, .8), y + ht - 1.1, z + R(-.8, .8), 1.4 * s, 120, '#2f4a26', '#5d7a34', .45, .6); }
   }
@@ -540,6 +593,8 @@ export class RingEnvironment {
     const m4 = new THREE.Matrix4(), v = new V3(), sc = new V3(), q = new THREE.Quaternion();
     for (const o of this.W.privateRoot.children) { if (!o.isInstancedMesh || o.geometry?.type !== 'IcosahedronGeometry') continue; const r = o.geometry.parameters.radius; if (r !== .55 && r !== .32) continue;
       for (let i = 0; i < o.count; i++) { o.getMatrixAt(i, m4); m4.decompose(v, q, sc); if (sc.x < .01) continue; const rad = r * sc.x * 1.05;
+        const P = this.S.plants, k = ['bush_a', 'bush_b', 'bush_c'][(rnd() * 3) | 0];
+        if (P?.has(k) && P.add(k, v.x, this.H(v.x, v.z), v.z, R(0, 6.28), rad * 2.1 / P.h(k))) continue;
         this.cluster(v.x, v.y + rad * .1, v.z, rad, r === .55 ? 150 : 55, '#33502a', '#6f8a3a', r === .55 ? .17 : .12, .75); }
       this.hide(o); }
   }
@@ -701,5 +756,5 @@ export class RingEnvironment {
     g.renderer.toneMappingExposure = lerp(g.renderer.toneMappingExposure, MOOD.exposure, k); if (s.environmentIntensity !== undefined) s.environmentIntensity = lerp(s.environmentIntensity, MOOD.env, k); void t;
   }
   restore() { this.root.removeFromParent(); for (const f of this.undo.splice(0).reverse()) try { f(); } catch {} if (this.g.dayNight) this.g.dayNight.lastN = null; }
-  stats() { return { leaves: this.leafMesh?.count || 0, hidden: this.undo.length }; }
+  stats() { return { leaves: this.leafMesh?.count || 0, hidden: this.undo.length, plants: this.S.plants?.stats?.() }; }
 }

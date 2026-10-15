@@ -24,7 +24,9 @@ export class EquippedToolVisual{
   constructor(game){
     this.g=game;this.id=null;this.current=null;this.models=new Map();this.tmpScale=new THREE.Vector3();
     this.hand=game.character?.instance?.socket?.('Hand_Socket_R')||game.character?.instance?.socket?.('Hand_R')||null;
-    const rel=HAND_REL[game.state?.player?.characterId];this.fix=rel?new THREE.Quaternion().fromArray(rel).invert().multiply(REF):new THREE.Quaternion();   // R143
+    const key=game.character?.instance?.modelKey||game.state?.player?.characterId;let rel=HAND_REL[key];
+    if(!rel&&this.hand&&game.character?.instance?.root){const root=game.character.instance.root;root.updateWorldMatrix(true,true);const q=new THREE.Quaternion(),r=new THREE.Quaternion();this.hand.getWorldQuaternion(q);root.getWorldQuaternion(r);rel=r.invert().multiply(q).toArray();}   // R170: a new model (cactus_v2) is measured in its rest pose
+    this.fix=rel?new THREE.Quaternion().fromArray(rel).invert().multiply(REF):new THREE.Quaternion();   // R143
   }
   model(id){
     if(!ALIGN[id]||!this.hand)return null;
