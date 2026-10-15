@@ -100,7 +100,7 @@ export class CharacterSwapSpot {
   // interaction point hand over to the new one, and restoreClassic() hands everything back (also on any failure).
   loadPremium() {
     const PLANTS = ['bush_a', 'bush_b', 'bush_c', 'tree_a', 'tree_b', 'tree_c', 'fern_a', 'fern_b'];   // R169: Jannik's GLB plants (each fails soft to the code plants)
-    Promise.all([import('../visual/RingSanctuary.js?build=RING-R177-20261016A'), ...PLANTS.map(k => loadGLTF(`./assets/garden/plants/${k}.glb`).then(g => [k, g], e => { console.warn('[TGW] plant', k, e); return null; }))]).then(([{ RingSanctuary, laneRect }, ...pl]) => {
+    Promise.all([import('../visual/RingSanctuary.js?build=RING-R178-20261016A'), ...PLANTS.map(k => loadGLTF(`./assets/garden/plants/${k}.glb`).then(g => [k, g], e => { console.warn('[TGW] plant', k, e); return null; }))]).then(([{ RingSanctuary, laneRect }, ...pl]) => {
       const gltfPlants = Object.fromEntries(pl.filter(Boolean));
       const W = this.g.world, vm = this.g.vegetationMask, sp = this.g.homePortal.gardenSpawn(), center = { x: sp.x + EAST_DX, z: sp.z + EAST_DZ };
       const px = W.pathX?.(center.z) ?? 0, yaw = Math.atan2(px - center.x, 0);   // the lane (+z) points at the garden path

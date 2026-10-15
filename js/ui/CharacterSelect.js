@@ -20,6 +20,8 @@ const OPEN = (() => { try { return unlockedIds(); } catch { return STARTERS; } }
 const SEEDS = (() => { try { return specialSeedState(); } catch { return {}; } })();   // R152: a seed waiting in the Bag says so
 const ENERGY = { daisy: 4, cactus: 3 };                                  // decision 1a: the starters are not all slow
 const GLB = { aloe: 'aloe-vera' };
+// R178: with ?ring=premium the live card shows Jannik's new v2 characters (the same files the game uses for them)
+const V2 = { cactus: 'cactus_v2', aloe: 'aloe_v2', swamp: 'swamp_v2' }; let PREMIUM = false; try { PREMIUM = localStorage.getItem('tgw.ring') === 'premium'; } catch {}
 const EN = {
   daisy: ['Meadow Friend', 'Calm and kind. Turns her face to the sun and gets everyone else to do the same.'],
   cactus: ['Desert Wanderer', 'Patient and tough. Gets by on very little and blooms when no one expects it.'],
@@ -58,7 +60,7 @@ const chr = id => {
   const sp = SPECIAL.chars[id] || {}, ab = ABILITY[sp.kind], [role, desc] = EN[id] || ['', ''];
   return { id, name: d.name, role, desc, personality: p, open: d.playable !== false && (!LOCKS || OPEN.has(id)), special: sp, ability: typeof ab === 'object' ? ab[id] : ab || '' };
 };
-const art = id => `./assets/ui/selector/${id}.webp?v=R132`;
+const art = id => (PREMIUM && V2[id]) ? `./assets/ui/selector/${id}_v2.webp?v=R178` : `./assets/ui/selector/${id}.webp?v=R132`;   // R178: v2 portraits under ?ring=premium
 
 // ---- sound: soft WebAudio tones, the same voice as the Stable's chime ----
 const Sound = {
@@ -95,7 +97,7 @@ class LiveCard {
   }
   async load(id) {
     if (this.cache.has(id)) return this.cache.get(id);
-    const p = loadGLTF(`./assets/characters/${GLB[id] || id}.glb`).then(g => {
+    const p = loadGLTF(`./assets/characters/${(PREMIUM && V2[id]) || GLB[id] || id}.glb`).then(g => {
       const root = g.scene, mixer = new THREE.AnimationMixer(root), idle = g.animations.find(a => a.name === 'Idle');
       if (idle) mixer.clipAction(idle).play();
       const b = new THREE.Box3().setFromObject(root), c = b.getCenter(new THREE.Vector3()); root.position.sub(new THREE.Vector3(c.x, b.min.y, c.z));
