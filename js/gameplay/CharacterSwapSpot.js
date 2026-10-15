@@ -100,7 +100,7 @@ export class CharacterSwapSpot {
   // interaction point hand over to the new one, and restoreClassic() hands everything back (also on any failure).
   loadPremium() {
     const PLANTS = ['bush_a', 'bush_b', 'bush_c', 'tree_a', 'tree_b', 'tree_c', 'fern_a', 'fern_b'];   // R169: Jannik's GLB plants (each fails soft to the code plants)
-    Promise.all([import('../visual/RingSanctuary.js?build=RING-R181-20261016A'), ...PLANTS.map(k => loadGLTF(`./assets/garden/plants/${k}.glb`).then(g => [k, g], e => { console.warn('[TGW] plant', k, e); return null; }))]).then(([{ RingSanctuary, laneRect }, ...pl]) => {
+    Promise.all([import('../visual/RingSanctuary.js?build=RING-R182-20261016A'), ...PLANTS.map(k => loadGLTF(`./assets/garden/plants/${k}.glb`).then(g => [k, g], e => { console.warn('[TGW] plant', k, e); return null; }))]).then(([{ RingSanctuary, laneRect }, ...pl]) => {
       const gltfPlants = Object.fromEntries(pl.filter(Boolean));
       const W = this.g.world, vm = this.g.vegetationMask, sp = this.g.homePortal.gardenSpawn(), center = { x: sp.x + EAST_DX, z: sp.z + EAST_DZ };
       const px = W.pathX?.(center.z) ?? 0, yaw = Math.atan2(px - center.x, 0);   // the lane (+z) points at the garden path
@@ -145,7 +145,66 @@ export class CharacterSwapSpot {
     const d = Math.hypot(pos.x - this.spot.x, pos.z - this.spot.z); if (d > RADIUS) return null;
     const seed = this.g.specialSeeds?.inBag?.()[0];   // R149: a Special Seed in the Bag is planted here first
     if (seed) return { type: 'home-plant', label: `Plant ${seed.name}`, distance: d };   // R153: also on the gold-circle fallback (no model)
+    // R182 (Jannik 16/10: 'the Ring must not leave gameplay for the selector'): in the premium Ring you switch at a capsule
+    if (this.sanctuary) { const pod = this.podAt(pos); if (pod) return pod; return null; }
     return { type: 'home-swap', label: 'Switch character', distance: d };
+  }
+  // R182: the capsule (pod) the player stands at: an open one offers 'Become <Name>', a closed one says how it opens
+  podAt(pos) {
+    const S = this.sanctuary; if (!S?.pods || this.becoming) return null; let best = null;
+    for (const id of S.ids || []) { const v = S.podWorld(id), d = Math.hypot(pos.x - v.x, pos.z - v.z); if (d < 1.45 && (!best || d < best.d)) best = { id, d }; }
+    if (!best) return null; const id = best.id, name = this.g.registry?.characters?.get(id)?.displayName || id[0].toUpperCase() + id.slice(1);
+    if (id === this.g.state.player.characterId) return { type: 'ring-pod-self', label: `You are ${name}`, distance: best.d, disabled: true, reason: 'Walk to another capsule to switch' };
+    if (!this.g.save?.isUnlocked?.(id)) return { type: 'ring-pod-locked', label: `${name} · Locked`, distance: best.d, disabled: true, locked: true, reason: `Plant ${name}'s Special Seed at the Ring stone to wake it` };
+    return { type: 'ring-pod', id, label: `Become ${name}`, distance: best.d };
+  }
+  // R182: the switch happens in the garden. The camera frames the capsule; the current character dissolves into light that
+  // streams into it; the capsule flares; the new character rises out of it and hops; warm light fills the screen and the game
+  // continues as that character right at the Ring (game.html with an arrival note, no selector in between).
+  async becomePod(id) {
+    if (this.becoming || !this.sanctuary || id === this.g.state.player.characterId) return false; this.becoming = true;
+    const g = this.g, S = this.sanctuary, P = S.pods.get(id), pod = S.podWorld(id), ch = g.character, name = g.registry?.characters?.get(id)?.displayName || id;
+    try { g.save?.flush(); } catch {}
+    let fresh = null; const load = g.registry.instantiateCharacter(id, { uTime: g.uTime }).then(i => (fresh = i)).catch(() => null);
+    const veil = document.createElement('div'); veil.className = 'tgw-veil'; Object.assign(veil.style, { position: 'fixed', inset: '0', zIndex: 9999, pointerEvents: 'none', opacity: '0', transition: 'opacity .9s ease', background: 'radial-gradient(60% 60% at 50% 55%, #fff8e6 0%, #fbeec9 45%, #f2e2b8 100%)' }); document.body.appendChild(veil);
+    const light = new THREE.PointLight(0xffd27a, 0, 7, 1.6); light.position.copy(pod).add(new THREE.Vector3(0, .6, 0)); g.scene.add(light);
+    const flare = new THREE.Sprite(new THREE.SpriteMaterial({ map: this.glow || (this.glow = glowTex()), color: 0xffe2a0, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, opacity: 0 })); flare.position.copy(light.position); flare.scale.setScalar(.1); g.scene.add(flare);
+    const t0 = performance.now(), at = () => (performance.now() - t0) / 1000, wait = s => new Promise(r => setTimeout(r, s * 1000));
+    const showcased = g.showcase?.start?.({ target: P?.g || S.root, size: 2.6, height: 2.6, min: 4.6, max: 6, done: () => at() > 4.6 }) || false;
+    const anim = () => { const t = at();
+      // 0.8-1.8 s: the character shrinks into light; 1.4-2.6 s: the capsule flares; 2.4 s on: the new one rises
+      const k = Math.min(1, Math.max(0, (t - .8) / 1)); if (ch?.root) { ch.root.scale.setScalar(Math.max(.001, 1 - k * k)); ch.root.visible = k < .99; }
+      const f = Math.min(1, Math.max(0, (t - 1.4) / 1.2)), f2 = Math.max(0, 1 - Math.max(0, t - 3.2) / 1.2); light.intensity = 14 * f * f2; flare.material.opacity = .95 * f * f2; flare.scale.setScalar(.2 + 3.6 * f * (1 + .1 * Math.sin(t * 9)));
+      if (fresh && t > 2.4) { if (!fresh.root.parent) { fresh.root.position.set(pod.x, pod.y - .5, pod.z); fresh.root.rotation.y = Math.atan2(ch.position.x - pod.x, ch.position.z - pod.z); g.scene.add(fresh.root); fresh.playHop?.(); }
+        const r = Math.min(1, (t - 2.4) / .7), e = 1 + 2.2 * (r - 1) ** 3 + 1.2 * (r - 1) ** 2; fresh.root.scale.setScalar(Math.max(.01, e)); fresh.root.position.y = pod.y - .5 + .5 * Math.min(1, r * 1.4); fresh.updateVisual?.({ dt: 1 / 60, speed: 0 }); }
+      if (t < 6.5) requestAnimationFrame(anim); };
+    requestAnimationFrame(anim);
+    await wait(.8); try { g.fx?.burst?.(ch.position.clone().add(new THREE.Vector3(0, .6, 0)), 0xffe2a0, 22, 1.6); } catch {}
+    await wait(1.4); try { g.fx?.burst?.(pod, 0xffd86b, 30, 2); } catch {} try { P && S.bloom?.(id); } catch {}
+    await Promise.race([load, wait(2)]); await wait(1.6);
+    g.hud?.showToast?.(`${name} awakens`, { milestone: true });
+    veil.style.opacity = '1'; await wait(1.1);
+    try { sessionStorage.setItem('tgw.arrive', JSON.stringify({ at: 'ring', id, name, t: Date.now() })); } catch {}
+    void showcased; location.href = `./game.html?char=${encodeURIComponent(id)}`;
+    return true;
+  }
+  // R182: arriving from a capsule switch: once the Ring stands, the player is in the garden at its lane, facing the Ring,
+  // and the warm veil lifts. Ignored when the home's first move-in plays (that is its own moment) or the note is stale.
+  arrive() {
+    let a = null; try { a = JSON.parse(sessionStorage.getItem('tgw.arrive') || 'null'); sessionStorage.removeItem('tgw.arrive'); } catch {}
+    const veil = document.getElementById('tgw-arrive-veil');
+    const lift = () => { if (veil) { veil.style.opacity = '0'; setTimeout(() => veil.remove(), 1400); } };
+    if (!a || a.at !== 'ring' || Date.now() - a.t > 60000 || a.id !== this.g.state.player.characterId || this.g.homePortal?.moveInPending) { lift(); return; }
+    const g = this.g, t0 = performance.now();
+    const go = () => { const S = this.sanctuary; if (!S) { if (performance.now() - t0 < 9000) return setTimeout(go, 200); lift(); return; }
+      try { const c = S.center, y = S.root.rotation.y, d = 3.4, x = c.x + Math.sin(y) * d, z = c.z + Math.cos(y) * d, h = Math.atan2(c.x - x, c.z - z), W = g.world;
+        if (W.space !== 'garden') { W.setSpace('garden'); g.homePortal?.onSpaceChanged?.('garden'); g.wildlife?.setActive?.(false); }
+        const C = g.character; C.position.set(x, W.groundHeight(x, z), z); C.root.position.copy(C.position); C.heading = h; C.root.rotation.y = h; C.velocity?.set?.(0, 0, 0); C.currentSpeed = 0;
+        g.state.player.position = { x, y: C.position.y, z }; g.followCamera?.snap?.();
+        try { g.fx?.burst?.(C.position.clone().add(new THREE.Vector3(0, .6, 0)), 0xffe2a0, 24, 1.6); } catch {} C.instance?.playHop?.();
+      } catch (e) { console.warn('[TGW] ring arrival failed; normal start', e); }
+      setTimeout(lift, 350); };
+    go(); return true;
   }
   // R149: plant the Special Seed: the character's pot grows (Pop_<id>), the padlock goes, the selector opens it
   plantSeed() {
