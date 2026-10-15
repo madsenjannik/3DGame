@@ -161,7 +161,13 @@ class RingPost {
     this.g = g; const r = g.renderer, sz = r.getDrawingBufferSize(new THREE.Vector2()); this.w = sz.x; this.h = sz.y; this.on = true;
     this.rt = new THREE.WebGLRenderTarget(sz.x, sz.y, { type: THREE.HalfFloatType, samples: 4 });
     const c = this.c = new M.EffectComposer(r, this.rt); c.setPixelRatio(1); c.setSize(sz.x, sz.y);
-    c.addPass(new M.RenderPass(g.scene, g.camera)); this.bloom = new M.UnrealBloomPass(new THREE.Vector2(sz.x / 2, sz.y / 2), .32, .45, 2.1); c.addPass(this.bloom);
+    c.addPass(new M.RenderPass(g.scene, g.camera));
+    // R172 (Jannik: black blocks by the Ring in Chrome): one invalid pixel (NaN/Inf from any shader on some GPUs) is smeared by the
+    // bloom's blur chain into large black rectangles. This pass turns such a pixel into black and caps over-bright HDR values before
+    // the bloom sees them, so the worst case is one dark pixel instead of a block.
+    c.addPass(new M.ShaderPass({ uniforms: { tDiffuse: { value: null } }, vertexShader: 'varying vec2 vUv;void main(){vUv=uv;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}',
+      fragmentShader: 'uniform sampler2D tDiffuse;varying vec2 vUv;void main(){vec4 c=texture2D(tDiffuse,vUv);if(any(isnan(c))||any(isinf(c))||!(c.r+c.g+c.b+c.a<1e4))c=vec4(0.,0.,0.,1.);gl_FragColor=max(min(c,vec4(64.)),vec4(0.));}' }));
+    this.bloom = new M.UnrealBloomPass(new THREE.Vector2(sz.x / 2, sz.y / 2), .32, .45, 2.1); c.addPass(this.bloom);
     c.addPass(new M.ShaderPass({ uniforms: { tDiffuse: { value: null }, uDark: { value: .32 } }, vertexShader: 'varying vec2 vUv;void main(){vUv=uv;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}',
       fragmentShader: 'uniform sampler2D tDiffuse;uniform float uDark;varying vec2 vUv;void main(){vec4 c=texture2D(tDiffuse,vUv);vec2 d=(vUv-.5)*vec2(1.25,1.);float v=smoothstep(.82,.28,length(d));c.rgb*=mix(1.-uDark,1.,v);gl_FragColor=c;}' }));
     c.addPass(new M.OutputPass());
@@ -528,7 +534,7 @@ export class RingEnvironment {
       birch: new THREE.MeshStandardMaterial({ color: '#d9d2bf', map: sanctuary.T.bark, bumpMap: sanctuary.T.barkBump, bumpScale: 1.5, roughness: .85 }),
       leaf: leafMaterial(sanctuary.T, sanctuary.U, sanctuary.tierId)
     };
-    this.trees(); this.backdrop(); this.shrubs(); this.pond(); this.ground(); this.stones(); this.rocks(); this.oldStones(); this.fence(); this.homeTrees(); this.meadow(); this.finish();
+    this.trees(); this.backdrop(); this.shrubs(); this.pond(); this.ground(); this.stones(); this.rocks(); this.oldStones(); this.fence(); this.homeTrees(); this.oldTrees(); this.meadow(); this.finish(); this.treeColliders();
   }
   H(x, z) { return this.W.groundHeight?.(x, z) || 0; }
   hide(o) { if (!o || !o.visible) return; o.visible = false; this.undo.push(() => { o.visible = true; }); }
@@ -656,10 +662,32 @@ export class RingEnvironment {
     const home = this.g.scene.getObjectByProperty?.('name', `PLAYER_HOME_GARDEN_${this.g.homePortal?.characterId}`) || (() => { let f = null; this.g.scene.traverse(o => { if (!f && /^PLAYER_HOME_GARDEN_/.test(o.name)) f = o; }); return f; })();
     if (!home) return; home.updateMatrixWorld(true); const groups = new Map();
     home.traverse(o => { if (!o.isMesh) return; let n = null; for (let q = o; q && q !== home; q = q.parent) { const m = /(Sway\d+)/.exec(q.name); if (m) { n = m[1]; break; } } if (n) (groups.get(n) || groups.set(n, []).get(n)).push(o); });
-    const box = new THREE.Box3(), size = new V3(), ctr = new V3();
-    for (const list of groups.values()) { box.makeEmpty(); for (const o of list) box.expandByObject(o); box.getSize(size); box.getCenter(ctr); if (size.y < 1.6) continue;
+    const box = new THREE.Box3(), size = new V3(), ctr = new V3(), trees = [];
+    // R172: one tree sways in several parts (Sway1/2/3); parts whose centres are within 1.2 m are one tree, not three stacked ones
+    for (const list of groups.values()) { box.makeEmpty(); for (const o of list) box.expandByObject(o); box.getCenter(ctr); const t = trees.find(t => Math.hypot(t.c.x - ctr.x, t.c.z - ctr.z) < 1.2); if (t) t.list.push(...list); else trees.push({ c: ctr.clone(), list: [...list] }); }
+    for (const { list } of trees) { box.makeEmpty(); for (const o of list) box.expandByObject(o); box.getSize(size); box.getCenter(ctr); if (size.y < 1.6) continue;
       for (const o of list) this.hide(o); const x = ctr.x, z = ctr.z;
       if (size.y / Math.max(size.x, size.z) > 1.9) this.birchTree(x, z, size.y / 4.9); else this.oak(x, z, size.y / 6, false); }
+  }
+  // R172 (Jannik GO 15/10): the 'foundation sample' broadleaf tree and small layered pine (old low-poly look) become the new GLB trees on
+  // their own spots; their colliders stay the garden's (treeColliders() widens them to the new trunks)
+  oldTrees() {
+    const fs = this.W.privateRoot.getObjectByName('World foundation sample'); if (!fs) return;
+    for (const o of fs.children) { const t = o.geometry?.type;
+      if ((o.isMesh && !o.isInstancedMesh && t === 'TubeGeometry') || (o.isInstancedMesh && t === 'IcosahedronGeometry' && o.count === 11) || (o.isMesh && !o.isInstancedMesh && t === 'BufferGeometry' && o.material?.color?.getHex?.() === 0x34593d)) this.hide(o); }
+    this.oak(-7.2, -3.05, .72, false); this.birchTree(-8.15, -4.7, .9);
+  }
+  // R172 (Jannik: 'collider on ALL trees'): every GLB tree gets a blocking circle the size of its trunk (90th percentile of the bark at
+  // 5-10 % of its height, roots excluded) unless a garden collider at least that big already stands on it. restore() takes them out.
+  treeColliders() {
+    const P = this.S.plants, W = this.W; if (!P?.items?.length) return; const trunk = {}, sc = new V3(), added = [];
+    const radius = k => { if (trunk[k] != null) return trunk[k]; const h = P.h(k), rs = [];
+      for (const pt of P.P[k].lod[0]) { if (!/bark/i.test(pt.material?.name || '')) continue; const a = pt.geometry.attributes.position; for (let i = 0; i < a.count; i++) { const y = a.getY(i) / h; if (y >= .05 && y < .1) rs.push(Math.hypot(a.getX(i), a.getZ(i))); } }
+      rs.sort((a, b) => a - b); return (trunk[k] = rs.length ? rs[(rs.length * .9) | 0] : .4); };
+    for (const it of P.items) { if (P.P[it.kind]?.type !== 'tree') continue; sc.setFromMatrixScale(it.m); const r = radius(it.kind) * sc.x;
+      if (W.colliders.some(c => c.space === 'garden' && Math.hypot(c.x - it.p.x, c.z - it.p.z) + r <= (c.r || 0) + .05)) continue;
+      const c = { x: it.p.x, z: it.p.z, r, kind: 'ring-tree', traversal: 'blocked', space: 'garden' }; W.colliders.push(c); added.push(c); }
+    this.treeCols = added.length; this.undo.push(() => { for (const c of added) { const i = W.colliders.indexOf(c); if (i >= 0) W.colliders.splice(i, 1); } });
   }
   // ---------- R167: the pond, asymmetric (Jannik: 'not just round'), dark and still, with lily pads, reeds and mossy stones ----------
   // Its shoreline uses the garden's own water-body rule (organic ellipse + harmonics) with new harmonics, so walking stops at
@@ -756,5 +784,5 @@ export class RingEnvironment {
     g.renderer.toneMappingExposure = lerp(g.renderer.toneMappingExposure, MOOD.exposure, k); if (s.environmentIntensity !== undefined) s.environmentIntensity = lerp(s.environmentIntensity, MOOD.env, k); void t;
   }
   restore() { this.root.removeFromParent(); for (const f of this.undo.splice(0).reverse()) try { f(); } catch {} if (this.g.dayNight) this.g.dayNight.lastN = null; }
-  stats() { return { leaves: this.leafMesh?.count || 0, hidden: this.undo.length, plants: this.S.plants?.stats?.() }; }
+  stats() { return { leaves: this.leafMesh?.count || 0, hidden: this.undo.length, plants: this.S.plants?.stats?.(), treeCols: this.treeCols || 0 }; }
 }

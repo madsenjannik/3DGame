@@ -104,6 +104,8 @@ export class AssetRegistry {
         // Play an overlay clip once (or looped); returns its length in seconds (0 when the clip is missing).
         playOverlay(name,{loop=false,timeScale=1}={}){const a=overlay(name);if(!a)return 0;a.stop();a.reset();a.enabled=true;a.setLoop(loop?THREE.LoopRepeat:THREE.LoopOnce,loop?Infinity:1);a.clampWhenFinished=false;a.setEffectiveWeight(1);a.setEffectiveTimeScale(timeScale);a.play();return a.getClip().duration/timeScale;},
         stopOverlay(name){overlays.get(name)?.stop();},
+        // R172: how far a running overlay is (0..1), or -1 when it is not playing (the held tool follows the v2 Swing with it)
+        overlayProgress(name){const a=overlays.get(name);if(!a||!a.isRunning())return -1;return a.time/Math.max(a.getClip().duration,1e-3);},
         socket(name){return visualRoot.getObjectByName(name);},
         playHop(){if(!hop)return;hop.stop();hop.reset();hop.enabled=true;hop.setLoop(THREE.LoopOnce,1);hop.setEffectiveWeight(1);hop.setEffectiveTimeScale(1);hop.play();},
         updateVisual({ dt, speed, maxSpeed=4.15, turnRate=0 }) {

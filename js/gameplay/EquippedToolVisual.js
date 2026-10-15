@@ -18,7 +18,7 @@ const ALIGN={
 // turned by inv(handRel[char]) * handRel[daisy] before ALIGN, so every character holds it the way Daisy does, and it
 // still follows the hand's animation (strike swings).
 const HAND_REL={daisy:[0.1746,-0.6459,0.1524,0.7274],cactus:[-0.0398,-0.0302,-0.6438,0.7635],swamp:[-0.455,-0.0478,-0.1558,0.8755],aloe:[-0.0497,-0.0059,-0.1794,0.9825],tulip:[0.5565,-0.376,-0.2844,0.6841],hyacinth:[0.4514,-0.5258,-0.4179,0.5876],succulent:[-0.455,-0.0477,-0.1558,0.8755],spire:[-0.0651,-0.0376,-0.5545,0.8289],fern:[-0.1342,-0.0236,-0.1995,0.9704]};
-const REF=new THREE.Quaternion().fromArray(HAND_REL.daisy);
+const REF=new THREE.Quaternion().fromArray(HAND_REL.daisy),AXIS_X=new THREE.Vector3(1,0,0);
 
 export class EquippedToolVisual{
   constructor(game){
@@ -35,6 +35,7 @@ export class EquippedToolVisual{
       m=buildHeldTool(id);if(!m)return null;
       m.name=`HOTBAR_HELD_${id.toUpperCase()}_R102`;m.visible=false;
       const a=ALIGN[id];m.position.fromArray(a.p);m.rotation.set(...a.r);m.quaternion.premultiply(this.fix);   // R143: per-character hand fix
+      m.userData.q0=m.quaternion.clone();
       this.hand.add(m);this.models.set(id,m);this.fit(id,m);
     }
     return m;
@@ -53,6 +54,14 @@ export class EquippedToolVisual{
     const world=this.g.world?.space;
     const blocked=this.g.fishing?.isBusy?.()||this.g.stable?.isBusy?.()||this.g.homePortal?.busy||this.g.buildMode?.active||this.g.state?.choice?.open;
     const show=!!(this.current&&(world==='world'||world==='garden')&&!blocked);
-    if(this.current){this.fit(this.id,this.current);this.current.visible=show;}
+    if(this.current){this.fit(this.id,this.current);this.current.visible=show;this.swing(this.current);}
+  }
+  // R172 (Jannik: 'Hit is wrong'): the v2 models' Swing clip chops along the hand socket's +Z (down at rest, up on the wind-up, forward on
+  // the strike, forward-down on the follow-through), but the tool is held upright along -Z, so its head went backwards. While Swing plays,
+  // the tool turns 180 deg about the socket's X axis on the wind-up (through 'up', so it stays raised) and back on the recovery.
+  swing(m){
+    const I=this.g.character?.instance,q0=m.userData.q0;if(!q0||!/_v2$/.test(I?.modelKey||''))return;
+    const f=I.overlayProgress?.('Swing')??-1,ss=THREE.MathUtils.smoothstep,k=f<0?0:ss(f,0,.28)*(1-ss(f,.62,.95));
+    m.quaternion.setFromAxisAngle(AXIS_X,Math.PI*k).multiply(q0);
   }
 }
