@@ -67,10 +67,11 @@ export class AssetRegistry {
       const { GLTFLoader } = await import('three/addons/loaders/GLTFLoader.js');
       // R170 (Jannik 15/10 GO): the new Cactus (cactus_v2.glb, same rig contract: Hips/Spine/Head/Arms/Hands/Sockets/Legs + the 7 clips)
       // is used only with ?ring=premium; everyone else keeps the current Cactus.
-      let v2 = false; try { v2 = def.id === 'cactus' && localStorage.getItem('tgw.ring') === 'premium'; } catch {}
-      const gltf = await new GLTFLoader().loadAsync(v2 ? './assets/characters/cactus_v2.glb' : def.source.url);
+      // R171: Aloe and Swamp v2 the same way. All v2 models are ~1.5 m tall, so they share Cactus's scale and stand equally tall.
+      const V2 = { cactus: 'cactus_v2', aloe: 'aloe_v2', swamp: 'swamp_v2' }; let v2 = false; try { v2 = !!V2[def.id] && localStorage.getItem('tgw.ring') === 'premium'; } catch {}
+      const gltf = await new GLTFLoader().loadAsync(v2 ? `./assets/characters/${V2[def.id]}.glb` : def.source.url);
       const visualRoot = gltf.scene;
-      visualRoot.scale.setScalar((def.source.scale || 1) * GAMEPLAY_CHARACTER_SCALE_MULTIPLIER);
+      visualRoot.scale.setScalar((v2 ? 0.62 : (def.source.scale || 1)) * GAMEPLAY_CHARACTER_SCALE_MULTIPLIER);
       visualRoot.traverse(o => {
         if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; }
       });
@@ -98,7 +99,7 @@ export class AssetRegistry {
       };
       return {
         definition: def,
-        modelKey: v2 ? 'cactus_v2' : def.id,
+        modelKey: v2 ? V2[def.id] : def.id,
         root,
         // Play an overlay clip once (or looped); returns its length in seconds (0 when the clip is missing).
         playOverlay(name,{loop=false,timeScale=1}={}){const a=overlay(name);if(!a)return 0;a.stop();a.reset();a.enabled=true;a.setLoop(loop?THREE.LoopRepeat:THREE.LoopOnce,loop?Infinity:1);a.clampWhenFinished=false;a.setEffectiveWeight(1);a.setEffectiveTimeScale(timeScale);a.play();return a.getClip().duration/timeScale;},
