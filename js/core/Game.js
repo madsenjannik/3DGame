@@ -26,7 +26,7 @@ import { OrangeryTree } from '../gameplay/OrangeryTree.js?build=UX-R157B1-202610
 import { installTabGuard } from './TabGuard.js?build=GUARD-R157C1-20261012B';   // R153
 import { Discovery } from '../gameplay/Discovery.js?build=UX-R157B1-20261011A';   // R154
 import { WildsLoopSystem } from '../gameplay/WildsLoopSystem.js?build=RING-R173-20261015A';
-import { WorkbenchPanel } from '../ui/WorkbenchPanel.js?build=RING-R173-20261015A';
+import { WorkbenchPanel } from '../ui/WorkbenchPanel.js?build=CORE-R158A-20261012A';
 import { DevMenu, devMenuEnabled } from '../ui/DevMenu.js?build=UX-R157B1-20261011A';
 import { applyControlProfile, defaultProfile } from './ControlProfiles.js';
 import { PerfHud } from '../dev/PerfHud.js';
