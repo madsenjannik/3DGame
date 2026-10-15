@@ -181,11 +181,11 @@ export class CharacterSwapSpot {
         const r = Math.min(1, (t - 2.4) / .7), e = 1 + 2.2 * (r - 1) ** 3 + 1.2 * (r - 1) ** 2; fresh.root.scale.setScalar(Math.max(.01, e)); fresh.root.position.y = pod.y - .5 + .5 * Math.min(1, r * 1.4); fresh.updateVisual?.({ dt: 1 / 60, speed: 0 }); }
       if (t < 6.5) requestAnimationFrame(anim); };
     requestAnimationFrame(anim);
-    await wait(.8); try { g.fx?.burst?.(ch.position.clone().add(new THREE.Vector3(0, .6, 0)), 0xffe2a0, 22, 1.6); } catch {}
-    await wait(1.4); try { g.fx?.burst?.(pod, 0xffd86b, 30, 2); } catch {} try { P && S.bloom?.(id); } catch {}
-    await Promise.race([load, wait(2)]); await wait(1.6);
+    this.stage = 'dissolve'; await wait(.8); try { g.fx?.burst?.(ch.position.clone().add(new THREE.Vector3(0, .6, 0)), 0xffe2a0, 22, 1.6); } catch {}
+    this.stage = 'flare'; await wait(1.4); try { g.fx?.burst?.(pod, 0xffd86b, 30, 2); } catch {} try { P && S.bloom?.(id); } catch {}
+    this.stage = 'load'; await Promise.race([load, wait(2)]); this.stage = 'rise'; await wait(1.6);
     g.hud?.showToast?.(`${name} awakens`, { milestone: true });
-    veil.style.opacity = '1'; await wait(1.1);
+    this.stage = 'veil'; veil.style.opacity = '1'; await wait(1.1); this.stage = 'go';
     try { sessionStorage.setItem('tgw.arrive', JSON.stringify({ at: 'ring', id, name, t: Date.now() })); } catch {}
     void showcased; location.href = `./game.html?char=${encodeURIComponent(id)}`;
     return true;

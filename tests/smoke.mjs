@@ -818,7 +818,7 @@ try {
       o.env = !!E && (E.stats().leaves > 5000 || (E.stats().plants?.placed || 0) > 100) && E.stats().hidden > 10 && kind('ring-arch') === 2;
       const WE = R.wenv, SL = W.sharedLandscape;   // R179/R180: the premium world look (GLB trees on the world's tree spots, concept rocks, chunked grass)
       o.world = !!WE && WE.stats().trees > 500 && WE.stats().rocks > 50 && !!SL?.root?.getObjectByName('R179_WORLD_GRASS') && (SL.forestMeshes || []).every(m => !m || !m.visible);
-      g.devMenu.teleport('garden', s.x, s.z, 0); await w(600); o.swap = sw.interaction({ x: s.x, z: s.z })?.type === 'home-swap' && !sw.interaction({ x: old.x, z: old.z });
+      g.devMenu.teleport('garden', s.x, s.z, 0); await w(600); o.swap = sw.interaction({ x: s.x, z: s.z })?.type !== 'home-swap' && !sw.interaction({ x: old.x, z: old.z }) && /^ring-pod/.test(sw.podAt(R.podWorld('daisy'))?.type || '') && sw.podAt(R.podWorld(g.state.player.characterId))?.type === 'ring-pod-self';   // R182: you switch at a capsule, the stone no longer leaves the game
       g.save.profile.combat.giant.wins = 1; for (let i = 0; i < 40 && S.s.tulip !== 1; i++) await w(250);
       o.offer = sw.interaction({ x: s.x, z: s.z })?.label === 'Plant Tulip Seed';
       o.planted = sw.plantSeed() && g.save.isUnlocked('tulip') && open('tulip') && R.pods.get('tulip').k < 1 && R.pods.get('tulip').anim;   // it unfolds (not snapped open)
