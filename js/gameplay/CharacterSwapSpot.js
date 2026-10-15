@@ -196,16 +196,18 @@ export class CharacterSwapSpot {
     let a = null; try { a = JSON.parse(sessionStorage.getItem('tgw.arrive') || 'null'); sessionStorage.removeItem('tgw.arrive'); } catch {}
     const veil = document.getElementById('tgw-arrive-veil');
     const lift = () => { if (veil) { veil.style.opacity = '0'; setTimeout(() => veil.remove(), 1400); } };
-    if (!a || a.at !== 'ring' || Date.now() - a.t > 60000 || a.id !== this.g.state.player.characterId || this.g.homePortal?.moveInPending) { lift(); return; }
+    this.arriveInfo = { note: !!a, age: a ? Date.now() - a.t : null, id: a?.id, me: this.g.state.player.characterId, moveIn: !!this.g.homePortal?.moveInPending };
+    if (!a || a.at !== 'ring' || Date.now() - a.t > 300000 || a.id !== this.g.state.player.characterId || this.g.homePortal?.moveInPending) { lift(); return; }
     const g = this.g, t0 = performance.now();
-    const go = () => { const S = this.sanctuary; if (!S) { if (performance.now() - t0 < 9000) return setTimeout(go, 200); lift(); return; }
-      try { const c = S.center, y = S.root.rotation.y, d = 3.4, x = c.x + Math.sin(y) * d, z = c.z + Math.cos(y) * d, h = Math.atan2(c.x - x, c.z - z), W = g.world;
+    // the Ring's spot is known before it is built (same rule as loadPremium), so the arrival never waits for it
+    const go = () => { const W0 = g.world, sp = g.homePortal?.gardenSpawn?.(); if (!sp) { if (performance.now() - t0 < 30000) return setTimeout(go, 250); lift(); return; }
+      try { const c = this.sanctuary?.center || { x: sp.x + EAST_DX, z: sp.z + EAST_DZ }, y = this.sanctuary ? this.sanctuary.root.rotation.y : Math.atan2((W0.pathX?.(c.z) ?? 0) - c.x, 0), d = 4.9,   // just outside the arch, looking in x = c.x + Math.sin(y) * d, z = c.z + Math.cos(y) * d, h = Math.atan2(c.x - x, c.z - z), W = g.world;
         if (W.space !== 'garden') { W.setSpace('garden'); g.homePortal?.onSpaceChanged?.('garden'); g.wildlife?.setActive?.(false); }
         const C = g.character; C.position.set(x, W.groundHeight(x, z), z); C.root.position.copy(C.position); C.heading = h; C.root.rotation.y = h; C.velocity?.set?.(0, 0, 0); C.currentSpeed = 0;
         g.state.player.position = { x, y: C.position.y, z }; g.followCamera?.snap?.();
         try { g.fx?.burst?.(C.position.clone().add(new THREE.Vector3(0, .6, 0)), 0xffe2a0, 24, 1.6); } catch {} C.instance?.playHop?.();
       } catch (e) { console.warn('[TGW] ring arrival failed; normal start', e); }
-      setTimeout(lift, 350); };
+      this.arriveInfo.done = { space: g.world.space, x: +g.character.position.x.toFixed(1), z: +g.character.position.z.toFixed(1) }; setTimeout(lift, 350); };
     go(); return true;
   }
   // R149: plant the Special Seed: the character's pot grows (Pop_<id>), the padlock goes, the selector opens it
