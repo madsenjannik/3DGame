@@ -11,7 +11,7 @@ import { WildsThreatSystem } from './WildsThreatSystem.js?build=SAVE-R157A-20261
 import { DailyRequests } from './DailyRequests.js?build=SAVE-R157A-20261011A';
 import { GardenPotsSystem } from './GardenPotsSystem.js?build=SAVE-R157A-20261011A';
 import { loadWildsModels, loadGardenModels, WildsModel } from './WildsModels.js';
-import { WORKSHOP_UPGRADES, WORKSHOP_FILES, WORKSHOP_SCALE, WORKSHOP_V2_FILES, WORKSHOP_V2_SCALE, workshopV2 } from '../data/workshopCatalog.js?build=RING-R173-20261015A';   // R144, R173
+import { WORKSHOP_UPGRADES, WORKSHOP_FILES, WORKSHOP_SCALE, WORKSHOP_V2_FILES, WORKSHOP_V2_SCALE, workshopV2 } from '../data/workshopCatalog.js?build=RING-R174-20261015A';   // R144, R173
 import { loadGLTF } from '../core/AssetManager.js';
 import { perkPrice } from '../data/economyCatalog.js?build=SAVE-R157A-20261011A';   // R148
 import { FIXED_HEDGE as HEDGE } from '../data/gardenCatalog.js';
@@ -323,6 +323,7 @@ export class WildsLoopSystem {
     if (!perk || this.profile.perks[perkId] || this.profile.homeLevel < 2 || !this.pay({ amber: this.perkPrice() })) return false;
     this.profile.perks[perkId] = true; this.save.persist(); this.hud?.showToast(`${perk.name} takes root`); this.emit();
     if (this.shrineModel) { this.shrineModel.play(['Plant'], () => this.shrineModel.loop('Idle')); this.syncPerks(perkId); }
+    this.state.events?.emit?.('showcase', { target: this.upgradeL2, done: () => !this.shrineModel?.busy?.() && !this.perkModels?.[perkId]?.busy?.() });   // R174
     return true;
   }
   mapMarkers() {
@@ -417,7 +418,8 @@ export class WildsLoopSystem {
     const lvl = this.profile.workshop | 0, w = this.workbench; if (!w) return;
     const bench = this.benchModel?.root, label = w.root.children.find(c => c.isSprite && c !== w.glow), showBench = on => { if (bench) bench.visible = on; for (const k in this.rack || {}) this.rack[k].visible = on && !this.benchModel && this.has(k); if (label) label.position.y = on ? 1.75 : 3.25; };
     if (lvl < 1) { if (this.workshopModel) this.workshopModel.root.visible = false; showBench(true); this.setWorkshopPosts(false); return; }
-    if (this.workshopModel && this.workshopLevel === lvl) { this.workshopModel.root.visible = true; showBench(false); return; }
+    if (this.workshopModel && this.workshopLevel === lvl) { this.workshopModel.root.visible = true; showBench(false); this.workshopBuilding = false; return; }
+    this.workshopBuilding = !!celebrate;   // R174: the upgrade camera waits for the Build/Upgrade clip
     const tok = this.workshopLoad = (this.workshopLoad || 0) + 1;
     const v2 = this.v2 ??= workshopV2();   // R173
     loadGLTF((v2 ? WORKSHOP_V2_FILES : WORKSHOP_FILES)[lvl]).then(gltf => {
@@ -427,9 +429,9 @@ export class WildsLoopSystem {
       for (const n of ['Ruin', 'Ghost']) { const o = m.root.getObjectByName(`Workshop_L${lvl}_${n}`); if (o) o.visible = false; }
       w.root.add(m.root); (this.gardenMixers ||= []).push(m); showBench(false);
       const clip = lvl === 1 ? 'Build' : 'Upgrade';
-      if (celebrate && m.has(clip)) m.play([clip], () => { m.loop('Idle'); this.setWorkshopPosts(true); }); else m.loop('Idle');   // R154: posts again once the build clip has finished
+      if (celebrate && m.has(clip)) m.play([clip], () => { m.loop('Idle'); this.setWorkshopPosts(true); this.workshopBuilding = false; }); else { m.loop('Idle'); this.workshopBuilding = false; }   // R154: posts again once the build clip has finished
       this.setWorkshopPosts(true);
-    }).catch(e => console.warn('[TGW] workshop model failed; the bench stays', e));
+    }).catch(e => { this.workshopBuilding = false; console.warn('[TGW] workshop model failed; the bench stays', e); });
   }
   setWorkshopPosts(on) {
     for (const o of this.workshopPosts || []) this.setObstacle(o, false); this.workshopPosts = [];
@@ -452,6 +454,7 @@ export class WildsLoopSystem {
     if (!next || !this.pay(next.cost)) return false;
     this.profile.workshop = next.level; this.save.persist();
     this.applyWorkshop(true); this.hud?.showToast(`${next.name} built`); this.emit();
+    this.state.events?.emit?.('showcase', { target: this.workbench?.root, size: 3.2, height: 3.1, done: () => !this.workshopBuilding });   // R174
     return true;
   }
 
@@ -460,6 +463,8 @@ export class WildsLoopSystem {
     if (!next || !this.pay(next.cost)) return false;
     this.profile.homeLevel = next.level; this.save.persist();
     this.applyHomeLevel(true); this.emit();
+    { const l = this.profile.homeLevel, models = l === 1 ? [this.barrelModel] : l === 2 ? [this.shrineModel] : (this.hedgeModels || []);   // R174
+      this.state.events?.emit?.('showcase', { target: [null, this.upgradeL1, this.upgradeL2, this.upgradeL3][l], done: () => !models.some(m => m?.busy?.()) }); }
     return true;
   }
 
