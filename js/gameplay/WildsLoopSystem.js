@@ -11,7 +11,7 @@ import { WildsThreatSystem } from './WildsThreatSystem.js?build=SAVE-R157A-20261
 import { DailyRequests } from './DailyRequests.js?build=SAVE-R157A-20261011A';
 import { GardenPotsSystem } from './GardenPotsSystem.js?build=SAVE-R157A-20261011A';
 import { loadWildsModels, loadGardenModels, WildsModel } from './WildsModels.js';
-import { WORKSHOP_UPGRADES, WORKSHOP_FILES, WORKSHOP_SCALE } from '../data/workshopCatalog.js?build=SAVE-R157A-20261011A';   // R144
+import { WORKSHOP_UPGRADES, WORKSHOP_FILES, WORKSHOP_SCALE, WORKSHOP_V2_FILES, WORKSHOP_V2_SCALE, workshopV2 } from '../data/workshopCatalog.js?build=RING-R173-20261015A';   // R144, R173
 import { loadGLTF } from '../core/AssetManager.js';
 import { perkPrice } from '../data/economyCatalog.js?build=SAVE-R157A-20261011A';   // R148
 import { FIXED_HEDGE as HEDGE } from '../data/gardenCatalog.js';
@@ -50,6 +50,18 @@ function labelSprite(text, width = 420) {
 
 function costMet(inv, cost) { return Object.entries(cost).every(([id, n]) => (inv.get(id) || 0) >= n); }
 
+// R173: the separate pieces of a mesh in world space ([x, z, half-width] each): vertices that share a position belong together
+// (glTF splits vertices at hard edges), and triangles join them into pieces.
+function meshPieces(o) {
+  const g = o.geometry, pos = g?.attributes?.position; if (!pos) return [];
+  o.updateWorldMatrix(true, false); const key = new Map(), id = new Int32Array(pos.count), par = [], find = a => { while (par[a] !== a) a = par[a] = par[par[a]]; return a; }, join = (a, b) => { a = find(a); b = find(b); if (a !== b) par[a] = b; };
+  for (let i = 0; i < pos.count; i++) { const k = `${pos.getX(i).toFixed(4)},${pos.getY(i).toFixed(4)},${pos.getZ(i).toFixed(4)}`; let n = key.get(k); if (n === undefined) { n = par.length; par.push(n); key.set(k, n); } id[i] = n; }
+  const idx = g.index; const tri = idx ? idx.count : pos.count; for (let t = 0; t < tri; t += 3) { const a = idx ? idx.getX(t) : t, b = idx ? idx.getX(t + 1) : t + 1, c = idx ? idx.getX(t + 2) : t + 2; join(id[a], id[b]); join(id[a], id[c]); }
+  const boxes = new Map(), v = new THREE.Vector3();
+  for (let i = 0; i < pos.count; i++) { const r = find(id[i]); let b = boxes.get(r); if (!b) boxes.set(r, b = new THREE.Box3()); b.expandByPoint(v.fromBufferAttribute(pos, i).applyMatrix4(o.matrixWorld)); }
+  const out = []; for (const b of boxes.values()) { const c = b.getCenter(new THREE.Vector3()), s = b.getSize(new THREE.Vector3()); out.push([c.x, c.z, Math.max(s.x, s.z) / 2]); } return out;
+}
+
 export class WildsLoopSystem {
   constructor({ world, state, save, hud, greenhouse, garden }) {
     this.garden = garden || null;
@@ -71,7 +83,9 @@ export class WildsLoopSystem {
     this.buildHomeUpgrades();
     this.placeThorns();
     loadWildsModels().then(m => this.applyModels(m)).catch(e => console.warn('[TGW] wilds models unavailable', e));
-    loadGardenModels().then(m => this.applyGardenModels(m)).catch(e => console.warn('[TGW] garden models unavailable', e));
+    // R173: with ?ring=premium the bench is the concept workshop's level 0 (falls back to the old bench if it fails to load)
+    this.v2 ??= workshopV2();
+    loadGardenModels().then(async m => { if (this.v2) { try { m.workbench = await loadGLTF(WORKSHOP_V2_FILES[0]); this.v2Bench = true; } catch (e) { console.warn('[TGW] workshop v2 bench failed; old bench', e); } } this.applyGardenModels(m); }).catch(e => console.warn('[TGW] garden models unavailable', e));
     this.applyHomeLevel(false);
     this.pots = new GardenPotsSystem(this, this.greenhouse);
     this.threat = new WildsThreatSystem(this);
@@ -405,10 +419,11 @@ export class WildsLoopSystem {
     if (lvl < 1) { if (this.workshopModel) this.workshopModel.root.visible = false; showBench(true); this.setWorkshopPosts(false); return; }
     if (this.workshopModel && this.workshopLevel === lvl) { this.workshopModel.root.visible = true; showBench(false); return; }
     const tok = this.workshopLoad = (this.workshopLoad || 0) + 1;
-    loadGLTF(WORKSHOP_FILES[lvl]).then(gltf => {
+    const v2 = this.v2 ??= workshopV2();   // R173
+    loadGLTF((v2 ? WORKSHOP_V2_FILES : WORKSHOP_FILES)[lvl]).then(gltf => {
       if (tok !== this.workshopLoad) return;
       if (this.workshopModel) { w.root.remove(this.workshopModel.root); this.gardenMixers = (this.gardenMixers || []).filter(m => m !== this.workshopModel); }
-      const m = this.workshopModel = new WildsModel(gltf, 'workshop', { scale: WORKSHOP_SCALE }); this.workshopLevel = lvl;
+      const m = this.workshopModel = new WildsModel(gltf, 'workshop', { scale: v2 ? WORKSHOP_V2_SCALE : WORKSHOP_SCALE }); this.workshopLevel = lvl;
       for (const n of ['Ruin', 'Ghost']) { const o = m.root.getObjectByName(`Workshop_L${lvl}_${n}`); if (o) o.visible = false; }
       w.root.add(m.root); (this.gardenMixers ||= []).push(m); showBench(false);
       const clip = lvl === 1 ? 'Build' : 'Upgrade';
@@ -423,6 +438,14 @@ export class WildsLoopSystem {
     // R154: the posts' shape is baked into each Post_N mesh about 1 m out (the node sits at 0,0,0), so use the geometry's centre
     m.root.traverse(o => { if (!/^Post_\d$/.test(o.name)) return; const geo = o.geometry; if (geo) { geo.boundingBox || geo.computeBoundingBox(); geo.boundingBox.getCenter(v).applyMatrix4(o.matrixWorld); } else o.getWorldPosition(v);
       this.workshopPosts.push(this.gardenObstacle(v.x, v.z, .13, 'workshop-post')); });
+    // R173: the concept workshop (v2) has no Post_N nodes; its posts are one merged mesh (Posts_*). Each separate piece of it is one post:
+    // pieces are found by shared vertex positions, and each becomes a collider at its centre, as wide as the piece (0.1-0.3 m).
+    // Its L3 tower and anvil are solid too (Jannik GO 15/10).
+    if (this.workshopPosts.length) return;
+    m.root.traverse(o => { if (!o.isMesh || !/^Posts_/.test(o.name)) return; for (const [x, z, r] of meshPieces(o)) this.workshopPosts.push(this.gardenObstacle(x, z, THREE.MathUtils.clamp(r, .1, .3), 'workshop-post')); });
+    const lvl = this.workshopLevel, box = new THREE.Box3(), size = new THREE.Vector3();
+    for (const n of ['Tower', 'Anvil']) { const o = m.root.getObjectByName(`Workshop_L${lvl}_${n}`); if (!o) continue; box.setFromObject(o); box.getCenter(v); box.getSize(size);
+      this.workshopPosts.push(this.gardenObstacle(v.x, v.z, Math.max(.2, (size.x + size.z) / 4), `workshop-${n.toLowerCase()}`)); }
   }
   upgradeWorkshop() {
     const next = WORKSHOP_UPGRADES[this.profile.workshop | 0];
@@ -510,7 +533,7 @@ export class WildsLoopSystem {
     const add = m => { this.gardenMixers.push(m); return m; };
     if (models.workbench) {
       const w = this.workbench, label = w.root.children.find(c => c.isSprite && c !== w.glow);
-      fresh(w.root, [label, w.glow]); const m = this.benchModel = add(new WildsModel(models.workbench, 'workbench'));
+      fresh(w.root, [label, w.glow]); const m = this.benchModel = add(new WildsModel(models.workbench, 'workbench', this.v2Bench ? { scale: WORKSHOP_V2_SCALE } : {}));
       w.root.add(m.root); m.loop('Idle'); label.position.y = 1.75; w.glow.position.y = .8;
     }
     if (models.barrel) {

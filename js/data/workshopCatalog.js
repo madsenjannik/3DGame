@@ -10,3 +10,8 @@ export const WORKSHOP_UPGRADES = [
 // Loaded on demand (only the level the player owns), scaled to the garden bench.
 export const WORKSHOP_FILES = ['', './assets/garden/workshop_l1.glb', './assets/garden/workshop_l2.glb', './assets/garden/workshop_l3.glb'];
 export const WORKSHOP_SCALE = 1.2;
+// R173 (Jannik GO 15/10): the workshop in the Ring concept's look (Jannik's workshop_v2_l0..l3), only with ?ring=premium. Authored in
+// metres (scale 1). L0 replaces the garden bench. Its posts are one merged mesh (Posts_*), split into one collider per post in the game.
+export const WORKSHOP_V2_FILES = ['./assets/garden/workshop_v2_l0.glb', './assets/garden/workshop_v2_l1.glb', './assets/garden/workshop_v2_l2.glb', './assets/garden/workshop_v2_l3.glb'];
+export const WORKSHOP_V2_SCALE = 1;
+export function workshopV2() { try { return localStorage.getItem('tgw.ring') === 'premium'; } catch { return false; } }

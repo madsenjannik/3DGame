@@ -53,7 +53,7 @@ export class WorkbenchPreview3D {
   }
   async select(kind,level){
     if(!PREVIEW_ASSETS[kind])return;
-    level=clampLevel(level);const file=PREVIEW_ASSETS[kind][level-1];
+    level=clampLevel(level);let v2=false;try{v2=kind==='workshop'&&localStorage.getItem('tgw.ring')==='premium';}catch{}const file=v2?`./assets/garden/workshop_v2_l${level}.glb`:PREVIEW_ASSETS[kind][level-1];   // R173: the concept workshop under ?ring=premium
     if(file===this.loadedKey&&this.model){if(this.visible)this.start();return;}
     if(file===this.requestedKey&&!this.model)return; // Avoid concurrent duplicate GLB fetches during React-less re-renders.
     this.requestedKey=file;

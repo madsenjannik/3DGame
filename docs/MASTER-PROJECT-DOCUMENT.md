@@ -1681,6 +1681,7 @@ are only touched where a measured hotspot requires it, minimally.
    failure. Must pass before every push (CLAUDE.md rule 5).
 
 **B status 02/10/2026: complete (R51–R57).** On-device check (iPhone, Jannik 02/10): 60 fps steady (frame max 20–24 ms), 217 draw calls / 370k tris in the garden, 363 / 433k at the lake, mobile-high, 1 WebGL context → no perf work needed before C.
+**R173 (v0.8.173):** Ring premium: Jannik's concept-look workshop (`workshop_v2_l0..l3`, scale 1; L0 = bench), one collider per post split from the merged posts mesh, L3 tower and anvil solid; preview in the Workbench panel.
 **R172 (v0.8.172):** Ring premium: new aloe/swamp/cactus v2 GLBs (eyes, eyebrows); NaN/Inf guard before the bloom; v2 held tool follows the Swing chop; trunk-sized colliders on every GLB tree, home tree merged; foundation tree + pine replaced by GLB trees.
 **R171 (v0.8.171):** Ring premium: Aloe and Swamp v2 (same contract as cactus_v2, shared scale 0.62).
 **R170 (v0.8.170):** Ring premium: Jannik's GLB plants (3 bushes, 3 trees, 2 ferns, LOD + wind) replace all code plants; the new Cactus (cactus_v2) under `?ring=premium`.
