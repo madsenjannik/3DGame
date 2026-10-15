@@ -142,11 +142,13 @@ export class CharacterSwapSpot {
   }
   interaction(pos) {
     if (!this.spot || !pos || this.g.world?.space !== 'garden') return null;
-    const d = Math.hypot(pos.x - this.spot.x, pos.z - this.spot.z); if (d > RADIUS) return null;
+    const d = Math.hypot(pos.x - this.spot.x, pos.z - this.spot.z);
+    if (this.sanctuary && d > RADIUS) return this.podAt(pos);   // R182: the capsules around the Ring
+    if (d > RADIUS) return null;
     const seed = this.g.specialSeeds?.inBag?.()[0];   // R149: a Special Seed in the Bag is planted here first
     if (seed) return { type: 'home-plant', label: `Plant ${seed.name}`, distance: d };   // R153: also on the gold-circle fallback (no model)
     // R182 (Jannik 16/10: 'the Ring must not leave gameplay for the selector'): in the premium Ring you switch at a capsule
-    if (this.sanctuary) { const pod = this.podAt(pos); if (pod) return pod; return null; }
+    if (this.sanctuary) return this.podAt(pos);
     return { type: 'home-swap', label: 'Switch character', distance: d };
   }
   // R182: the capsule (pod) the player stands at: an open one offers 'Become <Name>', a closed one says how it opens
@@ -165,9 +167,9 @@ export class CharacterSwapSpot {
     if (this.becoming || !this.sanctuary || id === this.g.state.player.characterId) return false; this.becoming = true;
     const g = this.g, S = this.sanctuary, P = S.pods.get(id), pod = S.podWorld(id), ch = g.character, name = g.registry?.characters?.get(id)?.displayName || id;
     try { g.save?.flush(); } catch {}
-    let fresh = null; const load = g.registry.instantiateCharacter(id, { uTime: g.uTime }).then(i => (fresh = i)).catch(() => null);
+    let fresh = null; const load = g.registry.instantiateCharacter(id, { uTime: g.uTime }).then(async i => { i.root.scale.setScalar(.001); i.root.position.set(pod.x, pod.y - .5, pod.z); g.scene.add(i.root); try { await g.renderer.compileAsync?.(i.root, g.camera, g.scene); } catch {} return (fresh = i); }).catch(() => null);   // shaders warmed while the camera moves in
     const veil = document.createElement('div'); veil.className = 'tgw-veil'; Object.assign(veil.style, { position: 'fixed', inset: '0', zIndex: 9999, pointerEvents: 'none', opacity: '0', transition: 'opacity .9s ease', background: 'radial-gradient(60% 60% at 50% 55%, #fff8e6 0%, #fbeec9 45%, #f2e2b8 100%)' }); document.body.appendChild(veil);
-    const light = new THREE.PointLight(0xffd27a, 0, 7, 1.6); light.position.copy(pod).add(new THREE.Vector3(0, .6, 0)); g.scene.add(light);
+    const light = { position: pod.clone().add(new THREE.Vector3(0, .6, 0)), intensity: 0 };   // no real light: adding one recompiles every material
     const flare = new THREE.Sprite(new THREE.SpriteMaterial({ map: this.glow || (this.glow = glowTex()), color: 0xffe2a0, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, opacity: 0 })); flare.position.copy(light.position); flare.scale.setScalar(.1); g.scene.add(flare);
     const t0 = performance.now(), at = () => (performance.now() - t0) / 1000, wait = s => new Promise(r => setTimeout(r, s * 1000));
     const showcased = g.showcase?.start?.({ target: P?.g || S.root, size: 2.6, height: 2.6, min: 4.6, max: 6, done: () => at() > 4.6 }) || false;
@@ -175,7 +177,7 @@ export class CharacterSwapSpot {
       // 0.8-1.8 s: the character shrinks into light; 1.4-2.6 s: the capsule flares; 2.4 s on: the new one rises
       const k = Math.min(1, Math.max(0, (t - .8) / 1)); if (ch?.root) { ch.root.scale.setScalar(Math.max(.001, 1 - k * k)); ch.root.visible = k < .99; }
       const f = Math.min(1, Math.max(0, (t - 1.4) / 1.2)), f2 = Math.max(0, 1 - Math.max(0, t - 3.2) / 1.2); light.intensity = 14 * f * f2; flare.material.opacity = .95 * f * f2; flare.scale.setScalar(.2 + 3.6 * f * (1 + .1 * Math.sin(t * 9)));
-      if (fresh && t > 2.4) { if (!fresh.root.parent) { fresh.root.position.set(pod.x, pod.y - .5, pod.z); fresh.root.rotation.y = Math.atan2(ch.position.x - pod.x, ch.position.z - pod.z); g.scene.add(fresh.root); fresh.playHop?.(); }
+      if (fresh && t > 2.4) { if (!fresh.started) { fresh.started = true; fresh.root.position.set(pod.x, pod.y - .5, pod.z); fresh.root.rotation.y = Math.atan2(ch.position.x - pod.x, ch.position.z - pod.z); fresh.playHop?.(); }
         const r = Math.min(1, (t - 2.4) / .7), e = 1 + 2.2 * (r - 1) ** 3 + 1.2 * (r - 1) ** 2; fresh.root.scale.setScalar(Math.max(.01, e)); fresh.root.position.y = pod.y - .5 + .5 * Math.min(1, r * 1.4); fresh.updateVisual?.({ dt: 1 / 60, speed: 0 }); }
       if (t < 6.5) requestAnimationFrame(anim); };
     requestAnimationFrame(anim);

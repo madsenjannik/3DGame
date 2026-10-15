@@ -19,6 +19,7 @@
     o.right_=0;f();addEventListener('resize',f);addEventListener('orientationchange',function(){setTimeout(f,300);});requestAnimationFrame(probe);})();</script>
   <script src="./version.js?v=RING-R182-20261016A"></script>
   <script>/* R163: ?ring=premium|classic is remembered from any entry page (the selector drops the query on its way to the game) */try{var __r=new URLSearchParams(location.search).get('ring');if(__r==='premium'||__r==='classic')localStorage.setItem('tgw.ring',__r)}catch(e){}</script>
+  <script>/* R183 */try{if(localStorage.getItem('tgw.ring')==='premium')document.documentElement.classList.add('tgw-premium');}catch(e){}</script>
   <script src="./character-roster.js?v=CORE-R158A-20261012A"></script>
   <link href="https://fonts.googleapis.com/css2?family=Lilita+One&family=Manrope:wght@500;600;700;800&display=swap" rel="stylesheet">
   <script type="importmap">{ "imports": { "three": "./vendor/three.module.js", "three/addons/": "./vendor/" } }</script>
@@ -31,6 +32,10 @@
     .cs-bgclip{position:fixed;inset:0;overflow:hidden;pointer-events:none}   /* R134: the bigger, drifting background must never widen the page (iOS zooms out) */
     .cs-bg{position:absolute;inset:-24px;background:url(./assets/ui/selector/world.webp?v=R132) center/cover no-repeat;filter:blur(2.5px) saturate(1.05);transform:scale(1.03);animation:csDrift 40s ease-in-out infinite alternate}
     @keyframes csDrift{to{transform:scale(1.08) translate(-1.2%,-.8%)}}
+    /* R183: with ?ring=premium the select screen shows the concept-look world (renders of the premium world / meadow) */
+    html.tgw-premium .cs-bg{background-image:url(./assets/ui/selector/world_v2.webp?v=R183);filter:blur(2px) saturate(1.02)}
+    html.tgw-premium .cs-card{background-image:url(./assets/ui/selector/meadow_v2.webp?v=R183)}
+    html.tgw-premium .cs-shade{background:radial-gradient(85% 75% at 50% 42%,rgba(30,38,26,0) 38%,rgba(30,38,26,.42) 100%),linear-gradient(180deg,rgba(200,211,195,.18),rgba(200,211,195,0) 30%,rgba(30,38,26,.22))}
     .cs-shade{position:fixed;inset:0;pointer-events:none;background:radial-gradient(85% 75% at 50% 42%,rgba(20,26,12,0) 35%,rgba(20,26,12,.5) 100%),linear-gradient(180deg,rgba(20,26,12,.18),rgba(20,26,12,0) 30%,rgba(20,26,12,.25))}
     .cs-frame{position:fixed;inset:max(10px,env(safe-area-inset-top)) max(12px,env(safe-area-inset-right)) max(10px,env(safe-area-inset-bottom)) max(12px,env(safe-area-inset-left));border-radius:22px;box-shadow:inset 0 0 0 3px rgba(255,248,230,.55),inset 0 0 0 6px rgba(59,47,34,.35);pointer-events:none}
     .cs-logo{position:fixed;left:calc(max(12px,env(safe-area-inset-left)) + 26px);top:calc(max(10px,env(safe-area-inset-top)) + 14px);width:clamp(150px,19vw,290px);text-align:center}
