@@ -100,7 +100,7 @@ export class CharacterSwapSpot {
   // interaction point hand over to the new one, and restoreClassic() hands everything back (also on any failure).
   loadPremium() {
     const PLANTS = ['bush_a', 'bush_b', 'bush_c', 'tree_a', 'tree_b', 'tree_c', 'fern_a', 'fern_b'];   // R169: Jannik's GLB plants (each fails soft to the code plants)
-    Promise.all([import('../visual/RingSanctuary.js?build=RING-R183-20261016A'), ...PLANTS.map(k => loadGLTF(`./assets/garden/plants/${k}.glb`).then(g => [k, g], e => { console.warn('[TGW] plant', k, e); return null; }))]).then(([{ RingSanctuary, laneRect }, ...pl]) => {
+    Promise.all([import('../visual/RingSanctuary.js?build=RING-R184-20261016A'), ...PLANTS.map(k => loadGLTF(`./assets/garden/plants/${k}.glb`).then(g => [k, g], e => { console.warn('[TGW] plant', k, e); return null; }))]).then(([{ RingSanctuary, laneRect }, ...pl]) => {
       const gltfPlants = Object.fromEntries(pl.filter(Boolean));
       const W = this.g.world, vm = this.g.vegetationMask, sp = this.g.homePortal.gardenSpawn(), center = { x: sp.x + EAST_DX, z: sp.z + EAST_DZ };
       const px = W.pathX?.(center.z) ?? 0, yaw = Math.atan2(px - center.x, 0);   // the lane (+z) points at the garden path
@@ -172,12 +172,18 @@ export class CharacterSwapSpot {
     const light = { position: pod.clone().add(new THREE.Vector3(0, .6, 0)), intensity: 0 };   // no real light: adding one recompiles every material
     const flare = new THREE.Sprite(new THREE.SpriteMaterial({ map: this.glow || (this.glow = glowTex()), color: 0xffe2a0, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, opacity: 0 })); flare.position.copy(light.position); flare.scale.setScalar(.1); g.scene.add(flare);
     const t0 = performance.now(), at = () => (performance.now() - t0) / 1000, wait = s => new Promise(r => setTimeout(r, s * 1000));
-    const showcased = g.showcase?.start?.({ target: P?.g || S.root, size: 2.6, height: 2.6, min: 4.6, max: 6, done: () => at() > 4.6 }) || false;
+    // R184 (Jannik 16/10: 'zoom in closer on the chosen character, now the tree is in front'): the capsule faces the oak and stands only ~3.4 m
+    // from it, so the default 3.5 m+ shot put the camera behind the trunk. Now the camera stands 1.9 m from the capsule on the Ring's inside,
+    // ~37 degrees off the line to the oak on the side away from the player (the player dissolves at the edge of the frame, not in front of it),
+    // low (1 m) and aimed at the height of the character that rises; the new one turns to face the camera.
+    const toC = Math.atan2(S.center.x - pod.x, S.center.z - pod.z), toP = Math.atan2(ch.position.x - pod.x, ch.position.z - pod.z), side = Math.sin(toP - toC) > 0 ? -1 : 1, camYaw = toC + side * .65;
+    const camAt = new THREE.Vector3(pod.x + Math.sin(camYaw) * 1.9, 0, pod.z + Math.cos(camYaw) * 1.9);
+    const showcased = g.showcase?.start?.({ target: P?.g || S.root, at: new THREE.Vector3(pod.x, pod.y, pod.z), yaw: camYaw, dist: 1.9, h: 1, lookY: .55, pan0: 0, pan: -side * .15, min: 4.6, max: 6, done: () => at() > 4.6 }) || false;
     const anim = () => { const t = at();
       // 0.8-1.8 s: the character shrinks into light; 1.4-2.6 s: the capsule flares; 2.4 s on: the new one rises
       const k = Math.min(1, Math.max(0, (t - .8) / 1)); if (ch?.root) { ch.root.scale.setScalar(Math.max(.001, 1 - k * k)); ch.root.visible = k < .99; }
       const f = Math.min(1, Math.max(0, (t - 1.4) / 1.2)), f2 = Math.max(0, 1 - Math.max(0, t - 3.2) / 1.2); light.intensity = 14 * f * f2; flare.material.opacity = .95 * f * f2; flare.scale.setScalar(.2 + 3.6 * f * (1 + .1 * Math.sin(t * 9)));
-      if (fresh && t > 2.4) { if (!fresh.started) { fresh.started = true; fresh.root.position.set(pod.x, pod.y - .5, pod.z); fresh.root.rotation.y = Math.atan2(ch.position.x - pod.x, ch.position.z - pod.z); fresh.playHop?.(); }
+      if (fresh && t > 2.4) { if (!fresh.started) { fresh.started = true; fresh.root.position.set(pod.x, pod.y - .5, pod.z); fresh.root.rotation.y = Math.atan2(camAt.x - pod.x, camAt.z - pod.z); fresh.playHop?.(); }
         const r = Math.min(1, (t - 2.4) / .7), e = 1 + 2.2 * (r - 1) ** 3 + 1.2 * (r - 1) ** 2; fresh.root.scale.setScalar(Math.max(.01, e)); fresh.root.position.y = pod.y - .5 + .5 * Math.min(1, r * 1.4); fresh.updateVisual?.({ dt: 1 / 60, speed: 0 }); }
       if (t < 6.5) requestAnimationFrame(anim); };
     requestAnimationFrame(anim);
