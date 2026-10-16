@@ -874,7 +874,8 @@ export class WorldEnvironment {
       const list = it.k < 4 ? kinds.conifer : kinds.round, k = list[(it.i + it.k) % 2]; if (!P[k]) continue;
       const height = 3.6 * it.s * 1.25, s = height / P[k].h;
       f.add(k, it.x, it.y + .1, it.z, it.ry, s, it);
-      if (it.o) { const r0 = it.o.r; it.o.r = Math.max(.3, trunkR(k) * s); this.undo.push(() => { it.o.r = r0; }); }
+      // R197: a tree the Root Bear cleared from its open core (it.hidden, collider .01) stays cleared; PlantField skips drawing it
+      if (it.o && !it.hidden) { const r0 = it.o.r; it.o.r = Math.max(.3, trunkR(k) * s); this.undo.push(() => { if (!it.hidden) it.o.r = r0; }); }
     }
     for (const m of L.forestMeshes || []) if (m && m.visible) { m.visible = false; this.undo.push(() => { m.visible = true; }); }
     // R195 (Jannik 16/10: 'old trees at Root Bear'): the bear's grove is its own ring of the old low-poly conifers (RootBearBoss, built

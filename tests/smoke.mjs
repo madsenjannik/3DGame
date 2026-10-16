@@ -45,11 +45,11 @@ async function context(opts = {}, block = []) {
   await ctx.route('**/*', r => { const u = r.request().url(); if (u.startsWith(B) && /premium-home\.html/.test(u)) return r.fulfill({ contentType: 'text/html', body: '<!doctype html><title>scene</title>' }); return !u.startsWith(B) || block.some(re => re.test(u)) ? r.abort() : r.continue(); });
   return ctx;
 }
-async function startGame(ctx, char, { dev = true, hud = '', tips = false } = {}) {   // R120: tips = show the first-time control tips (off by default so they never cover what a check clicks)   // R110: hud = DEV HUD variant ('classic' = mobile HUD D, 'desktop-e'); R102–R109 checks assumed it was on
+async function startGame(ctx, char, { dev = true, hud = '', tips = false, page = 'game.html' } = {}) {   // R197: page = 'classic/game.html' tests the frozen classic copy   // R120: tips = show the first-time control tips (off by default so they never cover what a check clicks)   // R110: hud = DEV HUD variant ('classic' = mobile HUD D, 'desktop-e'); R102–R109 checks assumed it was on
   const p = await ctx.newPage(); const errors = [];
   p.on('pageerror', e => errors.push(e.message));
   await p.addInitScript(([c, d, h, t]) => { if (!t) localStorage.setItem('tgw.controlTips.v1', '1'); localStorage.setItem(`dym.homeMovedIn.v1.${c}`, '1'); if (d) localStorage.setItem('tgw.devMenu', '1'); else localStorage.removeItem('tgw.devMenu'); if (h) localStorage.setItem('tgw.hudTestB', h); }, [char, dev, hud, tips]);
-  await p.goto(B + `game.html?char=${char}`, { waitUntil: 'load' });
+  await p.goto(B + `${page}?char=${char}`, { waitUntil: 'load' });
   const ok = await p.waitForFunction(() => !document.getElementById('loading'), null, { timeout: 240000 }).then(() => true, () => false);
   if (ok) await p.waitForFunction(() => !document.getElementById('tgw-premium-veil'), null, { timeout: 240000 }).catch(() => {});   // R189: premium builds its garden behind the cover; checks start once it is lifted
   return { p, errors, ok };
@@ -391,6 +391,8 @@ try {
       const ring = await p.evaluate(() => (window.__tgw.vegetationMask?.fixed || []).filter(f => f.colliders));
       const keep = c => c[0] !== 'ring-pot' && !ring.some(f => Math.hypot(c[1] - f.cx, c[2] - f.cz) < f.r); ref.colliders = ref.colliders.filter(keep); now.colliders = now.colliders.filter(keep);
       const walk = (a, b, k) => { if (typeof a !== 'object' || a === null || typeof b !== 'object' || b === null) { if (JSON.stringify(a) !== JSON.stringify(b)) diffs.push(k); return; } for (const x of new Set([...Object.keys(a), ...Object.keys(b)])) walk(a[x], b[x], `${k}.${x}`); };
+      // R197: under premium the bench is R173's v2 model at scale 1 (classic 1.3), on the same spot and turn
+      if (await p.evaluate(() => !!window.__tgw.wilds.v2Bench) && Array.isArray(ref.benchModel)) ref.benchModel = ref.benchModel.map((v, i) => i < 11 && i % 4 !== 3 ? Math.round(v / 1.3 * 1e4) / 1e4 : v);
       walk(ref, now, 'garden'); }
     check('garden migration: 0 transform differences vs pre-R60 reference', ok && !diffs.length && !errors.length, errors[0] || diffs.slice(0, 4).join(' '));
     // 11. old saves + defaults valid + structures follow a moved greenhouse
@@ -751,7 +753,8 @@ try {
       && await p.click('#cs-home').then(() => p.waitForURL(/index\.html/, { timeout: 15000 })).then(() => true, () => false);
     check('character select test page (R132–R134): English, 9 characters, Daisy/Cactus/Swamp open, locked ones a mystery that says how to grow them, browse by thumb and arrow; phone layout from the screen, no arrows on touch, big special icon, equal dividers; R135/R138 the game\'s selector: starters + played open, opens on ?char / last played; R136 back button works, debug readout', ok && Object.values(r).length === 7 && Object.values(r).every(Boolean) && !errors.length, errors[0] || JSON.stringify(r)); await ctx.close(); }
   // 17n. R138 switch character at home: a gold SWITCH circle on the garden lawn (garden only, away from the door) opens the selector and its back button returns; a locked character cannot be started outside DEV
-  { const ctx = await context({ viewport: { width: 844, height: 390 }, isMobile: true, hasTouch: true }); const { p, errors, ok } = await startGame(ctx, 'cactus', { hud: 'classic' }); let r = {};
+  //     R197: this is the classic Ring; premium replaces it (its own check is 'R157-R181 Ring premium'), so it runs on the frozen classic copy
+  { const ctx = await context({ viewport: { width: 844, height: 390 }, isMobile: true, hasTouch: true }); const { p, errors, ok } = await startGame(ctx, 'cactus', { hud: 'classic', page: 'classic/game.html' }); let r = {};
     if (ok) { r = await p.evaluate(async () => { const g = window.__tgw, w = ms => new Promise(x => setTimeout(x, ms)), o = {};
         for (let i = 0; i < 60 && !g.swapSpot?.spot; i++) await w(250); const s = g.swapSpot?.spot; if (!s) return { spot: false };
         o.worldNone = g.world.space !== 'garden' && !g.swapSpot.interaction({ x: s.x, z: s.z });
@@ -787,7 +790,7 @@ try {
       o.start = (W.profile.workshop | 0) === 0 && !W.workshopModel && W.benchModel?.root.visible !== false;
       W.state.inventory.set('wood', 12); W.state.inventory.set('stone', 6); W.emit?.();
       const bought = W.upgradeWorkshop(); for (let i = 0; i < 60 && !W.workshopModel; i++) await w(250);
-      o.l1 = bought && W.profile.workshop === 1 && W.workshopLevel === 1 && W.benchModel.root.visible === false && (W.workshopPosts || []).length === 6 && (W.state.inventory.get('wood') | 0) === 2;
+      o.l1 = bought && W.profile.workshop === 1 && W.workshopLevel === 1 && W.benchModel.root.visible === false && (W.workshopPosts || []).length === (W.v2 ? 4 : 6) && (W.state.inventory.get('wood') | 0) === 2;   // R197: premium's R173 concept workshop L1 has 4 posts (classic 6)
       g.devMenu.run('ws:3'); for (let i = 0; i < 60 && W.workshopLevel !== 3; i++) await w(250);
       o.l3 = W.workshopLevel === 3 && !!W.workshopModel.root.getObjectByName('Workshop_L3_Anvil');
       W.onOpenWorkbench?.(); await w(300); const panel = document.querySelector('.wilds-panel.open'); panel?.querySelector('[data-tab="home"]')?.click(); await w(300);
@@ -816,8 +819,13 @@ try {
       o.offer = g.swapSpot.interaction({ x: s.x, z: s.z })?.label === 'Plant Tulip Seed';
       for (let i = 0; i < 40 && !g.swapSpot.beacon?.group.visible; i++) await w(250); o.beacon = !!g.swapSpot.beacon?.group.visible;   // R153: the stone calls while a seed waits
       o.planted = g.swapSpot.plantSeed() && S.s.tulip === 2 && g.save.isUnlocked('tulip') && !g.hud.gearItems().some(x => x.id === 'seed-tulip');
+      const R = g.swapSpot.sanctuary;
+      if (R) {   // R197: premium's Ring (R157-R182): the Tulip pod unfolds (the moment), then stands open and the stone offers a pod swap; the beacon is out
+        const pod = R.pods.get('tulip'); o.moment = pod?.target === 1 && (pod.k < 1 || !!pod.anim);
+        for (let i = 0; i < 80 && pod && pod.k < 1; i++) await w(250); o.ring = pod?.target === 1 && /^ring-pod/.test(g.swapSpot.interaction({ x: s.x, z: s.z })?.type || '') && !g.swapSpot.beacon?.group.visible;
+      } else {
       const M = g.swapSpot.model, vis = n => M.getObjectByName(n)?.visible; o.moment = vis('Sprout_tulip') && vis('Lock_tulip');   // R153: the padlock lifts with Pop_tulip
-      for (let i = 0; i < 40 && vis('Lock_tulip'); i++) await w(250); o.ring = vis('Sprout_tulip') && !vis('Lock_tulip') && g.swapSpot.interaction({ x: s.x, z: s.z })?.type === 'home-swap' && !g.swapSpot.beacon?.group.visible;
+      for (let i = 0; i < 40 && vis('Lock_tulip'); i++) await w(250); o.ring = vis('Sprout_tulip') && !vis('Lock_tulip') && g.swapSpot.interaction({ x: s.x, z: s.z })?.type === 'home-swap' && !g.swapSpot.beacon?.group.visible; }
       await w(1500); o.once = S.s.tulip === 2 && !g.hud.gearItems().some(x => x.id === 'seed-tulip');   // never earned twice
       return o; });
     check('R149 Special Seeds: Giant beaten -> Tulip Seed in the Bag (no quick slot), Ring offers Plant Tulip Seed, planting opens Tulip, bosses give no Golden Seed', ok && ['noGolden', 'start', 'bag', 'offer', 'beacon', 'planted', 'moment', 'ring', 'once'].every(k => r[k]) && !errors.length, errors[0] || JSON.stringify(r)); await ctx.close(); }
@@ -923,8 +931,8 @@ try {
     if (ok) r = await p.evaluate(async () => { const g = window.__tgw, w = ms => new Promise(x => setTimeout(x, ms)), o = {}, W = g.wilds; for (let i = 0; i < 60 && !W.profile; i++) await w(250);
       o.motion = document.body.classList.contains('reduce-motion') && g.reduceMotion === true; g.fx.hit({ x: 0, z: 0 }); o.motion = o.motion && !(g.fx.freeze > 0) && !(g.fx.shake > 0);
       g.specialSeeds.earn('hyacinth'); const P = g.workbenchPanel; P.tab = 'tools'; P.show(); o.tab = P.tab === 'chars'; P.tab = 'tools'; P.render(); o.dot = P.el.querySelector('[data-tab="chars"]').classList.contains('has-dot'); P.hide();
-      g.devMenu.run('ws:1'); for (let i = 0; i < 80 && !(W.workshopModel && W.workshopPosts?.length === 6); i++) await w(250); await w(4000); W.setWorkshopPosts(true);
-      const ps = W.workshopPosts || [], spread = ps.length === 6 ? Math.max(...ps.map(a => Math.max(...ps.map(b => Math.hypot(a.x - b.x, a.z - b.z))))) : 0; o.posts = spread > 1.5;
+      g.devMenu.run('ws:1'); for (let i = 0; i < 80 && !(W.workshopModel && W.workshopPosts?.length === (W.v2 ? 4 : 6)); i++) await w(250); await w(4000); W.setWorkshopPosts(true);
+      const ps = W.workshopPosts || [], spread = ps.length === (W.v2 ? 4 : 6) ? Math.max(...ps.map(a => Math.max(...ps.map(b => Math.hypot(a.x - b.x, a.z - b.z))))) : 0; o.posts = spread > 1.5;
       for (let i = 0; i < 120 && !g.swapSpot?.spot; i++) await w(250); const s = g.swapSpot.spot; o.ring = g.garden.reserved(s.x, s.z) != null && g.garden.reserved(s.x + 1.5, s.z) != null && !W.threat.spots?.some?.(q => Math.hypot(q.x - s.x, q.z - s.z) < 2.6);
       for (let i = 0; i < 480 && !(g.fishing && g.boatEco); i++) await w(250); g.fishing.own.vest = 1; g.save.profile.wear = { vest: true }; document.body.classList.add('boating-active'); g.hud.onVestToggle(); o.vest = g.save.profile.wear.vest === true; document.body.classList.remove('boating-active');
       const { SPECIAL_SEEDS } = await import('./js/data/economyCatalog.js'); const sp = SPECIAL_SEEDS.find(d => d.id === 'spire'); o.spire = sp.met({ lakeRun: { golds: 0, best: 44.2 } }, g) && !sp.met({ lakeRun: { golds: 0, best: 50 } }, g);
@@ -978,7 +986,7 @@ try {
       g.hud.setObjective('NEXT STEP', { title: 'Craft your first tool', copy: 'x' }); g.devMenu.teleport('garden', 0, 2, 0); for (let i = 0; i < 20 && document.getElementById('objective-title').textContent !== 'Find the Golden Seed'; i++) await w(250);
       o.story = g.collectible?.status !== 'available' || document.getElementById('objective-title').textContent === 'Find the Golden Seed';
       g.devMenu.run('mats'); const P = g.workbenchPanel; P.show(); P.tab = 'tools'; P.render(); await w(300); o.goalCard = /Stone Axe/.test(P.el.querySelector('.wilds-item.goal')?.textContent || '');
-      o.tab = P.el.querySelector('[data-tab="chars"]').textContent === 'Characters'; P.hide();
+      o.tab = /^\W*Characters$/.test(P.el.querySelector('[data-tab="chars"]').textContent.trim());   // R197: R158A puts an icon glyph before the tab name P.hide();
       const ct = document.getElementById('control-tips'); for (let i = 0; i < 40 && !ct?.classList.contains('show'); i++) await w(250); ct?.click(); await w(300); o.tips = localStorage.getItem('tgw.controlTips.step') === '1';
       return o; });
     check('R156 first session: the garden card returns to Find the Golden Seed, the workbench marks the goal card, tips remember their step, tab Characters', ok && ['story', 'goalCard', 'tab', 'tips'].every(k => r[k]) && !errors.length, errors[0] || JSON.stringify(r)); await ctx.close(); }
@@ -998,8 +1006,10 @@ try {
     let r = {};
     if (ok) { await p.evaluate(() => { const g = window.__tgw; g.__hits = 0; const a = g.combat.attack.bind(g.combat); g.combat.attack = (...x) => { g.__hits++; return a(...x); }; document.getElementById('hud-bag')?.click(); });
       await p.waitForTimeout(1500); r.opened = await p.evaluate(() => !!document.querySelector('.gear-panel.open'));
-      await p.mouse.click(640, 420); await p.waitForTimeout(2500); r.closeNoSwing = await p.evaluate(() => window.__tgw.__hits === 0 && !document.querySelector('.gear-panel.open'));
-      await p.mouse.click(640, 420); await p.waitForTimeout(2500); r.nextSwings = await p.evaluate(() => window.__tgw.__hits === 1);
+      // R197: R158A's Bag covers the middle of the screen (x 170-1110), so 'the view' is clicked beside it
+      const vx = await p.evaluate(() => Math.round((document.querySelector('.gear-panel').getBoundingClientRect().right + innerWidth) / 2));
+      await p.mouse.click(vx, 420); await p.waitForTimeout(2500); r.closeNoSwing = await p.evaluate(() => window.__tgw.__hits === 0 && !document.querySelector('.gear-panel.open'));
+      await p.mouse.click(vx, 420); await p.waitForTimeout(2500); r.nextSwings = await p.evaluate(() => window.__tgw.__hits === 1);
       await p.keyboard.press('Escape'); await p.waitForTimeout(800); r.escOpens = await p.evaluate(() => document.body.classList.contains('game-menu-open'));
       await p.keyboard.press('Escape'); await p.waitForTimeout(800); r.escCloses = await p.evaluate(() => !document.body.classList.contains('game-menu-open')); }
     check('desktop input (R117/R121): closing the Bag by clicking the view does not swing, the next click does, Esc opens and closes the menu', ok && r.opened && r.closeNoSwing && r.nextSwings && r.escOpens && r.escCloses && !errors.length, errors[0] || JSON.stringify(r)); await ctx.close(); }
