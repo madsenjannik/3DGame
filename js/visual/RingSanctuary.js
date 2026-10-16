@@ -973,7 +973,24 @@ class WorldGrass {
     if (L.groundHeight(x, z) - y > .03) return false;   // a deck, floor or bridge
     if (this.homeBox && x > this.homeBox.min.x && x < this.homeBox.max.x && z > this.homeBox.min.z && z < this.homeBox.max.z) return false;
     for (const r of L.solidRects || []) if (x > r.minX - .3 && x < r.maxX + .3 && z > r.minZ - .3 && z < r.maxZ + .3) return false;
+    // R194 (Jannik 16/10: grass through the stable's path and arena and the orangery's plaza): those surfaces are flat meshes laid over
+    // green terrain, so the colour test passed under them; a blade is not grown where a straight-down ray hits one of them
+    for (const cv of this.covers()) { const b = cv.box; if (x < b.min.x - .15 || x > b.max.x + .15 || z < b.min.z - .15 || z > b.max.z + .15) continue;
+      this.ray.set(this.rayO.set(x, b.max.y + 1, z), this.rayD); if (this.ray.intersectObject(cv.o, false).length) return false; }
     L.worldColor(x, z, y, c); return c.g > c.r * 1.06 && c.g > c.b * 1.2;   // the world's own colour says grass
+  }
+  // the flat ground surfaces of the stable, the orangery and the lake cabin (under 0.4 m high, over 1.5 m², not green); they load after the
+  // grass, so the list is re-read every 3 s and the grass chunks are rebuilt once it changes
+  covers() {
+    const now = performance.now(); if (this._cov && now - this._covT < 3000) return this._cov; this._covT = now;
+    if (!this.ray) { this.ray = new THREE.Raycaster(); this.rayO = new V3(); this.rayD = new V3(0, -1, 0); }
+    const list = [], box = new THREE.Box3(), sz = new V3();
+    for (const n of ['NORTH_STABLE_ROOT', 'ORANGERY_SHARED_HUB', 'FISHING_V1_R6_SELECTIVE_OVERLAY']) { const r = this.g.scene.getObjectByName(n); if (!r) continue; r.updateMatrixWorld(true);
+      r.traverse(o => { if (!o.isMesh || o.isInstancedMesh || o.isSkinnedMesh || !o.geometry) return; box.setFromObject(o); box.getSize(sz); if (sz.y > .4 || sz.x * sz.z < 1.5) return;
+        const col = o.material?.color; if (col && !o.material.map && col.g > col.r * 1.06 && col.g > col.b * 1.2) return;   // a green field is grass ground
+        list.push({ o, box: box.clone() }); }); }
+    if (this._covN !== undefined && list.length !== this._covN) { this.cache.clear(); for (const im of this.live.values()) { im.visible = false; im.count = 0; this.pool.push(im); } this.live.clear(); this.cx = null; }
+    this._covN = list.length; return (this._cov = list);
   }
   build(key, cx, cz) {
     // heights and the grass test on a 0.5 m grid (17 x 17 per chunk), blades interpolate it: ~20x cheaper than per blade

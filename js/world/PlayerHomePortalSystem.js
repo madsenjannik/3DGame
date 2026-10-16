@@ -9,7 +9,7 @@ const DOOR_RADIUS=2.15;
 const HOME_STRUCTURAL_HALF_SIZE=2.0;
 const MOVE_IN_STORAGE_VERSION='v1';
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
-const V2_SHEDS=new Set(['aloe']);   // R177
+const V2_SHEDS=new Set(['aloe','cactus']);   // R177 Aloe; R194 Cactus (Jannik's concept homes)
 const PREFIX={tulip:'Tulip',daisy:'Daisy',hyacinth:'Hyacinth',cactus:'Cactus',fern:'Fern',succulent:'Succulent',spire:'Spire',swamp:'Swamp',aloe:'Aloe'};
 
 function setShadows(root){root.traverse(o=>{if(o.isMesh){o.castShadow=true;o.receiveShadow=true;}});}
@@ -59,8 +59,12 @@ function buildFenceSegments(yard){
   });
   if(!candidates.length)return[];
   candidates.sort((a,b)=>b.score-a.score);const mesh=candidates[0].o,fb=candidates[0].b;
+  const h=Math.max(.01,fb.max.y-fb.min.y);
+  return sliceSegments(mesh,[fb.min.y+h*.24,fb.min.y+h*.50,fb.min.y+h*.76]);
+}
+// R194: the slicing itself (horizontal planes through a mesh -> wall segments where it is solid), shared with the v2 yard parts below
+function sliceSegments(mesh,planes,half=.055){
   mesh.updateWorldMatrix(true,false);
-  const h=Math.max(.01,fb.max.y-fb.min.y),planes=[fb.min.y+h*.24,fb.min.y+h*.50,fb.min.y+h*.76];
   const g=mesh.geometry,pos=g.attributes.position,idx=g.index,a=new THREE.Vector3(),b=new THREE.Vector3(),c=new THREE.Vector3(),tmp=new THREE.Vector3();
   const raw=[],eps=1e-6;
   const intersectEdge=(p,q,y,pts)=>{
@@ -77,7 +81,7 @@ function buildFenceSegments(yard){
       if(y<minY-eps||y>maxY+eps)continue;const pts=[];intersectEdge(a,b,y,pts);intersectEdge(b,c,y,pts);intersectEdge(c,a,y,pts);
       const uniq=[];for(const q of pts)if(!uniq.some(r=>Math.hypot(q.x-r.x,q.z-r.z)<1e-5))uniq.push(q);if(uniq.length<2)continue;
       let p1=null,p2=null,best=0;for(let i=0;i<uniq.length;i++)for(let j=i+1;j<uniq.length;j++){const d=Math.hypot(uniq[j].x-uniq[i].x,uniq[j].z-uniq[i].z);if(d>best){best=d;p1=uniq[i];p2=uniq[j];}}
-      if(p1&&p2&&best>=.035)raw.push({ax:p1.x,az:p1.z,bx:p2.x,bz:p2.z,half:.055});
+      if(p1&&p2&&best>=.035)raw.push({ax:p1.x,az:p1.z,bx:p2.x,bz:p2.z,half});
     }
   }
   const seen=new Map(),Q=.025;
@@ -89,6 +93,24 @@ function buildFenceSegments(yard){
   return [...seen.values()];
 }
 
+// R194 (Jannik 16/10: 'fence etc. on the shed in the world has no colliders'): a v2 yard (Jannik's concept homes) has no fence mesh the old
+// rule recognises. Its solid parts are rasterised onto a 0.1 m grid wherever their geometry lies between lo and hi above the yard's ground
+// (every triangle edge is sampled, so the fence's thin rails count), and every filled cell becomes a short wall: the wooden fence
+// (<Prefix>_Yard_Root, open at the front by itself), the terracotta pots, the cactus plants (<Prefix>_Yard_SkinLight) and the yard's
+// boulders (<Prefix>_Yard_Stone from 0.15 m, so the stepping stones, 5-10 cm, stay walkable).
+const V2_YARD_SOLIDS=[['Yard_Root',.1,.65],['Yard_Terracotta',.08,.5],['Yard_SkinLight',.15,1],['Yard_Stone',.15,.4]];
+function v2YardSegments(root,prefix){
+  if(!root)return[];root.updateMatrixWorld(true);const base=new THREE.Vector3().setFromMatrixPosition(root.matrixWorld).y,C=.1,cells=new Map();
+  const a=new THREE.Vector3(),b=new THREE.Vector3(),c=new THREE.Vector3(),q=new THREE.Vector3();
+  for(const [part,lo,hi] of V2_YARD_SOLIDS){const o=root.getObjectByName(`${prefix}_${part}`);if(!o)continue;
+    o.traverse(m=>{if(!m.isMesh||!m.geometry?.attributes?.position)return;m.updateWorldMatrix(true,false);const pos=m.geometry.attributes.position,idx=m.geometry.index,n=idx?idx.count:pos.count;
+      const mark=v=>{const y=v.y-base;if(y<lo||y>hi)return;cells.set(`${Math.floor(v.x/C)},${Math.floor(v.z/C)}`,1);};
+      const edge=(p1,p2)=>{const L=p1.distanceTo(p2),k=Math.max(1,Math.ceil(L/.06));for(let t=0;t<=k;t++)mark(q.copy(p1).lerp(p2,t/k));};
+      for(let t=0;t+2<n;t+=3){const ia=idx?idx.getX(t):t,ib=idx?idx.getX(t+1):t+1,ic=idx?idx.getX(t+2):t+2;
+        a.fromBufferAttribute(pos,ia).applyMatrix4(m.matrixWorld);b.fromBufferAttribute(pos,ib).applyMatrix4(m.matrixWorld);c.fromBufferAttribute(pos,ic).applyMatrix4(m.matrixWorld);edge(a,b);edge(b,c);edge(c,a);}});}
+  const out=[];for(const k of cells.keys()){const [i,j]=k.split(',').map(Number),x=(i+.5)*C,z=(j+.5)*C;out.push({ax:x-C*.5,az:z,bx:x+C*.5,bz:z,half:C*.55});}
+  return out;
+}
 // R193 Fase 1c: the first frames of the other space compile its shaders (~1 s on the first walk into the premium garden); they are drawn
 // while the door fade still covers the screen, so the hitch is never seen
 const settle=()=>new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(()=>requestAnimationFrame(r))));
@@ -248,6 +270,7 @@ export class PlayerHomePortalSystem{
     this.gardenSegments.push(...structuralFootprintSegments(this.gardenHome));
     // R186 (Jannik 16/10: 'cannot enter the house with Aloe Vera'): a v2 home has no fence; the fence rule took Aloe v2's soil mound
     // (8 x 0.6 x 8.3 m) for one and closed the whole yard without a gate, 3.8 m short of the door. v2 homes get no yard collision.
+    if(/_v2\.glb$/.test(this.assetUrl())){try{this.worldSegments.push(...v2YardSegments(this.worldHome,this.prefix));this.gardenSegments.push(...v2YardSegments(this.gardenHome,this.prefix));}catch(err){console.warn('[TGW] v2 yard colliders',err);}}   // R194
     if(wyard&&!/_v2\.glb$/.test(this.assetUrl())){
       const exactFence=buildFenceSegments(wyard);
       if(exactFence.length)this.worldSegments.push(...exactFence);

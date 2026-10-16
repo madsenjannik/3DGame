@@ -1681,6 +1681,7 @@ are only touched where a measured hotspot requires it, minimally.
    failure. Must pass before every push (CLAUDE.md rule 5).
 
 **B status 02/10/2026: complete (R51–R57).** On-device check (iPhone, Jannik 02/10): 60 fps steady (frame max 20–24 ms), 217 draw calls / 370k tris in the garden, 363 / 433k at the lake, mobile-high, 1 WebGL context → no perf work needed before C.
+**R194 (v0.8.194):** v2 home yards get colliders (fence, pots, plants, boulders rasterised to 0.1 m walls); Cactus v2 home; world grass skips the stable's and orangery's flat ground surfaces.
 **R193 (v0.8.193):** Fase 1c performance: only the current space is drawn; objects wholly behind the fog are skipped; far wilds nodes / thickets / caches / dormant moles drawn as shared frozen copies (`WildsFarProxy.js`); plants culled per instance and shadowed from shadow-only lists one LOD coarser (`Game.shadowHooks`); garden-entry shader compile hidden under the door fade; shorter loading cover.
 **R192 (v0.8.192):** The premium garden's concept stones and bushes hide with their source under a moved structure (vegetation mask sync).
 **R191 (v0.8.191):** Fase 0b: the perf report shows the shadow pass and the main view by object group (draw calls, triangles).
