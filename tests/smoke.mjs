@@ -24,12 +24,21 @@ const server = http.createServer((q, s) => {
 const B = `http://localhost:${server.address().port}/`;
 const results = []; const check = (name, ok, info = '') => { results.push({ name, ok }); console.log(`${ok ? 'PASS' : 'FAIL'}  ${name}${info ? '  — ' + info : ''}`); };
 
-const browser = await pw.chromium.launch({ args: ['--use-gl=swiftshader', '--enable-unsafe-swiftshader'] });
+const launch = () => pw.chromium.launch({ args: ['--use-gl=swiftshader', '--enable-unsafe-swiftshader'] });
+let browser = await launch();
 async function context(opts = {}, block = []) {
+  if (!browser.isConnected()) { console.log('NOTE  the browser died (software GPU); relaunching for the next check'); browser = await launch(); }   // R197
   const ctx = await browser.newContext(opts);
   // R188: every check now runs premium; on the software GPU its desktop tier (bloom, full shadows, dense grass) starves the page and checks
   // time out, so the checks force the lightest render profile (render cost only; game logic, HUD and premium systems are the same)
   await ctx.addInitScript(() => { try { localStorage.setItem('tgw.qualityForce', 'mobile-low'); } catch {} });
+  // R197: one SwiftShader frame of the premium scene (~630 draw calls) blocks the page for ~4 s, so the game ran at ~0.3 fps and every
+  // wall-clock wait in these checks saw almost no game time. Here the WebGL draw calls run only in one animation frame every 15 s (the
+  // first one at once, so shaders still compile and fail loudly); every other frame runs the full game step, HUD and DOM at normal speed
+  // with its draws skipped. Works with and without DEV (no window.__tgw needed). A check that needs real frames sets window.__smokeFullRender.
+  await ctx.addInitScript(() => { let draw = true, last = -1e9; const raf = window.requestAnimationFrame.bind(window);
+    let T = null; window.requestAnimationFrame = cb => raf(t => { if (t !== T) { T = t; draw = !!window.__smokeFullRender || t - last > 15000; if (draw) last = t; } cb(t); });   // one decision per frame
+    for (const C of [window.WebGLRenderingContext, window.WebGL2RenderingContext]) if (C) for (const k of ['drawArrays', 'drawElements', 'drawArraysInstanced', 'drawElementsInstanced', 'drawRangeElements', 'clear']) { const f = C.prototype[k]; if (f) C.prototype[k] = function (...a) { if (draw) return f.apply(this, a); }; } });
   ctx.setDefaultTimeout(120000);   // R188: premium builds its garden on the main thread; on the software GPU a page can be busy > 30 s
   // R188: premium is the game; the start screen's live 3D scene (premium-home.html, an iframe) is not under test and on the software GPU
   // it starves the whole page, so the checks get an empty scene there
@@ -96,15 +105,18 @@ try {
   { const ctx = await context({ viewport: { width: 1280, height: 720 } }); const { p, errors, ok } = await startGame(ctx, 'tulip');
     const r = ok ? await p.evaluate(async () => { const g = window.__tgw, w = ms => new Promise(x => setTimeout(x, ms)), o = { keys: getComputedStyle(document.getElementById('key-hints')).display === 'flex', joy: getComputedStyle(document.getElementById('joy-rest')).display === 'none', mats: +getComputedStyle(document.getElementById('materials')).opacity === 1 };
       if (g.dayNight) g.dayNight.force = 0; g.devMenu.teleport('world', .1, 20, Math.PI); await w(600);   // R81: the R70 grade is checked by day (the real clock may be at night)
-      o.lookWorld = g.look?.applied === true && g.renderer.toneMappingExposure > 1.05;
-      g.devMenu.teleport('garden', 0, 6, Math.PI); await w(600); o.lookGarden = g.look?.applied === false && Math.abs(g.renderer.toneMappingExposure - 1.02) < 1e-6; return o; }) : {};
-    check('landscape HUD (desktop): key hints, no joystick, resources visible; R70 look on in the world, off in the garden', ok && r.keys && r.joy && r.mats && r.lookWorld && r.lookGarden && !errors.length, errors[0] || JSON.stringify(r));
+      // R197: under premium the R70 grade still switches (applied in the world, off in the garden), but the premium mood owns the exposure
+      // in both spaces (R179 world look / Ring garden mood, .98); classic (?ring=classic) keeps its own copy of the old R70 numbers
+      const mood = () => Math.abs(g.renderer.toneMappingExposure - .98) < .01;
+      o.lookWorld = g.look?.applied === true && mood();
+      g.devMenu.teleport('garden', 0, 6, Math.PI); await w(1500); o.lookGarden = g.look?.applied === false && mood(); return o; }) : {};
+    check('landscape HUD (desktop): key hints, no joystick, resources visible; R70 look on in the world, off in the garden, premium mood in both', ok && r.keys && r.joy && r.mats && r.lookWorld && r.lookGarden && !errors.length, errors[0] || JSON.stringify(r));
     await ctx.close(); }
   // 2c. R102 desktop hotbar: keys/B, real pointer hold+drag, real held 3D source mesh, reload persistence
   { const ctx = await context({ viewport: { width: 1280, height: 720 } }); const { p, errors, ok } = await startGame(ctx, 'tulip', { hud: 'desktop-e' });
     let r = {};
     if (ok) r = await p.evaluate(async () => {
-      const g=window.__tgw,w=ms=>new Promise(x=>setTimeout(x,ms));Object.assign(g.wilds.profile.tools,{axe:true,pickaxe:true,sickle:true,can:true});g.refreshHotbar(true);await w(100);
+      const g=window.__tgw,w=ms=>new Promise(x=>setTimeout(x,ms));Object.assign(g.wilds.profile.tools,{axe:true,pickaxe:true,sickle:true,can:true});g.save.profile.hotbar={slots:Array(10).fill(null),selected:-1};g.refreshHotbar(true);await w(100);   /* R197: empty hotbar first (under premium the lantern is carried before the tools) */
       const key=code=>window.dispatchEvent(new KeyboardEvent('keydown',{code,bubbles:true}));
       key('Digit2');await w(80);
       const held=g.equippedToolVisual?.current;
@@ -180,8 +192,9 @@ try {
       const d = gp.querySelector('.bag2-detail'); o.detail = /Stone Pickaxe/.test(d.textContent) && /Lets you break Boulders/.test(d.textContent) && /Strike 2/.test(d.textContent);
       gp.querySelector('.bag2-act[data-act="hold"]').click(); await w(150);
       const held = g.equippedToolVisual?.current; o.hold = g.activeHotbarId() === 'pickaxe' && !!held && held.parent?.name === 'Hand_Socket_R' && held.children?.some?.(x => x.isMesh);
-      gp.querySelector('.bag2-tile[data-item-id="can"]').click(); await w(60); gp.querySelector('.bag2-act[data-act="slot"]').click(); await w(60); gp.querySelector('.bag2-slot[data-q="0"]').click(); await w(80);
-      o.slot = g.save.profile.hotbar.slots[0] === 'can';
+      gp.querySelector('.bag2-tile[data-item-id="can"]').click(); await w(60);
+      // R197: since R158A every carried tool fills a free quick slot by itself (the Bag shows all 10), so 'Add to slot' reads 'In quick slots' and is off
+      const sb = gp.querySelector('.bag2-act[data-act="slot"]'); o.slot = g.save.profile.hotbar.slots.includes('can') && !!sb && sb.disabled && /In quick slots/.test(sb.textContent);
       gp.querySelector('.gear-close').click(); await w(100); o.closed = !document.body.classList.contains('mobile-bag-open') && !gp.classList.contains('open');
       g.equipHotbarSlot(-1); g.autoTool({ type: 'wilds-gather', node: { def: { requires: 'axe' } } }); o.auto = g.equippedToolVisual.id === 'axe';
       return o;
@@ -214,10 +227,11 @@ try {
       await p.evaluate(() => { const g = window.__tgw; g.fishing.own.vest = 1; g.boatEco?.persist?.(); g.refreshHotbar(true); });
       await p.keyboard.press('KeyB'); await p.waitForTimeout(400);
       r = await p.evaluate(async () => { const g = window.__tgw, w = ms => new Promise(x => setTimeout(x, ms)), gp = document.getElementById('gear-panel'), o = {};
-        const row = () => gp.querySelector('.gear-item[data-item-id="vest"]'); o.row = !!row() && row().dataset.wear === '1' && /Click to wear/.test(row().textContent);
-        if (!row()) return o;   // R164: R158A replaced the desktop Bag list; a missing row fails this check instead of aborting the whole run
-        row().click(); await w(100); o.worn = g.vestWorn() && /Worn/.test(row()?.textContent || '') && row()?.classList.contains('selected');
-        row()?.click(); await w(100); o.off = !g.vestWorn(); row()?.click(); await w(100); return o; });
+        // R197: R158A's Bag (tiles + detail card) replaced the R146 list: the vest's tile opens its card, whose Wear / Take off button toggles it
+        const tile = () => gp.querySelector('.bag2-tile[data-item-id="vest"]'), btn = () => gp.querySelector('.bag2-act[data-act="wear"]');
+        if (!tile()) return o; tile().click(); await w(100); o.row = !!btn() && /^Wear$/.test(btn().textContent.trim());
+        if (!btn()) return o; btn().click(); await w(100); o.worn = g.vestWorn() && /Take off/.test(btn()?.textContent || '') && /WORN/.test(tile()?.textContent || '');
+        btn()?.click(); await w(100); o.off = !g.vestWorn(); btn()?.click(); await w(100); return o; });
       r.stays = await p.evaluate(() => window.__tgw.vestWorn()); }
     check('R146 desktop Bag: click the Life Vest to wear it, again to take it off', ok && r.row && r.worn && r.off && r.stays && !errors.length, errors[0] || JSON.stringify(r)); await ctx.close(); }
   // 2i. R126 phone thumb arc: special ring on the action button, tap = strike (keeps the full ring), hold 0.8 s = special,
@@ -649,7 +663,7 @@ try {
   // context that comes back leaves no overlay, one that stays lost offers tap-to-reload; no 12 s 'Startup error'
   { const ctx = await context({ viewport: { width: 844, height: 390 }, isMobile: true, hasTouch: true }); const { p, errors, ok } = await startGame(ctx, 'fern');
     const r = ok ? await p.evaluate(async () => { const g = window.__tgw, w = ms => new Promise(r => setTimeout(r, ms)); await w(2500);
-      const f0 = g.renderer.info.render.frame; g.lantern.update = () => { throw new Error('R114 test'); }; await w(4000);
+      window.__smokeFullRender = true; const f0 = g.renderer.info.render.frame; g.lantern.update = () => { throw new Error('R114 test'); }; await w(4000);
       const o = { frames: g.renderer.info.render.frame > f0 + 1, off: g.failed.includes('lantern') };
       const ext = g.renderer.getContext().getExtension('WEBGL_lose_context'); ext.loseContext(); await w(1500); ext.restoreContext(); await w(5000);
       o.restored = !document.getElementById('gl-lost'); ext.loseContext(); await w(5000); o.overlay = !!document.getElementById('gl-lost');
