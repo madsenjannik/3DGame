@@ -27,7 +27,9 @@ const results = []; const check = (name, ok, info = '') => { results.push({ name
 const browser = await pw.chromium.launch({ args: ['--use-gl=swiftshader', '--enable-unsafe-swiftshader'] });
 async function context(opts = {}, block = []) {
   const ctx = await browser.newContext(opts);
-  await ctx.route('**/*', r => { const u = r.request().url(); return !u.startsWith(B) || block.some(re => re.test(u)) ? r.abort() : r.continue(); });
+  // R188: premium is the game; the start screen's live 3D scene (premium-home.html, an iframe) is not under test and on the software GPU
+  // it starves the whole page, so the checks get an empty scene there
+  await ctx.route('**/*', r => { const u = r.request().url(); if (u.startsWith(B) && /premium-home\.html/.test(u)) return r.fulfill({ contentType: 'text/html', body: '<!doctype html><title>scene</title>' }); return !u.startsWith(B) || block.some(re => re.test(u)) ? r.abort() : r.continue(); });
   return ctx;
 }
 async function startGame(ctx, char, { dev = true, hud = '', tips = false } = {}) {   // R120: tips = show the first-time control tips (off by default so they never cover what a check clicks)   // R110: hud = DEV HUD variant ('classic' = mobile HUD D, 'desktop-e'); R102–R109 checks assumed it was on
