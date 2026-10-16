@@ -5,6 +5,7 @@
 // time of every system run through Game.run. With the load timeline (loading gone, premium cover lifted, premium garden built,
 // bloom on) and the downloads (count, MB, largest files) it makes a plain-text report that can be copied and pasted to Claude.
 // Every run is kept for the session, so a garden run and a world run end up in one report.
+import * as THREE from 'three';
 const SECONDS = 20;
 const q = (a, p) => { if (!a.length) return 0; const s = [...a].sort((x, y) => x - y); return s[Math.min(s.length - 1, Math.floor(p * s.length))]; };
 const avg = a => a.length ? a.reduce((x, y) => x + y, 0) / a.length : 0;
@@ -13,6 +14,8 @@ const f1 = n => (+n).toFixed(1), f0 = n => Math.round(+n);
 export class PerfProbe {
   constructor(game) {
     this.g = game; this.runs = []; this.active = null; this.timeline = {};
+    // R190 Fase 0b: the shadow pass's own draw calls and triangles, exactly (counted around three.js' shadow render)
+    try { const r = game.renderer, sm = r.shadowMap, orig = sm.render.bind(sm); sm.render = (...args) => { const A = this.active, c = r.info.render.calls, t = r.info.render.triangles; orig(...args); if (A) { A.shCalls += r.info.render.calls - c; A.shTris += r.info.render.triangles - t; } }; } catch {}
     // load timeline, in ms since the page started (performance.now())
     const t0 = performance.now(), watch = () => {
       const T = this.timeline, mark = k => { if (T[k] == null) T[k] = Math.round(performance.now()); }, S = this.g.swapSpot?.sanctuary;
@@ -29,13 +32,29 @@ export class PerfProbe {
   sys(id, ms) { const A = this.active; if (A) A.sys[id] = (A.sys[id] || 0) + ms; }
   frame(stepMs, renderMs) {
     const A = this.active; if (!A) return; const now = performance.now(), i = this.g.renderer.info;
+    if (now >= A.nextSample) { A.nextSample = now + 5000; try { this.sample(A); } catch {} }
     if (A.last) A.dt.push(now - A.last); A.last = now; A.step.push(stepMs); A.render.push(renderMs); A.calls.push(i.render.calls); A.tris.push(i.render.triangles); A.frames++;
     if (now - A.t0 >= SECONDS * 1000) this.finish();
   }
   start(onDone) {
     if (this.active) return false;
-    this.active = { t0: performance.now(), last: 0, frames: 0, dt: [], step: [], render: [], calls: [], tris: [], sys: {}, space: this.g.world?.space || '?', onDone };
+    this.active = { t0: performance.now(), last: 0, frames: 0, dt: [], step: [], render: [], calls: [], tris: [], sys: {}, space: this.g.world?.space || '?', onDone, shCalls: 0, shTris: 0, groups: {}, samples: 0, nextSample: 0 };
     return true;
+  }
+  // R190 Fase 0b: what the main pass draws, by group: every visible mesh/sprite/points/line inside the camera frustum (the same test
+  // three.js culls with), one draw call per material group, instanced meshes count their instances' triangles. Group = its first two named
+  // ancestors under the scene. Sampled every 5 s and averaged.
+  sample(A) {
+    const cam = this.g.camera; if (!cam) return; cam.updateMatrixWorld(); const F = new THREE.Frustum(), M = new THREE.Matrix4();
+    M.multiplyMatrices(cam.projectionMatrix, cam.matrixWorldInverse); F.setFromProjectionMatrix(M); const G = A.groups;
+    const walk = (o, names) => { if (!o.visible) return; const nm = o.name && !/^(Scene|AuxScene)?$/.test(o.name) ? [...names, o.name] : names;
+      if ((o.isMesh || o.isSprite || o.isPoints || o.isLine) && !(o.isMesh && o.material?.visible === false)) {
+        const inView = o.frustumCulled === false || (o.isSprite ? F.intersectsSprite(o) : F.intersectsObject(o));
+        if (inView && !(o.isInstancedMesh && o.count === 0)) { const geo = o.geometry, mats = Array.isArray(o.material) ? Math.max(1, geo?.groups?.length || o.material.length) : 1;
+          const per = geo ? (geo.index ? geo.index.count : geo.attributes?.position?.count || 0) / 3 : 0, n = o.isInstancedMesh ? o.count : 1;
+          const key = (nm.slice(0, 2).join(' > ') || o.type).slice(0, 70), e = G[key] || (G[key] = { calls: 0, tris: 0 }); e.calls += mats; e.tris += o.isMesh ? per * n : 0; } }
+      for (const c of o.children) walk(c, nm); };
+    walk(this.g.scene, []); A.samples++;
   }
   finish() {
     const A = this.active; this.active = null; const g = this.g, r = g.renderer, i = r.info;
@@ -49,7 +68,9 @@ export class PerfProbe {
       calls: { avg: f0(avg(A.calls)), max: f0(Math.max(0, ...A.calls)) }, trisK: { avg: f0(avg(A.tris) / 1000), max: f0(Math.max(0, ...A.tris) / 1000) },
       memory: { geometries: i.memory.geometries, textures: i.memory.textures, programs: i.programs?.length ?? '?', heapMB: performance.memory ? f0(performance.memory.usedJSHeapSize / 1048576) : '?' },
       view: { quality: g.quality?.id, dpr: f1(r.getPixelRatio()), canvas: `${r.domElement.width}x${r.domElement.height}`, bloom: !!g.postFx?.on, gpu },
-      systemsMs: sys.map(([k, v]) => `${k} ${v.toFixed(2)}`)
+      systemsMs: sys.map(([k, v]) => `${k} ${v.toFixed(2)}`),
+      shadow: { calls: f0(A.shCalls / n), trisK: f0(A.shTris / n / 1000) },
+      groups: Object.entries(A.groups).map(([k, v]) => [k, v.calls / Math.max(1, A.samples), v.tris / Math.max(1, A.samples)]).sort((a, b) => b[1] - a[1]).slice(0, 15).map(([k, c, t]) => `${k}: ${f0(c)} calls, ${f0(t / 1000)}k tris`)
     };
     this.runs.push(run); try { A.onDone?.(run); } catch {}
   }
@@ -72,7 +93,9 @@ export class PerfProbe {
       `  draw calls avg ${R.calls.avg} max ${R.calls.max} · triangles avg ${R.trisK.avg}k max ${R.trisK.max}k`,
       `  memory geometries ${R.memory.geometries} · textures ${R.memory.textures} · programs ${R.memory.programs} · heap ${R.memory.heapMB} MB`,
       `  view ${R.view.quality} · dpr ${R.view.dpr} · canvas ${R.view.canvas} · bloom ${R.view.bloom} · ${R.view.gpu}`,
-      `  systems (ms per frame) ${R.systemsMs.join(' · ')}`);
+      `  systems (ms per frame) ${R.systemsMs.join(' · ')}`,
+      `  shadow pass per frame: ${R.shadow.calls} calls, ${R.shadow.trisK}k tris (the rest of the calls are the main view + bloom)`,
+      `  main view by group (visible in the camera, avg of samples every 5 s):`, ...R.groups.map(g => '    ' + g));
     if (!this.runs.length) L.push('', 'No 20 s run yet.');
     return L.join('\n');
   }

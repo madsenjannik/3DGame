@@ -1681,6 +1681,7 @@ are only touched where a measured hotspot requires it, minimally.
    failure. Must pass before every push (CLAUDE.md rule 5).
 
 **B status 02/10/2026: complete (R51–R57).** On-device check (iPhone, Jannik 02/10): 60 fps steady (frame max 20–24 ms), 217 draw calls / 370k tris in the garden, 363 / 433k at the lake, mobile-high, 1 WebGL context → no perf work needed before C.
+**R191 (v0.8.191):** Fase 0b: the perf report shows the shadow pass and the main view by object group (draw calls, triangles).
 **R190 (v0.8.190):** Fase 1a: Jannik's plants v5 (LOD0/1/2); LOD by plant height (4.5 h / 13 h) with 5 % hysteresis and a 0.3 s dithered cross-fade; LOD2 casts no shadow; leaf cards lit two-sided.
 **R189 (v0.8.189):** Fase 0: perf counts cover the whole frame (`renderer.info` reset per frame); Dev menu 20 s measurement (`js/dev/PerfProbe.js`) with a copyable report.
 **R188 (v0.8.188):** Premium is the game. The root always runs premium; the classic game (R187) is frozen in `./classic/` with its own code and assets and is never edited (CLAUDE.md rule 9); `?ring=classic` opens it.

@@ -6,7 +6,7 @@
 <meta name="theme-color" content="#dde5d3">
 <link rel="manifest" href="./manifest.webmanifest"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="Growing Wilds"><link rel="apple-touch-icon" href="./brand/app-icon/app-icon-180.png">
 <title>The Growing Wilds</title>
-<script src="./version.js?v=RING-R190-20261016A"></script>
+<script src="./version.js?v=RING-R191-20261016A"></script>
 <script>/* R185: GitHub Pages lets browsers keep a page up to 10 min, so right after a new build an old page (with old file tags) could load first. Ask the server for the current version (never cached); if it is newer, reload once with it in the address (a new address is never cached). */try{(function(){var b=window.TGW_VERSION&&TGW_VERSION.build;if(!b||!window.fetch||location.protocol==='file:')return;fetch('./version.js?check='+Date.now(),{cache:'no-store'}).then(function(r){return r.ok?r.text():''}).then(function(t){var m=/build:\s*'([^']+)'/.exec(t);if(!m||m[1]===b)return;if(sessionStorage.getItem('tgw.fresh')===m[1])return;sessionStorage.setItem('tgw.fresh',m[1]);var u=new URL(location.href);u.searchParams.set('v',m[1]);location.replace(u.toString());}).catch(function(){});})();}catch(e){}</script>
   <script>/* R163: ?ring=premium|classic is remembered from any entry page (the selector drops the query on its way to the game) */try{var __r=new URLSearchParams(location.search).get('ring');if(__r==='premium'||__r==='classic')localStorage.setItem('tgw.ring',__r)}catch(e){}</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -48,7 +48,7 @@
 <body>
 <div id="screen" class="start-screen">
 <iframe id="scene" class="scene-frame" data-src="./Character Sheds.html?splash=1&shed=Spire&char=spire" title="Spire garden scene"></iframe>
-<script>/* R181: with ?ring=premium the live start scene is the concept-look home (Aloe v2 at its v2 home) *//* R185: the src is set here for both looks, so the classic scene no longer starts loading first under premium */var __s=document.getElementById('scene');try{if(localStorage.getItem('tgw.ring')==='premium'){__s.src='./premium-home.html?splash=1&v=RING-R190-20261016A'+(new URLSearchParams(location.search).get('moveIn')==='0'?'&moveIn=0':'');__s.title='Aloe garden scene';}}catch(e){}if(!__s.getAttribute('src'))__s.src=__s.getAttribute('data-src');</script>
+<script>/* R181: with ?ring=premium the live start scene is the concept-look home (Aloe v2 at its v2 home) *//* R185: the src is set here for both looks, so the classic scene no longer starts loading first under premium */var __s=document.getElementById('scene');try{if(localStorage.getItem('tgw.ring')==='premium'){__s.src='./premium-home.html?splash=1&v=RING-R191-20261016A'+(new URLSearchParams(location.search).get('moveIn')==='0'?'&moveIn=0':'');__s.title='Aloe garden scene';}}catch(e){}if(!__s.getAttribute('src'))__s.src=__s.getAttribute('data-src');</script>
 <div class="shade"></div>
 <div class="wind-layer" aria-hidden="true">
 <span style="top:79.1%;width:70px;height:39px;background:#8fd14f;filter:blur(6px);opacity:.85;--dy:7vh;--rot:474deg;--dur:1.30s;--delay:.32s"></span>
