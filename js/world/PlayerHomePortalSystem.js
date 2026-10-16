@@ -89,6 +89,9 @@ function buildFenceSegments(yard){
   return [...seen.values()];
 }
 
+// R193 Fase 1c: the first frames of the other space compile its shaders (~1 s on the first walk into the premium garden); they are drawn
+// while the door fade still covers the screen, so the hitch is never seen
+const settle=()=>new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(()=>requestAnimationFrame(r))));
 export class PlayerHomePortalSystem{
   constructor(scene,{world,state,characterId,onSpaceChanged,moveInEnabled=true,moveInKey=''}={}){
     this.scene=scene;this.world=world;this.state=state;this.characterId=characterId||state?.player?.characterId||'succulent';
@@ -311,14 +314,14 @@ export class PlayerHomePortalSystem{
     if(this.busy||this.world.space!=='world')return;this.busy=true;hud?.setActionVisible?.(false,'');
     this.playOnce(this.worldMixer,this.worldHome,'Door_Open',{hold:true});await sleep(280);await this.fadeTo(1,'Opening your garden…');
     this.world.setSpace('garden');this.onSpaceChanged('garden');this.setDoorPose(this.gardenMixer,this.gardenHome,true);this.teleport(character,followCamera,this.gardenSpawn());
-    await sleep(70);await this.fadeTo(0);await sleep(110);this.playOnce(this.gardenMixer,this.gardenHome,'Door_Close');hud?.showToast?.('Your private garden');this.busy=false;
+    await settle();await sleep(70);await this.fadeTo(0);await sleep(110);this.playOnce(this.gardenMixer,this.gardenHome,'Door_Close');hud?.showToast?.('Your private garden');this.busy=false;
   }
 
   async exit(character,followCamera,hud){
     if(this.busy||this.world.space!=='garden')return;this.busy=true;hud?.setActionVisible?.(false,'');
     this.playOnce(this.gardenMixer,this.gardenHome,'Door_Open',{hold:true});await sleep(280);await this.fadeTo(1,'Back to the shared world…');
     this.world.setSpace('world');this.onSpaceChanged('world');this.setDoorPose(this.worldMixer,this.worldHome,true);this.teleport(character,followCamera,this.worldSpawn({away:true}));
-    await sleep(70);await this.fadeTo(0);await sleep(110);this.playOnce(this.worldMixer,this.worldHome,'Door_Close');hud?.showToast?.('Shared world');this.busy=false;
+    await settle();await sleep(70);await this.fadeTo(0);await sleep(110);this.playOnce(this.worldMixer,this.worldHome,'Door_Close');hud?.showToast?.('Shared world');this.busy=false;
   }
 
   interact(type,character,followCamera,hud){if(type==='home-enter')return this.enter(character,followCamera,hud);if(type==='home-exit')return this.exit(character,followCamera,hud);}

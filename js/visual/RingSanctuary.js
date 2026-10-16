@@ -147,14 +147,20 @@ function preparePlants(gltfs, U) {
 class PlantField {
   constructor(g, P, tier, opt = {}) { this.opt = opt; this.g = g; this.P = P; this.tier = tier; this.items = []; this.ims = {}; this.root = new THREE.Group(); this.root.name = 'R158_PLANTS'; this.t = 1; this.cam = new V3(); }
   has(k) { return !!this.P[k]; } h(k) { return this.P[k].h; } w(k) { return this.P[k].w; }
-  add(kind, x, y, z, ry, s, ref = null) { if (!this.P[kind]) return false; const h = Math.max(this.P[kind].h * s, 1.5); this.items.push({ kind, ref, p: new V3(x, y, z), m: new THREE.Matrix4().compose(new V3(x, y, z), new THREE.Quaternion().setFromAxisAngle(new V3(0, 1, 0), ry), new V3(s, s, s)), d1: LOD_D1 * h, d2: LOD_D2 * h, L: -1, from: -1, t: 1 }); return true; }
+  add(kind, x, y, z, ry, s, ref = null) { if (!this.P[kind]) return false; const h = Math.max(this.P[kind].h * s, 1.5), ph = this.P[kind].h * s, pw = this.P[kind].w * s; this.items.push({ kind, ref, p: new V3(x, y, z), m: new THREE.Matrix4().compose(new V3(x, y, z), new THREE.Quaternion().setFromAxisAngle(new V3(0, 1, 0), ry), new V3(s, s, s)), d1: LOD_D1 * h, d2: LOD_D2 * h, L: -1, from: -1, t: 1, sph: new THREE.Sphere(new V3(x, y + ph / 2, z), .5 * Math.hypot(ph, pw) + .3) }); return true; }
   build(parent) {
-    const n = {}; for (const it of this.items) n[it.kind] = (n[it.kind] || 0) + 1; const desk = this.tier === 'desktop';
+    const n = {}; for (const it of this.items) n[it.kind] = (n[it.kind] || 0) + 1; const desk = this.tier === 'desktop', hooks = this.g.shadowHooks; this.shadowIMs = [];
     // each instanced mesh gets its own light geometry wrapper (shared buffers) so its per-instance fade does not touch the other plant field
     for (const [kind, cnt] of Object.entries(n)) { const P = this.P[kind]; this.ims[kind] = P.lod.map((parts, L) => parts.map(pt => {
       const g = new THREE.BufferGeometry(); for (const [k, a] of Object.entries(pt.geometry.attributes)) g.setAttribute(k, a); g.setIndex(pt.geometry.index); g.boundingSphere = pt.geometry.boundingSphere; g.boundingBox = pt.geometry.boundingBox;
       const fade = new THREE.InstancedBufferAttribute(new Float32Array(cnt * 2).fill(1), 1); fade.setUsage(THREE.DynamicDrawUsage); g.setAttribute('aFade', fade);
-      const im = new THREE.InstancedMesh(g, pt.material, cnt * 2); im.count = 0; im.frustumCulled = false; im.receiveShadow = true; im.castShadow = desk && P.type !== 'fern' && L < 2 && !(this.opt.nearShadowOnly && L > 0); im.fade = fade; this.root.add(im); return im; })); }
+      const im = new THREE.InstancedMesh(g, pt.material, cnt * 2); im.count = 0; im.frustumCulled = false; im.receiveShadow = true; im.fade = fade; this.root.add(im);
+      const cast = desk && P.type !== 'fern' && L < 2 && !(this.opt.nearShadowOnly && L > 0);
+      // R193: shadows come from shadow-only lists (the plants inside the sun's shadow box), drawn only during the shadow pass, each plant
+      // one LOD step coarser than it is drawn (LOD0 casts with LOD1, LOD1 with LOD2; LOD2 casts none, as before)
+      if (hooks && desk && P.type !== 'fern' && L > 0) { const sh = new THREE.InstancedMesh(g, pt.material, cnt); sh.count = 0; sh.frustumCulled = false; sh.castShadow = true; sh.receiveShadow = false; sh.visible = false; this.root.add(sh); im.shadow = sh; this.shadowIMs.push(sh); }
+      im.castShadow = cast && !hooks; return im; })); }
+    if (hooks && this.shadowIMs.length) { this.hook = { pre: () => { for (const sh of this.shadowIMs) sh.visible = true; }, post: () => { for (const sh of this.shadowIMs) sh.visible = false; } }; hooks.push(this.hook); }
     parent.add(this.root); this.refresh(0);
   }
   // LOD choice with hysteresis; a change starts a cross-fade (drawn in both steps for LOD_FADE seconds with complementary dither)
@@ -165,17 +171,29 @@ class PlantField {
     return d < it.d1 * dn ? 0 : d < it.d2 * dn ? 1 : 2; }
   refresh(dt, decide = true) {
     const cam = this.g.camera; if (cam) cam.getWorldPosition(this.cam); const c = {}; let fading = false;
+    // R193 Fase 1c: the instanced plants were drawn whole (frustumCulled off), behind the camera and past the fog too. Per instance now: drawn
+    // when its bounding sphere is in the camera frustum and not wholly behind the fog (view depth, as three.js fogs), or within 22 m of the
+    // player (its shadow can fall into view; the sun's shadow box is 42 m wide around the player)
+    const F = this.frus || (this.frus = new THREE.Frustum()), M = this.frusM || (this.frusM = new THREE.Matrix4()), fw = this.fw || (this.fw = new V3()), pp = this.g.character?.position, fog = this.g.scene.fog, far = fog && !fog.isFogExp2 && fog.far > 0 ? fog.far : Infinity;
+    if (cam) { cam.updateMatrixWorld(); M.multiplyMatrices(cam.projectionMatrix, cam.matrixWorldInverse); F.setFromProjectionMatrix(M); cam.getWorldDirection(fw); }
+    const seen = it => { if (!cam) return true; const S = it.sph; if (!F.intersectsSphere(S)) return false; return (S.center.x - this.cam.x) * fw.x + (S.center.y - this.cam.y) * fw.y + (S.center.z - this.cam.z) * fw.z - S.radius <= far; };
+    const sc = {}; for (const kind of Object.keys(this.ims)) sc[kind] = [0, 0, 0];
+    const inShadow = it => pp && Math.abs(it.sph.center.x - pp.x) < 21 + it.sph.radius && Math.abs(it.sph.center.z - pp.z) < 21 + it.sph.radius;   // the sun's shadow box follows the player (42 m)
+    const putShadow = (it, L) => { const parts = this.ims[it.kind][L]; if (!parts[0]?.shadow) return; const k = sc[it.kind][L]++; for (const im of parts) im.shadow.setMatrixAt(k, it.m); };
     for (const kind of Object.keys(this.ims)) c[kind] = [0, 0, 0];
     const put = (it, L, f) => { const k = c[it.kind][L]++; for (const im of this.ims[it.kind][L]) { im.setMatrixAt(k, it.m); im.fade.setX(k, f); } };
     for (const it of this.items) { if (it.ref?.hidden) { it.L = -1; continue; }
       if (decide) { const L = this.pick(it, it.p.distanceTo(this.cam)); if (it.L < 0) { it.L = L; it.t = 1; } else if (L !== it.L) { it.from = it.L; it.L = L; it.t = 0; } }
       if (it.t < 1) { it.t = Math.min(1, it.t + dt / LOD_FADE); }
+      if (it.L < 2 && !(this.opt.nearShadowOnly && it.L > 0) && inShadow(it)) putShadow(it, it.L + 1);
+      if (!seen(it)) { if (it.t < 1 && it.from >= 0) fading = true; continue; }
       if (it.t < 1 && it.from >= 0) { fading = true; put(it, it.L, Math.max(it.t, 0)); put(it, it.from, -Math.max(it.t, .001)); } else put(it, it.L, 1); }
-    for (const [kind, arr] of Object.entries(this.ims)) arr.forEach((parts, L) => parts.forEach(im => { im.count = c[kind][L]; im.instanceMatrix.needsUpdate = true; im.fade.needsUpdate = true; }));
+    for (const [kind, arr] of Object.entries(this.ims)) arr.forEach((parts, L) => parts.forEach(im => { im.count = c[kind][L]; im.instanceMatrix.needsUpdate = true; im.fade.needsUpdate = true; if (im.shadow) { im.shadow.count = sc[kind][L]; im.shadow.instanceMatrix.needsUpdate = true; } }));
     this.fading = fading;
   }
   // decisions every 0.25 s as before; while a cross-fade runs the instance data is rewritten every frame until it ends
-  update(dt) { this.t += dt; if (this.t >= .25) { const d = this.t; this.t = 0; this.refresh(Math.min(d, .25), true); } else if (this.fading) this.refresh(dt, false); }
+  // LOD decisions every 0.25 s as before; the instance list is rebuilt every frame now (culling follows the camera without lag)
+  update(dt) { this.t += dt; if (this.t >= .25) { this.t = 0; this.refresh(dt, true); } else this.refresh(dt, false); }
   stats() { let n = 0; const lod = [0, 0, 0]; for (const arr of Object.values(this.ims)) arr.forEach((parts, L) => { n += parts[0]?.count || 0; lod[L] += parts[0]?.count || 0; }); return { placed: this.items.length, drawn: n, lod }; }
 }
 

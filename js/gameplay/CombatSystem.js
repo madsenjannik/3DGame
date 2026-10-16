@@ -8,6 +8,7 @@
 import * as THREE from 'three';
 import { loadGLTF } from '../core/AssetManager.js';
 import { WildsModel } from './WildsModels.js';
+import { WildsFarProxy } from './WildsFarProxy.js?build=RING-R193-20261016A';   // R193 Fase 1c
 import { WoodGiantBoss } from './WoodGiantBoss.js';
 import { RootBearBoss } from './RootBearBoss.js?build=DAYNIGHT-R81-20261005A';
 import { SpecialSystem } from './SpecialSystem.js?build=DAYNIGHT-R81-20261005A';
@@ -40,6 +41,9 @@ export class CombatSystem {
     const load = async (k, f) => { try { this.models[k] = await loadGLTF(`${DIR}${f}.glb`); } catch (e) { console.warn(`[TGW] combat model ${f} failed`, e); } };
     await Promise.all([load('mole', 'enemy_mole'), load('fx', 'fx_hit'), ...Object.entries(LOOT_FILES).map(([k, f]) => load(`loot_${k}`, f))]);
     for (const m of this.moles) this.attachMoleModel(m);
+    // R193 Fase 1c: a dormant mole holds the last frame of its Warning clip at any distance, so outside its detect radius all dormant moles
+    // are drawn by one shared copy of that pose (a mole is ~50 parts; 4 moles were ~200 draw calls)
+    try { if (this.models.mole && this.moles.length) { this.far = new WildsFarProxy(this.root); this.far.kind('mole', this.models.mole, MOLE.scale, 'Warning', this.moles.length, true); this.farT = 1; } } catch (e) { console.warn('[TGW] mole far copies off', e); this.far = null; }
     return this;
   }
 
@@ -284,7 +288,15 @@ export class CombatSystem {
 
   // ---------- frame ----------
   // Returns { interaction } (strike a nearby Mole / pick up a pouch). `active` = world, not busy.
+  moleFarTick(dt, ch) {
+    const F = this.far; if (!F || !ch) return; this.farT += dt; if (this.farT < .25) return; this.farT = 0; F.begin();
+    for (const m of this.moles) { const md = m.model; if (!md) continue; let on = false;
+      if (m.state === 'dormant' && m.root.visible && !md.busy() && !(m.stunUntil > Date.now()) && Math.hypot(ch.position.x - m.x, ch.position.z - m.z) > MOLE.detect + 4) { md.root.updateWorldMatrix(true, false); on = F.add('mole', md.root.matrixWorld); }
+      md.root.visible = !on; }
+    F.end();
+  }
   update(dt, time, ch, active) {
+    try { this.moleFarTick(dt, ch); } catch (e) { console.warn('[TGW] mole far copies off', e); for (const m of this.moles) if (m.model) m.model.root.visible = true; this.far?.root.removeFromParent(); this.far = null; }   // R193
     this.time = time; this.cd = Math.max(0, this.cd - dt); this.invuln = Math.max(0, this.invuln - dt);
     if (this.kb) {   // R65.3 knockback: ease-out slide, resolved against walls every frame
       const k = this.kb, ch = this.g.character; k.t = Math.min(k.dur, k.t + dt); const u = k.t / k.dur, want = k.dist * (1 - (1 - u) * (1 - u)), step = want - k.done; k.done = want;

@@ -1681,6 +1681,7 @@ are only touched where a measured hotspot requires it, minimally.
    failure. Must pass before every push (CLAUDE.md rule 5).
 
 **B status 02/10/2026: complete (R51–R57).** On-device check (iPhone, Jannik 02/10): 60 fps steady (frame max 20–24 ms), 217 draw calls / 370k tris in the garden, 363 / 433k at the lake, mobile-high, 1 WebGL context → no perf work needed before C.
+**R193 (v0.8.193):** Fase 1c performance: only the current space is drawn; objects wholly behind the fog are skipped; far wilds nodes / thickets / caches / dormant moles drawn as shared frozen copies (`WildsFarProxy.js`); plants culled per instance and shadowed from shadow-only lists one LOD coarser (`Game.shadowHooks`); garden-entry shader compile hidden under the door fade; shorter loading cover.
 **R192 (v0.8.192):** The premium garden's concept stones and bushes hide with their source under a moved structure (vegetation mask sync).
 **R191 (v0.8.191):** Fase 0b: the perf report shows the shadow pass and the main view by object group (draw calls, triangles).
 **R190 (v0.8.190):** Fase 1a: Jannik's plants v5 (LOD0/1/2); LOD by plant height (4.5 h / 13 h) with 5 % hysteresis and a 0.3 s dithered cross-fade; LOD2 casts no shadow; leaf cards lit two-sided.

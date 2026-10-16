@@ -1,6 +1,6 @@
 // @ts-nocheck
 import * as THREE from 'three';
-import { AssetRegistry } from './AssetRegistry.js?build=RING-R192-20261016A';
+import { AssetRegistry } from './AssetRegistry.js?build=RING-R193-20261016A';
 import { CharacterController } from './CharacterController.js?build=MOBILE-GESTURE-R34B-20260930A';
 import { GameState } from './GameState.js';
 import { InputManager } from './InputManager.js?build=UX-R157B1-20261011A';
@@ -18,25 +18,25 @@ import { Hud } from '../ui/Hud.js?build=CORE-R158A-20261012A';
 import { WorldMap } from '../ui/WorldMap.js?build=UX-R157B1-20261011A';
 import { GardenEnvironment } from '../world/GardenEnvironment.js?build=WATER-VEG-R103-20261006A';
 import { WildlifeSystem } from '../world/WildlifeSystem.js?build=CAMERA-CUTAWAY-CONTEXT-R21D-20260928E';
-import { PlayerHomePortalSystem } from '../world/PlayerHomePortalSystem.js?build=RING-R192-20261016A';
+import { PlayerHomePortalSystem } from '../world/PlayerHomePortalSystem.js?build=RING-R193-20261016A';
 import { NorthStableSystem } from '../world/NorthStableSystem.js?build=UX-R157B1-20261011A';
 import { SaveGame, pickWinner } from './SaveGame.js?build=UX-R157B1-20261011A';
 import { SpecialSeeds } from '../gameplay/SpecialSeeds.js?build=UX-R157B1-20261011A';   // R149
 import { OrangeryTree } from '../gameplay/OrangeryTree.js?build=UX-R157B1-20261011A';   // R150
 import { installTabGuard } from './TabGuard.js?build=GUARD-R157C1-20261012B';   // R153
 import { Discovery } from '../gameplay/Discovery.js?build=UX-R157B1-20261011A';   // R154
-import { WildsLoopSystem } from '../gameplay/WildsLoopSystem.js?build=RING-R192-20261016A';
+import { WildsLoopSystem } from '../gameplay/WildsLoopSystem.js?build=RING-R193-20261016A';
 import { WorkbenchPanel } from '../ui/WorkbenchPanel.js?build=CORE-R158A-20261012A';
-import { DevMenu, devMenuEnabled } from '../ui/DevMenu.js?build=RING-R192-20261016A';
+import { DevMenu, devMenuEnabled } from '../ui/DevMenu.js?build=RING-R193-20261016A';
 import { applyControlProfile, defaultProfile } from './ControlProfiles.js';
 import { PerfHud } from '../dev/PerfHud.js';
-import { PerfProbe } from '../dev/PerfProbe.js?build=RING-R192-20261016A';   // R189 Fase 0
+import { PerfProbe } from '../dev/PerfProbe.js?build=RING-R193-20261016A';   // R189 Fase 0
 import { QualityManager, QUALITY } from './Quality.js?build=UX-R157B1-20261011A';
 import { InteractionResolver, gardenInteractionSource } from './InteractionResolver.js?build=UX-R157B1-20261011A';
 import { log, warn } from '../dev/Log.js';
 import { LookPass } from '../visual/LookPass.js?build=BAG-NIGHT-R84-20261006A';
 import { DayNight } from '../visual/DayNight.js?build=BAG-NIGHT-R84-20261006A';   // R81
-import { UpgradeShowcase } from '../visual/UpgradeShowcase.js?build=RING-R192-20261016A';   // R174
+import { UpgradeShowcase } from '../visual/UpgradeShowcase.js?build=RING-R193-20261016A';   // R174
 import { TOOLS } from '../data/wildsCatalog.js';   // R124 Bag texts (the Workbench's own effect lines)
 import { WEAPONS } from '../data/combatCatalog.js?build=UX-R157B1-20261011A';   // R124 strike values
 import { VestVisual } from '../gameplay/VestVisual.js?build=UX-R157B1-20261011A';   // R125
@@ -48,17 +48,19 @@ import { BoatEconomySystem } from '../gameplay/BoatEconomySystem.js?build=UX-R15
 import { LakeRunSystem } from '../gameplay/LakeRunSystem.js';
 import { GardenBuildSystem } from '../gameplay/GardenBuildSystem.js';
 import { GardenBuildMode } from '../ui/GardenBuildMode.js';
-import { GardenVegetationMask } from '../world/GardenVegetationMask.js?build=RING-R192-20261016A';
-import { CombatSystem } from '../gameplay/CombatSystem.js?build=UX-R157B1-20261011A';
+import { GardenVegetationMask } from '../world/GardenVegetationMask.js?build=RING-R193-20261016A';
+import { CombatSystem } from '../gameplay/CombatSystem.js?build=RING-R193-20261016A';
 import { isToolJob } from '../ui/actionIcons.js?build=UX-R157B1-20261011A';   // R142
-import { CharacterSwapSpot } from '../gameplay/CharacterSwapSpot.js?build=RING-R192-20261016A';   // R138
+import { CharacterSwapSpot } from '../gameplay/CharacterSwapSpot.js?build=RING-R193-20261016A';   // R138
 import { ImpactFx } from '../gameplay/ImpactFx.js?build=UX-R157B1-20261011A';   // R129 FX layer
-import { EquippedToolVisual } from '../gameplay/EquippedToolVisual.js?build=RING-R192-20261016A';
+import { EquippedToolVisual } from '../gameplay/EquippedToolVisual.js?build=RING-R193-20261016A';
 
 export class Game {
   async init({characterId='succulent',devMode=false}={}){
     this.state=new GameState();this.state.player.characterId=characterId;this.registry=new AssetRegistry(characterCatalog);this.uTime={value:0};
     this.renderer=new THREE.WebGLRenderer({antialias:true,powerPreference:'high-performance',preserveDrawingBuffer:false});this.renderer.info.autoReset=false;   // R189: reset once per frame in frame(), so the counts cover the whole frame (bloom passes included)
+    // R193 Fase 1c: shadow-pass hooks (pre/post), so a system can draw a different set in the shadow map than in the view (the plants do)
+    this.shadowHooks=[];{const sm=this.renderer.shadowMap,orig=sm.render.bind(sm);sm.render=(...args)=>{for(const h of this.shadowHooks)try{h.pre();}catch{}try{orig(...args);}finally{for(const h of this.shadowHooks)try{h.post();}catch{}}};}
     this.renderer.setPixelRatio(Math.min(devicePixelRatio,2));this.renderer.setSize(innerWidth,innerHeight,false);
     this.renderer.outputColorSpace=THREE.SRGBColorSpace;this.renderer.toneMapping=THREE.ACESFilmicToneMapping;this.renderer.toneMappingExposure=1.02;
     this.renderer.setClearColor(0xdde5d3,1);this.renderer.shadowMap.enabled=true;this.renderer.shadowMap.type=THREE.PCFSoftShadowMap;
@@ -380,10 +382,27 @@ this.workbenchPanel.show();this.input.resetTouchPointers?.();};
     try{this.frameStep();}catch(e){if(!this._frameWarned){this._frameWarned=1;warn('FRAME','frame step failed; rendering continues',e);}}
     const t1=performance.now();
     // R145: the context can be lost a frame before 'webglcontextlost' fires; three.js then throws on a program's first use
+    const hidden=this.hideOtherSpace();   // R193 Fase 1c: the world's stable, orangery, cabin and animals are not drawn (or shadowed) while in the garden
     if(!this.renderer.getContext().isContextLost()){let post=false;try{post=!!this.postFx?.render?.();}catch(e){warn('POST','post pass failed; plain render',e);this.postFx=null;}if(!post)this.renderer.render(this.scene,this.camera);}   // R165: the premium Ring's bloom (desktop, garden), else plain
     this.perfProbe?.frame(t1-t0,performance.now()-t1);   // R189 Fase 0
     this.perfHud?.tick();
+    for(const o of hidden)o.visible=true;
   }
+  // R193: scene-level roots that belong to the shared world (the world's own root is hidden by setSpace already). Hidden only for the
+  // render (their systems keep their own visibility; raycasts and logic in frameStep see them as before).
+  hideOtherSpace(){const out=this._hidOut||(this._hidOut=[]);out.length=0;
+    if(this.world?.space==='garden'){for(const c of this.scene.children)if(c.visible&&/^(NORTH_STABLE_ROOT|ORANGERY_SHARED_HUB|FISHING_V1_|Wildlife_|WORLD_)/.test(c.name||'')){c.visible=false;out.push(c);}return out;}
+    // R193 Fase 1c: in the world, what lies wholly behind the fog is pure fog colour, so it is not drawn: the stable's people and horses,
+    // the orangery's parts, each wilds node and combat group, the animals. Fog depth is view depth (as three.js computes it), so an object
+    // is skipped when its nearest point along the camera's forward axis is past fog.far.
+    const fog=this.scene.fog;if(!fog||fog.isFogExp2||!(fog.far>0))return out;
+    const now=performance.now();if(!this._fogList||now-this._fogListT>2000){this._fogListT=now;const L=this._fogList=[];const kids=n=>{const r=this.scene.getObjectByName(n);if(r)for(const c of r.children)L.push(c);};
+      kids('NORTH_STABLE_ROOT');kids('ORANGERY_SHARED_HUB');kids('WILDS_CORE_LOOP');kids('WILDS_COMBAT');for(const c of this.scene.children)if(/^Wildlife_/.test(c.name||''))L.push(c);}
+    const cam=this.camera,cp=this._fogCP||(this._fogCP=new THREE.Vector3()),fw=this._fogFW||(this._fogFW=new THREE.Vector3()),v=this._fogV||(this._fogV=new THREE.Vector3()),box=this._fogBox||(this._fogBox=new THREE.Box3()),sph=this._fogS||(this._fogS=new THREE.Sphere());
+    cam.getWorldPosition(cp);cam.getWorldDirection(fw);
+    for(const o of this._fogList){if(!o.visible||!o.parent)continue;let r=o.userData.r193r;if(r==null||now-(o.userData.r193t||0)>5000){box.setFromObject(o);if(box.isEmpty())continue;box.getBoundingSphere(sph);o.getWorldPosition(v);r=o.userData.r193r=sph.radius+sph.center.distanceTo(v);o.userData.r193t=now;}
+      o.getWorldPosition(v);if(v.sub(cp).dot(fw)-r>fog.far){o.visible=false;out.push(o);}}
+    return out;}
   frameStep(){
     if (this.tabGuard && !this.tabGuard.canWrite()) { this.tabGuard.lose(); return; } // R157A: no progression in losing tab
     const rawDt=this.clock.getDelta();this.quality?.sample(rawDt);const dt=Math.min(rawDt,1/20)*(this.run('fxstop',()=>this.fx?.timeScale(rawDt))??1);   /* R129 hit-stop */this.time+=dt;this.uTime.value=this.time;this.input.update();

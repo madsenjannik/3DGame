@@ -10,8 +10,9 @@ import { MATERIALS, NODE_KINDS, TOOLS, HOME_UPGRADES, RULES, PASSIVES, PERKS, GO
 import { WildsThreatSystem } from './WildsThreatSystem.js?build=SAVE-R157A-20261011A';
 import { DailyRequests } from './DailyRequests.js?build=SAVE-R157A-20261011A';
 import { GardenPotsSystem } from './GardenPotsSystem.js?build=SAVE-R157A-20261011A';
-import { loadWildsModels, loadGardenModels, WildsModel } from './WildsModels.js';
-import { WORKSHOP_UPGRADES, WORKSHOP_FILES, WORKSHOP_SCALE, WORKSHOP_V2_FILES, WORKSHOP_V2_SCALE, workshopV2 } from '../data/workshopCatalog.js?build=RING-R192-20261016A';   // R144, R173
+import { loadWildsModels, loadGardenModels, WildsModel, WILDS_MODELS } from './WildsModels.js';
+import { WildsFarProxy } from './WildsFarProxy.js?build=RING-R193-20261016A';   // R193 Fase 1c
+import { WORKSHOP_UPGRADES, WORKSHOP_FILES, WORKSHOP_SCALE, WORKSHOP_V2_FILES, WORKSHOP_V2_SCALE, workshopV2 } from '../data/workshopCatalog.js?build=RING-R193-20261016A';   // R144, R173
 import { loadGLTF } from '../core/AssetManager.js';
 import { perkPrice } from '../data/economyCatalog.js?build=SAVE-R157A-20261011A';   // R148
 import { FIXED_HEDGE as HEDGE } from '../data/gardenCatalog.js';
@@ -618,6 +619,27 @@ export class WildsLoopSystem {
       }
     }
     this.modelsReady = true;
+    try { this.setupFar(models); } catch (e) { console.warn('[TGW] wilds far copies off', e); this.far = null; }
+  }
+  // R193 Fase 1c: beyond 45 m (where the model's animation already stops) each node / thicket / cache is drawn by one shared frozen copy
+  // per kind (WildsFarProxy) instead of its own ~25 parts
+  setupFar(models) {
+    const F = this.far = new WildsFarProxy(this.root), n = {}; for (const node of this.nodes) n[node.kind] = (n[node.kind] || 0) + 1;
+    for (const [kind, c] of Object.entries(n)) if (models[kind] && WILDS_MODELS[kind]) F.kind(kind, models[kind], WILDS_MODELS[kind].scale, 'Idle', c);
+    const g = this.thorns.filter(t => GOLDEN_CACHES.includes(t.id)).length, a = this.thorns.length - g;
+    if (models.thicket && this.thorns.length) F.kind('thicket', models.thicket, WILDS_MODELS.thicket.scale, 'Idle', this.thorns.length);
+    if (models.golden && g) F.kind('golden', models.golden, WILDS_MODELS.golden.scale, 'Closed', g);
+    if (models.amber && a) F.kind('amber', models.amber, WILDS_MODELS.amber.scale, 'Closed', a);
+    this.farT = 1;
+  }
+  farTick(dt, px, pz) {
+    const F = this.far; if (!F) return; this.farT += dt; if (this.farT < .25) return; this.farT = 0; F.begin(); const FAR = 45;
+    const use = (m, key, ok) => { let on = false; if (ok && m && !m.busy()) { m.root.updateWorldMatrix(true, false); on = F.add(key, m.root.matrixWorld); } if (m) m.root.visible = !on; };
+    for (const node of this.nodes) use(node.model, node.kind, node.root.visible && node.body.visible && node.state === 'ready' && node.near < .02 && Math.hypot(px - node.x, pz - node.z) > FAR);
+    for (const t of this.thorns) { const far = Math.hypot(px - t.x, pz - t.z) > FAR;
+      use(t.thicket, 'thicket', t.phase === 'wild' && t.brush.visible && far);
+      use(t.cacheModel, GOLDEN_CACHES.includes(t.id) ? 'golden' : 'amber', (t.phase === 'wild' || t.phase === 'cleared') && t.cache.visible && far); }
+    F.end();
   }
 
   clearThorn(t) {
@@ -686,6 +708,7 @@ export class WildsLoopSystem {
     this.daily?.update();
     this.threat?.tick(now);
     if (space === 'garden') return this.updateGarden(dt, time, character, offer, () => best);
+    try { this.farTick(dt, px, pz); } catch (e) { console.warn('[TGW] wilds far copies off', e); if (this.far) { for (const nd of this.nodes) if (nd.model) nd.model.root.visible = true; for (const t of this.thorns) { if (t.thicket) t.thicket.root.visible = true; if (t.cacheModel) t.cacheModel.root.visible = true; } this.far.root.removeFromParent(); this.far = null; } }   // R193
 
     for (const node of this.nodes) {
       if (!node.root.visible) continue;
