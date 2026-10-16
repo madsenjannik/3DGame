@@ -110,27 +110,36 @@ export function laneRect(center, yaw) { const w = (x, z) => new V3(x * K, 0, z *
 // R169: Jannik's GLB plants (assets/garden/plants: bush_a-c, tree_a-c, fern_a-b; <Name>_LOD0/_LOD1, materials Bark/Leaves,
 // COLOR_0.r = wind weight). Each plant is drawn instanced per (kind, LOD, material); every 0.25 s each placement takes LOD0 near
 // the camera and LOD1 further away. Wind comes from the plant's own vertex weight (material.vertexColors stays off).
-const PLANT_NEAR = { tree: 30, bush: 15, fern: 10 }, PLANT_AMP = { tree: .14, bush: .05, fern: .05 };
+const PLANT_AMP = { tree: .14, bush: .05, fern: .05 };
+// R190 (Jannik's v5 plants): LOD by the plant's own height h = max(height, 1.5 m): LOD1 from 4.5 h, LOD2 from 13 h, 5 % hysteresis,
+// a 0.3 s dithered cross-fade between steps, no shadows from LOD2
+const LOD_D1 = 4.5, LOD_D2 = 13, LOD_HYST = .05, LOD_FADE = .3;
 const plantType = k => k.startsWith('tree') ? 'tree' : k.startsWith('bush') ? 'bush' : 'fern';
 function preparePlants(gltfs, U) {
   const out = {};
   for (const [kind, gltf] of Object.entries(gltfs || {})) { try {
-    const sc = gltf.scene; sc.updateMatrixWorld(true); const lod = [[], []], mats = new Set(); let box = new THREE.Box3();
-    sc.traverse(o => { if (!o.isMesh) return; let L = -1; for (let q = o; q; q = q.parent) { if (/_LOD0$/.test(q.name)) { L = 0; break; } if (/_LOD1$/.test(q.name)) { L = 1; break; } } if (L < 0) return;
+    const sc = gltf.scene; sc.updateMatrixWorld(true); const lod = [[], [], []], mats = new Set(); let box = new THREE.Box3();
+    sc.traverse(o => { if (!o.isMesh) return; let L = -1; for (let q = o; q; q = q.parent) { const m = /_LOD([012])$/.exec(q.name); if (m) { L = +m[1]; break; } } if (L < 0) return;
       const g = o.geometry.clone().applyMatrix4(o.matrixWorld); if (L === 0) { g.computeBoundingBox(); box.union(g.boundingBox); } lod[L].push({ geometry: g, material: o.material }); mats.add(o.material); });
-    if (!lod[0].length) continue; if (!lod[1].length) lod[1] = lod[0];
+    if (!lod[0].length) continue; if (!lod[1].length) lod[1] = lod[0]; if (!lod[2].length) lod[2] = lod[1];   // R190: v5 files have LOD0/1/2; older two-step files reuse their far step
     const amp = PLANT_AMP[plantType(kind)];
-    for (const m of mats) { m.vertexColors = false; m.onBeforeCompile = sh => { sh.uniforms.uTime = U.time;
-      sh.vertexShader = 'uniform float uTime;\nattribute vec3 color;\n' + sh.vertexShader.replace('#include <begin_vertex>', `#include <begin_vertex>
+    for (const m of mats) { m.vertexColors = false; const leaf = /leaves/i.test(m.name || '') || m.alphaTest > 0; m.onBeforeCompile = sh => { sh.uniforms.uTime = U.time;
+      // R190 (v5 spec): the leaf cards are lit with the same normal on both sides (no faceDirection flip, else the backs go dark), and every
+      // instance carries a fade (aFade) for the dithered LOD cross-fade: 1 = whole, 0..1 = fading in, -1..0 = fading out (complementary dither)
+      sh.vertexShader = 'uniform float uTime;\nattribute vec3 color;\nvarying float vFade;\n#ifdef USE_INSTANCING\nattribute float aFade;\n#endif\n' + sh.vertexShader.replace('#include <begin_vertex>', `#include <begin_vertex>
  #ifdef USE_INSTANCING
  vec2 wp = vec2(instanceMatrix[3][0], instanceMatrix[3][2]);
+ vFade = aFade;
  #else
  vec2 wp = vec2(0.0);
+ vFade = 1.0;
  #endif
  float wk = color.r * ${amp.toFixed(3)};
  transformed.x += sin(uTime * 1.6 + wp.x * 1.3 + wp.y * .7 + position.y * .6) * wk;
- transformed.z += cos(uTime * 1.2 + wp.y * 1.1 + position.y * .4) * wk * .6;`); };
-      m.customProgramCacheKey = () => `r169-plant-${amp}`; }
+ transformed.z += cos(uTime * 1.2 + wp.y * 1.1 + position.y * .4) * wk * .6;`);
+      sh.fragmentShader = 'varying float vFade;\nfloat tgwBayer(vec2 p){ivec2 i=ivec2(mod(p,4.));int k=i.x+i.y*4;float m[16]=float[16](0.,8.,2.,10.,12.,4.,14.,6.,3.,11.,1.,9.,15.,7.,13.,5.);return (m[k]+.5)/16.;}\n' + sh.fragmentShader.replace('void main() {', 'void main() {\n if (vFade < .999) { float b = tgwBayer(gl_FragCoord.xy); if (vFade < 0. ? b < -vFade : b >= vFade) discard; }');
+      if (leaf) sh.fragmentShader = sh.fragmentShader.replace('#include <normal_fragment_begin>', THREE.ShaderChunk.normal_fragment_begin.replace('normal *= faceDirection;', '')); };
+      m.customProgramCacheKey = () => `r190-plant-${amp}-${leaf ? 1 : 0}`; }
     const size = box.getSize(new V3()); out[kind] = { lod, h: size.y || 1, w: Math.max(size.x, size.z) || 1, type: plantType(kind) };
   } catch (e) { console.warn('[TGW] plant prepare failed', kind, e); } }
   return out;
@@ -138,20 +147,36 @@ function preparePlants(gltfs, U) {
 class PlantField {
   constructor(g, P, tier, opt = {}) { this.opt = opt; this.g = g; this.P = P; this.tier = tier; this.items = []; this.ims = {}; this.root = new THREE.Group(); this.root.name = 'R158_PLANTS'; this.t = 1; this.cam = new V3(); }
   has(k) { return !!this.P[k]; } h(k) { return this.P[k].h; } w(k) { return this.P[k].w; }
-  add(kind, x, y, z, ry, s, ref = null) { if (!this.P[kind]) return false; this.items.push({ kind, ref, p: new V3(x, y, z), m: new THREE.Matrix4().compose(new V3(x, y, z), new THREE.Quaternion().setFromAxisAngle(new V3(0, 1, 0), ry), new V3(s, s, s)), big: this.P[kind].h * s > 3 }); return true; }
+  add(kind, x, y, z, ry, s, ref = null) { if (!this.P[kind]) return false; const h = Math.max(this.P[kind].h * s, 1.5); this.items.push({ kind, ref, p: new V3(x, y, z), m: new THREE.Matrix4().compose(new V3(x, y, z), new THREE.Quaternion().setFromAxisAngle(new V3(0, 1, 0), ry), new V3(s, s, s)), d1: LOD_D1 * h, d2: LOD_D2 * h, L: -1, from: -1, t: 1 }); return true; }
   build(parent) {
     const n = {}; for (const it of this.items) n[it.kind] = (n[it.kind] || 0) + 1; const desk = this.tier === 'desktop';
-    for (const [kind, cnt] of Object.entries(n)) { const P = this.P[kind]; this.ims[kind] = P.lod.map((parts, L) => parts.map(pt => { const im = new THREE.InstancedMesh(pt.geometry, pt.material, cnt); im.count = 0; im.frustumCulled = false; im.receiveShadow = true; im.castShadow = desk && P.type !== 'fern' && !(this.opt.nearShadowOnly && L > 0); this.root.add(im); return im; })); }
-    parent.add(this.root); this.refresh();
+    // each instanced mesh gets its own light geometry wrapper (shared buffers) so its per-instance fade does not touch the other plant field
+    for (const [kind, cnt] of Object.entries(n)) { const P = this.P[kind]; this.ims[kind] = P.lod.map((parts, L) => parts.map(pt => {
+      const g = new THREE.BufferGeometry(); for (const [k, a] of Object.entries(pt.geometry.attributes)) g.setAttribute(k, a); g.setIndex(pt.geometry.index); g.boundingSphere = pt.geometry.boundingSphere; g.boundingBox = pt.geometry.boundingBox;
+      const fade = new THREE.InstancedBufferAttribute(new Float32Array(cnt * 2).fill(1), 1); fade.setUsage(THREE.DynamicDrawUsage); g.setAttribute('aFade', fade);
+      const im = new THREE.InstancedMesh(g, pt.material, cnt * 2); im.count = 0; im.frustumCulled = false; im.receiveShadow = true; im.castShadow = desk && P.type !== 'fern' && L < 2 && !(this.opt.nearShadowOnly && L > 0); im.fade = fade; this.root.add(im); return im; })); }
+    parent.add(this.root); this.refresh(0);
   }
-  refresh() {
-    const cam = this.g.camera; if (cam) cam.getWorldPosition(this.cam); const c = {};
-    for (const kind of Object.keys(this.ims)) c[kind] = [0, 0];
-    for (const it of this.items) { if (it.ref?.hidden) continue; const L = it.p.distanceTo(this.cam) < PLANT_NEAR[this.P[it.kind].type] * (it.big ? 1.3 : 1) ? 0 : 1, k = c[it.kind][L]++; for (const im of this.ims[it.kind][L]) im.setMatrixAt(k, it.m); }
-    for (const [kind, arr] of Object.entries(this.ims)) arr.forEach((parts, L) => parts.forEach(im => { im.count = c[kind][L]; im.instanceMatrix.needsUpdate = true; }));
+  // LOD choice with hysteresis; a change starts a cross-fade (drawn in both steps for LOD_FADE seconds with complementary dither)
+  pick(it, d) { const up = 1 + LOD_HYST, dn = 1 - LOD_HYST, L = it.L;
+    if (L < 0) return d < it.d1 ? 0 : d < it.d2 ? 1 : 2;
+    if (L === 0) return d > it.d2 * up ? 2 : d > it.d1 * up ? 1 : 0;
+    if (L === 1) return d < it.d1 * dn ? 0 : d > it.d2 * up ? 2 : 1;
+    return d < it.d1 * dn ? 0 : d < it.d2 * dn ? 1 : 2; }
+  refresh(dt, decide = true) {
+    const cam = this.g.camera; if (cam) cam.getWorldPosition(this.cam); const c = {}; let fading = false;
+    for (const kind of Object.keys(this.ims)) c[kind] = [0, 0, 0];
+    const put = (it, L, f) => { const k = c[it.kind][L]++; for (const im of this.ims[it.kind][L]) { im.setMatrixAt(k, it.m); im.fade.setX(k, f); } };
+    for (const it of this.items) { if (it.ref?.hidden) { it.L = -1; continue; }
+      if (decide) { const L = this.pick(it, it.p.distanceTo(this.cam)); if (it.L < 0) { it.L = L; it.t = 1; } else if (L !== it.L) { it.from = it.L; it.L = L; it.t = 0; } }
+      if (it.t < 1) { it.t = Math.min(1, it.t + dt / LOD_FADE); }
+      if (it.t < 1 && it.from >= 0) { fading = true; put(it, it.L, Math.max(it.t, 0)); put(it, it.from, -Math.max(it.t, .001)); } else put(it, it.L, 1); }
+    for (const [kind, arr] of Object.entries(this.ims)) arr.forEach((parts, L) => parts.forEach(im => { im.count = c[kind][L]; im.instanceMatrix.needsUpdate = true; im.fade.needsUpdate = true; }));
+    this.fading = fading;
   }
-  update(dt) { this.t += dt; if (this.t < .25) return; this.t = 0; this.refresh(); }
-  stats() { let n = 0; for (const arr of Object.values(this.ims)) for (const parts of arr) n += parts[0]?.count || 0; return { placed: this.items.length, drawn: n }; }
+  // decisions every 0.25 s as before; while a cross-fade runs the instance data is rewritten every frame until it ends
+  update(dt) { this.t += dt; if (this.t >= .25) { const d = this.t; this.t = 0; this.refresh(Math.min(d, .25), true); } else if (this.fading) this.refresh(dt, false); }
+  stats() { let n = 0; const lod = [0, 0, 0]; for (const arr of Object.values(this.ims)) arr.forEach((parts, L) => { n += parts[0]?.count || 0; lod[L] += parts[0]?.count || 0; }); return { placed: this.items.length, drawn: n, lod }; }
 }
 
 // R165: the concept's bloom (strength .32, radius .45, threshold 2.1: only the glow blooms) + a soft vignette, desktop only, garden only.
