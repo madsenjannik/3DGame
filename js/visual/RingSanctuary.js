@@ -557,7 +557,7 @@ const LEAF_BUDGET = { 'desktop': 1, 'mobile-high': .4, 'mobile-low': .25 };
 
 export class RingEnvironment {
   constructor(sanctuary) {
-    this.S = sanctuary; this.g = sanctuary.g; this.W = this.g.world; this.undo = []; rnd = rng(23);
+    this.S = sanctuary; this.g = sanctuary.g; this.W = this.g.world; this.undo = []; this.links = []; rnd = rng(23);
     this.root = new THREE.Group(); this.root.name = 'R158_RING_ENVIRONMENT'; this.W.privateRoot.add(this.root);
     this.leaves = []; this.bark = []; this.birch = []; this.reeds = []; this.cattails = []; this.rocksAt = []; this.ferns = [];
     this.tier = sanctuary.tierId; const k = LEAF_BUDGET[this.tier] ?? 1; this.leafK = k; this.leafSize = 1 / Math.sqrt(Math.max(.3, k));
@@ -570,6 +570,17 @@ export class RingEnvironment {
   }
   H(x, z) { return this.W.groundHeight?.(x, z) || 0; }
   hide(o) { if (!o || !o.visible) return; o.visible = false; this.undo.push(() => { o.visible = true; }); }
+  // R192 (Jannik 16/10: 'suddenly a stone inside the workbench'): the concept copies of the garden's stones and bed shrubs were made once and
+  // never heard of the vegetation mask, which hides a stone/shrub instance (zero scale) under a structure the player has moved there. Each
+  // copy now remembers its source instance and shows or hides with it after every mask apply.
+  srcMatrix(o, i, out) { const e = this.g.vegetationMask?.meshes?.find(m => m.mesh === o); if (e) return out.fromArray(e.original, i * 16); o.getMatrixAt(i, out); return out; }   // the authored transform, even if masked now
+  link(src, i, set) { this.links.push({ src, i, set }); }
+  syncMask() { const m = new THREE.Matrix4(), dirty = new Set();
+    for (const L of this.links) { L.src.getMatrixAt(L.i, m); const e = m.elements, hidden = Math.hypot(e[0], e[1], e[2]) < 1e-4; if (L.hidden === hidden) continue; L.hidden = hidden; const d = L.set(hidden); if (d) dirty.add(d); }
+    for (const im of dirty) im.instanceMatrix.needsUpdate = true; }
+  hookMask() { const vm = this.g.vegetationMask; if (!vm?.apply || vm.__r192) return; const orig = vm.apply; vm.__r192 = true;
+    vm.apply = (...a) => { const r = orig.apply(vm, a); try { this.syncMask(); } catch (e) { console.warn('[TGW] concept copies mask sync', e); } return r; };
+    this.undo.push(() => { vm.apply = orig; vm.__r192 = false; }); this.syncMask(); }
   // the concept's leaf clusters (cupped cards, darker inside, lighter on top) and tapered bark tubes
   cluster(cx, cy, cz, rad, n, base, vr, size, flat = .75) {
     n = Math.round(n * this.leafK); size *= this.leafSize; const Z = new V3(0, 0, 1), q2 = new THREE.Quaternion();
@@ -630,9 +641,9 @@ export class RingEnvironment {
   shrubs() {
     const m4 = new THREE.Matrix4(), v = new V3(), sc = new V3(), q = new THREE.Quaternion();
     for (const o of this.W.privateRoot.children) { if (!o.isInstancedMesh || o.geometry?.type !== 'IcosahedronGeometry') continue; const r = o.geometry.parameters.radius; if (r !== .55 && r !== .32) continue;
-      for (let i = 0; i < o.count; i++) { o.getMatrixAt(i, m4); m4.decompose(v, q, sc); if (sc.x < .01) continue; const rad = r * sc.x * 1.05;
-        const P = this.S.plants, k = ['bush_a', 'bush_b', 'bush_c'][(rnd() * 3) | 0];
-        if (P?.has(k) && P.add(k, v.x, this.H(v.x, v.z), v.z, R(0, 6.28), rad * 2.1 / P.h(k))) continue;
+      for (let i = 0; i < o.count; i++) { this.srcMatrix(o, i, m4); m4.decompose(v, q, sc); if (sc.x < .01) continue; const rad = r * sc.x * 1.05;
+        const P = this.S.plants, k = ['bush_a', 'bush_b', 'bush_c'][(rnd() * 3) | 0], ref = { hidden: false };
+        if (P?.has(k) && P.add(k, v.x, this.H(v.x, v.z), v.z, R(0, 6.28), rad * 2.1 / P.h(k), ref)) { this.link(o, i, h => { ref.hidden = h; return null; }); continue; }
         this.cluster(v.x, v.y + rad * .1, v.z, rad, r === .55 ? 150 : 55, '#33502a', '#6f8a3a', r === .55 ? .17 : .12, .75); }
       this.hide(o); }
   }
@@ -664,9 +675,10 @@ export class RingEnvironment {
   rocks() {
     const geos = this.S.rockGeos; if (!geos?.length) return; const list = geos.map(() => []), m4 = new THREE.Matrix4();
     this.W.privateRoot.traverse(o => { if (!o.visible || o.geometry?.type !== 'DodecahedronGeometry' || o.parent?.name?.startsWith('R15')) return;
-      if (o.isInstancedMesh) { for (let i = 0; i < o.count; i++) { o.getMatrixAt(i, m4); const e = m4.elements; if (Math.hypot(e[0], e[1], e[2]) < .01) continue; list[(rnd() * geos.length) | 0].push(m4.clone().premultiply(o.matrixWorld)); } this.hide(o); return; }
-      if (o.isMesh && o.scale.y > .07) { o.updateWorldMatrix(true, false); list[(rnd() * geos.length) | 0].push(o.matrixWorld.clone()); this.hide(o); } });
-    list.forEach((L, k) => { if (!L.length) return; const im = new THREE.InstancedMesh(geos[k], this.S.m.rock, L.length); L.forEach((mm, i) => im.setMatrixAt(i, mm)); im.castShadow = this.tier === 'desktop'; im.receiveShadow = true; this.root.add(im); });
+      if (o.isInstancedMesh) { for (let i = 0; i < o.count; i++) { this.srcMatrix(o, i, m4); const e = m4.elements; if (Math.hypot(e[0], e[1], e[2]) < .01) continue; list[(rnd() * geos.length) | 0].push({ m: m4.clone().premultiply(o.matrixWorld), src: o, i }); } this.hide(o); return; }
+      if (o.isMesh && o.scale.y > .07) { o.updateWorldMatrix(true, false); list[(rnd() * geos.length) | 0].push({ m: o.matrixWorld.clone() }); this.hide(o); } });
+    const ZERO = new THREE.Matrix4().makeScale(0, 0, 0);
+    list.forEach((L, k) => { if (!L.length) return; const im = new THREE.InstancedMesh(geos[k], this.S.m.rock, L.length); L.forEach((it, j) => { im.setMatrixAt(j, it.m); if (it.src) this.link(it.src, it.i, h => { im.setMatrixAt(j, h ? ZERO : it.m); return im; }); }); im.castShadow = this.tier === 'desktop'; im.receiveShadow = true; this.root.add(im); });
   }
   // R168: the older 'foundation sample' grey stones (icosahedrons) by the pond and the side path: big -> concept rocks, flat -> flagstones
   oldStones() {
@@ -783,7 +795,7 @@ export class RingEnvironment {
     im.receiveShadow = true; im.name = 'R167_MEADOW'; im.frustumCulled = false; this.meadowMesh = im; this.meadowAll = items.length;
     const grp = new THREE.Group(); grp.name = 'R167_MEADOW_ROOT'; grp.add(im); W.privateRoot.add(grp); this.undo.push(() => grp.removeFromParent());
     this.setTier(this.tier);
-    try { this.g.vegetationMask?.apply?.(); } catch {}   // grass under a moved structure is hidden like the garden's own
+    try { this.hookMask(); this.g.vegetationMask?.apply?.(); } catch {}   // grass under a moved structure is hidden like the garden's own; R192: the concept stones and shrubs follow it too
   }
   grassTint() {
     this.W.privateRoot.traverse(o => { if (o.userData?.calmType !== 'grass' || !o.material?.color) return; const m = o.material, c0 = m.color.clone(); m.color.set('#bdb87c'); this.undo.push(() => m.color.copy(c0)); });
