@@ -2,6 +2,7 @@ import { layoutMapLabels } from './MapLabelLayout.js?build=GAMEPLAY-R157B-202610
 // worldmap.js — in-game minimap + fullscreen world map (M). No dependencies.
 // World coords = SharedLandscape.js coords (x right/east, z down/south, metres). Heading h: forward = (sin h, cos h) = three.js rotation.y.
 let W0={x:60,z:-40},WL=-.9,HALF=250,WR=188;
+const SHED={x:0,z:4.7};   // R195: the world home's spot (PlayerHomePortalSystem places every character's shed there)
 let ORG={x:60,z:-40,rot:0.8685393952858896,r:12},LK={x:95,z:20,r:26},PD={x:30,z:72,r:7},MD={x:78,z:95,r:24},VP={x:-62,z:-70};
 let WF={x:18,z:113,dx:-3/Math.hypot(3,8),dz:8/Math.hypot(3,8)},CAB={x:118.2,z:3.1,hx:2.58,hz:3.08,y:.35};CAB.rot=Math.atan2(-(LK.z-CAB.z),LK.x-CAB.x);
 let BR={x:65,z:46.5,dx:17/Math.hypot(17,14),dz:14/Math.hypot(17,14),half:5.2,w:.95};
@@ -22,7 +23,7 @@ export function configure(L){if(!L)return;
   if(L.stable){STB={x:L.stable.x,z:L.stable.z-10};STC={x:L.stable.x,z:L.stable.z-17,r:30};}
   if(typeof L.worldHeight==='function')extHeight=(x,z)=>L.worldHeight(x,z);}
 
-export const LANDMARKS=()=>[['Orangery',ORG],['Cabin',CAB],['Lake',LK],['Bridge',BR],['Pond',PD],['Waterfall',WF],['Meadow',MD],['Lookout',VP],['Stable',STC],['Home Garden',{x:0,z:-2}]];
+export const LANDMARKS=()=>[['Orangery',ORG],['Cabin',CAB],['Lake',LK],['Bridge',BR],['Pond',PD],['Waterfall',WF],['Meadow',MD],['Lookout',VP],['Stable',STC],['Shed',{x:SHED.x,z:SHED.z}]];
 
 const clamp01=x=>Math.min(1,Math.max(0,x)),mix=(a,b,t)=>a+(b-a)*t,clamp=(v,a,b)=>v<a?a:v>b?b:v;
 const smooth=(a,b,x)=>{const t=clamp01((x-a)/(b-a));return t*t*(3-2*t);};
@@ -89,8 +90,11 @@ export function bakeBaseMap(){const cv=document.createElement('canvas');cv.width
     g.fillStyle='#7c3a2c';g.fillRect(-CAB.hx*P,-CAB.hz*P,CAB.hx*2*P,CAB.hz*2*P);g.fillStyle='#5e2a20';g.fillRect(-CAB.hx*P,-.2*P,CAB.hx*2*P,.4*P);g.restore();
   g.fillStyle='#8e8a7e';const vr=mulberry32(5);for(let i=0;i<9;i++){const a=i/9*6.283,r=3.2+vr()*2.3;g.beginPath();g.arc(cx(VP.x+Math.cos(a)*r),cz(VP.z+Math.sin(a)*r),(.4+vr()*.5)*P,0,6.283);g.fill();}
   g.fillStyle='#b9b4a6';g.beginPath();g.arc(cx(VP.x),cz(VP.z),.9*P,0,6.283);g.fill();
-  g.fillStyle='#86ad5c';g.fillRect(cx(-12.55),cz(-13.55),25.1*P,25.4*P);g.strokeStyle='#7a6448';g.lineWidth=3;g.strokeRect(cx(-12.55),cz(-13.55),25.1*P,25.4*P);
-  g.fillStyle='#6b5038';[[-9,-10,5,14],[-2.5,-10,5,14]].forEach(([x,z,w,h])=>g.fillRect(cx(x),cz(z),w*P,h*P));g.fillStyle='#5f8fa0';g.beginPath();g.arc(cx(6),cz(-4),1.6*P,0,6.283);g.fill();
+  // R195 (Jannik 16/10: 'the home garden should not be a square on the map, just SHED'): the private garden is not in the shared world;
+  // the world shows the player's shed (round, ~4 m) in its round yard, with the door facing the path
+  g.fillStyle='#86ad5c';g.beginPath();g.arc(cx(SHED.x),cz(SHED.z+1.6),5.4*P,0,6.283);g.fill();g.strokeStyle='#7a6448';g.lineWidth=3;g.stroke();
+  g.fillStyle='#efe6cf';g.beginPath();g.arc(cx(SHED.x),cz(SHED.z),2.2*P,0,6.283);g.fill();g.strokeStyle='#5d8a3a';g.lineWidth=5;g.stroke();
+  g.fillStyle='#4e7d34';g.beginPath();g.arc(cx(SHED.x),cz(SHED.z),1.2*P,0,6.283);g.fill();g.fillStyle='#7a5a3c';g.fillRect(cx(SHED.x-.5),cz(SHED.z+1.8),1*P,.9*P);
   g.save();g.translate(cx(STB.x),cz(STB.z));g.rotate(Math.PI);g.scale(P,P);
     const stad=r=>{g.beginPath();g.moveTo(-16,8-r);g.lineTo(16,8-r);g.arc(16,8,r,-Math.PI/2,Math.PI/2);g.lineTo(-16,8+r);g.arc(-16,8,r,Math.PI/2,Math.PI*1.5);g.closePath();};
     g.fillStyle='#7f9a4c';stad(19.5);g.fill();g.strokeStyle='#b89a70';g.lineWidth=3.6;stad(16);g.stroke();
@@ -151,7 +155,7 @@ export class WorldMap{
     const up=e=>{pts.delete(e.pointerId);startG();if(!pts.size)this.fc.style.cursor='grab';};this.fc.addEventListener('pointerup',up);this.fc.addEventListener('pointercancel',up);
     this.fc.addEventListener('wheel',e=>{e.preventDefault();this.follow=false;const r=this.fc.getBoundingClientRect(),mx=e.clientX-r.left-r.width/2,my=e.clientY-r.top-r.height/2,f=this._fv,wx=f.x+mx/f.s,wz=f.z+my/f.s;f.s=this._clampS(f.s*Math.exp(-e.deltaY*.0015));f.x=wx-mx/f.s;f.z=wz-my/f.s;this._clampView();},{passive:false});
     const cont=this.o.container;if(getComputedStyle(cont).position==='static')cont.style.position='relative';cont.appendChild(mini);cont.appendChild(tag);cont.appendChild(full);this._layout();}
-  _minS(){const r=this.full.getBoundingClientRect();return Math.max(r.width,r.height)/(2*(WR+8));}
+  _minS(){const r=this.full.getBoundingClientRect();return Math.min(r.width,r.height)/(2*(WR+8));}   // R195: zoom out until the whole world fits the shorter side (was the longer: top and bottom cut off)
   _clampS(s){return clamp(s,this._minS(),12);}
   _clampView(){const f=this._fv,r=this.full.getBoundingClientRect(),lim=Math.max(0,WR+8-Math.min(r.width,r.height)/2/f.s),dx=f.x-W0.x,dz=f.z-W0.z,d=Math.hypot(dx,dz);if(d>lim){f.x=W0.x+dx/d*lim;f.z=W0.z+dz/d*lim;}}
   _sizeFull(){const r=this.full.getBoundingClientRect();this.fc.width=Math.max(1,r.width*this.dpr);this.fc.height=Math.max(1,r.height*this.dpr);if(this.isOpen){this._fv.s=this._clampS(this._fv.s);this._clampView();}}

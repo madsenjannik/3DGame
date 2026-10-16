@@ -103,7 +103,8 @@ function v2YardSegments(root,prefix){
   if(!root)return[];root.updateMatrixWorld(true);const base=new THREE.Vector3().setFromMatrixPosition(root.matrixWorld).y,C=.1,cells=new Map();
   const a=new THREE.Vector3(),b=new THREE.Vector3(),c=new THREE.Vector3(),q=new THREE.Vector3();
   for(const [part,lo,hi] of V2_YARD_SOLIDS){const o=root.getObjectByName(`${prefix}_${part}`);if(!o)continue;
-    o.traverse(m=>{if(!m.isMesh||!m.geometry?.attributes?.position)return;m.updateWorldMatrix(true,false);const pos=m.geometry.attributes.position,idx=m.geometry.index,n=idx?idx.count:pos.count;
+    o.traverse(m=>{if(!m.isMesh||!m.geometry?.attributes?.position)return;for(let q=m;q&&q!==root.parent;q=q.parent)if(!q.visible)return;   // R195: a part hidden in this copy (the garden's) is not solid
+      m.updateWorldMatrix(true,false);const pos=m.geometry.attributes.position,idx=m.geometry.index,n=idx?idx.count:pos.count;
       const mark=v=>{const y=v.y-base;if(y<lo||y>hi)return;cells.set(`${Math.floor(v.x/C)},${Math.floor(v.z/C)}`,1);};
       const edge=(p1,p2)=>{const L=p1.distanceTo(p2),k=Math.max(1,Math.ceil(L/.06));for(let t=0;t<=k;t++)mark(q.copy(p1).lerp(p2,t/k));};
       for(let t=0;t+2<n;t+=3){const ia=idx?idx.getX(t):t,ib=idx?idx.getX(t+1):t+1,ic=idx?idx.getX(t+2):t+2;
@@ -291,7 +292,7 @@ export class PlayerHomePortalSystem{
     if(!/_v2\.glb$/.test(this.assetUrl()))return;
     const rc=new THREE.Raycaster(),down=new THREE.Vector3(0,-1,0),o=new THREE.Vector3(),grid=root=>{
       if(!root)return null;root.updateMatrixWorld(true);const ms=[],caps=new Map();
-      for(const [n,cap] of [[`${this.prefix}_Yard_Stone`,.14],[`${this.prefix}_Shed_Stone`,.4]]){const g=root.getObjectByName(n);g?.traverse(m=>{if(m.isMesh){ms.push(m);caps.set(m,cap);}});}
+      for(const [n,cap] of [[`${this.prefix}_Yard_Stone`,.14],[`${this.prefix}_Shed_Stone`,.4]]){const g=root.getObjectByName(n);g?.traverse(m=>{if(m.isMesh){for(let q=m;q&&q!==root.parent;q=q.parent)if(!q.visible)return;   /* R195: hidden in this copy */ms.push(m);caps.set(m,cap);}});}
       if(!ms.length)return null;const box=new THREE.Box3();for(const m of ms)box.expandByObject(m);
       const S=.1,x0=box.min.x,z0=box.min.z,nx=Math.ceil((box.max.x-x0)/S)+1,nz=Math.ceil((box.max.z-z0)/S)+1,h=new Float32Array(nx*nz).fill(-Infinity),base=root.position.y;
       for(let i=0;i<nx;i++)for(let k=0;k<nz;k++){o.set(x0+i*S,box.max.y+1,z0+k*S);rc.set(o,down);const hit=rc.intersectObjects(ms,false)[0];if(hit&&hit.point.y-base<=caps.get(hit.object))h[i*nz+k]=hit.point.y;}

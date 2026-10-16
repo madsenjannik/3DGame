@@ -877,7 +877,22 @@ export class WorldEnvironment {
       if (it.o) { const r0 = it.o.r; it.o.r = Math.max(.3, trunkR(k) * s); this.undo.push(() => { it.o.r = r0; }); }
     }
     for (const m of L.forestMeshes || []) if (m && m.visible) { m.visible = false; this.undo.push(() => { m.visible = true; }); }
+    // R195 (Jannik 16/10: 'old trees at Root Bear'): the bear's grove is its own ring of the old low-poly conifers (RootBearBoss, built
+    // before this); they become concept trees on the same spots, their colliders shrink to the trunk like the forest's
+    const B = this.g.combat?.bear;
+    if (B?.groveTrees?.length) { B.groveTrees.forEach((t, i) => { const k = kinds.conifer[i % 2]; if (!P[k]) return; const s = 3.6 * t.s * 1.25 / P[k].h; f.add(k, t.x, t.y + .1, t.z, t.ry, s, null);
+        const o = B.groveObstacles?.[i]; if (o) { const r0 = o.r; o.r = Math.max(.3, trunkR(k) * s); this.undo.push(() => { o.r = r0; }); } });
+      for (const m of B.groveMeshes || []) if (m.visible) { m.visible = false; this.undo.push(() => { m.visible = true; }); } }
     f.build(L.root); this.undo.push(() => f.root.removeFromParent());
+  }
+  // R195: the grove's mossy Pure Poly rocks arrive later (their own GLB); once there they become concept rocks on the same transforms
+  groveRocks() {
+    if (this.groveRocksDone) return; const B = this.g.combat?.bear, geos = this.S.rockGeos; if (!B?.rockSpots?.length || !geos?.length) { if (!B) this.groveRocksDone = true; return; }
+    const objs = []; B.root?.traverse?.(o => { if (o.name === 'ROOT_BEAR_ROCK') objs.push(o); }); if (objs.length < B.rockSpots.length) return;
+    this.groveRocksDone = true; const im = new THREE.InstancedMesh(geos[0], this.S.m.rock, objs.length), m4 = new THREE.Matrix4(), q = new THREE.Quaternion(), v = new V3();
+    objs.forEach((o, i) => { const R = B.rockSpots[i] || { s: 1, ry: 0 }; o.updateWorldMatrix(true, false); v.setFromMatrixPosition(o.matrixWorld); q.setFromEuler(new THREE.Euler(0, R.ry, 0)); const k = 1.25 * R.s; m4.compose(v, q, new V3(k * 1.15, k * .8, k)); im.setMatrixAt(i, m4);
+      if (o.visible) { o.visible = false; this.undo.push(() => { o.visible = true; }); } });
+    im.castShadow = this.S.tierId === 'desktop'; im.receiveShadow = true; im.name = 'R195_GROVE_ROCKS'; this.L.root.add(im); this.undo.push(() => im.removeFromParent());
   }
   // the dry-stone walls and the viewpoint's boulders become the concept's rounded, moss-capped rocks on the same transforms
   stones() {
@@ -935,7 +950,7 @@ export class WorldEnvironment {
     w.sun.color.lerp(MOOD.sunC, k); w.sun.intensity = lerp(w.sun.intensity, MOOD.sunI, k);
     g.renderer.toneMappingExposure = lerp(g.renderer.toneMappingExposure, MOOD.exposure, k); if (s.environmentIntensity !== undefined) s.environmentIntensity = lerp(s.environmentIntensity, MOOD.env, k);
   }
-  update(dt) { this.mood(); this.field?.update(dt); this.grass?.update(dt); this.moteUpdate(Math.min(dt, .1)); }
+  update(dt) { this.mood(); this.field?.update(dt); this.grass?.update(dt); this.moteUpdate(Math.min(dt, .1)); if (!this.groveRocksDone && (this.grT = (this.grT || 0) + dt) > 2) { this.grT = 0; try { this.groveRocks(); } catch (e) { this.groveRocksDone = true; console.warn('[TGW] grove rocks', e); } } }
   restore() { try { this.grass?.dispose(); } catch {} this.grass = null; for (const f of this.undo.splice(0).reverse()) try { f(); } catch {} if (this.g.dayNight) this.g.dayNight.lastN = null; }
   stats() { return { trees: this.field?.items.length || 0, drawn: this.field?.stats().drawn || 0, rocks: this.rockCount || 0, grass: this.grass?.stats() }; }
 }
