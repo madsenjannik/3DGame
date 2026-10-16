@@ -24,6 +24,8 @@
       + '#tgw-premium-veil .pl-bud{transform-box:fill-box;transform-origin:50% 100%;transform:scale(0);transition:transform .8s ease}'
       + '#tgw-premium-veil .on{transform:scale(1)}#tgw-premium-veil .pl-stem.on{stroke-dashoffset:var(--o,0)}'
       + '#tgw-premium-veil .pl-line{min-height:1.4em;color:#3f4a36;font-weight:800;font-size:12px;letter-spacing:.2em;text-transform:uppercase;text-align:center;text-shadow:0 1px 0 rgba(255,250,236,.7);transition:opacity .45s ease}'
+      + '#tgw-premium-veil .pl-caret{display:inline-block;width:.55em;height:1em;margin-left:.15em;vertical-align:-.12em;background:#3f4a36;opacity:.75;animation:plCaret .9s steps(1) infinite}'
+      + '@keyframes plCaret{50%{opacity:0}}'
       + '@keyframes plDrift{to{transform:scale(1.12) translate(-1.5%,-1%)}}'
       + ''
       + '@keyframes plMote{0%{transform:translate(0,0);opacity:0}15%{opacity:.9}85%{opacity:.6}100%{transform:translate(var(--dx),-105vh);opacity:0}}'
@@ -41,12 +43,14 @@
       + '<path class="pl-leaf l2" d="M49 34 C42 33 37 28 36 22 C43 22 48 26 49 34Z" fill="#9ccb5e"/>'
       + '<g class="pl-bud"><ellipse cx="50" cy="12" rx="4" ry="5.5" fill="#e9a35a"/></g>'
       + '<g class="pl-bloom">' + [0, 72, 144, 216, 288].map(function (a) { return '<ellipse cx="50" cy="5" rx="4.6" ry="7.4" fill="#f3c46a" transform="rotate(' + a + ' 50 12)"/>'; }).join('') + '<circle cx="50" cy="12" r="3.6" fill="#c8603a"/></g>'
-      + '</svg><div class="pl-line">' + LINES[0] + '</div></div>';
+      + '</svg><div class="pl-line"></div></div>';
     document.body.appendChild(v);
     var line = v.querySelector('.pl-line'), stem = v.querySelector('.pl-stem'), leaves = v.querySelectorAll('.pl-leaf'), bud = v.querySelector('.pl-bud'), bloom = v.querySelector('.pl-bloom'), at = 0, gone = false;
-    var say = function (t) { line.style.opacity = '0'; setTimeout(function () { line.textContent = t; line.style.opacity = '1'; }, 300); };
+    // R196 (Jannik 16/10: 'the text may type / load too'): each line is typed letter by letter behind a blinking caret
+    var typing = null, say = function (t) { clearInterval(typing); var i = 0; line.innerHTML = '<span class="pl-t"></span><i class="pl-caret"></i>'; var out = line.firstChild;
+      typing = setInterval(function () { i++; out.textContent = t.slice(0, i); if (i >= t.length) clearInterval(typing); }, 38); };
     var show = function (n) { stem.style.setProperty('--o', String(Math.round(60 - 60 * Math.min(1, (n + 1) / 4)))); stem.classList.add('on'); for (var k = 0; k < leaves.length; k++) if (k < n) leaves[k].classList.add('on'); if (n >= 3) bud.classList.add('on'); };
-    requestAnimationFrame(function () { show(0); });
+    requestAnimationFrame(function () { show(0); say(LINES[0]); });
     var lift = function () { if (gone) return; gone = true; v.style.opacity = '0'; setTimeout(function () { v.remove(); }, 650); };
     window.TGW_LOAD = {
       stage: function (n) { if (gone || n <= at) return; at = n; show(n); say(LINES[Math.min(n, 3)]); },

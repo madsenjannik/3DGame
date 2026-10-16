@@ -1681,6 +1681,7 @@ are only touched where a measured hotspot requires it, minimally.
    failure. Must pass before every push (CLAUDE.md rule 5).
 
 **B status 02/10/2026: complete (R51–R57).** On-device check (iPhone, Jannik 02/10): 60 fps steady (frame max 20–24 ms), 217 draw calls / 370k tris in the garden, 363 / 433k at the lake, mobile-high, 1 WebGL context → no perf work needed before C.
+**R196 (v0.8.196):** The loading cover's step line types itself with a blinking caret.
 **R195 (v0.8.195):** Hidden v2 yard parts make no walls (garden copy); waterfall ribbon gets normals (was black); Root Bear grove trees and rocks in the concept look; world map zooms out to the whole world and shows the home as Shed.
 **R194 (v0.8.194):** v2 home yards get colliders (fence, pots, plants, boulders rasterised to 0.1 m walls); Cactus v2 home; world grass skips the stable's and orangery's flat ground surfaces.
 **R193 (v0.8.193):** Fase 1c performance: only the current space is drawn; objects wholly behind the fog are skipped; far wilds nodes / thickets / caches / dormant moles drawn as shared frozen copies (`WildsFarProxy.js`); plants culled per instance and shadowed from shadow-only lists one LOD coarser (`Game.shadowHooks`); garden-entry shader compile hidden under the door fade; shorter loading cover.
