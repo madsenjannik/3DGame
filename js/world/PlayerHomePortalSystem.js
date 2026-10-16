@@ -235,6 +235,7 @@ export class PlayerHomePortalSystem{
     const gshed=this.gardenHome.getObjectByName(`${this.prefix}_Shed`),gdoor=this.gardenHome.getObjectByName(`${this.prefix}_Door`);
     if(wdoor)wdoor.getWorldPosition(this.worldDoorPoint);if(gdoor)gdoor.getWorldPosition(this.gardenDoorPoint);
     this.worldSegments=[];this.gardenSegments=[];
+    try{this.buildYardTops();}catch(e){console.warn('[TGW] v2 yard stone heights skipped',e);}   // R187
     // Keep the approved full visual bounds for camera retraction, but resolve player
     // collision against the shared 4 x 4 m structural shed footprint. This prevents
     // decorative Aloe/Hyacinth/Tulip/etc. geometry from creating invisible walls.
@@ -255,6 +256,24 @@ export class PlayerHomePortalSystem{
         if(gateX+gate<b.max.x)this.worldSegments.push({ax:gateX+gate,az:front,bx:b.max.x,bz:front,half:.055});
       }
     }
+  }
+
+  // R187 (Jannik 16/10: 'the legs disappear into the stones' at Aloe v2's home): a v2 yard's stepping stones (5-10 cm) and the door step
+  // (20-25 cm) stand above the ground the character walks on. For a v2 home the ground follows their tops: a 0.1 m grid of downward rays
+  // over <Prefix>_Yard_Stone (only tops below 14 cm, so the big boulders beside the path are not climbed) and <Prefix>_Shed_Stone.
+  buildYardTops(){
+    if(!/_v2\.glb$/.test(this.assetUrl()))return;
+    const rc=new THREE.Raycaster(),down=new THREE.Vector3(0,-1,0),o=new THREE.Vector3(),grid=root=>{
+      if(!root)return null;root.updateMatrixWorld(true);const ms=[],caps=new Map();
+      for(const [n,cap] of [[`${this.prefix}_Yard_Stone`,.14],[`${this.prefix}_Shed_Stone`,.4]]){const g=root.getObjectByName(n);g?.traverse(m=>{if(m.isMesh){ms.push(m);caps.set(m,cap);}});}
+      if(!ms.length)return null;const box=new THREE.Box3();for(const m of ms)box.expandByObject(m);
+      const S=.1,x0=box.min.x,z0=box.min.z,nx=Math.ceil((box.max.x-x0)/S)+1,nz=Math.ceil((box.max.z-z0)/S)+1,h=new Float32Array(nx*nz).fill(-Infinity),base=root.position.y;
+      for(let i=0;i<nx;i++)for(let k=0;k<nz;k++){o.set(x0+i*S,box.max.y+1,z0+k*S);rc.set(o,down);const hit=rc.intersectObjects(ms,false)[0];if(hit&&hit.point.y-base<=caps.get(hit.object))h[i*nz+k]=hit.point.y;}
+      return {x0,z0,nx,nz,S,h};};
+    this.yardTops={world:grid(this.worldHome),garden:grid(this.gardenHome)};
+    if(!this.world.__yardTops){const W=this.world,base=W.groundHeight.bind(W);W.__yardTops=true;
+      W.groundHeight=(x=0,z=0)=>{const y=base(x,z);const G=this.yardTops?.[W.space==='garden'?'garden':'world'];if(!G)return y;
+        const i=Math.round((x-G.x0)/G.S),k=Math.round((z-G.z0)/G.S);if(i<0||k<0||i>=G.nx||k>=G.nz)return y;const t=G.h[i*G.nz+k];return t>y?t:y;};}
   }
 
   resolveCollisions(p,radius=.3){const list=this.world.space==='garden'?this.gardenSegments:this.worldSegments;for(let pass=0;pass<2;pass++)for(const s of list)resolveSegment(p,s,radius);}

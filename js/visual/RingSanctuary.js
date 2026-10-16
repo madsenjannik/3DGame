@@ -162,11 +162,13 @@ class RingPost {
     this.rt = new THREE.WebGLRenderTarget(sz.x, sz.y, { type: THREE.HalfFloatType, samples: 4 });
     const c = this.c = new M.EffectComposer(r, this.rt); c.setPixelRatio(1); c.setSize(sz.x, sz.y);
     c.addPass(new M.RenderPass(g.scene, g.camera));
+    // R187 (Jannik 16/10: dotted dark lines round the light shafts): the shaft and stone-column shaders took pow() of 1-uv.y, which a
+    // pixel just outside a triangle edge extrapolates past 1 (NaN); they now clamp, and the guard fills a bad pixel from its neighbours, not black.
     // R172 (Jannik: black blocks by the Ring in Chrome): one invalid pixel (NaN/Inf from any shader on some GPUs) is smeared by the
     // bloom's blur chain into large black rectangles. This pass turns such a pixel into black and caps over-bright HDR values before
     // the bloom sees them, so the worst case is one dark pixel instead of a block.
     c.addPass(new M.ShaderPass({ uniforms: { tDiffuse: { value: null } }, vertexShader: 'varying vec2 vUv;void main(){vUv=uv;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}',
-      fragmentShader: 'uniform sampler2D tDiffuse;varying vec2 vUv;void main(){vec4 c=texture2D(tDiffuse,vUv);if(any(isnan(c))||any(isinf(c))||!(c.r+c.g+c.b+c.a<1e4))c=vec4(0.,0.,0.,1.);gl_FragColor=max(min(c,vec4(64.)),vec4(0.));}' }));
+      fragmentShader: 'uniform sampler2D tDiffuse;varying vec2 vUv;bool bad(vec4 c){return any(isnan(c))||any(isinf(c))||!(c.r+c.g+c.b+c.a<1e4);}void main(){vec4 c=texture2D(tDiffuse,vUv);if(bad(c)){vec2 px=1./vec2(textureSize(tDiffuse,0));vec4 s=vec4(0.);float n=0.;for(int i=0;i<4;i++){vec2 o=i==0?vec2(px.x,0.):i==1?vec2(-px.x,0.):i==2?vec2(0.,px.y):vec2(0.,-px.y);vec4 q=texture2D(tDiffuse,vUv+o*1.5);if(!bad(q)){s+=q;n+=1.;}}c=n>0.?s/n:vec4(0.,0.,0.,1.);}gl_FragColor=max(min(c,vec4(64.)),vec4(0.));}' }));
     this.bloom = new M.UnrealBloomPass(new THREE.Vector2(sz.x / 2, sz.y / 2), .32, .45, 2.1); c.addPass(this.bloom);
     c.addPass(new M.ShaderPass({ uniforms: { tDiffuse: { value: null }, uDark: { value: .32 } }, vertexShader: 'varying vec2 vUv;void main(){vUv=uv;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}',
       fragmentShader: 'uniform sampler2D tDiffuse;uniform float uDark;varying vec2 vUv;void main(){vec4 c=texture2D(tDiffuse,vUv);vec2 d=(vUv-.5)*vec2(1.25,1.);float v=smoothstep(.82,.28,length(d));c.rgb*=mix(1.-uDark,1.,v);gl_FragColor=c;}' }));
@@ -328,7 +330,7 @@ export class RingSanctuary {
     const sc = this.stoneC, sy = this.Hc(sc.x, sc.z), desk = this.tierId === 'desktop';
     this.colMat = new THREE.ShaderMaterial({ transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, side: THREE.DoubleSide, uniforms: { uK: { value: .3 }, uCol: { value: C('#ffc85a') }, uT: { value: 0 } },
       vertexShader: 'varying vec2 vU;varying float vF;void main(){vU=uv;vec3 n=normalize(normalMatrix*normal);vec4 mv=modelViewMatrix*vec4(position,1.);vF=abs(dot(n,normalize(-mv.xyz)));gl_Position=projectionMatrix*mv;}',
-      fragmentShader: 'uniform float uK;uniform vec3 uCol;uniform float uT;varying vec2 vU;varying float vF;void main(){float a=uK*pow(1.-vU.y,1.6)*smoothstep(0.,.08,vU.y)*pow(vF,1.4)*(.82+.18*sin(uT*3.+vU.y*12.));gl_FragColor=vec4(uCol*a,1.);}' });
+      fragmentShader: 'uniform float uK;uniform vec3 uCol;uniform float uT;varying vec2 vU;varying float vF;void main(){float y=clamp(vU.y,0.,1.);float a=uK*pow(1.-y,1.6)*smoothstep(0.,.08,y)*pow(clamp(vF,0.,1.),1.4)*(.82+.18*sin(uT*3.+vU.y*12.));gl_FragColor=vec4(uCol*a,1.);}' });
     this.column = new THREE.Mesh(new THREE.CylinderGeometry(.5, .66, 3.6, 28, 1, true), this.colMat); this.column.position.set(sc.x, sy + 1.6, sc.z); this.column.renderOrder = 6; this.root.add(this.column);
     this.halo = new THREE.Mesh(new THREE.PlaneGeometry(3.8, 3.8).rotateX(-Math.PI / 2), new THREE.MeshBasicMaterial({ map: this.T.radial, color: '#ffbf55', transparent: true, opacity: .5, blending: THREE.AdditiveBlending, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -4 }));
     this.halo.position.set(sc.x, sy + .03, sc.z); this.halo.renderOrder = 4; this.root.add(this.halo);
@@ -450,7 +452,7 @@ export class RingSanctuary {
     this.motes = new THREE.Points(g, new THREE.PointsMaterial({ size: .04, map: this.T.radial, color: '#ffe2a0', transparent: true, opacity: .85, depthWrite: false, blending: THREE.AdditiveBlending })); this.motes.renderOrder = 5; this.root.add(this.motes);
     this.shaftMat = new THREE.ShaderMaterial({ transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, side: THREE.DoubleSide, uniforms: { uK: { value: .06 }, uCol: { value: C('#ffe6b8') } },
       vertexShader: 'varying vec2 vU;varying float vF;void main(){vU=uv;vec3 n=normalize(normalMatrix*normal);vec4 mv=modelViewMatrix*vec4(position,1.);vF=abs(dot(n,normalize(-mv.xyz)));gl_Position=projectionMatrix*mv;}',
-      fragmentShader: 'uniform float uK;uniform vec3 uCol;varying vec2 vU;varying float vF;void main(){float a=uK*smoothstep(0.,.3,vU.y)*pow(1.-vU.y,.6)*pow(vF,2.5);gl_FragColor=vec4(uCol*a,1.);}' });
+      fragmentShader: 'uniform float uK;uniform vec3 uCol;varying vec2 vU;varying float vF;void main(){float y=clamp(vU.y,0.,1.);float a=uK*smoothstep(0.,.3,y)*pow(1.-y,.6)*pow(clamp(vF,0.,1.),2.5);gl_FragColor=vec4(uCol*a,1.);}' });
     this.shafts = [[-1.6, 2.2], [2.4, -.6], [.9, 3.1]].map(([x, z]) => { const m = new THREE.Mesh(new THREE.CylinderGeometry(.35, .75, 8, 20, 1, true), this.shaftMat); m.userData.g = new V3(x, this.Hc(x, z), z); this.root.add(m); return m; });
   }
   // the Ring model's own stone (a copy) at the head of the lane: the planting and switch point
