@@ -384,12 +384,14 @@ try {
     await p.addInitScript(sv => { localStorage.setItem('tgw.controlTips.v1', '1'); localStorage.setItem('dym.homeMovedIn.v1.fern', '1'); localStorage.setItem('tgw.devMenu', '1'); localStorage.setItem('dym-gh-level', '2'); if (!sessionStorage.getItem('seeded')) { localStorage.setItem('tgw.save', JSON.stringify(sv)); sessionStorage.setItem('seeded', '1'); } }, SNAPSHOT_SAVE);
     await p.goto(B + 'game.html?char=fern', { waitUntil: 'load' });
     const ok = await p.waitForFunction(() => window.__tgw?.wilds?.gardenModels && window.__tgw.greenhouse?.entries.size === 3 && window.__tgw.wilds.threat, null, { timeout: 240000 }).then(() => true, () => false);
+    if (ok) await p.waitForFunction(() => !document.getElementById('tgw-premium-veil'), null, { timeout: 240000 }).catch(() => {});   // R197: premium builds its garden behind the cover; compare once it is lifted (as startGame)
     let diffs = ['not loaded'];
     if (ok) await p.waitForFunction(() => window.__tgw.swapSpot?.model, null, { timeout: 60000 }).catch(() => {});   // R140: the ring is in place first
     if (ok) { const ref = JSON.parse(fs.readFileSync(path.join(ROOT, 'tests/garden-snapshot.ref.json'), 'utf8')), now = await p.evaluate(collectGardenSnapshot); diffs = [];
       // R140: the Sprouting Ring replaced the two bed shrubs on purpose (their collider is gone, its pots have their own); compare everything else exactly
       const ring = await p.evaluate(() => (window.__tgw.vegetationMask?.fixed || []).filter(f => f.colliders));
       const keep = c => c[0] !== 'ring-pot' && !ring.some(f => Math.hypot(c[1] - f.cx, c[2] - f.cz) < f.r); ref.colliders = ref.colliders.filter(keep); now.colliders = now.colliders.filter(keep);
+      const byXZ = (a, b) => JSON.stringify(a) < JSON.stringify(b) ? -1 : 1; ref.colliders.sort(byXZ); now.colliders.sort(byXZ);   // R197: premium loads in parallel (R185), so colliders register in a different order; the set must match
       const walk = (a, b, k) => { if (typeof a !== 'object' || a === null || typeof b !== 'object' || b === null) { if (JSON.stringify(a) !== JSON.stringify(b)) diffs.push(k); return; } for (const x of new Set([...Object.keys(a), ...Object.keys(b)])) walk(a[x], b[x], `${k}.${x}`); };
       // R197: under premium the bench is R173's v2 model at scale 1 (classic 1.3), on the same spot and turn
       if (await p.evaluate(() => !!window.__tgw.wilds.v2Bench) && Array.isArray(ref.benchModel)) ref.benchModel = ref.benchModel.map((v, i) => i < 11 && i % 4 !== 3 ? Math.round(v / 1.3 * 1e4) / 1e4 : v);
@@ -427,6 +429,7 @@ try {
     await p.addInitScript(() => { localStorage.setItem('tgw.controlTips.v1', '1'); localStorage.setItem('dym.homeMovedIn.v1.fern', '1'); localStorage.setItem('tgw.devMenu', '1'); localStorage.setItem('dym-gh-level', '1'); });
     await p.goto(B + 'game.html?char=fern', { waitUntil: 'load' });
     const ok = await p.waitForFunction(() => window.__tgw?.wilds?.gardenModels && window.__tgw.greenhouse?.entries.size === 3, null, { timeout: 240000 }).then(() => true, () => false);
+    if (ok) await p.waitForFunction(() => !document.getElementById('tgw-premium-veil'), null, { timeout: 240000 }).catch(() => {});   // R197: as startGame
     const step = (fn, arg) => p.evaluate(fn, arg), W = ms => p.waitForTimeout(ms);
     let r = {};
     if (ok) {
@@ -436,7 +439,7 @@ try {
       await step(() => { const g = window.__tgw; g.devMenu.teleport('garden', -8.5, 0.6, Math.PI); g.buildMode.start('shrine'); }); await W(5000);   // R153: the old spot (-3.6, 9) now overlaps the Sprouting Ring, which is reserved
       Object.assign(r, await step(() => { const g = window.__tgw, placed = g.buildMode.confirm(), t = g.garden.transformOf('shrine'), grp = g.wilds.upgradeL2.position, ob = g.wilds.upgradeObstacles[2];
         g.save.flush(); return { placed, moved: !g.garden.isDefault('shrine'), follows: grp.x === t.x && grp.z === t.z && ob.x === t.x && ob.z === t.z, hidden: g.vegetationMask.meshes.reduce((a, e) => a + e.hidden, 0) }; }));
-      await p.reload({ waitUntil: 'load' }); await p.waitForFunction(() => window.__tgw?.wilds?.gardenModels && window.__tgw.greenhouse?.entries.size === 3, null, { timeout: 240000 }).catch(() => {});
+      await p.reload({ waitUntil: 'load' }); await p.waitForFunction(() => window.__tgw?.wilds?.gardenModels && window.__tgw.greenhouse?.entries.size === 3, null, { timeout: 240000 }).catch(() => {}); await p.waitForFunction(() => !document.getElementById('tgw-premium-veil'), null, { timeout: 240000 }).catch(() => {});   // R197
       Object.assign(r, await step(() => { const g = window.__tgw, persisted = !g.garden.isDefault('shrine') && g.wilds.upgradeL2.position.x === g.garden.transformOf('shrine').x;
         g.garden.resetToDefaults(); return { persisted, resetHidden: g.vegetationMask.meshes.reduce((a, e) => a + e.hidden, 0), resetPos: g.wilds.upgradeL2.position.x === -9.2 && g.wilds.upgradeL2.position.z === 2.8 }; }));
       // R60.2 paths: spine never buildable; a moved greenhouse gets its own branch (stones + paint) that others must avoid; reset restores the authored branch.
