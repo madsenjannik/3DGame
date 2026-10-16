@@ -1681,6 +1681,7 @@ are only touched where a measured hotspot requires it, minimally.
    failure. Must pass before every push (CLAUDE.md rule 5).
 
 **B status 02/10/2026: complete (R51–R57).** On-device check (iPhone, Jannik 02/10): 60 fps steady (frame max 20–24 ms), 217 draw calls / 370k tris in the garden, 363 / 433k at the lake, mobile-high, 1 WebGL context → no perf work needed before C.
+**R188 (v0.8.188):** Premium is the game. The root always runs premium; the classic game (R187) is frozen in `./classic/` with its own code and assets and is never edited (CLAUDE.md rule 9); `?ring=classic` opens it.
 **R187 (v0.8.187):** v2 home yard stones raise the walked ground; light-shaft shaders clamped and the NaN guard fills from neighbours (no dark outlines); loading cover without portrait.
 **R186 (v0.8.186):** Aloe v2 home: no yard-fence collision (its soil mound was taken for a closed fence); premium loading cover (portrait, growing sprout, real loading steps, `js/ui/premiumLoader.js`).
 **R185 (v0.8.185):** Load fixes: premium files prefetched with the game, a cover until the premium garden is ready (no classic flash), one-time reload when a page is older than the server build (GitHub Pages HTML cache), start-screen iframe no longer loads the classic scene first under premium; capsule camera 1.5 m.
