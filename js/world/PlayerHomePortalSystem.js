@@ -242,7 +242,9 @@ export class PlayerHomePortalSystem{
     if(gshed)this.gardenCameraBox=new THREE.Box3().setFromObject(gshed);
     this.worldSegments.push(...structuralFootprintSegments(this.worldHome));
     this.gardenSegments.push(...structuralFootprintSegments(this.gardenHome));
-    if(wyard){
+    // R186 (Jannik 16/10: 'cannot enter the house with Aloe Vera'): a v2 home has no fence; the fence rule took Aloe v2's soil mound
+    // (8 x 0.6 x 8.3 m) for one and closed the whole yard without a gate, 3.8 m short of the door. v2 homes get no yard collision.
+    if(wyard&&!/_v2\.glb$/.test(this.assetUrl())){
       const exactFence=buildFenceSegments(wyard);
       if(exactFence.length)this.worldSegments.push(...exactFence);
       else{

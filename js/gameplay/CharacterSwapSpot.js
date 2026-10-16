@@ -49,14 +49,17 @@ export class CharacterSwapSpot {
   // (#tgw-premium-veil, made in game.html) stays until the premium garden is built and its bloom is on; never longer than 25 s.
   prefetch() {
     const fail = e => { console.warn('[TGW] premium prefetch', e); return null; };
-    this.pre = { sanctuary: import('../visual/RingSanctuary.js?build=RING-R185-20261016A'), plants: PLANTS.map(k => loadGLTF(`./assets/garden/plants/${k}.glb`).then(g => [k, g], e => { console.warn('[TGW] plant', k, e); return null; })) };
+    this.pre = { sanctuary: import('../visual/RingSanctuary.js?build=RING-R186-20261016A'), plants: PLANTS.map(k => loadGLTF(`./assets/garden/plants/${k}.glb`).then(g => [k, g], e => { console.warn('[TGW] plant', k, e); return null; })) };
     this.pre.sanctuary.catch(fail); loadGLTF(MODEL).catch(fail);
     for (const n of ['EffectComposer', 'RenderPass', 'UnrealBloomPass', 'OutputPass', 'ShaderPass']) import(`three/addons/postprocessing/${n}.js`).catch(fail);
-    const t0 = performance.now(), tick = () => { const S = this.sanctuary, done = this.premiumFailed || (S && (S.post || performance.now() - (S.t0 + S.buildMs) > 4000)) || performance.now() - t0 > 25000;
+    // R186: the cover's sprout grows one leaf per real step (premiumLoader.js): 1 systems up, 2 world built, 3 premium garden built, done = bloom on
+    const L = n => { try { window.TGW_LOAD?.stage?.(n); } catch {} }; L(1);
+    const t0 = performance.now(), tick = () => { const S = this.sanctuary, ld = document.getElementById('loading'); if (!ld || ld.classList.contains('hide')) L(2); if (S) L(3);
+      const done = this.premiumFailed || (S && (S.post || performance.now() - (S.t0 + S.buildMs) > 4000)) || performance.now() - t0 > 25000;
       if (done) setTimeout(() => this.liftPremiumVeil(), S?.post ? 400 : 0); else setTimeout(tick, 200); };
     tick();
   }
-  liftPremiumVeil() { const v = document.getElementById('tgw-premium-veil'); if (!v || v.dataset.lifting) return; v.dataset.lifting = '1'; v.style.opacity = '0'; setTimeout(() => v.remove(), 1000); }
+  liftPremiumVeil() { try { if (window.TGW_LOAD?.done) { window.TGW_LOAD.done(); return; } } catch {} const v = document.getElementById('tgw-premium-veil'); if (!v || v.dataset.lifting) return; v.dataset.lifting = '1'; v.style.opacity = '0'; setTimeout(() => v.remove(), 1000); }
   build() {
     const sp = this.g.homePortal?.gardenSpawn?.(); if (!sp) return false;
     const p = { x: sp.x + SIDE, z: sp.z + BACK };

@@ -1681,6 +1681,7 @@ are only touched where a measured hotspot requires it, minimally.
    failure. Must pass before every push (CLAUDE.md rule 5).
 
 **B status 02/10/2026: complete (R51–R57).** On-device check (iPhone, Jannik 02/10): 60 fps steady (frame max 20–24 ms), 217 draw calls / 370k tris in the garden, 363 / 433k at the lake, mobile-high, 1 WebGL context → no perf work needed before C.
+**R186 (v0.8.186):** Aloe v2 home: no yard-fence collision (its soil mound was taken for a closed fence); premium loading cover (portrait, growing sprout, real loading steps, `js/ui/premiumLoader.js`).
 **R185 (v0.8.185):** Load fixes: premium files prefetched with the game, a cover until the premium garden is ready (no classic flash), one-time reload when a page is older than the server build (GitHub Pages HTML cache), start-screen iframe no longer loads the classic scene first under premium; capsule camera 1.5 m.
 **R184 (v0.8.184):** Ring premium: the capsule switch camera frames the chosen character close (1.9 m, inside the Ring); `UpgradeShowcase.start` accepts an explicit shot.
 **R183 (v0.8.183):** Ring premium: character select in the concept look (world_v2 background, meadow_v2 cards, v2 portraits).
