@@ -390,11 +390,17 @@ try {
     if (ok) { const ref = JSON.parse(fs.readFileSync(path.join(ROOT, 'tests/garden-snapshot.ref.json'), 'utf8')), now = await p.evaluate(collectGardenSnapshot); diffs = [];
       // R140: the Sprouting Ring replaced the two bed shrubs on purpose (their collider is gone, its pots have their own); compare everything else exactly
       const ring = await p.evaluate(() => (window.__tgw.vegetationMask?.fixed || []).filter(f => f.colliders));
-      const keep = c => c[0] !== 'ring-pot' && !ring.some(f => Math.hypot(c[1] - f.cx, c[2] - f.cz) < f.r); ref.colliders = ref.colliders.filter(keep); now.colliders = now.colliders.filter(keep);
+      const inFix = (f, x, z) => f.r != null ? Math.hypot(x - f.cx, z - f.cz) < f.r : x > f.x0 && x < f.x1 && z > f.z0 && z < f.z1;   // R197: as GardenVegetationMask (premium's lane is a rectangle)
+      const keep = c => !/^ring-/.test(c[0]) && !ring.some(f => inFix(f, c[1], c[2]));   // R197: premium's own Ring/tree colliders (ring-*) and what its clearing + lane take over are the Ring's, not the R60 migration's
+      ref.colliders = ref.colliders.filter(keep); now.colliders = now.colliders.filter(keep);
       const byXZ = (a, b) => JSON.stringify(a) < JSON.stringify(b) ? -1 : 1; ref.colliders.sort(byXZ); now.colliders.sort(byXZ);   // R197: premium loads in parallel (R185), so colliders register in a different order; the set must match
       const walk = (a, b, k) => { if (typeof a !== 'object' || a === null || typeof b !== 'object' || b === null) { if (JSON.stringify(a) !== JSON.stringify(b)) diffs.push(k); return; } for (const x of new Set([...Object.keys(a), ...Object.keys(b)])) walk(a[x], b[x], `${k}.${x}`); };
       // R197: under premium the bench is R173's v2 model at scale 1 (classic 1.3), on the same spot and turn
       if (await p.evaluate(() => !!window.__tgw.wilds.v2Bench) && Array.isArray(ref.benchModel)) ref.benchModel = ref.benchModel.map((v, i) => i < 11 && i % 4 !== 3 ? Math.round(v / 1.3 * 1e4) / 1e4 : v);
+      // R197: weed spots avoid the Ring (R153); premium's Ring stands on the east lawn, so its spots differ from the classic draw (same seeded
+      // sequence, later spots shift). There the contract is checked instead: 22 spots, none inside the premium Ring's clearing.
+      const clear = await p.evaluate(() => window.__tgw.swapSpot?.premiumClear || null);
+      if (clear) { if (!(now.spots.length === 22 && now.spots.every(([x, z]) => Math.hypot(x - clear.cx, z - clear.cz) > clear.r))) diffs.push('premium weed spots'); delete ref.spots; delete now.spots; }
       walk(ref, now, 'garden'); }
     check('garden migration: 0 transform differences vs pre-R60 reference', ok && !diffs.length && !errors.length, errors[0] || diffs.slice(0, 4).join(' '));
     // 11. old saves + defaults valid + structures follow a moved greenhouse
@@ -445,9 +451,10 @@ try {
       // R60.2 paths: spine never buildable; a moved greenhouse gets its own branch (stones + paint) that others must avoid; reset restores the authored branch.
       Object.assign(r, await step(() => { const g = window.__tgw, gb = g.garden, A = (t, x, z, rot) => gb.anchorFor(t, x, z, rot);
         const spine = /path/.test(gb.problem('greenhouse', ...Object.values(A('greenhouse', 2.6, -3.5, 3))) || '');
-        const a = A('greenhouse', 6.7, -4, 3), moved = gb.place('greenhouse', a.gx, a.gz, a.rot) === null;
+        // R197: premium's Ring reserves the east lawn (centre ~(7, -2), r 4.6: 'blocked by Sprouting Ring'), so there the greenhouse moves south (8, -10)
+        const prem = !!g.swapSpot?.sanctuary, a = prem ? A('greenhouse', 8, -10, 3) : A('greenhouse', 6.7, -4, 3), moved = gb.place('greenhouse', a.gx, a.gz, a.rot) === null;
         const stones = g.world.dynamicBranchStones.length > 0 && g.world.branchStones.every(m => !m.visible) && !!g.world.greenhouseBranch;
-        const s = A('shrine', 2.3, -3.6, 0), branchBlocks = /greenhouse path/.test(gb.problem('shrine', s.gx, s.gz, s.rot) || '');
+        const s = prem ? A('shrine', 2.5, -8.5, 0) : A('shrine', 2.3, -3.6, 0), branchBlocks = /greenhouse path/.test(gb.problem('shrine', s.gx, s.gz, s.rot) || '');
         const regrow = (g.vegetationMask.patch || []).some(m => m.visible && m.count > 100);   /* R143: grass grows back where the greenhouse stood */
         gb.resetToDefaults(); const restored = !g.world.greenhouseBranch && g.world.branchStones.every(m => m.visible) && g.world.dynamicBranchStones.length === 0 && (g.vegetationMask.patch || []).every(m => !m.visible);
         return { spine, moved, stones, branchBlocks, regrow, restored }; }));
