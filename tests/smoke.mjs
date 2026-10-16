@@ -42,6 +42,7 @@ async function startGame(ctx, char, { dev = true, hud = '', tips = false } = {})
   await p.addInitScript(([c, d, h, t]) => { if (!t) localStorage.setItem('tgw.controlTips.v1', '1'); localStorage.setItem(`dym.homeMovedIn.v1.${c}`, '1'); if (d) localStorage.setItem('tgw.devMenu', '1'); else localStorage.removeItem('tgw.devMenu'); if (h) localStorage.setItem('tgw.hudTestB', h); }, [char, dev, hud, tips]);
   await p.goto(B + `game.html?char=${char}`, { waitUntil: 'load' });
   const ok = await p.waitForFunction(() => !document.getElementById('loading'), null, { timeout: 240000 }).then(() => true, () => false);
+  if (ok) await p.waitForFunction(() => !document.getElementById('tgw-premium-veil'), null, { timeout: 240000 }).catch(() => {});   // R189: premium builds its garden behind the cover; checks start once it is lifted
   return { p, errors, ok };
 }
 

@@ -36,7 +36,7 @@ export class DevMenu {
         <section><small>KAMERA & STYRING (kun dev)</small><div class="dev-grid profiles">${Object.entries(PROFILES).map(([id, p]) => `<button data-a="cam:${id}">${p.name}</button>`).join('')}</div><p class="dev-note"></p></section>
         <section><small>HUD TEST · NORMAL GAMEPLAY</small><div class="dev-grid hud-tests"><button data-a="hud:current">Current HUD</button><button data-a="hud:d-classic">Test HUD D klassisk (mobil)</button><button data-a="hud:e-desktop">Test HUD E desktop</button></div><p class="dev-note hud-test-note">Kun visuelt layout. Ingen gameplay-logik ændres.</p></section>
         <section><small>R134 TEST (til/fra)</small><div class="dev-grid"><button data-a="flag:flyIcons">Ikoner flyver op i baren</button><button data-a="flag:tipTop">Tutorial-tip øverst (mobil)</button><button data-a="tips:again">Vis tutorial igen (genindlæser)</button></div><p class="dev-note">Kun visuelt. Slået fra som standard.</p></section>
-        <section><small>MÅLING</small><div class="dev-grid"><button data-a="perf">Performance-HUD til/fra</button><button data-a="metrics">Vis startup-tider</button><button data-a="look">3D-look (R70) til/fra</button></div><div class="dev-grid four"><button data-a="q:auto">Auto</button><button data-a="q:mobile-low">Lav</button><button data-a="q:mobile-high">Høj</button><button data-a="q:desktop">Desktop</button></div></section>
+        <section><small>MÅLING</small><div class="dev-grid"><button data-a="probe">Mål 20 s her (R189)</button><button data-a="probe-copy">Kopiér målerapport</button></div><div class="dev-grid"><button data-a="perf">Performance-HUD til/fra</button><button data-a="metrics">Vis startup-tider</button><button data-a="look">3D-look (R70) til/fra</button></div><div class="dev-grid four"><button data-a="q:auto">Auto</button><button data-a="q:mobile-low">Lav</button><button data-a="q:mobile-high">Høj</button><button data-a="q:desktop">Desktop</button></div></section>
         <section><small>RESSOURCER</small><div class="dev-grid">
           <button data-a="mats">+20 materialer</button><button data-a="tools">Alle redskaber</button><button data-a="pots">3 potter + vand</button><button data-a="skip">Spol 5 min frem</button>
         </div></section>
@@ -179,6 +179,12 @@ export class DevMenu {
     }
     if (a === 'tips:again') { try { localStorage.removeItem('tgw.controlTips.v1'); } catch {} location.reload(); return; }
     if (a === 'look') { const on = g.look?.toggle?.(); this.toast(on ? '3D-look R70: til (kun i verden)' : '3D-look R70: fra (som før)'); return; }
+    // R189 Fase 0: a 20 s measurement where the player stands (menu closed while it runs); the report keeps every run of this session
+    if (a === 'probe') { const P = g.perfProbe; if (!P) { this.toast('Måling ikke tilgængelig'); return; }
+      if (!P.start(R => this.toast(`Måling færdig (${R.space}): ${R.fps} fps · p95 ${R.frameMs.p95} ms · ${R.hitches.over50} hak > 50 ms. Kopiér rapporten i DEV.`))) { this.toast('En måling kører allerede'); return; }
+      this.hide(); this.toast('Måler i 20 s. Spil normalt: gå, løb, drej kameraet.'); return; }
+    if (a === 'probe-copy') { const txt = g.perfProbe?.report?.() || 'Ingen måling'; const show = () => { let ta = document.getElementById('tgw-perf-report'); if (!ta) { ta = document.createElement('textarea'); ta.id = 'tgw-perf-report'; ta.readOnly = true; ta.style.cssText = 'position:fixed;inset:8% 8%;z-index:13000;font:12px/1.4 ui-monospace,monospace;padding:12px;border-radius:10px;border:2px solid #3b2f22;background:#fffaf0;color:#2b261d'; ta.addEventListener('keydown', e => { if (e.key === 'Escape') ta.remove(); }); ta.addEventListener('dblclick', () => ta.remove()); document.body.appendChild(ta); } ta.value = txt; ta.focus(); ta.select(); this.toast('Rapporten er markeret: Ctrl+C. Dobbeltklik lukker.'); };
+      try { navigator.clipboard.writeText(txt).then(() => this.toast('Målerapport kopieret. Indsæt den til Claude.'), show); } catch { show(); } return; }
     if (a === 'perf') { g.perfHud?.set(!g.perfHud.on); this.toast(g.perfHud?.on ? 'Performance-HUD til' : 'Performance-HUD fra'); return; }
     if (a === 'metrics') {
       const m = window.__TGW_STARTUP_METRICS__ || {}; const keys = Object.keys(m).filter(k => k.endsWith('Ms'));

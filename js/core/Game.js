@@ -1,6 +1,6 @@
 // @ts-nocheck
 import * as THREE from 'three';
-import { AssetRegistry } from './AssetRegistry.js?build=RING-R188-20261016A';
+import { AssetRegistry } from './AssetRegistry.js?build=RING-R189-20261016A';
 import { CharacterController } from './CharacterController.js?build=MOBILE-GESTURE-R34B-20260930A';
 import { GameState } from './GameState.js';
 import { InputManager } from './InputManager.js?build=UX-R157B1-20261011A';
@@ -18,24 +18,25 @@ import { Hud } from '../ui/Hud.js?build=CORE-R158A-20261012A';
 import { WorldMap } from '../ui/WorldMap.js?build=UX-R157B1-20261011A';
 import { GardenEnvironment } from '../world/GardenEnvironment.js?build=WATER-VEG-R103-20261006A';
 import { WildlifeSystem } from '../world/WildlifeSystem.js?build=CAMERA-CUTAWAY-CONTEXT-R21D-20260928E';
-import { PlayerHomePortalSystem } from '../world/PlayerHomePortalSystem.js?build=RING-R188-20261016A';
+import { PlayerHomePortalSystem } from '../world/PlayerHomePortalSystem.js?build=RING-R189-20261016A';
 import { NorthStableSystem } from '../world/NorthStableSystem.js?build=UX-R157B1-20261011A';
 import { SaveGame, pickWinner } from './SaveGame.js?build=UX-R157B1-20261011A';
 import { SpecialSeeds } from '../gameplay/SpecialSeeds.js?build=UX-R157B1-20261011A';   // R149
 import { OrangeryTree } from '../gameplay/OrangeryTree.js?build=UX-R157B1-20261011A';   // R150
 import { installTabGuard } from './TabGuard.js?build=GUARD-R157C1-20261012B';   // R153
 import { Discovery } from '../gameplay/Discovery.js?build=UX-R157B1-20261011A';   // R154
-import { WildsLoopSystem } from '../gameplay/WildsLoopSystem.js?build=RING-R188-20261016A';
+import { WildsLoopSystem } from '../gameplay/WildsLoopSystem.js?build=RING-R189-20261016A';
 import { WorkbenchPanel } from '../ui/WorkbenchPanel.js?build=CORE-R158A-20261012A';
-import { DevMenu, devMenuEnabled } from '../ui/DevMenu.js?build=UX-R157B1-20261011A';
+import { DevMenu, devMenuEnabled } from '../ui/DevMenu.js?build=RING-R189-20261016A';
 import { applyControlProfile, defaultProfile } from './ControlProfiles.js';
 import { PerfHud } from '../dev/PerfHud.js';
+import { PerfProbe } from '../dev/PerfProbe.js?build=RING-R189-20261016A';   // R189 Fase 0
 import { QualityManager, QUALITY } from './Quality.js?build=UX-R157B1-20261011A';
 import { InteractionResolver, gardenInteractionSource } from './InteractionResolver.js?build=UX-R157B1-20261011A';
 import { log, warn } from '../dev/Log.js';
 import { LookPass } from '../visual/LookPass.js?build=BAG-NIGHT-R84-20261006A';
 import { DayNight } from '../visual/DayNight.js?build=BAG-NIGHT-R84-20261006A';   // R81
-import { UpgradeShowcase } from '../visual/UpgradeShowcase.js?build=RING-R188-20261016A';   // R174
+import { UpgradeShowcase } from '../visual/UpgradeShowcase.js?build=RING-R189-20261016A';   // R174
 import { TOOLS } from '../data/wildsCatalog.js';   // R124 Bag texts (the Workbench's own effect lines)
 import { WEAPONS } from '../data/combatCatalog.js?build=UX-R157B1-20261011A';   // R124 strike values
 import { VestVisual } from '../gameplay/VestVisual.js?build=UX-R157B1-20261011A';   // R125
@@ -47,17 +48,17 @@ import { BoatEconomySystem } from '../gameplay/BoatEconomySystem.js?build=UX-R15
 import { LakeRunSystem } from '../gameplay/LakeRunSystem.js';
 import { GardenBuildSystem } from '../gameplay/GardenBuildSystem.js';
 import { GardenBuildMode } from '../ui/GardenBuildMode.js';
-import { GardenVegetationMask } from '../world/GardenVegetationMask.js?build=RING-R188-20261016A';
+import { GardenVegetationMask } from '../world/GardenVegetationMask.js?build=RING-R189-20261016A';
 import { CombatSystem } from '../gameplay/CombatSystem.js?build=UX-R157B1-20261011A';
 import { isToolJob } from '../ui/actionIcons.js?build=UX-R157B1-20261011A';   // R142
-import { CharacterSwapSpot } from '../gameplay/CharacterSwapSpot.js?build=RING-R188-20261016A';   // R138
+import { CharacterSwapSpot } from '../gameplay/CharacterSwapSpot.js?build=RING-R189-20261016A';   // R138
 import { ImpactFx } from '../gameplay/ImpactFx.js?build=UX-R157B1-20261011A';   // R129 FX layer
-import { EquippedToolVisual } from '../gameplay/EquippedToolVisual.js?build=RING-R188-20261016A';
+import { EquippedToolVisual } from '../gameplay/EquippedToolVisual.js?build=RING-R189-20261016A';
 
 export class Game {
   async init({characterId='succulent',devMode=false}={}){
     this.state=new GameState();this.state.player.characterId=characterId;this.registry=new AssetRegistry(characterCatalog);this.uTime={value:0};
-    this.renderer=new THREE.WebGLRenderer({antialias:true,powerPreference:'high-performance',preserveDrawingBuffer:false});
+    this.renderer=new THREE.WebGLRenderer({antialias:true,powerPreference:'high-performance',preserveDrawingBuffer:false});this.renderer.info.autoReset=false;   // R189: reset once per frame in frame(), so the counts cover the whole frame (bloom passes included)
     this.renderer.setPixelRatio(Math.min(devicePixelRatio,2));this.renderer.setSize(innerWidth,innerHeight,false);
     this.renderer.outputColorSpace=THREE.SRGBColorSpace;this.renderer.toneMapping=THREE.ACESFilmicToneMapping;this.renderer.toneMappingExposure=1.02;
     this.renderer.setClearColor(0xdde5d3,1);this.renderer.shadowMap.enabled=true;this.renderer.shadowMap.type=THREE.PCFSoftShadowMap;
@@ -214,7 +215,7 @@ this.workbenchPanel.show();this.input.resetTouchPointers?.();};
       }
     };
     this.equippedToolVisual=new EquippedToolVisual(this);this.refreshHotbar(true);
-    if(devMode||devMenuEnabled()){this.perfHud=new PerfHud(this);this.devMenu=new DevMenu(this);window.__tgw=this;}
+    if(devMode||devMenuEnabled()){this.perfHud=new PerfHud(this);this.perfProbe=new PerfProbe(this);this.devMenu=new DevMenu(this);window.__tgw=this;}
     else applyControlProfile(this,defaultProfile()); // R50.3: free camera everywhere (mouse-look on desktop)
     mark('wildsReadyMs');
     this.cameraOcclusion=new CameraOcclusionSystem({world:this.world,homePortal:this.homePortal,greenhouse:this.greenhouse,orangery:this.orangery,stable:this.stable});
@@ -373,11 +374,14 @@ this.workbenchPanel.show();this.input.resetTouchPointers?.();};
     if(this.choiceWorld&&!this._choiceRestored){this._choiceRestored=1;if(r==='plant'){this.choiceWorld.restorePlanted?.();s.personal.rareSpecimenPlanted=true;}else s.events.emit('world-project:changed',{...s.worldProject});}
   }
   // R114: optional systems fail soft per frame too. A system that throws is switched off (warned once) and the loop keeps running.
-  run(id,fn){if(this._off?.[id])return undefined;try{return fn();}catch(e){(this._off||(this._off={}))[id]=1;this.failed?.push?.(id);warn('FRAME',`${id} disabled after a frame error`,e);return undefined;}}
+  run(id,fn){if(this._off?.[id])return undefined;const P=this.perfProbe?.active?this.perfProbe:null,t=P?performance.now():0;try{return fn();}catch(e){(this._off||(this._off={}))[id]=1;this.failed?.push?.(id);warn('FRAME',`${id} disabled after a frame error`,e);return undefined;}finally{if(P)P.sys(id,performance.now()-t);}}   // R189: timed while a perf run is active
   frame(){
+    const t0=performance.now();this.renderer.info.reset();   // R189
     try{this.frameStep();}catch(e){if(!this._frameWarned){this._frameWarned=1;warn('FRAME','frame step failed; rendering continues',e);}}
+    const t1=performance.now();
     // R145: the context can be lost a frame before 'webglcontextlost' fires; three.js then throws on a program's first use
     if(!this.renderer.getContext().isContextLost()){let post=false;try{post=!!this.postFx?.render?.();}catch(e){warn('POST','post pass failed; plain render',e);this.postFx=null;}if(!post)this.renderer.render(this.scene,this.camera);}   // R165: the premium Ring's bloom (desktop, garden), else plain
+    this.perfProbe?.frame(t1-t0,performance.now()-t1);   // R189 Fase 0
     this.perfHud?.tick();
   }
   frameStep(){
