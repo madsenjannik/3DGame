@@ -30,6 +30,7 @@ async function context(opts = {}, block = []) {
   // R188: every check now runs premium; on the software GPU its desktop tier (bloom, full shadows, dense grass) starves the page and checks
   // time out, so the checks force the lightest render profile (render cost only; game logic, HUD and premium systems are the same)
   await ctx.addInitScript(() => { try { localStorage.setItem('tgw.qualityForce', 'mobile-low'); } catch {} });
+  ctx.setDefaultTimeout(120000);   // R188: premium builds its garden on the main thread; on the software GPU a page can be busy > 30 s
   // R188: premium is the game; the start screen's live 3D scene (premium-home.html, an iframe) is not under test and on the software GPU
   // it starves the whole page, so the checks get an empty scene there
   await ctx.route('**/*', r => { const u = r.request().url(); if (u.startsWith(B) && /premium-home\.html/.test(u)) return r.fulfill({ contentType: 'text/html', body: '<!doctype html><title>scene</title>' }); return !u.startsWith(B) || block.some(re => re.test(u)) ? r.abort() : r.continue(); });
