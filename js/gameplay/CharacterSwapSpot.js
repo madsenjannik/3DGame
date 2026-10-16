@@ -18,6 +18,7 @@ import { createHoloIndicator } from '../visual/holo-indicator.js';
 import { loadGLTF } from '../core/AssetManager.js';
 
 const MODEL = './assets/garden/spirebaenken.glb';
+const PLANTS = ['bush_a', 'bush_b', 'bush_c', 'tree_a', 'tree_b', 'tree_c', 'fern_a', 'fern_b'];   // R169: Jannik's GLB plants (each fails soft to the code plants)
 const IDS = ['daisy', 'cactus', 'swamp', 'aloe', 'tulip', 'hyacinth', 'succulent', 'spire', 'fern'];
 // metres from the garden spawn to the ring's stone (the authored bed-shrub pair at -6.5, 6.7); clearing radius; stone reach
 const EAST_DX = 6.8, EAST_DZ = -11.65;   // R159: the premium Ring's spot (the east lawn, ~(7, -2)) from the garden spawn, like SIDE/BACK
@@ -41,7 +42,21 @@ const runeTex = () => canvasTex((x, s) => {
 // R157: ?ring=premium switches the experimental sanctuary look on (remembered), ?ring=classic switches it off
 export function ringMode() { try { const q = new URLSearchParams(location.search).get('ring'); if (q === 'premium' || q === 'classic') localStorage.setItem('tgw.ring', q); return localStorage.getItem('tgw.ring') === 'premium' ? 'premium' : 'classic'; } catch { return 'classic'; } }
 export class CharacterSwapSpot {
-  constructor(game) { this.g = game; this.spot = null; this.m = null; this.model = null; this.mixer = null; this.near = 0; this.motes = []; this.glowMats = []; this.potColliders = []; }
+  constructor(game) { this.g = game; this.spot = null; this.m = null; this.model = null; this.mixer = null; this.near = 0; this.motes = []; this.glowMats = []; this.potColliders = []; if (ringMode() === 'premium') this.prefetch(); }
+  // R185 (Jannik 16/10: 'loading is slow and I usually see the old version before the new one'): the premium look used to start only
+  // after a chain (garden home -> Ring GLB -> RingSanctuary.js + 8 plant GLBs -> build -> bloom modules), so the classic garden showed for
+  // many seconds and then changed under the player. Now every premium file starts downloading with the game, and the loading cover
+  // (#tgw-premium-veil, made in game.html) stays until the premium garden is built and its bloom is on; never longer than 25 s.
+  prefetch() {
+    const fail = e => { console.warn('[TGW] premium prefetch', e); return null; };
+    this.pre = { sanctuary: import('../visual/RingSanctuary.js?build=RING-R185-20261016A'), plants: PLANTS.map(k => loadGLTF(`./assets/garden/plants/${k}.glb`).then(g => [k, g], e => { console.warn('[TGW] plant', k, e); return null; })) };
+    this.pre.sanctuary.catch(fail); loadGLTF(MODEL).catch(fail);
+    for (const n of ['EffectComposer', 'RenderPass', 'UnrealBloomPass', 'OutputPass', 'ShaderPass']) import(`three/addons/postprocessing/${n}.js`).catch(fail);
+    const t0 = performance.now(), tick = () => { const S = this.sanctuary, done = this.premiumFailed || (S && (S.post || performance.now() - (S.t0 + S.buildMs) > 4000)) || performance.now() - t0 > 25000;
+      if (done) setTimeout(() => this.liftPremiumVeil(), S?.post ? 400 : 0); else setTimeout(tick, 200); };
+    tick();
+  }
+  liftPremiumVeil() { const v = document.getElementById('tgw-premium-veil'); if (!v || v.dataset.lifting) return; v.dataset.lifting = '1'; v.style.opacity = '0'; setTimeout(() => v.remove(), 1000); }
   build() {
     const sp = this.g.homePortal?.gardenSpawn?.(); if (!sp) return false;
     const p = { x: sp.x + SIDE, z: sp.z + BACK };
@@ -99,8 +114,8 @@ export class CharacterSwapSpot {
   // (it does not fit at the old spot). The old Ring stays loaded but hidden; its colliders, mound, clearing and the
   // interaction point hand over to the new one, and restoreClassic() hands everything back (also on any failure).
   loadPremium() {
-    const PLANTS = ['bush_a', 'bush_b', 'bush_c', 'tree_a', 'tree_b', 'tree_c', 'fern_a', 'fern_b'];   // R169: Jannik's GLB plants (each fails soft to the code plants)
-    Promise.all([import('../visual/RingSanctuary.js?build=RING-R184-20261016A'), ...PLANTS.map(k => loadGLTF(`./assets/garden/plants/${k}.glb`).then(g => [k, g], e => { console.warn('[TGW] plant', k, e); return null; }))]).then(([{ RingSanctuary, laneRect }, ...pl]) => {
+    const pre = this.pre || (this.prefetch(), this.pre);   // R185: usually already downloaded since the game started
+    Promise.all([pre.sanctuary, ...pre.plants]).then(([{ RingSanctuary, laneRect }, ...pl]) => {
       const gltfPlants = Object.fromEntries(pl.filter(Boolean));
       const W = this.g.world, vm = this.g.vegetationMask, sp = this.g.homePortal.gardenSpawn(), center = { x: sp.x + EAST_DX, z: sp.z + EAST_DZ };
       const px = W.pathX?.(center.z) ?? 0, yaw = Math.atan2(px - center.x, 0);   // the lane (+z) points at the garden path
@@ -114,8 +129,8 @@ export class CharacterSwapSpot {
         if (this.g.wilds) { this.g.wilds.extraProps = () => [{ x: center.x, z: center.z, r: S.clearR + .3 }]; this.g.wilds.threat?.relayout?.(); }
         this.fx.position.y = -TOP; S.stoneGroup.add(this.fx); if (this.beacon) { S.stoneGroup.add(this.beacon.group); this.beacon.group.position.y = .14; }
         this.applyUnlocked();
-      } catch (e) { console.warn('[TGW] ring premium failed; classic Ring kept', e); this.restoreClassic(); }
-    }).catch(e => console.warn('[TGW] ring premium module failed; classic Ring kept', e));
+      } catch (e) { console.warn('[TGW] ring premium failed; classic Ring kept', e); this.premiumFailed = true; this.restoreClassic(); }
+    }).catch(e => { this.premiumFailed = true; console.warn('[TGW] ring premium module failed; classic Ring kept', e); });
   }
   restoreClassic() {
     const S = this.sanctuary, W = this.g.world, vm = this.g.vegetationMask; this.sanctuary = null;
@@ -173,12 +188,12 @@ export class CharacterSwapSpot {
     const flare = new THREE.Sprite(new THREE.SpriteMaterial({ map: this.glow || (this.glow = glowTex()), color: 0xffe2a0, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, opacity: 0 })); flare.position.copy(light.position); flare.scale.setScalar(.1); g.scene.add(flare);
     const t0 = performance.now(), at = () => (performance.now() - t0) / 1000, wait = s => new Promise(r => setTimeout(r, s * 1000));
     // R184 (Jannik 16/10: 'zoom in closer on the chosen character, now the tree is in front'): the capsule faces the oak and stands only ~3.4 m
-    // from it, so the default 3.5 m+ shot put the camera behind the trunk. Now the camera stands 1.9 m from the capsule on the Ring's inside,
+    // from it, so the default 3.5 m+ shot put the camera behind the trunk. Now the camera stands 1.5 m from the capsule on the Ring's inside,
     // ~37 degrees off the line to the oak on the side away from the player (the player dissolves at the edge of the frame, not in front of it),
-    // low (1 m) and aimed at the height of the character that rises; the new one turns to face the camera.
+    // low (0.85 m) and aimed at the height of the character that rises; the new one turns to face the camera.
     const toC = Math.atan2(S.center.x - pod.x, S.center.z - pod.z), toP = Math.atan2(ch.position.x - pod.x, ch.position.z - pod.z), side = Math.sin(toP - toC) > 0 ? -1 : 1, camYaw = toC + side * .65;
-    const camAt = new THREE.Vector3(pod.x + Math.sin(camYaw) * 1.9, 0, pod.z + Math.cos(camYaw) * 1.9);
-    const showcased = g.showcase?.start?.({ target: P?.g || S.root, at: new THREE.Vector3(pod.x, pod.y, pod.z), yaw: camYaw, dist: 1.9, h: 1, lookY: .55, pan0: 0, pan: -side * .15, min: 4.6, max: 6, done: () => at() > 4.6 }) || false;
+    const camAt = new THREE.Vector3(pod.x + Math.sin(camYaw) * 1.5, 0, pod.z + Math.cos(camYaw) * 1.5);
+    const showcased = g.showcase?.start?.({ target: P?.g || S.root, at: new THREE.Vector3(pod.x, pod.y, pod.z), yaw: camYaw, dist: 1.5, h: .85, lookY: .5, pan0: 0, pan: -side * .15, min: 4.6, max: 6, done: () => at() > 4.6 }) || false;
     const anim = () => { const t = at();
       // 0.8-1.8 s: the character shrinks into light; 1.4-2.6 s: the capsule flares; 2.4 s on: the new one rises
       const k = Math.min(1, Math.max(0, (t - .8) / 1)); if (ch?.root) { ch.root.scale.setScalar(Math.max(.001, 1 - k * k)); ch.root.visible = k < .99; }
