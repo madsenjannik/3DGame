@@ -60,6 +60,19 @@ export class FishingGrip {
         if (n && (!best || rank > best.rank || (rank === best.rank && n > best.n))) best = { n, rank, c: sum.multiplyScalar(1 / n) };
       });
     } catch (e) { /* fails soft: default clay green */ }
+    if (!best) try {
+      // R197 (Jannik GO 19/10 'GO fisk'): v2 rigs (Swamp, Aloe, Cactus) are rigid meshes parented to the bones, not skinned, so the loop above
+      // finds none. Then the meshes hanging under Hand_R are the hand: average their colour (material colour x vertex colour), a mesh
+      // named 'hand' (or with a 'hand' / 'limb' material) first.
+      this.B.hR.traverse(o => {
+        if (!o.isMesh || o.isSkinnedMesh) return; const m = Array.isArray(o.material) ? o.material[0] : o.material, a = o.geometry?.attributes?.position, col = o.geometry?.attributes?.color;
+        if (!m?.color || !a || /^fx_/.test(m.name || '')) return;
+        const sum = new THREE.Color(0, 0, 0), n = a.count; if (!n) return;
+        for (let v = 0; v < n; v++) { const c = m.color.clone(); if (col && m.vertexColors) c.multiply(new THREE.Color(col.getX(v), col.getY(v), col.getZ(v))); sum.add(c); }
+        const rank = /hand/i.test(o.name) || /hand/i.test(m.name || '') ? 2 : /limb/i.test(m.name || '') ? 1 : 0;
+        if (!best || rank > best.rank || (rank === best.rank && n > best.n)) best = { n, rank, c: sum.multiplyScalar(1 / n) };
+      });
+    } catch (e) { /* fails soft: default clay green */ }
     return best ? best.c : fallback;
   }
   buildFist(colour) {
