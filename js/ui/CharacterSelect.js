@@ -105,6 +105,8 @@ class LiveCard {
     });
     this.cache.set(id, p); return p;
   }
+  // R203: load a character and compile its shaders ahead (no download, parse or shader compile when you arrive on it)
+  async warm(id) { try { const m = await this.load(id); if (!m.warm) { m.warm = true; this.r.compile(m.root, this.cam, this.s); } } catch {} }
   // place the canvas over the centre card's art box and show this character there
   async show(id, box) {
     this.want = id; const c = this.canvas;
@@ -117,6 +119,9 @@ class LiveCard {
     this.cur = m; this.s.add(m.root);
     const h = m.h, dist = (h * .5) / Math.tan(THREE.MathUtils.degToRad(15)) * 1.1;              // the portraits' framing
     this.cam.position.set(0, h * .58, dist); this.cam.lookAt(0, h * .5, 0);
+    // R203: show the canvas only once the loop has drawn this character (no frame of the previous one or an empty canvas), so the portrait
+    // under it crossfades straight into the live figure
+    await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r))); if (this.want !== id) return false;
     c.classList.add('on'); return true;
   }
 }
@@ -158,11 +163,21 @@ export function mountCharacterSelect() {
     const r = art.getBoundingClientRect();
     live.show(c.id, { left: r.left - stage.left, top: r.top - stage.top, width: r.width, height: r.height }).then(ok => { if (ok && list[i].id === c.id) $('.cs-card.main')?.classList.add('live'); });
   };
+  // R203 (Jannik GO 19/10: 'yaaay'): the arriving centre card pops, its plate pops after it, and behind it a burst of gold light and sparks
+  const yayEl = (() => { const e = document.createElement('div'); e.id = 'cs-yay'; e.setAttribute('aria-hidden', 'true'); const st = $('#cs-stage'); st.insertBefore(e, st.firstChild); return e; })();   // the glow, behind the cards
+  const sparkEl = (() => { const e = document.createElement('div'); e.id = 'cs-yay-f'; e.setAttribute('aria-hidden', 'true'); e.innerHTML = Array.from({ length: 16 }, (_, k) => `<i${k % 3 === 0 ? ' class="star"' : ''}></i>`).join(''); $('#cs-stage').appendChild(e); return e; })();   // the sparks, in front
+  const yay = c => { const m = $('.cs-card.main'); if (!m) return; m.classList.add('pop'); m.addEventListener('animationend', ev => { if (ev.animationName === 'csPop') m.classList.remove('pop'); });
+    const st = $('#cs-stage').getBoundingClientRect(), r = m.getBoundingClientRect(), w = m.offsetWidth;
+    for (const e of [yayEl, sparkEl]) { e.style.left = `${r.left + r.width / 2 - st.left}px`; e.style.top = `${r.top + r.height / 2 - st.top}px`; e.style.setProperty('--w', `${w}px`); }
+    const h = m.offsetHeight; sparkEl.querySelectorAll('i').forEach((p, k) => { const a = k / 16 * Math.PI * 2 + Math.random() * .3, cx = Math.cos(a), cy = Math.sin(a), d = .78 + Math.random() * .45;   // from the card's edge outwards
+      p.style.setProperty('--x0', `${cx * w * .45}px`); p.style.setProperty('--y0', `${cy * h * .45}px`); p.style.setProperty('--x', `${cx * w * d}px`); p.style.setProperty('--y', `${cy * h * d}px`); p.style.setProperty('--d', `${Math.random() * .1}s`); });
+    sparkEl.style.display = c.open ? '' : 'none';
+    for (const e of [yayEl, sparkEl]) { e.classList.remove('go'); void e.offsetWidth; e.classList.add('go'); } };
   const render = dir => {
     const n = list.length, c = list[i], prev = list[(i - 1 + n) % n], next = list[(i + 1) % n];
     const row = $('#cs-cards'); row.innerHTML = card(prev, 'side prev') + card(c, 'main') + card(next, 'side next');
-    if (dir) { row.classList.remove('slide-l', 'slide-r'); void row.offsetWidth; row.classList.add(dir > 0 ? 'slide-l' : 'slide-r'); }
-    live?.show(null); clearTimeout(render.t); render.t = setTimeout(placeLive, dir ? 340 : 0);   // after the slide settles
+    if (dir) { row.classList.remove('slide-l', 'slide-r'); void row.offsetWidth; row.classList.add(dir > 0 ? 'slide-l' : 'slide-r'); yay(c); }
+    live?.show(null); clearTimeout(render.t); render.t = setTimeout(placeLive, dir ? 620 : 0);   // R203: after the pop has landed (the canvas sits on the card's resting box)
     $('#cs-thumbs').innerHTML = list.map((t, k) => `<button type="button" class="cs-thumb${k === i ? ' on' : ''}${t.open ? '' : ' locked'}" data-i="${k}" aria-label="${t.open ? t.name : 'Locked character'}">${t.open ? `<span style="--art:url(${art(t.id)})"></span>` : '<em>?</em>'}</button>`).join('');
     $('#cs-name').textContent = c.name; $('#cs-role').textContent = c.open ? c.role : 'Locked';
     $('#cs-desc').textContent = c.open ? c.desc : SEEDS[c.id] === 1 ? 'Your seed is in your Bag: plant it at the Sprouting Ring in your garden' : (UNLOCK[c.id] || 'Locked');
@@ -186,5 +201,6 @@ export function mountCharacterSelect() {
   area.addEventListener('pointerdown', e => { sx = e.clientX; }); area.addEventListener('pointerup', e => { if (sx != null && Math.abs(e.clientX - sx) > 40) { swiped = performance.now(); go(i + (e.clientX < sx ? 1 : -1), e.clientX < sx ? 1 : -1); } sx = null; });
   addEventListener('resize', () => { clearTimeout(render.t); render.t = setTimeout(placeLive, 120); });
   render(0); window.__cs = { get i() { return i; }, list, go, live }; document.body.classList.add('cs-ready');
-  setTimeout(() => { for (const id of STARTERS) live?.load(id); }, 600);   // warm the three starters
+  // R203: warm every open character, one at a time (the starters first), so switching never downloads, parses or compiles
+  setTimeout(async () => { const ids = list.filter(c => c.open).map(c => c.id).sort((a, b) => STARTERS.has(b) - STARTERS.has(a)); for (const id of ids) { await live?.warm(id); await new Promise(r => setTimeout(r, 120)); } }, 600);
 }

@@ -17,7 +17,7 @@
       if(document.body)for(var e of document.body.querySelectorAll('*')){if(e.closest('.cs-bgclip,#cs-debug'))continue;var r=e.getBoundingClientRect();if(r.width&&r.right>W+1&&r.right>o.right_){o.right_=r.right;o.over=e.tagName.toLowerCase()+(e.id?'#'+e.id:'')+(e.classList[0]?'.'+e.classList[0]:'')+' R'+Math.round(r.right)+'/'+W;o.at=Math.round(performance.now()-t0);}}
       if(performance.now()-t0<2500)requestAnimationFrame(probe);}
     o.right_=0;f();addEventListener('resize',f);addEventListener('orientationchange',function(){setTimeout(f,300);});requestAnimationFrame(probe);})();</script>
-  <script src="./version.js?v=RING-R202-20261019A"></script><script src="./js/core/settings.js?v=RING-R202-20261019A"></script>
+  <script src="./version.js?v=RING-R203-20261019A"></script><script src="./js/core/settings.js?v=RING-R203-20261019A"></script>
   <script>/* R185: GitHub Pages lets browsers keep a page up to 10 min, so right after a new build an old page (with old file tags) could load first. Ask the server for the current version (never cached); if it is newer, reload once with it in the address (a new address is never cached). */try{(function(){var b=window.TGW_VERSION&&TGW_VERSION.build;if(!b||!window.fetch||location.protocol==='file:')return;fetch('./version.js?check='+Date.now(),{cache:'no-store'}).then(function(r){return r.ok?r.text():''}).then(function(t){var m=/build:\s*'([^']+)'/.exec(t);if(!m||m[1]===b)return;if(sessionStorage.getItem('tgw.fresh')===m[1])return;sessionStorage.setItem('tgw.fresh',m[1]);var u=new URL(location.href);u.searchParams.set('v',m[1]);location.replace(u.toString());}).catch(function(){});})();}catch(e){}</script>
   <script>/* R163: ?ring=premium|classic is remembered from any entry page (the selector drops the query on its way to the game) */try{var __r=new URLSearchParams(location.search).get('ring');if(__r==='premium'||__r==='classic')localStorage.setItem('tgw.ring',__r)}catch(e){}</script>
   <script>/* R183 */try{if(localStorage.getItem('tgw.ring')==='premium')document.documentElement.classList.add('tgw-premium');}catch(e){}</script>
@@ -143,6 +143,28 @@
     html:not(.cs-phone) #cs-stage{top:calc(max(10px,env(safe-area-inset-top)) + 2vh);bottom:calc(max(10px,env(safe-area-inset-bottom)) + 4.5vh + 214px);height:auto;justify-content:center}
     html:not(.cs-phone) .cs-card{width:clamp(160px,min(24vw,34vh),460px)}
     html:not(.cs-phone) #cs-thumbs{margin-top:clamp(26px,4.2vh,52px)}
+    /* R203 (Jannik GO 19/10: 'the card you move to must pop, like yaaay'): the new centre card pops (0.8 -> 1.2 -> 1.03 -> 1.11 -> rest),
+       its name plate pops after it, and behind it a burst of gold light with 12 sparks (open characters only); reduce motion: none */
+    @keyframes csPop{0%{transform:scale(.8)}45%{transform:scale(1.2)}68%{transform:scale(1.03)}84%{transform:scale(1.11)}100%{transform:scale(var(--s))}}
+    #cs-cards .cs-card.main.pop,#cs-cards.slide-l .cs-card.main.pop,#cs-cards.slide-r .cs-card.main.pop{animation:csPop .6s cubic-bezier(.25,.9,.35,1) both,csHalo 1s ease-out both}
+    @keyframes csHalo{0%{box-shadow:0 0 0 4px var(--gold),0 0 0 7px #8a6a2a,0 0 0 0 rgba(255,214,110,0),0 18px 30px rgba(0,0,0,.4)}28%{box-shadow:0 0 0 5px #ffe08a,0 0 0 9px #b8862e,0 0 80px 34px rgba(255,214,110,.95),0 18px 30px rgba(0,0,0,.4)}100%{box-shadow:0 0 0 4px var(--gold),0 0 0 7px #8a6a2a,0 0 26px 6px rgba(240,196,99,.55),0 18px 30px rgba(0,0,0,.4)}}
+    @keyframes csPlate{0%,30%{transform:scale(.6);opacity:0}62%{transform:scale(1.14);opacity:1}100%{transform:scale(1);opacity:1}}
+    .cs-card.main.pop .cs-plate b{display:inline-block;animation:csPlate .62s cubic-bezier(.3,1.5,.5,1) both}
+    #cs-yay{position:absolute;left:0;top:0;width:0;height:0;pointer-events:none;z-index:0}
+    #cs-yay::before{content:'';position:absolute;left:calc(var(--w,300px) * -.6);top:calc(var(--w,300px) * -.6);width:calc(var(--w,300px) * 1.2);height:calc(var(--w,300px) * 1.2);border-radius:50%;
+      background:radial-gradient(circle,rgba(255,226,120,1),rgba(250,200,80,.6) 40%,rgba(240,196,99,0) 70%);opacity:0;transform:scale(.3)}
+    #cs-yay.go::before{animation:csGlow .8s ease-out}
+    @keyframes csGlow{0%{opacity:0;transform:scale(.3)}22%{opacity:1}100%{opacity:0;transform:scale(1.75)}}
+    @keyframes csGlow2{0%{opacity:0;transform:scale(.5)}20%{opacity:1}100%{opacity:0;transform:scale(2.4)}}
+    #cs-yay.go::before{animation:csGlow2 .9s ease-out}
+    #cs-yay-f{position:absolute;left:0;top:0;width:0;height:0;pointer-events:none;z-index:4}
+    #cs-yay-f i{position:absolute;left:-9px;top:-9px;width:18px;height:18px;border-radius:50%;background:#fff6d2;box-shadow:0 0 14px 5px rgba(255,210,100,.95);opacity:0}
+    #cs-yay-f i.star{border-radius:0;background:#ffe9a8;clip-path:polygon(50% 0,62% 38%,100% 50%,62% 62%,50% 100%,38% 62%,0 50%,38% 38%);box-shadow:none;width:28px;height:28px;left:-14px;top:-14px;filter:drop-shadow(0 0 6px rgba(255,205,90,.95))}
+    #cs-yay-f.go i{animation:csSpark .9s cubic-bezier(.15,.85,.3,1) var(--d) both}
+    @keyframes csSpark{0%{opacity:0;transform:translate(var(--x0),var(--y0)) scale(.9) rotate(0)}10%{opacity:1}70%{opacity:1;transform:translate(calc(var(--x) * .85),calc(var(--y) * .85)) scale(1) rotate(160deg)}100%{opacity:0;transform:translate(var(--x),var(--y)) scale(.35) rotate(220deg)}}
+    .cs-card.main .cs-art,.cs-card.main.live .cs-art{transition:opacity .3s}   /* crossfade with the live canvas (was .25 s after .1 s) */
+    .cs-live{transition:opacity .3s}
+    @media (prefers-reduced-motion:reduce){#cs-cards .cs-card.main.pop,.cs-card.main.pop .cs-plate b{animation:none}#cs-yay,#cs-yay-f{display:none}}
 </style>
 </head>
 <body>
@@ -160,7 +182,7 @@
     <button id="cs-play" type="button"></button>
   </section>
   <script type="module">
-    import { mountCharacterSelect } from './js/ui/CharacterSelect.js?build=RING-R202-20261019A';
+    import { mountCharacterSelect } from './js/ui/CharacterSelect.js?build=RING-R203-20261019A';
     mountCharacterSelect();
   </script>
 </body>
