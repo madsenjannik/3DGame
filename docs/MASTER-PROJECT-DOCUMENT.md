@@ -1852,7 +1852,7 @@ animation + shadow culling.
 **Not now**: multiplayer backend, ECS/engine rewrite, WebGPU, physics engine, global state/event-bus rewrite, quest
 framework, procedural streaming, day/night, skill tree, inventory grid, equipment, crafting tiers, many enemies/bosses.
 
-**R198 (v0.8.198):** Fishing grip (GO 19/10, Fishing lock opened for this only): the fist takes the hand colour from the meshes under `Hand_R` on v2 rigs (rigid, not skinned). PerfProbe (dev): exact draws per group for main view and shadow pass, hitch log, load detail (ring bloom ready, cover told to go, shader programs, long tasks). Measuring only; the cover-delay fix and the garden shadow cut wait for Jannik's next report.
+**R198 (v0.8.198):** Fishing grip (GO 19/10, Fishing lock opened for this only): the fist takes the hand colour from the meshes under `Hand_R` on v2 rigs (rigid, not skinned). PerfProbe (dev): exact draws per group for main view and shadow pass, hitch log, load detail (ring bloom ready, cover told to go, shader programs, long tasks). Measuring only; the cover-delay fix and the garden shadow cut wait for Jannik's next report. **Smoke: 61/61, all PASS (first fully green run under premium).**
 
 ## Performance budgets
 Mobile FPS target 50–60 (minimum ~30 in heavy scenes) · frame budget 16.7 ms · avoid startup long-task series >50 ms ·
