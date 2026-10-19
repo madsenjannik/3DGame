@@ -386,7 +386,7 @@ export class RingSanctuary {
       .catch(e => console.warn('[TGW] ring bloom unavailable; plain render kept', e));
   }
   // R167: the 'hitch the first time you come near the Ring' was the GPU compiling the new shaders on first sight; compile them all now
-  warm() { try { const r = this.g.renderer, p = r.compileAsync ? r.compileAsync(this.g.scene, this.g.camera) : (r.compile(this.g.scene, this.g.camera), null); p?.catch?.(() => {}); } catch {} }
+  warm() { try { const seen = this.rwSeen || (this.rwSeen = new WeakSet()); this.g.scene.traverse(o => { if (o.isMesh || o.isPoints || o.isSprite) seen.add(o); }); this.rwInit = true; } catch {} try { const r = this.g.renderer, p = r.compileAsync ? r.compileAsync(this.g.scene, this.g.camera) : (r.compile(this.g.scene, this.g.camera), null); p?.catch?.(() => {}); } catch {} }
   glowUpdate(t, dt) {
     if (!this.colMat) return; const calling = !!this.g.specialSeeds?.inBag?.().length; this.callK = (this.callK || 0) + ((calling ? 1 : 0) - (this.callK || 0)) * Math.min(1, dt * 2);
     const c = this.callK, br = .5 + .5 * Math.sin(t * 1.7), day = this.U.day.value; this.colMat.uniforms.uT.value = t; this.colMat.uniforms.uK.value = .22 + .12 * br + .45 * c;
@@ -537,16 +537,36 @@ export class RingSanctuary {
     for (const P of this.pods.values()) { if (P.k !== P.target) { P.k += Math.sign(P.target - P.k) * Math.min(Math.abs(P.target - P.k), Math.min(dt, .1) / 1.6); if (P.k === P.target) P.anim = false; this.applyPod(P); }
       if (P.sway && P.open.visible) P.sway.rotation.z = Math.sin(t * 1.3 + P.ph) * .07; }
     this.glowUpdate(t, dt); this.phoneBudget(dt); this.plants?.update(dt);
+    if ((this.ssT = (this.ssT || 0) + dt) > 2) { this.ssT = 0; try { this.smallShadows(true); } catch (e) { console.warn('[TGW] small-shadow pass failed; restored', e); try { this.smallShadows(false); } catch {} this.ssOff = true; } }
     const br = .5 + .5 * Math.sin(t * 2.1); this.m.ember.emissiveIntensity = 2 + 1.5 * br; for (const gl of this.glows) gl.material.opacity = (gl.isSprite ? .4 : .24) + .12 * br;
     if (this.motes) this.motes.rotation.y = t * .02;
     if (sd && this.shafts) for (const m of this.shafts) { if (!m.visible) continue; m.position.copy(m.userData.g).addScaledVector(sd, 3.6); m.quaternion.setFromUnitVectors(new V3(0, 1, 0), sd); }
   }
+  // R198 C1 (Jannik GO 19/10, his report: the garden's shadow pass was 1053 draw calls, 678 of them WILDS_PRIVATE_GARDEN: the thorn hedge's
+  // 10 segments x ~23 parts, the workshop, compost and shrine, each part its own shadow draw): parts whose world size is under 0.3 m
+  // (radius) stop casting. The sun's shadow map is ~2 cm a texel over 42 m, so a 6 cm thorn or 8 cm berry only made specks inside the
+  // hedge's own shadow. Re-checked every 2 s (a part growing in a Build clip gets its shadow back); the greenhouse levels are not in this
+  // group and are never touched. on = false (failure / dispose) gives every part its own castShadow back.
+  smallShadows(on) { if (this.ssOff && on) return; let root = this.ssRoot; if (!root || !root.parent) root = this.ssRoot = this.g.world?.privateRoot?.getObjectByName('WILDS_PRIVATE_GARDEN') || this.g.scene.getObjectByName('WILDS_PRIVATE_GARDEN'); if (!root) return;
+    const sc = new V3(); root.updateMatrixWorld(true);
+    root.traverse(o => { if (!o.isMesh) return; const u = o.userData; if (u.r198cs === undefined) { if (!on) return; u.r198cs = o.castShadow; } if (!u.r198cs) return;
+      if (!on) { o.castShadow = true; return; } const gm = o.geometry; if (!gm) return; gm.boundingSphere || gm.computeBoundingSphere(); sc.setFromMatrixScale(o.matrixWorld);
+      o.castShadow = gm.boundingSphere.radius * Math.max(sc.x, sc.y, sc.z) >= .3; });
+    this.ssCount = 0; if (on) root.traverse(o => { if (o.isMesh && o.userData.r198cs && !o.castShadow) this.ssCount++; }); }
   bloom(id) { const P = this.pods.get(id); if (!P) return; P.k = 0; P.target = 1; P.anim = true; this.applyPod(P);
     try { this.g.fx?.burst?.(this.podWorld(id), 0xffb35a, 18, 1.4); } catch {} }
   podWorld(id) { const P = this.pods.get(id); const v = new V3(); P?.g.getWorldPosition(v); v.y += .5; return v; }
   // R179: called by the swap spot every frame while the player is in the shared world
-  worldUpdate(dt) { if (!this.wenv) return; try { this.U.time.value = (performance.now() - this.t0) / 1000; this.wenv.update(dt); } catch (e) { console.warn('[TGW] world premium look failed; world restored', e); try { this.wenv.restore(); } catch {} this.wenv = null; if (this.post) this.post.world = false; } }
-  dispose() { try { this.wenv?.restore(); } catch {} this.wenv = null; try { this.plants?.root.removeFromParent(); } catch {} try { this.leaveGarden(); } catch {} try { this.env?.restore(); } catch {} this.env = null; if (this.g.postFx === this.post) this.g.postFx = null; try { this.post?.dispose(); } catch {} const W = this.g.world; for (const c of this.cols) { const i = W.colliders.indexOf(c); if (i >= 0) W.colliders.splice(i, 1); } this.cols = []; this.root.removeFromParent(); }
+  // R198 D (Jannik GO 19/10, his report: the world's 2 hitches were each a render spike with 1-3 new shader programs): models loaded after
+  // the garden's warm-up (animals, FX, late GLBs) compiled their shaders the first time they came into view. In the world, every 3 s the
+  // meshes not seen before are collected and only their subtrees are compiled ahead of time against the scene's lights (compileAsync:
+  // parallel, off the frame; one batch at a time). A whole-scene compile cost ~30 ms of main thread itself, so it is never used here.
+  rewarm(dt) { if ((this.rwT = (this.rwT || 0) + dt) < 3 || this.rwBusy) return; this.rwT = 0; const seen = this.rwSeen || (this.rwSeen = new WeakSet()), sc = this.g.scene, tops = new Set(), first = !this.rwInit;   // first: no warm() ran (it marks what it compiled)
+    sc.traverse(o => { if (!(o.isMesh || o.isPoints || o.isSprite) || seen.has(o)) return; seen.add(o); if (first) return; let t = o; while (t.parent && t.parent !== sc && t.parent.parent !== sc) t = t.parent; tops.add(t); });
+    this.rwInit = true; const r = this.g.renderer; if (!tops.size || !r.compileAsync) return; this.rwBusy = true; this.rwCount = (this.rwCount || 0) + 1;
+    Promise.all([...tops].map(t => r.compileAsync(t, this.g.camera, sc).catch(() => {}))).finally(() => { this.rwBusy = false; }); }
+  worldUpdate(dt) { try { this.rewarm(dt); } catch {} if (!this.wenv) return; try { this.U.time.value = (performance.now() - this.t0) / 1000; this.wenv.update(dt); } catch (e) { console.warn('[TGW] world premium look failed; world restored', e); try { this.wenv.restore(); } catch {} this.wenv = null; if (this.post) this.post.world = false; } }
+  dispose() { try { this.smallShadows(false); } catch {} try { this.wenv?.restore(); } catch {} this.wenv = null; try { this.plants?.root.removeFromParent(); } catch {} try { this.leaveGarden(); } catch {} try { this.env?.restore(); } catch {} this.env = null; if (this.g.postFx === this.post) this.g.postFx = null; try { this.post?.dispose(); } catch {} const W = this.g.world; for (const c of this.cols) { const i = W.colliders.indexOf(c); if (i >= 0) W.colliders.splice(i, 1); } this.cols = []; this.root.removeFromParent(); }
   stats() { let tris = 0, draws = 0; this.root.traverse(o => { if (!o.visible || !o.geometry) return; draws++; const n = (o.geometry.index ? o.geometry.index.count : o.geometry.attributes.position.count) / 3; tris += n * (o.isInstancedMesh ? o.count : 1); }); return { draws, tris: Math.round(tris), buildMs: Math.round(this.buildMs) }; }
 }
 

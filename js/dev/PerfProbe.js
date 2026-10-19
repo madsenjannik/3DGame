@@ -110,6 +110,7 @@ export class PerfProbe {
     const L = [`TGW perf report · ${v.version || '?'} ${v.build || ''} · ${new Date().toISOString()}`, `UA ${navigator.userAgent}`,
       `LOAD (ms from page start): loading gone ${T.loadingGone ?? '-'} · premium garden built ${T.premiumGardenBuilt ?? '-'} (build ${T.premiumBuildMs ?? '-'} ms) · cover lifted ${T.coverLifted ?? '-'} · bloom on ${T.bloomOn ?? '-'}`,
       `LOAD DETAIL (R198): ring bloom ready ${T.ringBloomReady ?? '-'} · cover told to go ${T.coverDone ?? '-'} · shader programs ${Object.entries(T.programs || {}).map(([k, v]) => `${k} ${v}`).join(' · ') || '-'}${T.programsAtDone != null ? ` · coverDone ${T.programsAtDone}` : ''}`,
+      `R198: small garden parts without shadow ${this.g.swapSpot?.sanctuary?.ssCount ?? '-'} · world shader re-warms ${this.g.swapSpot?.sanctuary?.rwCount ?? 0}`,
       `LONG TASKS > 50 ms in the load (to cover lifted + 1 s): ${this.long.filter(([st]) => st <= (T.coverLifted ?? 0) + 1000).map(([st, d]) => `${st}:${d}`).join(' ') || 'none (or not supported)'}`,
       `DOWNLOADS: ${D.requests} requests · ${D.MB} MB transferred · ${D.fromCache} from cache · GLB ${D.glbMB} MB`, ...D.top.map(s => '  ' + s)];
     for (const [k, R] of this.runs.entries()) L.push('', `RUN ${k + 1} · ${R.space} · ${R.seconds} s · ${R.frames} frames · ${R.fps} fps`,
