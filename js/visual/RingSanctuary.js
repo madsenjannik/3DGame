@@ -559,12 +559,15 @@ export class RingSanctuary {
   // R179: called by the swap spot every frame while the player is in the shared world
   // R198 D (Jannik GO 19/10, his report: the world's 2 hitches were each a render spike with 1-3 new shader programs): models loaded after
   // the garden's warm-up (animals, FX, late GLBs) compiled their shaders the first time they came into view. In the world, every 3 s the
-  // meshes not seen before are collected and only their subtrees are compiled ahead of time against the scene's lights (compileAsync:
-  // parallel, off the frame; one batch at a time). A whole-scene compile cost ~30 ms of main thread itself, so it is never used here.
+  // meshes not seen before are collected and only their subtrees are compiled ahead of time against the scene's lights (compile:
+  // started, not waited for). A whole-scene compile cost ~30 ms of main thread itself, so it is never used here.
   rewarm(dt) { if ((this.rwT = (this.rwT || 0) + dt) < 3 || this.rwBusy) return; this.rwT = 0; const seen = this.rwSeen || (this.rwSeen = new WeakSet()), sc = this.g.scene, tops = new Set(), first = !this.rwInit;   // first: no warm() ran (it marks what it compiled)
     sc.traverse(o => { if (!(o.isMesh || o.isPoints || o.isSprite) || seen.has(o)) return; seen.add(o); if (first) return; let t = o; while (t.parent && t.parent !== sc && t.parent.parent !== sc) t = t.parent; tops.add(t); });
-    this.rwInit = true; const r = this.g.renderer; if (!tops.size || !r.compileAsync) return; this.rwBusy = true; this.rwCount = (this.rwCount || 0) + 1;
-    Promise.all([...tops].map(t => r.compileAsync(t, this.g.camera, sc).catch(() => {}))).finally(() => { this.rwBusy = false; }); }
+    this.rwInit = true; const r = this.g.renderer; if (!tops.size || !r.compile) return; this.rwCount = (this.rwCount || 0) + 1;
+    // R202: compile() starts the programs (in parallel where the browser can) without waiting. compileAsync's ready-poller threw from a
+    // timer when a material was disposed while compiling (a gathered wilds node swaps its model): an uncaught page error and a promise
+    // that never settled, which also stopped every later re-warm.
+    for (const t of tops) { if (!t.parent) continue; try { r.compile(t, this.g.camera, sc); } catch {} } }
   worldUpdate(dt) { try { this.rewarm(dt); } catch {} if (!this.wenv) return; try { this.U.time.value = (performance.now() - this.t0) / 1000; this.wenv.update(dt); } catch (e) { console.warn('[TGW] world premium look failed; world restored', e); try { this.wenv.restore(); } catch {} this.wenv = null; if (this.post) this.post.world = false; } }
   dispose() { try { this.smallShadows(false); } catch {} try { this.wenv?.restore(); } catch {} this.wenv = null; try { this.plants?.root.removeFromParent(); } catch {} try { this.leaveGarden(); } catch {} try { this.env?.restore(); } catch {} this.env = null; if (this.g.postFx === this.post) this.g.postFx = null; try { this.post?.dispose(); } catch {} const W = this.g.world; for (const c of this.cols) { const i = W.colliders.indexOf(c); if (i >= 0) W.colliders.splice(i, 1); } this.cols = []; this.root.removeFromParent(); }
   stats() { let tris = 0, draws = 0; this.root.traverse(o => { if (!o.visible || !o.geometry) return; draws++; const n = (o.geometry.index ? o.geometry.index.count : o.geometry.attributes.position.count) / 3; tris += n * (o.isInstancedMesh ? o.count : 1); }); return { draws, tris: Math.round(tris), buildMs: Math.round(this.buildMs) }; }

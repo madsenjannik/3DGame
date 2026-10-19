@@ -1860,6 +1860,8 @@ framework, procedural streaming, day/night, skill tree, inventory grid, equipmen
 
 **R201 (v0.8.201):** Start screen: the leaf gust removed; the start scene's character appears after its home's MoveIn (pop + hop; reduce motion = no animation). Character select on desktop (not cs-phone): cards centred between top and info panel and up to 460 px wide; thumbnails kept. Phones unchanged.
 
+**R202 (v0.8.202):** Start scene: the character's arrival is a sprout out of the ground (rise with overshoot, pollen burst, tumbling leaves, ring of light, hop on landing); only the game's Reduce motion setting skips it (no longer the OS setting). World shader re-warm (R199 D) fixed: `compile()` instead of `compileAsync()` (whose poller threw on a material disposed mid-compile).
+
 ## Performance budgets
 Mobile FPS target 50–60 (minimum ~30 in heavy scenes) · frame budget 16.7 ms · avoid startup long-task series >50 ms ·
 as few WebGL contexts as possible · draw calls and triangles measured, not guessed.
