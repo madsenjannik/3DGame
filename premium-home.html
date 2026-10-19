@@ -32,7 +32,12 @@ const [shedG,charG,wildG,...P]=await Promise.all([L.loadAsync(SHED_URL).catch(()
 const PL=Object.fromEntries(names.map((n,i)=>[n,P[i]]));
 // home: the character's shed rises with its MoveIn clip, then idles (its roof leaves sway)
 const shed=shedG.scene;shadows(shed);shed.position.set(HX,0,HZ);shed.rotation.y=.18;s.add(shed);const sm=new THREE.AnimationMixer(shed);const idleS=shedG.animations.find(a=>a.name==='Idle');if(idleS)sm.clipAction(idleS).play();const move=new URLSearchParams(location.search).get('moveIn')==='0'?null:shedG.animations.find(a=>a.name==='MoveIn');if(move){const a=sm.clipAction(move);a.setLoop(THREE.LoopOnce,1);a.clampWhenFinished=true;a.play()}mixers.push(sm);
-const ch=charG.scene;shadows(ch);const bb=new THREE.Box3().setFromObject(ch);ch.scale.setScalar(1.25/Math.max(.01,bb.max.y-bb.min.y));ch.position.set(6.6,.02,4.4);ch.rotation.y=-.35;s.add(ch);const cm=new THREE.AnimationMixer(ch);const idle=charG.animations.find(a=>a.name==='Idle');if(idle)cm.clipAction(idle).play();let hop=null;const hc=charG.animations.find(a=>a.name==='Hop');if(hc){hop=cm.clipAction(hc);hop.setLoop(THREE.LoopOnce,1);hop.clampWhenFinished=false}mixers.push(cm);
+const ch=charG.scene;shadows(ch);const bb=new THREE.Box3().setFromObject(ch);const kS=1.25/Math.max(.01,bb.max.y-bb.min.y);ch.scale.setScalar(kS);ch.position.set(6.6,.02,4.4);ch.rotation.y=-.35;s.add(ch);const cm=new THREE.AnimationMixer(ch);const idle=charG.animations.find(a=>a.name==='Idle');if(idle)cm.clipAction(idle).play();let hop=null;const hc=charG.animations.find(a=>a.name==='Hop');if(hc){hop=cm.clipAction(hc);hop.setLoop(THREE.LoopOnce,1);hop.clampWhenFinished=false}mixers.push(cm);
+// R201 (Jannik GO 19/10: 'shouldn't Cactus fade in last?'): the character waits until its home has risen (the end of the shed's MoveIn),
+// then pops in (scale with a small overshoot) and hops; reduce motion / moveIn=0: it simply appears
+const REDUCE=(()=>{try{return localStorage.getItem('dymGame.entry.reduceMotion')==='1'||matchMedia('(prefers-reduced-motion: reduce)').matches}catch{return false}})();
+const ARRIVE=move?move.duration:.6;let arrived=-1;ch.visible=false;
+const arrive=t=>{if(arrived<0){if(t<ARRIVE)return;arrived=t;ch.visible=true;if(!REDUCE&&hop)hop.reset().play()}const k=REDUCE?1:Math.min(1,(t-arrived)/.5),e=1+2.2*Math.pow(k-1,3)+1.2*Math.pow(k-1,2);ch.scale.setScalar(kS*Math.max(.001,REDUCE?1:e))};window.__homeArrive=()=>({at:ARRIVE,arrived,visible:ch.visible,scale:+(ch.scale.x/kS).toFixed(3)});
 // a ring of trees behind and beside the home, bushes at its feet, ferns in the foreground
 if(PL.tree_a)[[-9,-8,7.2,'tree_a'],[-4.5,-11,8,'tree_c'],[1.5,-12,7.4,'tree_b'],[7,-10,8.2,'tree_a'],[12,-6,7,'tree_c'],[-12,-1,6.6,'tree_b'],[14,1,6.8,'tree_a'],[-15,-12,9,'tree_c'],[17,-11,9,'tree_b'],[-7,4.5,5.8,'tree_c']].forEach(([x,z,h,k],i)=>PL[k]&&plant(PL[k],x,z,h,i*1.7));
 if(PL.bush_a)[[-2.6,1.4,1.5,'bush_a'],[.6,-1.8,1.3,'bush_b'],[-1.6,-3.6,1.6,'bush_c'],[10.6,2.4,1.1,'bush_a'],[-4.8,-.6,1.4,'bush_b'],[11.2,-3,1.6,'bush_c']].forEach(([x,z,h,k],i)=>PL[k]&&plant(PL[k],x,z,h,i*2.3));
@@ -54,7 +59,7 @@ const CAM=(new URLSearchParams(location.search).get('cam')||'').split(',').map(N
 if(new URLSearchParams(location.search).get('bare')==='1'){shed.visible=false;ch.visible=false;s.traverse(o=>{if(/^Animal_/.test(o.name||''))o.visible=false})}   // R183: stills of the meadow alone
 window.__still=(w,h,q)=>{r.setSize(w,h,false);c.aspect=w/h;c.updateProjectionMatrix();r.render(s,c);return r.domElement.toDataURL('image/webp',q||.86)};
 const clock=new THREE.Clock();let t=0,shown=false;
-function frame(){const dt=Math.min(.05,clock.getDelta());t+=dt;uTime.value=t;mixers.forEach(m=>m.update(dt));
+function frame(){const dt=Math.min(.05,clock.getDelta());t+=dt;uTime.value=t;mixers.forEach(m=>m.update(dt));arrive(t);
  const A=mg.attributes.position.array;for(let i=0;i<MN;i++){A[i*3]+=Math.sin(t*.5+i)*.004;A[i*3+1]+=Math.sin(t*.8+i*1.7)*.003;A[i*3+2]+=Math.cos(t*.4+i)*.004}mg.attributes.position.needsUpdate=true;
  if(CAM){c.position.set(CAM[0],CAM[1],CAM[2]);c.lookAt(CAM[3],CAM[4],CAM[5])}else{c.position.x=9.5+Math.sin(t*.16)*.35;c.position.y=4.6+Math.sin(t*.12)*.08;c.lookAt(LX,2.0,0)}r.render(s,c);if(!shown){shown=true;requestAnimationFrame(()=>r.domElement.classList.add('on'))}}
 r.setAnimationLoop(frame);

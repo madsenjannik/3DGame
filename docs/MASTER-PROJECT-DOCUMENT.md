@@ -1858,6 +1858,8 @@ framework, procedural streaming, day/night, skill tree, inventory grid, equipmen
 
 **R200 (v0.8.200):** Start: the fixed 1.55 s splash removed; the premium start scene shows the last played character with its own home (v2 where it exists, else classic). Settings (start screen + in-game, shared in `js/core/settings.js`): Graphics Auto/High/Medium/Low (quality profiles), Sound (gates every AudioContext; ready for audio), Reduce motion, Dev menu (start screen). In-game menu restyled to the premium card: Resume, Settings, Controls, Quit to start screen; Switch character removed (the Ring is where you switch). **Smoke: 61/61, all PASS.**
 
+**R201 (v0.8.201):** Start screen: the leaf gust removed; the start scene's character appears after its home's MoveIn (pop + hop; reduce motion = no animation). Character select on desktop (not cs-phone): cards centred between top and info panel and up to 460 px wide; thumbnails kept. Phones unchanged.
+
 ## Performance budgets
 Mobile FPS target 50–60 (minimum ~30 in heavy scenes) · frame budget 16.7 ms · avoid startup long-task series >50 ms ·
 as few WebGL contexts as possible · draw calls and triangles measured, not guessed.
