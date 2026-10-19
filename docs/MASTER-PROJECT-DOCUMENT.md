@@ -1854,7 +1854,7 @@ framework, procedural streaming, day/night, skill tree, inventory grid, equipmen
 
 **R198 (v0.8.198):** Fishing grip (GO 19/10, Fishing lock opened for this only): the fist takes the hand colour from the meshes under `Hand_R` on v2 rigs (rigid, not skinned). PerfProbe (dev): exact draws per group for main view and shadow pass, hitch log, load detail (ring bloom ready, cover told to go, shader programs, long tasks). Measuring only; the cover-delay fix and the garden shadow cut wait for Jannik's next report. **Smoke: 61/61, all PASS (first fully green run under premium).**
 
-**R199 (v0.8.199):** Premium garden: parts of `WILDS_PRIVATE_GARDEN` under 0.3 m (radius) stop casting shadows (re-checked every 2 s; greenhouse untouched; fail-soft restore). Premium world: meshes loaded after the warm-up get their shaders compiled ahead, per new subtree (`compileAsync`), every 3 s. From Jannik's R198 report (garden shadow pass 1053 calls, 678 of them the private garden's small parts; world hitches = new shader programs).
+**R199 (v0.8.199):** Premium garden: parts of `WILDS_PRIVATE_GARDEN` under 0.3 m (radius) stop casting shadows (re-checked every 2 s; greenhouse untouched; fail-soft restore). Premium world: meshes loaded after the warm-up get their shaders compiled ahead, per new subtree (`compileAsync`), every 3 s. From Jannik's R198 report (garden shadow pass 1053 calls, 678 of them the private garden's small parts; world hitches = new shader programs). **Smoke: 61/61, all PASS.**
 
 ## Performance budgets
 Mobile FPS target 50–60 (minimum ~30 in heavy scenes) · frame budget 16.7 ms · avoid startup long-task series >50 ms ·
