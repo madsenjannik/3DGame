@@ -22,9 +22,15 @@ const uTime={value:0};
 // Jannik's plants: keep LOD0 only, the wind weight lives in COLOR_0 (not a colour)
 const plant=(g,x,z,h,ry)=>{const o=g.scene.clone(true);o.traverse(m=>{if(/_LOD1$/.test(m.name))m.visible=false;if(m.isMesh){m.castShadow=true;m.receiveShadow=true;if(m.material){m.material=m.material.clone();m.material.vertexColors=false}}});const b=new THREE.Box3().setFromObject(o);o.scale.setScalar(h/Math.max(.01,b.max.y-b.min.y));o.position.set(x,0,z);o.rotation.y=ry;s.add(o);return o};
 const names=['tree_a','tree_b','tree_c','bush_a','bush_b','bush_c','fern_a','fern_b'];
-const [shedG,charG,wildG,...P]=await Promise.all([L.loadAsync('./assets/homes/shed_aloe_v2.glb'),L.loadAsync('./assets/characters/aloe_v2.glb'),L.loadAsync('./assets/wildlife/animal_assets_20.glb').catch(()=>null),...names.map(n=>L.loadAsync(`./assets/garden/plants/${n}.glb`).catch(()=>null))]);
+// R200 (Jannik GO 19/10: 'the shed shown must be the character and shed you continue with'): the last played character (tgw.lastChar,
+// as the start button's 'Continue as …') with its own home; v2 (concept look) where it exists (sheds: Aloe, Cactus; characters: Aloe,
+// Cactus, Swamp), else its own classic GLB (Jannik chose its own over a stand-in). No last character: Aloe.
+const CHARS=['tulip','daisy','hyacinth','cactus','fern','succulent','spire','swamp','aloe'],V2_SHED=new Set(['aloe','cactus']),V2_CHAR=new Set(['aloe','cactus','swamp']);
+const ID=(()=>{const q=new URLSearchParams(location.search).get('char');if(CHARS.includes(q))return q;try{const id=(JSON.parse(localStorage.getItem('tgw.lastChar')||'null')||{}).id;if(CHARS.includes(id))return id}catch{}return 'aloe'})();
+const SHED_URL=V2_SHED.has(ID)?`./assets/homes/shed_${ID}_v2.glb`:`./assets/homes/shed_${ID}.glb`,CHAR_URL=V2_CHAR.has(ID)?`./assets/characters/${ID}_v2.glb`:`./assets/characters/${ID==='aloe'?'aloe-vera':ID}.glb`;
+const [shedG,charG,wildG,...P]=await Promise.all([L.loadAsync(SHED_URL).catch(()=>L.loadAsync('./assets/homes/shed_aloe_v2.glb')),L.loadAsync(CHAR_URL).catch(()=>L.loadAsync('./assets/characters/aloe_v2.glb')),L.loadAsync('./assets/wildlife/animal_assets_20.glb').catch(()=>null),...names.map(n=>L.loadAsync(`./assets/garden/plants/${n}.glb`).catch(()=>null))]);
 const PL=Object.fromEntries(names.map((n,i)=>[n,P[i]]));
-// home: Aloe's v2 shed rises with its MoveIn clip, then idles (its roof leaves sway)
+// home: the character's shed rises with its MoveIn clip, then idles (its roof leaves sway)
 const shed=shedG.scene;shadows(shed);shed.position.set(HX,0,HZ);shed.rotation.y=.18;s.add(shed);const sm=new THREE.AnimationMixer(shed);const idleS=shedG.animations.find(a=>a.name==='Idle');if(idleS)sm.clipAction(idleS).play();const move=new URLSearchParams(location.search).get('moveIn')==='0'?null:shedG.animations.find(a=>a.name==='MoveIn');if(move){const a=sm.clipAction(move);a.setLoop(THREE.LoopOnce,1);a.clampWhenFinished=true;a.play()}mixers.push(sm);
 const ch=charG.scene;shadows(ch);const bb=new THREE.Box3().setFromObject(ch);ch.scale.setScalar(1.25/Math.max(.01,bb.max.y-bb.min.y));ch.position.set(6.6,.02,4.4);ch.rotation.y=-.35;s.add(ch);const cm=new THREE.AnimationMixer(ch);const idle=charG.animations.find(a=>a.name==='Idle');if(idle)cm.clipAction(idle).play();let hop=null;const hc=charG.animations.find(a=>a.name==='Hop');if(hc){hop=cm.clipAction(hc);hop.setLoop(THREE.LoopOnce,1);hop.clampWhenFinished=false}mixers.push(cm);
 // a ring of trees behind and beside the home, bushes at its feet, ferns in the foreground

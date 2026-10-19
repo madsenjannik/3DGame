@@ -5608,3 +5608,29 @@ html body:not(.touch) :is(.wilds-close,#game-menu button,.gear-panel .gear-item[
 /* R156: a lit lantern reads (gold on dark glass, not gold on pale glass); the workbench list fills the fixed-height card */
 html body.hud-desktop-e:not(.touch).lantern-ready #lantern-btn.on{background:rgba(43,52,33,.84)!important;color:#ffd27a!important}
 body:not(.touch) .wilds-card .wilds-list{flex:1 1 auto}
+/* R200 (Jannik GO 19/10): the in-game menu in the premium card of the start screen's Settings: frosted backdrop, cream glass card,
+   small caps label, large title, quiet rows, a dark pill for the main action; Settings view with Graphics / Sound / Reduce motion */
+#game-menu{background:rgba(18,24,15,.36);-webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px);transition:opacity .2s ease}
+#game-menu .gm-card{width:min(380px,100%);gap:0;padding:26px 26px 16px;border:1px solid rgba(255,255,255,.56);border-radius:28px;background:rgba(242,238,226,.94);color:#2b3026;box-shadow:0 30px 90px rgba(15,21,13,.28)}
+#game-menu small{font:700 9px/1 Manrope,system-ui,sans-serif;letter-spacing:.2em;color:#78806f}
+#game-menu h2{margin:7px 0 18px;font:800 30px/1.05 Manrope,system-ui,sans-serif;color:#2b3026;letter-spacing:-.01em}
+#game-menu .gm-main,#game-menu .gm-settings{display:flex;flex-direction:column;gap:8px}
+#game-menu .gm-main[hidden],#game-menu .gm-settings[hidden]{display:none}
+#game-menu button{min-height:46px;border:0;border-radius:999px;background:rgba(55,65,49,.07);color:#2b3026;font:700 13px/1 Manrope,system-ui,sans-serif;letter-spacing:.01em;box-shadow:none;transition:background .15s ease}
+#game-menu button:hover{background:rgba(55,65,49,.13)}
+#game-menu button.gm-primary{background:#30392b;color:#f4f0e7;font-size:11px;letter-spacing:.1em;text-transform:uppercase;box-shadow:0 6px 16px rgba(20,26,17,.18)}
+#game-menu button.gm-primary:hover{background:#3b4635}
+#game-menu .gm-row{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px 16px;padding:14px 0;border-top:1px solid rgba(55,65,49,.12)}
+#game-menu .gm-row:last-of-type{margin-bottom:10px}
+#game-menu .gm-copy b{display:block;font:700 13px/1.2 Manrope,system-ui,sans-serif}
+#game-menu .gm-copy span{display:block;margin-top:3px;max-width:230px;color:#767d70;font:500 10px/1.4 Manrope,system-ui,sans-serif}
+#game-menu .gm-toggle{position:relative;flex:0 0 auto;width:48px;min-height:28px;height:28px;padding:0;border-radius:999px;background:#c9ccbf}
+#game-menu .gm-toggle:hover{background:#c0c3b5}
+#game-menu .gm-toggle:after{content:"";position:absolute;left:3px;top:3px;width:22px;height:22px;border-radius:50%;background:#fff;box-shadow:0 2px 8px rgba(0,0,0,.14);transition:transform .18s ease}
+#game-menu .gm-toggle.on{background:#586b4f}
+#game-menu .gm-toggle.on:after{transform:translateX(20px)}
+#game-menu .gm-seg{display:flex;gap:2px;padding:3px;border-radius:999px;background:rgba(55,65,49,.1)}
+#game-menu .gm-seg button{min-width:0;min-height:30px;height:30px;padding:0 11px;background:transparent;color:#5d6556;font-size:11px}
+#game-menu .gm-seg button.on{background:#30392b;color:#f4f0e7;box-shadow:0 2px 8px rgba(20,26,17,.18)}
+#game-menu .gm-ver{margin-top:12px;font:600 10px/1 Manrope,system-ui,sans-serif;color:#9a9f91}
+@media (max-height:430px){#game-menu .gm-card{padding:14px 18px 10px}#game-menu h2{font-size:20px;margin:4px 0 10px}#game-menu button{min-height:38px}#game-menu .gm-row{padding:8px 0}}

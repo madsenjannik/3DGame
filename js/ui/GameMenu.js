@@ -1,7 +1,9 @@
 // @ts-nocheck
 // R121 (GO 07/10): small in-game menu. Round button under the quest card (phone + desktop E) and Esc on desktop when
-// nothing else is open. Resume · Controls (shows the first-time tips again) · Choose character · Start screen.
-// No pause: the day/night clock follows real time, so the menu is only a layer over the game. Fails soft.
+// nothing else is open. No pause: the day/night clock follows real time, so the menu is only a layer over the game. Fails soft.
+// R200 (Jannik GO 19/10): the premium card of the start screen's Settings (frosted cream, dark pill buttons). Resume · Settings
+// (Graphics Auto/High/Medium/Low applied live, Sound, Reduce motion; the same values as the start screen, js/core/settings.js) ·
+// Controls (shows the first-time tips again) · Quit to start screen. 'Switch character' is gone (Jannik: switching happens at the Ring).
 import { ControlTips } from './ControlTips.js?build=SAVE-R159-20261014A';
 
 const BUSY_CLASSES = ['fishing-active', 'boating-active', 'stable-talk-active', 'stable-race-active', 'lakerun-active', 'mobile-bag-open', 'choice-open', 'rotate-gated'];
@@ -14,10 +16,9 @@ export class GameMenu {
     const obj = document.getElementById('objective'); if (obj?.parentNode) obj.after(btn); else document.body.appendChild(btn);
     const el = document.createElement('div'); el.id = 'game-menu';
     el.innerHTML = '<div class="gm-card" role="dialog" aria-label="Menu"><small>The Growing Wilds</small><h2>Menu</h2>'
-      + '<button type="button" data-a="resume" class="gm-primary">Resume</button><button type="button" data-a="controls">Controls</button>'
-      + '<button type="button" data-a="chars">Switch character</button><button type="button" data-a="start">Start screen</button>'
-      + '<div class="gm-confirm" hidden><p>All your characters share one garden and one game. Your progress is saved.</p>'
-      + '<button type="button" data-a="chars-go" class="gm-primary">Switch character</button><button type="button" data-a="chars-no">Cancel</button></div>'
+      + '<div class="gm-main"><button type="button" data-a="resume" class="gm-primary">Resume</button><button type="button" data-a="settings">Settings</button>'
+      + '<button type="button" data-a="controls">Controls</button><button type="button" data-a="start">Quit to start screen</button></div>'
+      + '<div class="gm-settings" hidden></div>'
       + `<span class="gm-ver">v${globalThis.TGW_VERSION?.version || ''}</span></div>`;
     document.body.appendChild(el); this.btn = btn; this.el = el; el.inert = true;   // R156: closed = not focusable
     for (const n of [btn, el]) for (const t of ['pointerdown', 'pointerup', 'pointermove']) n.addEventListener(t, e => e.stopPropagation());   // never moves or strikes
@@ -52,21 +53,33 @@ export class GameMenu {
   }
   toggle(on) {
     if (on && !this.canOpen()) return;
-    this.open = !!on; if (!this.open) this.confirm(false); this.el.inert = !this.open; this.el.classList.toggle('open', this.open); document.body.classList.toggle('game-menu-open', this.open);
+    this.open = !!on; if (!this.open) this.settings(false); this.el.inert = !this.open; this.el.classList.toggle('open', this.open); document.body.classList.toggle('game-menu-open', this.open);
     if (this.open) { const i = this.g.input; i?.resetTouchPointers?.(); if (i) { i.actionPressed = i.hopPressed = i.strikePressed = false; for (const k in i.keys) i.keys[k] = false; }
       this.el.querySelector('.gm-primary')?.focus?.({ preventScroll: true }); }
   }
-  confirm(on) {
-    const c = this.el.querySelector('.gm-confirm'); if (!c) return;
-    c.hidden = !on; this.el.querySelectorAll('.gm-card > button').forEach(b => { b.hidden = on; });
-    if (on) c.querySelector('.gm-primary')?.focus?.({ preventScroll: true });
+  // R200: the Settings view inside the same card (Back returns to the menu)
+  settings(on) {
+    const S = globalThis.TGW_SETTINGS, v = this.el.querySelector('.gm-settings'), main = this.el.querySelector('.gm-main'), h = this.el.querySelector('h2'); if (!v || !main) return;
+    v.hidden = !on; main.hidden = !!on; if (h) h.textContent = on ? 'Settings' : 'Menu'; if (!on) { main.querySelector('[data-a="settings"]')?.focus?.({ preventScroll: true }); return; }
+    const cur = S?.graphics?.() ?? '', motion = !!this.g.reduceMotion, sound = S?.sound?.() !== false;
+    const row = (title, sub, ctl) => `<div class="gm-row"><div class="gm-copy"><b>${title}</b><span>${sub}</span></div>${ctl}</div>`;
+    const tog = (a, on) => `<button type="button" data-a="${a}" class="gm-toggle${on ? ' on' : ''}" role="switch" aria-checked="${on}" aria-label="${a}"></button>`;
+    v.innerHTML = (S ? row('Graphics', 'Auto picks the best look your device runs smoothly.', `<div class="gm-seg" role="radiogroup" aria-label="Graphics">${S.GRAPHICS.map(([k, l]) => `<button type="button" data-a="gfx:${k}" role="radio" aria-checked="${k === cur}" class="${k === cur ? 'on' : ''}">${l}</button>`).join('')}</div>`)
+      + row('Sound', 'Music and effects.', tog('sound', sound)) : '')
+      + row('Reduce motion', 'Less wind and movement, no camera shake or flashes.', tog('motion', motion))
+      + '<button type="button" data-a="back" class="gm-primary">Back</button>';
+    v.querySelector('.gm-primary')?.focus?.({ preventScroll: true });
   }
   run(a) {
-    const g = this.g, id = g.state?.player?.characterId || '';
+    const g = this.g;
     if (a === 'resume') return this.toggle(false);
-    // R122: switching character asks first (each character has its own save)
-    if (a === 'chars') return this.confirm(true);
-    if (a === 'chars-no') return this.confirm(false);
+    // R200: Settings (live; stored for the start screen too)
+    const S = globalThis.TGW_SETTINGS;
+    if (a === 'settings') return this.settings(true);
+    if (a === 'back') return this.settings(false);
+    if (a.startsWith('gfx:')) { const v = a.slice(4); try { S?.setGraphics(v); g.quality?.set?.(v || null); } catch {} return this.settings(true); }
+    if (a === 'sound') { try { S?.setSound(!S.sound()); } catch {} return this.settings(true); }
+    if (a === 'motion') { const on = !g.reduceMotion; try { S ? S.setMotion(on) : localStorage.setItem('dymGame.entry.reduceMotion', on ? '1' : '0'); } catch {} g.reduceMotion = on; document.body.classList.toggle('reduce-motion', on); return this.settings(true); }
     if (a === 'controls') {
       this.toggle(false);
       if (g.tips && !g.tips.off) return;
@@ -75,7 +88,6 @@ export class GameMenu {
       return;
     }
     try { g.save?.flush(); } catch {}
-    if (a === 'chars-go') location.href = './selector.html?char=' + encodeURIComponent(id);
-    else if (a === 'start') location.href = './index.html';
+    if (a === 'start') location.href = './index.html';
   }
 }
