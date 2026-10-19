@@ -109,10 +109,12 @@ class LiveCard {
   async warm(id) { try { const m = await this.load(id); if (!m.warm) { m.warm = true; this.r.compile(m.root, this.cam, this.s); } } catch {} }
   // place the canvas over the centre card's art box and show this character there
   // R204: the canvas sits inside the centre card over its art box (layout sizes, not screen rects), so it follows the card's pop exactly
+  // R205: hide at once (no fade) and drop the previous figure, so it never fades out over the next card; only the new figure fades in
+  hideNow() { const c = this.canvas; c.style.transition = 'none'; c.classList.remove('on'); void c.offsetWidth; c.style.transition = ''; if (this.cur) { this.s.remove(this.cur.root); this.cur = null; } }
   async show(id, art) {
     this.want = id; const c = this.canvas;
-    if (!id || !art) { c.classList.remove('on'); return false; }
-    if (c.parentNode !== art.parentNode || c.previousSibling !== art) { c.classList.remove('on'); art.after(c); }
+    if (!id || !art) { this.hideNow(); return false; }
+    if (c.parentNode !== art.parentNode || c.previousSibling !== art) { this.hideNow(); art.after(c); }
     const box = { left: art.offsetLeft, top: art.offsetTop, width: art.offsetWidth, height: art.offsetHeight };
     Object.assign(c.style, { left: `${box.left}px`, top: `${box.top}px`, width: `${box.width}px`, height: `${box.height}px` });
     this.r.setSize(box.width, box.height, false); this.cam.aspect = box.width / box.height; this.cam.updateProjectionMatrix();
@@ -168,7 +170,7 @@ export function mountCharacterSelect() {
   // R203 (Jannik GO 19/10: 'yaaay'): the arriving centre card pops, its plate pops after it, and behind it a burst of gold light and sparks
   const yayEl = (() => { const e = document.createElement('div'); e.id = 'cs-yay'; e.setAttribute('aria-hidden', 'true'); const st = $('#cs-stage'); st.insertBefore(e, st.firstChild); return e; })();   // the glow, behind the cards
   const sparkEl = (() => { const e = document.createElement('div'); e.id = 'cs-yay-f'; e.setAttribute('aria-hidden', 'true'); e.innerHTML = Array.from({ length: 10 }, (_, k) => `<i${k % 3 === 0 ? ' class="star"' : ''}></i>`).join(''); $('#cs-stage').appendChild(e); return e; })();   // the sparks, in front
-  const yay = c => { const m = $('.cs-card.main'); if (!m) return; m.classList.add('pop'); m.addEventListener('animationend', ev => { if (ev.animationName === 'csPop') m.classList.remove('pop'); });
+  const yay = c => { const m = $('.cs-card.main'); if (!m) return; m.classList.add('pop');   // R205: it stays until the next switch rebuilds the row; removing it at the end restarted the row's slide-in on this card (the jump left/right after the pop)
     const st = $('#cs-stage').getBoundingClientRect(), r = m.getBoundingClientRect(), w = m.offsetWidth;
     for (const e of [yayEl, sparkEl]) { e.style.left = `${r.left + r.width / 2 - st.left}px`; e.style.top = `${r.top + r.height / 2 - st.top}px`; e.style.setProperty('--w', `${w}px`); }
     const h = m.offsetHeight; sparkEl.querySelectorAll('i').forEach((p, k) => { const a = k / 10 * Math.PI * 2 + Math.random() * .4, cx = Math.cos(a), cy = Math.sin(a), d = .64 + Math.random() * .26;   // from the card's edge outwards

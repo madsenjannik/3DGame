@@ -49,7 +49,7 @@ export class CharacterSwapSpot {
   // (#tgw-premium-veil, made in game.html) stays until the premium garden is built and its bloom is on; never longer than 25 s.
   prefetch() {
     const fail = e => { console.warn('[TGW] premium prefetch', e); return null; };
-    this.pre = { sanctuary: import('../visual/RingSanctuary.js?build=RING-R204-20261019A'), plants: PLANTS.map(k => loadGLTF(`./assets/garden/plants/${k}.glb`).then(g => [k, g], e => { console.warn('[TGW] plant', k, e); return null; })) };
+    this.pre = { sanctuary: import('../visual/RingSanctuary.js?build=RING-R205-20261019A'), plants: PLANTS.map(k => loadGLTF(`./assets/garden/plants/${k}.glb`).then(g => [k, g], e => { console.warn('[TGW] plant', k, e); return null; })) };
     this.pre.sanctuary.catch(fail); loadGLTF(MODEL).catch(fail);
     for (const n of ['EffectComposer', 'RenderPass', 'UnrealBloomPass', 'OutputPass', 'ShaderPass']) import(`three/addons/postprocessing/${n}.js`).catch(fail);
     // R186: the cover's sprout grows one leaf per real step (premiumLoader.js): 1 systems up, 2 world built, 3 premium garden built, done = bloom on
