@@ -108,9 +108,12 @@ class LiveCard {
   // R203: load a character and compile its shaders ahead (no download, parse or shader compile when you arrive on it)
   async warm(id) { try { const m = await this.load(id); if (!m.warm) { m.warm = true; this.r.compile(m.root, this.cam, this.s); } } catch {} }
   // place the canvas over the centre card's art box and show this character there
-  async show(id, box) {
+  // R204: the canvas sits inside the centre card over its art box (layout sizes, not screen rects), so it follows the card's pop exactly
+  async show(id, art) {
     this.want = id; const c = this.canvas;
-    if (!id) { c.classList.remove('on'); return false; }
+    if (!id || !art) { c.classList.remove('on'); return false; }
+    if (c.parentNode !== art.parentNode || c.previousSibling !== art) { c.classList.remove('on'); art.after(c); }
+    const box = { left: art.offsetLeft, top: art.offsetTop, width: art.offsetWidth, height: art.offsetHeight };
     Object.assign(c.style, { left: `${box.left}px`, top: `${box.top}px`, width: `${box.width}px`, height: `${box.height}px` });
     this.r.setSize(box.width, box.height, false); this.cam.aspect = box.width / box.height; this.cam.updateProjectionMatrix();
     let m; try { m = await this.load(id); } catch (e) { console.warn('[TGW] live card falls back to the portrait', e); return false; }
@@ -158,26 +161,25 @@ export function mountCharacterSelect() {
       <span class="cs-art" style="--art:url(${art(c.id)})"></span>${c.open ? '' : '<span class="cs-lock" aria-hidden="true"></span><span class="cs-q" aria-hidden="true">?</span>'}
       <span class="cs-plate"><b>${c.name}</b><small>${c.open ? c.role : 'Locked'}</small></span></button>`;
   const placeLive = () => {
-    if (!live) return; const c = list[i], art = $('.cs-card.main .cs-art'), stage = $('#cs-stage').getBoundingClientRect();
+    if (!live) return; const c = list[i], art = $('.cs-card.main .cs-art');
     if (!c.open || !art) return live.show(null);
-    const r = art.getBoundingClientRect();
-    live.show(c.id, { left: r.left - stage.left, top: r.top - stage.top, width: r.width, height: r.height }).then(ok => { if (ok && list[i].id === c.id) $('.cs-card.main')?.classList.add('live'); });
+    live.show(c.id, art).then(ok => { if (ok && list[i].id === c.id) $('.cs-card.main')?.classList.add('live'); });
   };
   // R203 (Jannik GO 19/10: 'yaaay'): the arriving centre card pops, its plate pops after it, and behind it a burst of gold light and sparks
   const yayEl = (() => { const e = document.createElement('div'); e.id = 'cs-yay'; e.setAttribute('aria-hidden', 'true'); const st = $('#cs-stage'); st.insertBefore(e, st.firstChild); return e; })();   // the glow, behind the cards
-  const sparkEl = (() => { const e = document.createElement('div'); e.id = 'cs-yay-f'; e.setAttribute('aria-hidden', 'true'); e.innerHTML = Array.from({ length: 16 }, (_, k) => `<i${k % 3 === 0 ? ' class="star"' : ''}></i>`).join(''); $('#cs-stage').appendChild(e); return e; })();   // the sparks, in front
+  const sparkEl = (() => { const e = document.createElement('div'); e.id = 'cs-yay-f'; e.setAttribute('aria-hidden', 'true'); e.innerHTML = Array.from({ length: 10 }, (_, k) => `<i${k % 3 === 0 ? ' class="star"' : ''}></i>`).join(''); $('#cs-stage').appendChild(e); return e; })();   // the sparks, in front
   const yay = c => { const m = $('.cs-card.main'); if (!m) return; m.classList.add('pop'); m.addEventListener('animationend', ev => { if (ev.animationName === 'csPop') m.classList.remove('pop'); });
     const st = $('#cs-stage').getBoundingClientRect(), r = m.getBoundingClientRect(), w = m.offsetWidth;
     for (const e of [yayEl, sparkEl]) { e.style.left = `${r.left + r.width / 2 - st.left}px`; e.style.top = `${r.top + r.height / 2 - st.top}px`; e.style.setProperty('--w', `${w}px`); }
-    const h = m.offsetHeight; sparkEl.querySelectorAll('i').forEach((p, k) => { const a = k / 16 * Math.PI * 2 + Math.random() * .3, cx = Math.cos(a), cy = Math.sin(a), d = .78 + Math.random() * .45;   // from the card's edge outwards
-      p.style.setProperty('--x0', `${cx * w * .45}px`); p.style.setProperty('--y0', `${cy * h * .45}px`); p.style.setProperty('--x', `${cx * w * d}px`); p.style.setProperty('--y', `${cy * h * d}px`); p.style.setProperty('--d', `${Math.random() * .1}s`); });
+    const h = m.offsetHeight; sparkEl.querySelectorAll('i').forEach((p, k) => { const a = k / 10 * Math.PI * 2 + Math.random() * .4, cx = Math.cos(a), cy = Math.sin(a), d = .64 + Math.random() * .26;   // from the card's edge outwards
+      p.style.setProperty('--x0', `${cx * w * .45}px`); p.style.setProperty('--y0', `${cy * h * .45}px`); p.style.setProperty('--x', `${cx * w * d}px`); p.style.setProperty('--y', `${cy * h * d}px`); p.style.setProperty('--d', `${.05 + Math.random() * .15}s`); });
     sparkEl.style.display = c.open ? '' : 'none';
     for (const e of [yayEl, sparkEl]) { e.classList.remove('go'); void e.offsetWidth; e.classList.add('go'); } };
   const render = dir => {
     const n = list.length, c = list[i], prev = list[(i - 1 + n) % n], next = list[(i + 1) % n];
     const row = $('#cs-cards'); row.innerHTML = card(prev, 'side prev') + card(c, 'main') + card(next, 'side next');
     if (dir) { row.classList.remove('slide-l', 'slide-r'); void row.offsetWidth; row.classList.add(dir > 0 ? 'slide-l' : 'slide-r'); yay(c); }
-    live?.show(null); clearTimeout(render.t); render.t = setTimeout(placeLive, dir ? 620 : 0);   // R203: after the pop has landed (the canvas sits on the card's resting box)
+    clearTimeout(render.t); render.t = setTimeout(placeLive, 0);   // R204: the canvas lives in the card and pops with it, so no waiting for the pop
     $('#cs-thumbs').innerHTML = list.map((t, k) => `<button type="button" class="cs-thumb${k === i ? ' on' : ''}${t.open ? '' : ' locked'}" data-i="${k}" aria-label="${t.open ? t.name : 'Locked character'}">${t.open ? `<span style="--art:url(${art(t.id)})"></span>` : '<em>?</em>'}</button>`).join('');
     $('#cs-name').textContent = c.name; $('#cs-role').textContent = c.open ? c.role : 'Locked';
     $('#cs-desc').textContent = c.open ? c.desc : SEEDS[c.id] === 1 ? 'Your seed is in your Bag: plant it at the Sprouting Ring in your garden' : (UNLOCK[c.id] || 'Locked');

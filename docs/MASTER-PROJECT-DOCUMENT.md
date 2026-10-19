@@ -1864,6 +1864,8 @@ framework, procedural streaming, day/night, skill tree, inventory grid, equipmen
 
 **R203 (v0.8.203):** Character select: the arriving centre card pops (scale + gold halo + name plate pop, gold glow and sparks for open characters); all open characters preloaded and precompiled in the background; the live 3D figure appears after its first frame and crossfades with the portrait.
 
+**R204 (v0.8.204):** Character select: the live 3D canvas is a child of the centre card (layout-sized over the art box), so it follows the pop and is never misplaced; the pop is softer (one overshoot, gentle halo, rising plate, 10 small drifting sparks).
+
 ## Performance budgets
 Mobile FPS target 50–60 (minimum ~30 in heavy scenes) · frame budget 16.7 ms · avoid startup long-task series >50 ms ·
 as few WebGL contexts as possible · draw calls and triangles measured, not guessed.
