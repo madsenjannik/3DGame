@@ -1874,6 +1874,8 @@ framework, procedural streaming, day/night, skill tree, inventory grid, equipmen
 
 **R208 (v0.8.208):** Loading cover: the sprout grows in one continuous, overlapping Web Animations sequence (~5-6 s) independent of the loading steps; done() plays out the rest in ~0.7 s and opens the bloom.
 
+**R209 (v0.8.209):** Loading cover: stem, leaves and bud are one picture revealed bottom-up by two counter-moving translate layers over 5 s (drawn as one unit, no repaint); bloom on done.
+
 ## Performance budgets
 Mobile FPS target 50–60 (minimum ~30 in heavy scenes) · frame budget 16.7 ms · avoid startup long-task series >50 ms ·
 as few WebGL contexts as possible · draw calls and triangles measured, not guessed.

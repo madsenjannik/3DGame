@@ -21,10 +21,12 @@
       // scales ran on the busy main thread and stuttered); calm ease-out curves, and a slow sway so it is never quite still
       + '#tgw-premium-veil .pl-sprout{position:relative;width:clamp(120px,19vmin,170px);aspect-ratio:100/78;transform-origin:50% 90%;animation:plSway 5.5s ease-in-out infinite alternate}'
       + '#tgw-premium-veil .pl-part{position:absolute;inset:0;will-change:transform}#tgw-premium-veil .pl-part svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible}'
-      + '#tgw-premium-veil .pl-stem{transform-origin:50% 89.7%;transform:scaleY(0)}'
-      + '#tgw-premium-veil .pl-leaf{transform:scale(0)}'
-      + '#tgw-premium-veil .pl-leaf.l0{transform-origin:49% 74.4%}#tgw-premium-veil .pl-leaf.l1{transform-origin:51% 59%}#tgw-premium-veil .pl-leaf.l2{transform-origin:49% 43.6%}'
-      + '#tgw-premium-veil .pl-bud{transform-origin:50% 22.4%;transform:scale(0)}'
+      // R209 (Jannik 21/10: 'it still stutters; it must look like it is drawn as one unit'): stem, leaves and bud are one picture, painted
+      // once, revealed bottom-up by two counter-moving translate layers (the plant stays still, the edge rises): no scaling, no repaint,
+      // the cheapest animation a browser has
+      + '#tgw-premium-veil .pl-reveal{position:absolute;inset:0;overflow:hidden;transform:translateY(100%);will-change:transform}'
+      + '#tgw-premium-veil .pl-reveal-in{position:absolute;inset:0;transform:translateY(-100%);will-change:transform}'
+      + '#tgw-premium-veil .pl-reveal svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible}'
       + '#tgw-premium-veil .pl-bloom{transform-origin:50% 15.4%;transform:scale(0)}'
       + '@keyframes plSway{from{transform:rotate(-1.6deg)}to{transform:rotate(1.6deg)}}'
       + '#tgw-premium-veil .pl-line{min-height:1.4em;color:#3f4a36;font-weight:800;font-size:12px;letter-spacing:.2em;text-transform:uppercase;text-align:center;text-shadow:0 1px 0 rgba(255,250,236,.7);transition:opacity .45s ease}'
@@ -42,15 +44,15 @@
       + '<div class="pl-col">'
       + '<div class="pl-sprout" aria-hidden="true">'
       + part('', '<ellipse cx="50" cy="72" rx="30" ry="6" fill="#6b5137" opacity=".85"/><ellipse cx="50" cy="70" rx="24" ry="3.6" fill="#86684a"/>')
-      + part('pl-stem', '<path d="M50 70 C50 58 47 48 50 36 C52 28 50 20 50 14" fill="none" stroke="#5f8a3a" stroke-width="3.2" stroke-linecap="round"/>')
-      + part('pl-leaf l0', '<path d="M49 58 C40 58 33 53 31 46 C39 45 46 49 49 58Z" fill="#7fae4a"/>')
-      + part('pl-leaf l1', '<path d="M51 46 C60 46 68 41 70 33 C61 32 54 37 51 46Z" fill="#8fbd55"/>')
-      + part('pl-leaf l2', '<path d="M49 34 C42 33 37 28 36 22 C43 22 48 26 49 34Z" fill="#9ccb5e"/>')
-      + part('pl-bud', '<ellipse cx="50" cy="12" rx="4" ry="5.5" fill="#e9a35a"/>')
+      + '<div class="pl-reveal"><div class="pl-reveal-in"><svg viewBox="0 0 100 78">'
+      + '<path d="M50 70 C50 58 47 48 50 36 C52 28 50 20 50 14" fill="none" stroke="#5f8a3a" stroke-width="3.2" stroke-linecap="round"/>'
+      + '<path d="M49 58 C40 58 33 53 31 46 C39 45 46 49 49 58Z" fill="#7fae4a"/><path d="M51 46 C60 46 68 41 70 33 C61 32 54 37 51 46Z" fill="#8fbd55"/>'
+      + '<path d="M49 34 C42 33 37 28 36 22 C43 22 48 26 49 34Z" fill="#9ccb5e"/><ellipse cx="50" cy="12" rx="4" ry="5.5" fill="#e9a35a"/>'
+      + '</svg></div></div>'
       + part('pl-bloom', [0, 72, 144, 216, 288].map(function (a) { return '<ellipse cx="50" cy="5" rx="4.6" ry="7.4" fill="#f3c46a" transform="rotate(' + a + ' 50 12)"/>'; }).join('') + '<circle cx="50" cy="12" r="3.6" fill="#c8603a"/>')
       + '</div><div class="pl-line"></div></div>';
     document.body.appendChild(v);
-    var line = v.querySelector('.pl-line'), stem = v.querySelector('.pl-stem'), leaves = v.querySelectorAll('.pl-leaf'), bud = v.querySelector('.pl-bud'), bloom = v.querySelector('.pl-bloom'), at = 0, gone = false;
+    var line = v.querySelector('.pl-line'), rev = v.querySelector('.pl-reveal'), revIn = v.querySelector('.pl-reveal-in'), bloom = v.querySelector('.pl-bloom'), at = 0, gone = false;
     // R196 typed each line letter by letter from a JS timer; while the game loads the main thread is busy, so it reached only a few letters
     // before the next step replaced the line. R206 (Jannik 21/10: 'set a time to show them instead'): each line appears whole with a soft
     // fade + lift (a CSS animation, smooth while JS is busy) and stays at least MIN ms; steps that come faster wait in a queue.
@@ -58,18 +60,14 @@
     var put = function (t) { cur = t; shownAt = performance.now(); line.innerHTML = '<span class="pl-t"></span>'; line.firstChild.textContent = t; };
     var pump = function () { clearTimeout(wait); wait = null; if (!queue.length) return; var left = MIN - (performance.now() - shownAt); if (left > 0) { wait = setTimeout(pump, left); return; } put(queue.shift()); if (queue.length) wait = setTimeout(pump, MIN); };
     var say = function (t) { if (t === cur || queue[queue.length - 1] === t) return; queue.push(t); if (!wait) pump(); };
-    // R208 (Jannik 21/10: 'this is not smooth / flowing, it is place, wait, place, wait'): the sprout no longer steps with the loading
-    // steps. It grows in one continuous movement (Web Animations on transform = compositor, smooth while the game loads): the stem rises
-    // over 6 s, fast first and easing out, each leaf unfolds while the one before is still moving, the bud forms at the end; when the game is
-    // ready whatever is left plays out in ~0.7 s and the bloom opens. A load longer than 6 s finds it fully grown, swaying.
+    // R208 (Jannik 21/10: 'place, wait, place, wait'): the sprout no longer steps with the loading steps; R209 ('it still stutters, it must
+    // look drawn as one unit'): it is one picture revealed bottom-up in one movement (startGrowth). When the game is ready whatever is left
+    // plays out in ~0.7 s and the bloom opens. A load longer than 5 s finds it fully drawn, swaying.
     var EASE = 'cubic-bezier(.22,.8,.3,1)', grows = [], reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
-    var grow = function (el, from, to, delay, dur) { if (reduce) { el.style.transform = 'none'; return; } try { grows.push(el.animate([{ transform: from }, { transform: to }], { duration: dur, delay: delay, easing: EASE, fill: 'both' })); } catch (e) { el.style.transform = 'none'; } };
-    var startGrowth = function () {
-      grow(stem, 'scaleY(0)', 'scaleY(1)', 0, 6000);
-      grow(leaves[0], 'scale(0) rotate(-26deg)', 'none', 600, 2200);   // each part starts while the one before is about half way
-      grow(leaves[1], 'scale(0) rotate(26deg)', 'none', 1500, 2200);
-      grow(leaves[2], 'scale(0) rotate(-26deg)', 'none', 2500, 2200);
-      grow(bud, 'scale(0)', 'none', 3600, 2000);
+    var startGrowth = function () {   // R209: one bottom-up reveal of the whole plant over 5 s (soft in-out), as if drawn in one stroke
+      var D = 5000, E2 = 'cubic-bezier(.45,.05,.35,1)';
+      if (reduce) { rev.style.transform = revIn.style.transform = 'none'; return; }
+      try { grows.push(rev.animate([{ transform: 'translateY(100%)' }, { transform: 'translateY(0)' }], { duration: D, easing: E2, fill: 'both' }), revIn.animate([{ transform: 'translateY(-100%)' }, { transform: 'translateY(0)' }], { duration: D, easing: E2, fill: 'both' })); } catch (e) { rev.style.transform = revIn.style.transform = 'none'; }
     };
     var finishGrowth = function () { grows.forEach(function (a) { try { var t = a.effect.getComputedTiming(), left = (t.endTime || 0) - (a.currentTime || 0); if (left > 700) a.updatePlaybackRate(left / 700); } catch (e) {} });
       if (reduce) { bloom.style.transform = 'none'; return; } try { bloom.animate([{ transform: 'scale(0) rotate(-40deg)' }, { transform: 'none' }], { duration: 1200, delay: 450, easing: EASE, fill: 'both' }); } catch (e) { bloom.style.transform = 'none'; } };
