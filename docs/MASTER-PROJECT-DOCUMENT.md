@@ -1884,6 +1884,8 @@ framework, procedural streaming, day/night, skill tree, inventory grid, equipmen
 
 **R213 (v0.8.213, GO A 21/10):** the desktop focus dot is a 13 px soft open ring (cream, thin dark outline), 85% at rest / 100% while turning, hidden while the aim sprout shows a target and near the screen edge.
 
+**R214 (v0.8.214, GO 21/10):** desktop pointer lock: an aim point (screen point just above the head projected to the ground, max 7 m) picks between tool jobs (`WildsLoopSystem` offer via `aim.better`) and between moles/snails (`CombatSystem.target`), reach unchanged, bosses unchanged; the ring rides the aim point and locks onto the marked target in gold. Phones/no lock: distance pick as before.
+
 ## Performance budgets
 Mobile FPS target 50–60 (minimum ~30 in heavy scenes) · frame budget 16.7 ms · avoid startup long-task series >50 ms ·
 as few WebGL contexts as possible · draw calls and triangles measured, not guessed.

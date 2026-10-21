@@ -1,8 +1,8 @@
 // @ts-nocheck
-import { Game } from './core/Game.js?build=RING-R213-20261021A';
+import { Game } from './core/Game.js?build=RING-R214-20261021A';
 import { characterCatalog } from './data/assetCatalog.js';
 import { unlockedIds } from './core/SaveGame.js?build=UX-R157B1-20261011A';
-import { devMenuEnabled } from './ui/DevMenu.js?build=RING-R213-20261021A';
+import { devMenuEnabled } from './ui/DevMenu.js?build=RING-R214-20261021A';
 
 async function start() {
   // R78.2: the HTML shell can be browser-cached while main.js is already fresh (it carries a per-run query).

@@ -5641,3 +5641,4 @@ body:not(.tgw-mouse-look) #aim-dot{display:none}
 #game-menu .gm-range input{width:130px;accent-color:#30392b;cursor:pointer}
 #game-menu .gm-range output{min-width:34px;font-size:12px;font-weight:700;color:#30392b;text-align:right;font-variant-numeric:tabular-nums}
 #game-menu .gm-card{max-height:calc(100dvh - 24px);overflow-y:auto;overscroll-behavior:contain}   /* R212: Settings grew (mouse rows); short windows scroll */
+#aim-dot{transition:border-color .2s}#aim-dot.locked{border-color:rgba(255,226,140,.96)}   /* R214: lock-on turns the ring gold */

@@ -8,7 +8,7 @@
 import * as THREE from 'three';
 import { loadGLTF } from '../core/AssetManager.js';
 import { WildsModel } from './WildsModels.js';
-import { WildsFarProxy } from './WildsFarProxy.js?build=RING-R213-20261021A';   // R193 Fase 1c
+import { WildsFarProxy } from './WildsFarProxy.js?build=RING-R214-20261021A';   // R193 Fase 1c
 import { WoodGiantBoss } from './WoodGiantBoss.js';
 import { RootBearBoss } from './RootBearBoss.js?build=DAYNIGHT-R81-20261005A';
 import { SpecialSystem } from './SpecialSystem.js?build=DAYNIGHT-R81-20261005A';
@@ -190,7 +190,9 @@ export class CombatSystem {
   // Nearest hittable enemy: Moles in the wilds, snails in the private garden (R62).
   target(reach) {
     const ch = this.g.character, garden = this.g.world.space === 'garden'; let best = null;
-    const consider = (kind, e) => { const d = Math.hypot(ch.position.x - e.x, ch.position.z - e.z); if (d < reach && (!best || d < best.d)) best = { kind, m: e, d, x: e.x, z: e.z }; };
+    // R214 (GO 21/10): with the desktop aim point (pointer lock), moles/snails in reach compare by distance to it; reach is unchanged
+    const aim = this.g.aim?.point ? this.g.aim : null, key = (e, d) => aim ? aim.aimDist(e.x, e.z) ?? d : d;
+    const consider = (kind, e) => { const d = Math.hypot(ch.position.x - e.x, ch.position.z - e.z); if (d < reach) { const k = key(e, d); if (!best || k < best.k) best = { kind, m: e, d, x: e.x, z: e.z, k }; } };
     if (garden) { for (const sn of this.w.threat?.snails || []) if (sn.state !== 'dying' && sn.state !== 'gone') consider('snail', sn); }
     else for (const m of this.moles) if (VULNERABLE.has(m.state)) consider('mole', m);
     if (!garden && this.boss) { const b = this.boss.target(ch.position.x, ch.position.z, reach); if (b && (!best || b.d <= best.d)) best = b; }  // R63
