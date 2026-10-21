@@ -1878,6 +1878,8 @@ framework, procedural streaming, day/night, skill tree, inventory grid, equipmen
 
 **R210 (v0.8.210, GO 21/10, opens the desktop control for this):** desktop mouse-look with pointer lock in the 'free' profile (click captures, mouse turns the camera, click turns the character to the view and strikes, Esc frees + opens the menu); the cursor returns for the menu, Bag, Workbench, map, Dev menu, choices, build mode, move-in and the locked special cameras (fishing, stable talks/race, Lake Run), which keep their own control. Locked camera/controller code untouched. Smoke: 61/61, all PASS.
 
+**R211 (v0.8.211, GO 21/10 'trin 1'):** desktop aim marker `js/gameplay/AimMarker.js`: while pointer-locked a golden sprout floats over the exact target of the next left click (resolver tool job, else `combat.target`), hidden in menus/special cameras; a locked click turns the character toward that target within ±1.2 rad of the view. No camera change. Aim step 2 (over-the-shoulder aim for ranged specials) is not built.
+
 ## Performance budgets
 Mobile FPS target 50–60 (minimum ~30 in heavy scenes) · frame budget 16.7 ms · avoid startup long-task series >50 ms ·
 as few WebGL contexts as possible · draw calls and triangles measured, not guessed.

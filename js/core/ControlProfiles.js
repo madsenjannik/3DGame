@@ -90,7 +90,7 @@ function installPointerLook(game, cam, el) {
   const release = () => { if (locked()) { releasing = true; document.exitPointerLock?.(); } };
   el.addEventListener('pointerdown', e => {
     if (e.pointerType !== 'mouse' || e.button !== 0) return;
-    if (locked()) { if (!(game.character?.currentSpeed > .6)) game.character && (game.character.heading = wrapAngle(cam.yaw + Math.PI)); return; }   // strike toward the view
+    if (locked()) { if (!(game.character?.currentSpeed > .6) && game.character) { const view = wrapAngle(cam.yaw + Math.PI); let h = null; try { h = game.aim?.aimHeading?.(view); } catch {} game.character.heading = h ?? view; } return; }   // strike toward the view; R211: toward the sprout-marked target when it is in front
     if (free()) { try { const r = el.requestPointerLock(); r?.catch?.(() => {}); } catch {} }   // this click also strikes (as before)
   });
   document.addEventListener('mousemove', e => {
