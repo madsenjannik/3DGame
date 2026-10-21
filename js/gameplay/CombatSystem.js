@@ -8,7 +8,7 @@
 import * as THREE from 'three';
 import { loadGLTF } from '../core/AssetManager.js';
 import { WildsModel } from './WildsModels.js';
-import { WildsFarProxy } from './WildsFarProxy.js?build=RING-R205-20261019A';   // R193 Fase 1c
+import { WildsFarProxy } from './WildsFarProxy.js?build=RING-R206-20261021A';   // R193 Fase 1c
 import { WoodGiantBoss } from './WoodGiantBoss.js';
 import { RootBearBoss } from './RootBearBoss.js?build=DAYNIGHT-R81-20261005A';
 import { SpecialSystem } from './SpecialSystem.js?build=DAYNIGHT-R81-20261005A';

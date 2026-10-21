@@ -24,8 +24,8 @@
       + '#tgw-premium-veil .pl-bud{transform-box:fill-box;transform-origin:50% 100%;transform:scale(0);transition:transform .8s ease}'
       + '#tgw-premium-veil .on{transform:scale(1)}#tgw-premium-veil .pl-stem.on{stroke-dashoffset:var(--o,0)}'
       + '#tgw-premium-veil .pl-line{min-height:1.4em;color:#3f4a36;font-weight:800;font-size:12px;letter-spacing:.2em;text-transform:uppercase;text-align:center;text-shadow:0 1px 0 rgba(255,250,236,.7);transition:opacity .45s ease}'
-      + '#tgw-premium-veil .pl-caret{display:inline-block;width:.55em;height:1em;margin-left:.15em;vertical-align:-.12em;background:#3f4a36;opacity:.75;animation:plCaret .9s steps(1) infinite}'
-      + '@keyframes plCaret{50%{opacity:0}}'
+      + '#tgw-premium-veil .pl-t{display:inline-block;animation:plIn .5s cubic-bezier(.33,1,.68,1) both}'
+      + '@keyframes plIn{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:none}}'
       + '@keyframes plDrift{to{transform:scale(1.12) translate(-1.5%,-1%)}}'
       + ''
       + '@keyframes plMote{0%{transform:translate(0,0);opacity:0}15%{opacity:.9}85%{opacity:.6}100%{transform:translate(var(--dx),-105vh);opacity:0}}'
@@ -46,15 +46,22 @@
       + '</svg><div class="pl-line"></div></div>';
     document.body.appendChild(v);
     var line = v.querySelector('.pl-line'), stem = v.querySelector('.pl-stem'), leaves = v.querySelectorAll('.pl-leaf'), bud = v.querySelector('.pl-bud'), bloom = v.querySelector('.pl-bloom'), at = 0, gone = false;
-    // R196 (Jannik 16/10: 'the text may type / load too'): each line is typed letter by letter behind a blinking caret
-    var typing = null, say = function (t) { clearInterval(typing); var i = 0; line.innerHTML = '<span class="pl-t"></span><i class="pl-caret"></i>'; var out = line.firstChild;
-      typing = setInterval(function () { i++; out.textContent = t.slice(0, i); if (i >= t.length) clearInterval(typing); }, 38); };
+    // R196 typed each line letter by letter from a JS timer; while the game loads the main thread is busy, so it reached only a few letters
+    // before the next step replaced the line. R206 (Jannik 21/10: 'set a time to show them instead'): each line appears whole with a soft
+    // fade + lift (a CSS animation, smooth while JS is busy) and stays at least MIN ms; steps that come faster wait in a queue.
+    var MIN = 1300, shownAt = 0, queue = [], wait = null, cur = '';
+    var put = function (t) { cur = t; shownAt = performance.now(); line.innerHTML = '<span class="pl-t"></span>'; line.firstChild.textContent = t; };
+    var pump = function () { clearTimeout(wait); wait = null; if (!queue.length) return; var left = MIN - (performance.now() - shownAt); if (left > 0) { wait = setTimeout(pump, left); return; } put(queue.shift()); if (queue.length) wait = setTimeout(pump, MIN); };
+    var say = function (t) { if (t === cur || queue[queue.length - 1] === t) return; queue.push(t); if (!wait) pump(); };
     var show = function (n) { stem.style.setProperty('--o', String(Math.round(60 - 60 * Math.min(1, (n + 1) / 4)))); stem.classList.add('on'); for (var k = 0; k < leaves.length; k++) if (k < n) leaves[k].classList.add('on'); if (n >= 3) bud.classList.add('on'); };
-    requestAnimationFrame(function () { show(0); say(LINES[0]); });
+    say(LINES[0]); requestAnimationFrame(function () { show(0); });   // R206: the first line at once (not after the first frame)
     var lift = function () { if (gone) return; gone = true; v.style.opacity = '0'; setTimeout(function () { v.remove(); }, 650); };
     window.TGW_LOAD = {
       stage: function (n) { if (gone || n <= at) return; at = n; show(n); say(LINES[Math.min(n, 3)]); },
-      done: function () { if (gone) return; window.TGW_LOAD.stage(3); bud.classList.add('on'); bloom.classList.add('on'); say(LINES[4]); setTimeout(lift, 380); }   // R193: bloom, then lift (was 0.9 s + 1 s fade)
+      // R193: bloom, then lift. R206: the steps still queued are skipped; 'Welcome home' comes once the current line has stood 0.6 s and the
+      // cover lifts 0.65 s after it (at most ~1 s later than before)
+      done: function () { if (gone) return; window.TGW_LOAD.stage(3); bud.classList.add('on'); bloom.classList.add('on'); clearTimeout(wait); wait = null; queue = [];
+        setTimeout(function () { put(LINES[4]); setTimeout(lift, 650); }, Math.max(0, 600 - (performance.now() - shownAt))); }
     };
     setTimeout(lift, 30000);
   } catch (e) { var o = document.getElementById('tgw-premium-veil'); if (o) o.remove(); }

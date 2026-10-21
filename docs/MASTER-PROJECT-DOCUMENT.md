@@ -1868,6 +1868,8 @@ framework, procedural streaming, day/night, skill tree, inventory grid, equipmen
 
 **R205 (v0.8.205):** Character select: the centre card keeps its pop class (removing it restarted the row's slide-in: a sideways jump after the pop); on a switch the canvas hides instantly and drops the previous figure, so only the new one fades in. Smoke: 61/61, all PASS (thumb-arc 'charged' now recorded during the hold).
 
+**R206 (v0.8.206):** Loading cover: the typed lines (a JS timer starved while loading) are replaced by whole lines that fade in (CSS) and stay at least 1.3 s, queued; done() skips the queue to 'Welcome home' after 0.6 s and lifts 0.65 s later.
+
 ## Performance budgets
 Mobile FPS target 50–60 (minimum ~30 in heavy scenes) · frame budget 16.7 ms · avoid startup long-task series >50 ms ·
 as few WebGL contexts as possible · draw calls and triangles measured, not guessed.

@@ -11,8 +11,8 @@ import { WildsThreatSystem } from './WildsThreatSystem.js?build=SAVE-R157A-20261
 import { DailyRequests } from './DailyRequests.js?build=SAVE-R157A-20261011A';
 import { GardenPotsSystem } from './GardenPotsSystem.js?build=SAVE-R157A-20261011A';
 import { loadWildsModels, loadGardenModels, WildsModel, WILDS_MODELS } from './WildsModels.js';
-import { WildsFarProxy } from './WildsFarProxy.js?build=RING-R205-20261019A';   // R193 Fase 1c
-import { WORKSHOP_UPGRADES, WORKSHOP_FILES, WORKSHOP_SCALE, WORKSHOP_V2_FILES, WORKSHOP_V2_SCALE, workshopV2 } from '../data/workshopCatalog.js?build=RING-R205-20261019A';   // R144, R173
+import { WildsFarProxy } from './WildsFarProxy.js?build=RING-R206-20261021A';   // R193 Fase 1c
+import { WORKSHOP_UPGRADES, WORKSHOP_FILES, WORKSHOP_SCALE, WORKSHOP_V2_FILES, WORKSHOP_V2_SCALE, workshopV2 } from '../data/workshopCatalog.js?build=RING-R206-20261021A';   // R144, R173
 import { loadGLTF } from '../core/AssetManager.js';
 import { perkPrice } from '../data/economyCatalog.js?build=SAVE-R157A-20261011A';   // R148
 import { FIXED_HEDGE as HEDGE } from '../data/gardenCatalog.js';
