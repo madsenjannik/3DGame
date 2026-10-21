@@ -1876,7 +1876,7 @@ framework, procedural streaming, day/night, skill tree, inventory grid, equipmen
 
 **R209 (v0.8.209):** Loading cover: stem, leaves and bud are one picture revealed bottom-up by two counter-moving translate layers over 5 s (drawn as one unit, no repaint); bloom on done.
 
-**R210 (v0.8.210, GO 21/10, opens the desktop control for this):** desktop mouse-look with pointer lock in the 'free' profile (click captures, mouse turns the camera, click turns the character to the view and strikes, Esc frees + opens the menu); the cursor returns for the menu, Bag, Workbench, map, Dev menu, choices, build mode, move-in and the locked special cameras (fishing, stable talks/race, Lake Run), which keep their own control. Locked camera/controller code untouched.
+**R210 (v0.8.210, GO 21/10, opens the desktop control for this):** desktop mouse-look with pointer lock in the 'free' profile (click captures, mouse turns the camera, click turns the character to the view and strikes, Esc frees + opens the menu); the cursor returns for the menu, Bag, Workbench, map, Dev menu, choices, build mode, move-in and the locked special cameras (fishing, stable talks/race, Lake Run), which keep their own control. Locked camera/controller code untouched. Smoke: 61/61, all PASS.
 
 ## Performance budgets
 Mobile FPS target 50–60 (minimum ~30 in heavy scenes) · frame budget 16.7 ms · avoid startup long-task series >50 ms ·
