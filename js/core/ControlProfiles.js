@@ -69,6 +69,43 @@ function installMouse(game, cam) {
     if (cam.profileId !== 'free') return; e.preventDefault();
     cam.freeZoom = THREE.MathUtils.clamp((cam.freeZoom || 1) * (e.deltaY > 0 ? 1.08 : 1 / 1.08), .65, 1.45);
   }, { passive: false });
+  installPointerLook(game, cam, el);
+}
+
+// R210 (Jannik GO 21/10, A1: 'on desktop the mouse must be the direction, part of the game'): a click on the game view captures the mouse
+// (pointer lock: the cursor hides) and from then on the mouse turns the camera all the time (no button needed); W runs where you look and a
+// left click turns the character to the view and strikes. The cursor comes back by itself whenever the game is not free roaming: the menu,
+// the Bag, the Workbench, the map, the Dev menu, a choice, build mode, and the locked special cameras (fishing, stable talks and race, Lake
+// Run, the move-in) keep their own control (B, C). Esc frees the mouse (the browser's rule) and opens the menu. Only the 'free' profile on
+// desktop; it never edits the locked ThirdPersonCamera or CharacterController code (it sets the same freeYaw / freePitch the drag sets).
+const SPECIAL = ['fishing-active', 'stable-talk-active', 'stable-race-active', 'lakerun-active', 'choice-open', 'game-menu-open', 'world-map-open', 'mobile-bag-open'];
+function installPointerLook(game, cam, el) {
+  if (cam._lockInstalled || game.input?.isTouch || !el.requestPointerLock) return; cam._lockInstalled = true;
+  const locked = () => document.pointerLockElement === el;
+  const free = () => { const b = document.body.classList, g = game;
+    return cam.profileId === 'free' && !document.hidden && !SPECIAL.some(c => b.contains(c)) && !document.querySelector('.gear-panel.open')
+      && !(g.state?.choice?.open || g.workbenchPanel?.open || g.devMenu?.open || g.buildMode?.active || g.worldMap?.isOpen || g.homePortal?.busy || g.menu?.open
+        || g.lakeRun?.busy?.() || g.fishing?.isBusy?.() || g.stable?.isBusy?.() || g.showcase?.active); };
+  let releasing = false;
+  const release = () => { if (locked()) { releasing = true; document.exitPointerLock?.(); } };
+  el.addEventListener('pointerdown', e => {
+    if (e.pointerType !== 'mouse' || e.button !== 0) return;
+    if (locked()) { if (!(game.character?.currentSpeed > .6)) game.character && (game.character.heading = wrapAngle(cam.yaw + Math.PI)); return; }   // strike toward the view
+    if (free()) { try { const r = el.requestPointerLock(); r?.catch?.(() => {}); } catch {} }   // this click also strikes (as before)
+  });
+  document.addEventListener('mousemove', e => {
+    if (!locked() || cam.profileId !== 'free') return;
+    const dx = e.movementX || 0, dy = e.movementY || 0; if (!dx && !dy) return;
+    cam.freeYaw = wrapAngle(cam.freeYaw - dx * .0026);
+    cam.freePitch = THREE.MathUtils.clamp(cam.freePitch + dy * .0017, -.18, .28);
+    cam.idleLook = 0;
+  });
+  document.addEventListener('pointerlockchange', () => {
+    document.body.classList.toggle('tgw-mouse-look', locked());
+    if (!locked() && !releasing && free()) game.menu?.toggle?.(true);   // the player pressed Esc: the cursor is back and the menu opens
+    releasing = false;
+  });
+  setInterval(() => { if (locked() && !free()) release(); }, 120);   // a menu, panel or special camera opened: give the cursor back
 }
 
 export function applyControlProfile(game, id) {
@@ -86,7 +123,7 @@ export function applyControlProfile(game, id) {
     cam.profileId = 'free'; installMouse(game, cam);
     game.cameraOcclusion?.setFreeRules?.(true);   // R58.2: ride over low props, pass trunks, lift instead of collapsing
     cam.inBoat = () => game.fishing?.boat?.on && game.fishing.mode === 'boat';
-    if (hint) hint.textContent = 'WASD to move · Shift to run · Space to hop · left click to strike · hold right mouse to look · wheel to zoom';
+    if (hint) hint.textContent = game.input?.isTouch ? 'WASD to move · Shift to run · Space to hop · left click to strike · hold right mouse to look · wheel to zoom' : 'Click the game to steer with the mouse · WASD to move · left click to strike · wheel to zoom · Esc for the menu';
     cam.freeYaw = cam.yaw; cam.freePitch = 0; cam.idleLook = 99; cam.freeZoom = cam.freeZoom || 1;
     cam.distance = function () { return (this.camera.aspect < .8 ? 7.0 : 5.8) * (this.freeZoom || 1); };
     cam.wantedYaw = function () { return this.freeYaw; };

@@ -41,7 +41,7 @@ export class GameMenu {
       if (this.open && !['Escape', 'Enter', ' ', 'Tab'].includes(e.key)) { e.stopImmediatePropagation(); return; }
       if (e.key === 'Escape' && !e.repeat && !this.open && document.querySelector('.gear-panel.open')) { e.preventDefault(); e.stopPropagation(); this.g.hud?.toggleGear?.(false); return; }
       if (e.key !== 'Escape' || e.repeat) return;
-      if (this.open) { e.preventDefault(); e.stopPropagation(); this.toggle(false); return; }
+      if (this.open) { e.preventDefault(); e.stopPropagation(); if (performance.now() - (this.openedAt || 0) > 250) this.toggle(false); return; }   // R210: the Esc that freed the mouse (pointer lock) and opened the menu must not close it again
       if (!this.g.input?.isTouch && this.canOpen()) { e.preventDefault(); this.toggle(true); }
     }, true);
   }
@@ -53,7 +53,7 @@ export class GameMenu {
   }
   toggle(on) {
     if (on && !this.canOpen()) return;
-    this.open = !!on; if (!this.open) this.settings(false); this.el.inert = !this.open; this.el.classList.toggle('open', this.open); document.body.classList.toggle('game-menu-open', this.open);
+    this.open = !!on; if (this.open) this.openedAt = performance.now(); if (!this.open) this.settings(false); this.el.inert = !this.open; this.el.classList.toggle('open', this.open); document.body.classList.toggle('game-menu-open', this.open);
     if (this.open) { const i = this.g.input; i?.resetTouchPointers?.(); if (i) { i.actionPressed = i.hopPressed = i.strikePressed = false; for (const k in i.keys) i.keys[k] = false; }
       this.el.querySelector('.gm-primary')?.focus?.({ preventScroll: true }); }
   }
