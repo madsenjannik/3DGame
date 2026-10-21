@@ -1888,6 +1888,8 @@ framework, procedural streaming, day/night, skill tree, inventory grid, equipmen
 
 **R215 (v0.8.215, GO A 21/10):** desktop control = cursor aim (replaces the R210 pointer-lock mouse-look): the ring is the cursor over the game view, the aim point is the cursor's ray on the ground (drives the R214 pick), the character's visible body faces it (walking direction unchanged, CharacterController untouched), a click strikes toward it, the view turns while the right mouse button is held (pointer lock during the hold, Mouse sensitivity applies). Phones unchanged.
 
+**R216 (v0.8.216, GO 21/10):** desktop cursor aim movement: WASD relative to the cursor (the controller gets `aim.basis` instead of the camera; CharacterController untouched), body faces its walk and turns to the cursor when standing, click turns to it; the free camera's lazy recentre is off while the cursor aim is on.
+
 ## Performance budgets
 Mobile FPS target 50–60 (minimum ~30 in heavy scenes) · frame budget 16.7 ms · avoid startup long-task series >50 ms ·
 as few WebGL contexts as possible · draw calls and triangles measured, not guessed.

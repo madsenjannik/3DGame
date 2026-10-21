@@ -152,9 +152,10 @@ export function applyControlProfile(game, id) {
       if (lock != null) { if (this.idleLook > 1.2) this.freeYaw = wrapAngle(this.freeYaw + wrapAngle(lock - this.freeYaw) * damp(2.4, dt)); }
       else if (boating) { if (this.idleLook > 1.2) this.freeYaw = wrapAngle(this.freeYaw + wrapAngle(this.target.heading + Math.PI - this.freeYaw) * damp(2.4, dt)); }
       else {
-        // Lazy recenter: only while walking forward-ish and the camera hasn't been touched for 2.5 s.
+        // Lazy recenter: only while walking forward-ish and the camera hasn't been touched for 2.5 s. R216: never with the desktop cursor
+        // aim (W walks toward the cursor; a camera that turned after the character would move the cursor's ground point and circle).
         const moving = (this.target.currentSpeed || 0) > .6 && !this.target.reverseIntentActive;
-        if (moving && this.idleLook > 2.5) this.freeYaw = wrapAngle(this.freeYaw + wrapAngle(this.target.heading + Math.PI - this.freeYaw) * damp(.85, dt));
+        if (moving && this.idleLook > 2.5 && !this.cursorAim) this.freeYaw = wrapAngle(this.freeYaw + wrapAngle(this.target.heading + Math.PI - this.freeYaw) * damp(.85, dt));
       }
       this.yaw = wrapAngle(this.yaw + wrapAngle(this.freeYaw - this.yaw) * damp(this.yawDamp || 12, dt));
       finish(this, dt, .34);

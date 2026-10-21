@@ -6,7 +6,8 @@
 // mouse is a cursor again (R210's pointer-lock mouse-look is gone; the view turns while the right button is held). The R213 ring IS
 // the cursor over the game view (the system cursor hides there, shows over the HUD); the aim point is where the cursor meets the
 // ground; the character's body turns to face it all the time (only the visible body: the walking direction stays the controller's,
-// so CharacterController is untouched) and a click strikes toward it. R214 stays: among tool jobs (and moles/snails) in their normal
+// so CharacterController is untouched) and a click strikes toward it. R216 (GO 21/10, 'I can moonwalk'): WASD is relative to the cursor
+// (W walks toward it), the body faces where it walks and turns to the cursor only while standing; the camera no longer recentres itself. R214 stays: among tool jobs (and moles/snails) in their normal
 // reach, the one nearest the aim point wins; bosses keep their own choice. Hidden in menus, panels, special cameras and on phones.
 import * as THREE from 'three';
 
@@ -36,7 +37,7 @@ export class AimMarker {
     this.sprite.name = 'AIM_SPROUT'; this.sprite.renderOrder = 999; this.sprite.visible = false; this.sprite.frustumCulled = false;
     game.scene.add(this.sprite);
     this.dot = document.createElement('div'); this.dot.id = 'aim-dot'; this.dot.setAttribute('aria-hidden', 'true'); document.body.appendChild(this.dot);
-    this.dotA = 0; this.v = new THREE.Vector3(); this.point = null; this.ray = new THREE.Raycaster(); this.ndc = new THREE.Vector2(); this.lock = 0; this.face = null; this.on = false;
+    this.dotA = 0; this.v = new THREE.Vector3(); this.point = null; this.ray = new THREE.Raycaster(); this.ndc = new THREE.Vector2(); this.lock = 0; this.face = null; this.on = false; this.basis = { yaw: 0 };
   }
   // once per frame before the systems offer, so their choice and the click use this frame's aim: the cursor's ray on the ground
   updatePoint(active) {
@@ -46,6 +47,7 @@ export class AimMarker {
     let L = Math.hypot(dx, dz);
     if (!(L <= AIM_MAX)) { if (!(L > 0)) { dx = d.x; dz = d.z; L = Math.hypot(dx, dz) || 1; } dx *= AIM_MAX / L; dz *= AIM_MAX / L; }   // cursor on the sky: far along its direction
     this.point = { x: P.x + dx, y: P.y, z: P.z + dz };
+    if (L > .5) this.basis.yaw = Math.atan2(-dx, -dz);   // R216: the movement basis CharacterController reads (forward = toward the cursor)
   }
   aimDist(x, z) { const p = this.point; return p && Number.isFinite(x) && Number.isFinite(z) ? Math.hypot(x - p.x, z - p.z) : null; }
   posOf(it) { const o = it?.node || it?.thorn || it?.weed || it?.snail; return o ? { x: o.x ?? o.root?.position.x, z: o.z ?? o.root?.position.z } : null; }
@@ -63,16 +65,22 @@ export class AimMarker {
     this.dot.style.transform = `translate(${cur.x}px, ${cur.y}px) translate(-50%, -50%) scale(${(1 + this.lock * .55).toFixed(3)})`;
     this.dot.classList.toggle('locked', this.lock > .5);
   }
-  // the visible body faces the aim point (after the controller ran this frame; it set root.rotation.y = heading)
+  // R216: standing still the body turns to the marked target or the cursor (heading kept in step, so a walk starts from there);
+  // walking it faces where it walks (the controller's heading), since WASD is now relative to the cursor (no moonwalk)
   faceAim(dt, on) {
     const ch = this.g.character, r = ch?.root; if (!r) return;
-    const p = this.point, P = ch.position;
-    if (!on || !p || Math.hypot(p.x - P.x, p.z - P.z) < .35) { this.face = on && this.face != null ? this.face : null; if (this.face != null) r.rotation.y = this.face; return; }
-    const q = this.target || p, want = Math.atan2(q.x - P.x, q.z - P.z);   // a marked target wins: that is what the click hits if (this.face == null) this.face = r.rotation.y;
-    this.face += Math.atan2(Math.sin(want - this.face), Math.cos(want - this.face)) * (1 - Math.exp(-dt * 16)); r.rotation.y = this.face;
+    if (!on) { this.face = null; return; }
+    const moving = (ch.currentSpeed || 0) > .3; if (moving || this.face == null) { this.face = r.rotation.y; if (moving) return; }
+    const P = ch.position, q = this.target || this.point; if (!q || Math.hypot(q.x - P.x, q.z - P.z) < .35) { r.rotation.y = this.face; return; }
+    const want = Math.atan2(q.x - P.x, q.z - P.z);
+    this.face += Math.atan2(Math.sin(want - this.face), Math.cos(want - this.face)) * (1 - Math.exp(-dt * 16));
+    this.face = Math.atan2(Math.sin(this.face), Math.cos(this.face)); r.rotation.y = this.face; ch.heading = this.face;
   }
-  // a click strikes where the body faces (combat still turns to its own target when it has one)
-  faceNow() { const ch = this.g.character; if (ch && this.on && this.face != null) ch.heading = Math.atan2(Math.sin(this.face), Math.cos(this.face)); }
+  // a click turns straight to the marked target or the cursor before the strike (combat still snaps to its own target)
+  faceNow() {
+    const ch = this.g.character, P = ch?.position, q = this.target || this.point; if (!ch || !this.on || !q || Math.hypot(q.x - P.x, q.z - P.z) < .35) return;
+    this.face = ch.heading = Math.atan2(q.x - P.x, q.z - P.z); ch.root.rotation.y = this.face;
+  }
   // what the next click hits (same branches as Game's click): a tool job → that interaction, else the combat target
   pick(it, toolJob) {
     if (toolJob && it && it.type !== 'combat-strike') { const o = it.node || it.thorn || it.weed || it.snail; return o ? { o, x: o.x ?? o.root?.position.x, z: o.z ?? o.root?.position.z, kind: it.type } : null; }
