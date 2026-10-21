@@ -1880,6 +1880,8 @@ framework, procedural streaming, day/night, skill tree, inventory grid, equipmen
 
 **R211 (v0.8.211, GO 21/10 'trin 1'):** desktop aim marker `js/gameplay/AimMarker.js`: while pointer-locked a golden sprout floats over the exact target of the next left click (resolver tool job, else `combat.target`), hidden in menus/special cameras; a locked click turns the character toward that target within ±1.2 rad of the view. No camera change. Aim step 2 (over-the-shoulder aim for ranged specials) is not built.
 
+**R212 (v0.8.212, GO 21/10 incl. the locked camera):** desktop mouse-look: UE4-default 0.175°/count on both axes (ARK's own value is not published) with raw input; Settings get Mouse sensitivity (x0.2-3, `tgw.mouseSens`) and Mouse smoothing (`tgw.mouseSmooth`); a quiet focus dot 4.5 m ahead in the view; the 'free' camera with pointer look tilts from -0.32 rad (look up, view lifts, character stays in frame) to 1.2 rad (near top-down). Touch and other profiles unchanged.
+
 ## Performance budgets
 Mobile FPS target 50–60 (minimum ~30 in heavy scenes) · frame budget 16.7 ms · avoid startup long-task series >50 ms ·
 as few WebGL contexts as possible · draw calls and triangles measured, not guessed.

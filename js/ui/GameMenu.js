@@ -67,7 +67,10 @@ export class GameMenu {
     v.innerHTML = (S ? row('Graphics', 'Auto picks the best look your device runs smoothly.', `<div class="gm-seg" role="radiogroup" aria-label="Graphics">${S.GRAPHICS.map(([k, l]) => `<button type="button" data-a="gfx:${k}" role="radio" aria-checked="${k === cur}" class="${k === cur ? 'on' : ''}">${l}</button>`).join('')}</div>`)
       + row('Sound', 'Music and effects.', tog('sound', sound)) : '')
       + row('Reduce motion', 'Less wind and movement, no camera shake or flashes.', tog('motion', motion))
+      + (S?.mouseSens && !this.g.input?.isTouch ? row('Mouse sensitivity', 'How fast the mouse turns the view.', `<div class="gm-range"><input type="range" min="0.2" max="3" step="0.05" value="${S.mouseSens()}" aria-label="Mouse sensitivity"><output>${S.mouseSens().toFixed(2)}</output></div>`)
+        + row('Mouse smoothing', 'A soft, slightly delayed camera. Off follows the mouse at once.', tog('smooth', S.mouseSmooth())) : '')   // R212
       + '<button type="button" data-a="back" class="gm-primary">Back</button>';
+    const rg = v.querySelector('.gm-range input'); if (rg) rg.addEventListener('input', () => { try { S.setMouseSens(rg.value); rg.nextElementSibling.textContent = S.mouseSens().toFixed(2); } catch {} });
     v.querySelector('.gm-primary')?.focus?.({ preventScroll: true });
   }
   run(a) {
@@ -78,6 +81,7 @@ export class GameMenu {
     if (a === 'settings') return this.settings(true);
     if (a === 'back') return this.settings(false);
     if (a.startsWith('gfx:')) { const v = a.slice(4); try { S?.setGraphics(v); g.quality?.set?.(v || null); } catch {} return this.settings(true); }
+    if (a === 'smooth') { try { S?.setMouseSmooth(!S.mouseSmooth()); } catch {} return this.settings(true); }   // R212
     if (a === 'sound') { try { S?.setSound(!S.sound()); } catch {} return this.settings(true); }
     if (a === 'motion') { const on = !g.reduceMotion; try { S ? S.setMotion(on) : localStorage.setItem('dymGame.entry.reduceMotion', on ? '1' : '0'); } catch {} g.reduceMotion = on; document.body.classList.toggle('reduce-motion', on); return this.settings(true); }
     if (a === 'controls') {

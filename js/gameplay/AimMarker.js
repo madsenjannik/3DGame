@@ -4,6 +4,9 @@
 // (mole, snail, Wood Giant root/body, Root Bear). It reads the same choice the click uses and never picks its own, so it cannot lie.
 // The click turns the character toward the marked target when it is inside a cone in front of the view (ControlProfiles asks
 // aimHeading()). Hidden in menus, special cameras and without pointer lock. No camera change. Visual only, fails soft.
+// R212 (GO 21/10): a quiet focus dot while the mouse steers. The camera looks at the character's head, so a dot in the exact
+// screen centre would sit on the head: it marks the point 4.5 m ahead in the view direction instead (where a click strikes when
+// nothing is marked). Faint at rest, clearer while the mouse turns, gone while the sprout shows a target.
 import * as THREE from 'three';
 
 const KIND_H = { giant: 6.4, bear: 4.4, root: 1.7, mole: .9, snail: .75 };   // creatures move and animate: a fixed head height
@@ -31,6 +34,20 @@ export class AimMarker {
     this.sprite = new THREE.Sprite(new THREE.SpriteMaterial({ map: sproutTexture(), transparent: true, depthTest: false, depthWrite: false, opacity: 0 }));
     this.sprite.name = 'AIM_SPROUT'; this.sprite.renderOrder = 999; this.sprite.visible = false; this.sprite.frustumCulled = false;
     game.scene.add(this.sprite);
+    this.dot = document.createElement('div'); this.dot.id = 'aim-dot'; this.dot.setAttribute('aria-hidden', 'true'); document.body.appendChild(this.dot);
+    this.dotA = 0; this.v = new THREE.Vector3();
+  }
+  focusDot(dt, active) {
+    const g = this.g, cam = g.followCamera, ch = g.character; let want = 0;
+    if (active && cam && ch) {
+      const h = cam.yaw + Math.PI, p = this.v.set(ch.position.x + Math.sin(h) * 4.5, ch.position.y + .7, ch.position.z + Math.cos(h) * 4.5).project(g.camera);
+      if (p.z > -1 && p.z < 1 && Math.abs(p.x) < 1 && Math.abs(p.y) < 1) {
+        want = ((cam.idleLook ?? 9) < .6 ? .75 : .38) * (1 - Math.min(1, this.a * 1.6));
+        this.dot.style.transform = `translate(${((p.x + 1) / 2 * innerWidth).toFixed(1)}px, ${((1 - p.y) / 2 * innerHeight).toFixed(1)}px) translate(-50%, -50%)`;
+      }
+    }
+    this.dotA += (want - this.dotA) * (1 - Math.exp(-dt * 10));
+    const o = this.dotA < .01 ? '0' : this.dotA.toFixed(2); if (this.dot.style.opacity !== o) this.dot.style.opacity = o;
   }
   // what the next click hits (same branches as Game's click): a tool job → that interaction, else the combat target
   pick(it, toolJob) {
@@ -60,6 +77,7 @@ export class AimMarker {
       this.has = true;
     }
     this.a += ((this.target ? 1 : 0) - this.a) * (1 - Math.exp(-dt * (this.target ? 12 : 8)));
+    this.focusDot(dt, active);
     const vis = this.a > .02; this.sprite.visible = vis; if (!vis) { this.has = false; return; }
     const bob = this.g.reduceMotion ? 0 : Math.sin(this.t * 2.6) * .08, pulse = this.g.reduceMotion ? 1 : 1 + Math.sin(this.t * 3.4) * .05;
     this.sprite.position.set(this.base.x, this.base.y + bob, this.base.z);
