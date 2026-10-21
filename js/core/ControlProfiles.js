@@ -51,75 +51,58 @@ function setFov(cam, portrait, landscape) {
 function installMouse(game, cam) {
   if (cam._mouseInstalled) return; cam._mouseInstalled = true;
   const el = game.renderer.domElement; let drag = null;
+  const desk = !game.input?.isTouch;
   el.addEventListener('contextmenu', e => { if (cam.profileId === 'free') e.preventDefault(); });
+  // R215 (Jannik GO A 21/10): on desktop the cursor aims (AimMarker) and the view turns while the RIGHT mouse button is held. While held,
+  // the mouse is captured (pointer lock, the cursor stays where it was) and turns the view at the R212 rate x 'Mouse sensitivity';
+  // where the browser refuses the lock, the plain drag below turns it.
+  const locked = () => document.pointerLockElement === el;
   el.addEventListener('pointerdown', e => {
     if (cam.profileId !== 'free' || e.pointerType !== 'mouse' || e.button !== 2) return;
     drag = { id: e.pointerId, x: e.clientX, y: e.clientY }; el.setPointerCapture?.(e.pointerId); e.preventDefault();
+    if (desk && el.requestPointerLock) requestLock(el);
   });
-  el.addEventListener('pointermove', e => {
-    if (!drag || e.pointerId !== drag.id) return;
-    const dx = e.clientX - drag.x, dy = e.clientY - drag.y; drag.x = e.clientX; drag.y = e.clientY;
-    cam.freeYaw = wrapAngle(cam.freeYaw - dx * .0045);
-    const R = cam.wide ? WIDE : NARROW; cam.freePitch = THREE.MathUtils.clamp(cam.freePitch + dy * .0026, R[0] - REST, R[1] - REST);
+  const turn = (dx, dy) => {
+    const k = desk ? MOUSE_RAD * sens() : .0045;
+    cam.freeYaw = wrapAngle(cam.freeYaw - dx * k);
+    const R = cam.wide ? WIDE : NARROW; cam.freePitch = THREE.MathUtils.clamp(cam.freePitch + dy * (desk ? k : .0026), R[0] - REST, R[1] - REST);
     cam.idleLook = 0;
+  };
+  el.addEventListener('pointermove', e => {
+    if (!drag || e.pointerId !== drag.id || locked()) return;
+    const dx = e.clientX - drag.x, dy = e.clientY - drag.y; drag.x = e.clientX; drag.y = e.clientY; turn(dx, dy);
   });
-  const end = e => { if (drag && e.pointerId === drag.id) { drag = null; el.releasePointerCapture?.(e.pointerId); } };
+  document.addEventListener('mousemove', e => { if (drag && locked() && cam.profileId === 'free') turn(e.movementX || 0, e.movementY || 0); });
+  const end = e => { if (drag && e.pointerId === drag.id) { drag = null; el.releasePointerCapture?.(e.pointerId); if (locked()) document.exitPointerLock?.(); } };
   el.addEventListener('pointerup', end); el.addEventListener('pointercancel', end);
+  document.addEventListener('mouseup', e => { if (e.button === 2 && drag) { drag = null; if (locked()) document.exitPointerLock?.(); } });
+  document.addEventListener('pointerlockchange', () => { document.body.classList.toggle('tgw-view-turn', locked()); if (!locked()) drag = null; });
   el.addEventListener('wheel', e => {
     if (cam.profileId !== 'free') return; e.preventDefault();
     cam.freeZoom = THREE.MathUtils.clamp((cam.freeZoom || 1) * (e.deltaY > 0 ? 1.08 : 1 / 1.08), .65, 1.45);
   }, { passive: false });
-  installPointerLook(game, cam, el);
+  if (desk) {
+    // the cursor for AimMarker: where it is and whether it is over the game view (over the HUD the normal cursor shows)
+    const ptr = cam.cursor = { x: innerWidth / 2, y: innerHeight * .4, over: false };
+    document.addEventListener('mousemove', e => { if (locked()) return; ptr.x = e.clientX; ptr.y = e.clientY; ptr.over = e.target === el; });
+    document.documentElement.addEventListener('mouseleave', () => { ptr.over = false; });
+    const applySmooth = () => { const sn = !smooth(); cam.posDamp = sn ? 30 : 0; cam.yawDamp = sn ? 40 : 0; };
+    cam.applySmooth = applySmooth; applySmooth();
+    try { globalThis.TGW_SETTINGS?.on?.(k => { if (k === 'smooth' && cam.profileId === 'free') applySmooth(); }); } catch {}
+  }
 }
 
-// R210 (Jannik GO 21/10, A1: 'on desktop the mouse must be the direction, part of the game'): a click on the game view captures the mouse
-// (pointer lock: the cursor hides) and from then on the mouse turns the camera all the time (no button needed); W runs where you look and a
-// left click turns the character to the view and strikes. The cursor comes back by itself whenever the game is not free roaming: the menu,
-// the Bag, the Workbench, the map, the Dev menu, a choice, build mode, and the locked special cameras (fishing, stable talks and race, Lake
-// Run, the move-in) keep their own control (B, C). Esc frees the mouse (the browser's rule) and opens the menu. Only the 'free' profile on
-// desktop; it never edits the locked ThirdPersonCamera or CharacterController code (it sets the same freeYaw / freePitch the drag sets).
-const SPECIAL = ['fishing-active', 'stable-talk-active', 'stable-race-active', 'lakerun-active', 'choice-open', 'game-menu-open', 'world-map-open', 'mobile-bag-open'];
+// R210 pointer lock mouse-look (the mouse turned the view all the time) was replaced in R215 by the cursor aim above (Jannik GO A 21/10).
 // R212 (Jannik GO 21/10, 'as close to ARK as possible'): ARK's exact turn rate is not published, so the base is Unreal Engine 4's
 // default (0.07 x 2.5 = 0.175 degrees per mouse count, both axes) with raw mouse input where the browser offers it, a 'Mouse
-// sensitivity' slider (x0.2 to x3) to tune it by feel, and 'Mouse smoothing' (on like ARK; off = the camera follows without lag).
-// The tilt range is ARK-like: from looking well up into the sky to almost straight down (GO for the locked camera, same day).
+// sensitivity' slider (x0.2 to x3) and 'Mouse smoothing' (on like ARK; off = the camera follows without lag). The tilt range is wide:
+// from looking up into the sky (character at the bottom of the frame) to almost straight down (GO for the locked camera, same day).
 const MOUSE_RAD = .175 * Math.PI / 180, REST = .34, WIDE = [-.32, 1.2], NARROW = [.14, .66];
 const sens = () => { try { return globalThis.TGW_SETTINGS?.mouseSens?.() ?? 1; } catch { return 1; } };
 const smooth = () => { try { return globalThis.TGW_SETTINGS?.mouseSmooth?.() !== false; } catch { return true; } };
 function requestLock(el) {
   const plain = () => { try { el.requestPointerLock()?.catch?.(() => {}); } catch {} };
   try { const r = el.requestPointerLock({ unadjustedMovement: true }); if (r?.catch) r.catch(plain); } catch { plain(); }   // raw input (no OS acceleration) where supported
-}
-function installPointerLook(game, cam, el) {
-  if (cam._lockInstalled || game.input?.isTouch || !el.requestPointerLock) return; cam._lockInstalled = true;
-  const locked = () => document.pointerLockElement === el;
-  const free = () => { const b = document.body.classList, g = game;
-    return cam.profileId === 'free' && !document.hidden && !SPECIAL.some(c => b.contains(c)) && !document.querySelector('.gear-panel.open')
-      && !(g.state?.choice?.open || g.workbenchPanel?.open || g.devMenu?.open || g.buildMode?.active || g.worldMap?.isOpen || g.homePortal?.busy || g.menu?.open
-        || g.lakeRun?.busy?.() || g.fishing?.isBusy?.() || g.stable?.isBusy?.() || g.showcase?.active); };
-  let releasing = false;
-  const release = () => { if (locked()) { releasing = true; document.exitPointerLock?.(); } };
-  el.addEventListener('pointerdown', e => {
-    if (e.pointerType !== 'mouse' || e.button !== 0) return;
-    if (locked()) { if (!(game.character?.currentSpeed > .6) && game.character) { const view = wrapAngle(cam.yaw + Math.PI); let h = null; try { h = game.aim?.aimHeading?.(view); } catch {} game.character.heading = h ?? view; } return; }   // strike toward the view; R211: toward the sprout-marked target when it is in front
-    if (free()) requestLock(el);   // this click also strikes (as before)
-  });
-  document.addEventListener('mousemove', e => {
-    if (!locked() || cam.profileId !== 'free') return;
-    const dx = e.movementX || 0, dy = e.movementY || 0; if (!dx && !dy) return;
-    const k = MOUSE_RAD * sens();   // R212: same rate both axes
-    cam.freeYaw = wrapAngle(cam.freeYaw - dx * k);
-    cam.freePitch = THREE.MathUtils.clamp(cam.freePitch + dy * k, WIDE[0] - REST, WIDE[1] - REST);
-    cam.idleLook = 0;
-  });
-  document.addEventListener('pointerlockchange', () => {
-    document.body.classList.toggle('tgw-mouse-look', locked()); cam.wide = true;
-    const snappy = locked() && !smooth(); cam.posDamp = snappy ? 30 : 0; cam.yawDamp = snappy ? 40 : 0;
-    if (!locked() && !releasing && free()) game.menu?.toggle?.(true);   // the player pressed Esc: the cursor is back and the menu opens
-    releasing = false;
-  });
-  setInterval(() => { if (locked() && !free()) release(); }, 120);
-  try { globalThis.TGW_SETTINGS?.on?.(k => { if (k === 'smooth') { const sn = locked() && !smooth(); cam.posDamp = sn ? 30 : 0; cam.yawDamp = sn ? 40 : 0; } }); } catch {}   // a menu, panel or special camera opened: give the cursor back
 }
 
 export function applyControlProfile(game, id) {
@@ -135,10 +118,10 @@ export function applyControlProfile(game, id) {
   if (!PROFILES[id] || id === 'standard') { cam.manualYaw = 0; cam.manualPitch = 0; return 'standard'; }
 
   if (id === 'free') {
-    cam.profileId = 'free'; installMouse(game, cam); cam.wide = !!cam._lockInstalled;   // R212: desktop mouse-look tilts ARK-wide
+    cam.profileId = 'free'; installMouse(game, cam); cam.wide = !game.input?.isTouch; cam.applySmooth?.();   // R212: desktop tilts ARK-wide
     game.cameraOcclusion?.setFreeRules?.(true);   // R58.2: ride over low props, pass trunks, lift instead of collapsing
     cam.inBoat = () => game.fishing?.boat?.on && game.fishing.mode === 'boat';
-    if (hint) hint.textContent = game.input?.isTouch ? 'WASD to move · Shift to run · Space to hop · left click to strike · hold right mouse to look · wheel to zoom' : 'Click the game to steer with the mouse · WASD to move · left click to strike · wheel to zoom · Esc for the menu';
+    if (hint) hint.textContent = game.input?.isTouch ? 'WASD to move · Shift to run · Space to hop · left click to strike · hold right mouse to look · wheel to zoom' : 'WASD to move · the mouse aims · left click to strike · hold right mouse to turn the view · wheel to zoom · Esc for the menu';
     cam.freeYaw = cam.yaw; cam.freePitch = 0; cam.idleLook = 99; cam.freeZoom = cam.freeZoom || 1;
     cam.distance = function () { return (this.camera.aspect < .8 ? 7.0 : 5.8) * (this.freeZoom || 1); };
     cam.wantedYaw = function () { return this.freeYaw; };

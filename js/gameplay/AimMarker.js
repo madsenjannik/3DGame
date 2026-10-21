@@ -1,21 +1,17 @@
 // @ts-nocheck
-// R211 (Jannik GO 21/10, aim step 1): while the mouse steers (pointer lock, R210) a small golden sprout floats over exactly what the
-// next left click hits: the tool job the InteractionResolver chose (node, thornbrush, weed, snail), else the combat target
-// (mole, snail, Wood Giant root/body, Root Bear). It reads the same choice the click uses and never picks its own, so it cannot lie.
-// The click turns the character toward the marked target when it is inside a cone in front of the view (ControlProfiles asks
-// aimHeading()). Hidden in menus, special cameras and without pointer lock. No camera change. Fails soft. (R214: it also owns the aim point that picks between targets, see below.)
-// R212 (GO 21/10): a quiet focus dot while the mouse steers. The camera looks at the character's head, so a dot in the exact
-// screen centre would sit on the head: it marked a point ahead in the view direction instead (where a click strikes when
-// nothing is marked). R213 (GO A): a soft open ring. R214: it sits on the aim point and locks onto the marked target (gold, wider).
+// R211 (Jannik GO 21/10, aim step 1): a small golden sprout floats over exactly what the next left click hits: the tool job the
+// InteractionResolver chose (node, thornbrush, weed, snail), else the combat target (mole, snail, Wood Giant root/body, Root Bear).
+// It reads the same choice the click uses and never picks its own, so it cannot lie. Fails soft.
+// R215 (Jannik GO A 21/10, 'the ring must follow my mouse like a cursor on a PC, together with the character'): on desktop the
+// mouse is a cursor again (R210's pointer-lock mouse-look is gone; the view turns while the right button is held). The R213 ring IS
+// the cursor over the game view (the system cursor hides there, shows over the HUD); the aim point is where the cursor meets the
+// ground; the character's body turns to face it all the time (only the visible body: the walking direction stays the controller's,
+// so CharacterController is untouched) and a click strikes toward it. R214 stays: among tool jobs (and moles/snails) in their normal
+// reach, the one nearest the aim point wins; bosses keep their own choice. Hidden in menus, panels, special cameras and on phones.
 import * as THREE from 'three';
 
 const KIND_H = { giant: 6.4, bear: 4.4, root: 1.7, mole: .9, snail: .75 };   // creatures move and animate: a fixed head height
-const CONE = 1.2;   // rad either side of the view a click may turn toward the target
-// R214 (Jannik GO 21/10, 'what you look at is what you hit'): the aim point is where a fixed screen point just above the head
-// (the camera looks at the head) meets the ground, at most AIM_MAX m ahead. Looking down brings it to your feet. Among tool jobs
-// (and moles/snails) inside their normal reach, the one nearest the aim point wins; reach, damage and timing are unchanged; the
-// bosses keep their own choice. Desktop pointer lock only: without it (phones, menus) everything picks by distance as before.
-const AIM_Y = .25, AIM_MAX = 7, TOOL = new Set(['wilds-gather', 'wilds-cut', 'wilds-weed', 'wilds-snail']);
+const AIM_MAX = 25, TOOL = new Set(['wilds-gather', 'wilds-cut', 'wilds-weed', 'wilds-snail']);
 
 function sproutTexture() {
   const c = document.createElement('canvas'); c.width = c.height = 128; const x = c.getContext('2d');
@@ -40,15 +36,15 @@ export class AimMarker {
     this.sprite.name = 'AIM_SPROUT'; this.sprite.renderOrder = 999; this.sprite.visible = false; this.sprite.frustumCulled = false;
     game.scene.add(this.sprite);
     this.dot = document.createElement('div'); this.dot.id = 'aim-dot'; this.dot.setAttribute('aria-hidden', 'true'); document.body.appendChild(this.dot);
-    this.dotA = 0; this.v = new THREE.Vector3(); this.point = null; this.ray = new THREE.Raycaster(); this.ndc = new THREE.Vector2(); this.sx = null; this.sy = 0; this.lock = 0;
+    this.dotA = 0; this.v = new THREE.Vector3(); this.point = null; this.ray = new THREE.Raycaster(); this.ndc = new THREE.Vector2(); this.lock = 0; this.face = null; this.on = false;
   }
-  // R214: once per frame before the systems offer, so their choice and the click use this frame's aim
+  // once per frame before the systems offer, so their choice and the click use this frame's aim: the cursor's ray on the ground
   updatePoint(active) {
-    this.point = null; const g = this.g, cam = g.camera, ch = g.character; if (!active || !cam || !ch) return;
-    this.ray.setFromCamera(this.ndc.set(0, AIM_Y), cam); const o = this.ray.ray.origin, d = this.ray.ray.direction, P = ch.position, vh = (g.followCamera?.yaw ?? 0) + Math.PI;
+    this.point = null; const g = this.g, cam = g.camera, ch = g.character, cur = g.followCamera?.cursor; if (!active || !cam || !ch || !cur) return;
+    this.ray.setFromCamera(this.ndc.set(cur.x / innerWidth * 2 - 1, 1 - cur.y / innerHeight * 2), cam); const o = this.ray.ray.origin, d = this.ray.ray.direction, P = ch.position;
     let dx = NaN, dz = NaN; if (d.y < -1e-3) { const t = (P.y - o.y) / d.y; dx = o.x + d.x * t - P.x; dz = o.z + d.z * t - P.z; }
     let L = Math.hypot(dx, dz);
-    if (!(L <= AIM_MAX)) { if (!(L > 0)) { dx = Math.sin(vh); dz = Math.cos(vh); L = 1; } dx *= AIM_MAX / L; dz *= AIM_MAX / L; }   // looking level or up: the far point ahead
+    if (!(L <= AIM_MAX)) { if (!(L > 0)) { dx = d.x; dz = d.z; L = Math.hypot(dx, dz) || 1; } dx *= AIM_MAX / L; dz *= AIM_MAX / L; }   // cursor on the sky: far along its direction
     this.point = { x: P.x + dx, y: P.y, z: P.z + dz };
   }
   aimDist(x, z) { const p = this.point; return p && Number.isFinite(x) && Number.isFinite(z) ? Math.hypot(x - p.x, z - p.z) : null; }
@@ -58,22 +54,25 @@ export class AimMarker {
     if (this.point && TOOL.has(c.type) && TOOL.has(best.type)) { const a = this.posOf(c), b = this.posOf(best), da = a && this.aimDist(a.x, a.z), db = b && this.aimDist(b.x, b.z); if (da != null && db != null) return da < db; }
     return c.distance < best.distance;
   }
-  // R212/R213 ring, R214: it sits on the aim point and, when a target is marked, glides onto it and widens (lock-on) instead of fading
+  // the R213 ring is the cursor over the game view; when a target is marked it widens and turns gold (lock-on)
   focusDot(dt, active) {
-    const g = this.g; let want = 0, x = null, y = 0;
-    const scr = (wx, wy, wz) => { const p = this.v.set(wx, wy, wz).project(g.camera); return p.z > -1 && p.z < 1 ? p : null; };
-    if (active && this.point) {
-      const t = this.target, p = t ? scr(t.x, this.base.y - this.top(t) - .2, t.z) : scr(this.point.x, this.point.y + .05, this.point.z);
-      if (p) { x = (p.x + 1) / 2 * innerWidth; y = (1 - p.y) / 2 * innerHeight;
-        want = (t ? 1 : (g.followCamera?.idleLook ?? 9) < .6 ? 1 : .85) * (1 - THREE.MathUtils.smoothstep(Math.max(Math.abs(p.x), Math.abs(p.y)), .8, .97)); }
-    }
-    if (x != null) { if (this.sx == null || this.dotA < .02) { this.sx = x; this.sy = y; } else { const k = 1 - Math.exp(-dt * 18); this.sx += (x - this.sx) * k; this.sy += (y - this.sy) * k; } }
-    this.lock += ((this.target && active ? 1 : 0) - this.lock) * (1 - Math.exp(-dt * 12));
-    this.dotA += (want - this.dotA) * (1 - Math.exp(-dt * 10));
-    const o = this.dotA < .01 ? '0' : this.dotA.toFixed(2); if (this.dot.style.opacity !== o) this.dot.style.opacity = o;
-    if (this.sx != null) this.dot.style.transform = `translate(${this.sx.toFixed(1)}px, ${this.sy.toFixed(1)}px) translate(-50%, -50%) scale(${(1 + this.lock * .85).toFixed(3)})`;
+    const cur = this.g.followCamera?.cursor, on = !!(active && cur);
+    if (on !== this.on) { this.on = on; document.body.classList.toggle('tgw-cursor-aim', on); }
+    this.lock += ((this.target && on ? 1 : 0) - this.lock) * (1 - Math.exp(-dt * 14));
+    if (!on) return;
+    this.dot.style.transform = `translate(${cur.x}px, ${cur.y}px) translate(-50%, -50%) scale(${(1 + this.lock * .55).toFixed(3)})`;
     this.dot.classList.toggle('locked', this.lock > .5);
   }
+  // the visible body faces the aim point (after the controller ran this frame; it set root.rotation.y = heading)
+  faceAim(dt, on) {
+    const ch = this.g.character, r = ch?.root; if (!r) return;
+    const p = this.point, P = ch.position;
+    if (!on || !p || Math.hypot(p.x - P.x, p.z - P.z) < .35) { this.face = on && this.face != null ? this.face : null; if (this.face != null) r.rotation.y = this.face; return; }
+    const q = this.target || p, want = Math.atan2(q.x - P.x, q.z - P.z);   // a marked target wins: that is what the click hits if (this.face == null) this.face = r.rotation.y;
+    this.face += Math.atan2(Math.sin(want - this.face), Math.cos(want - this.face)) * (1 - Math.exp(-dt * 16)); r.rotation.y = this.face;
+  }
+  // a click strikes where the body faces (combat still turns to its own target when it has one)
+  faceNow() { const ch = this.g.character; if (ch && this.on && this.face != null) ch.heading = Math.atan2(Math.sin(this.face), Math.cos(this.face)); }
   // what the next click hits (same branches as Game's click): a tool job → that interaction, else the combat target
   pick(it, toolJob) {
     if (toolJob && it && it.type !== 'combat-strike') { const o = it.node || it.thorn || it.weed || it.snail; return o ? { o, x: o.x ?? o.root?.position.x, z: o.z ?? o.root?.position.z, kind: it.type } : null; }
@@ -102,16 +101,10 @@ export class AimMarker {
       this.has = true;
     }
     this.a += ((this.target ? 1 : 0) - this.a) * (1 - Math.exp(-dt * (this.target ? 12 : 8)));
-    this.focusDot(dt, active);
+    this.focusDot(dt, active); this.faceAim(dt, active);
     const vis = this.a > .02; this.sprite.visible = vis; if (!vis) { this.has = false; return; }
     const bob = this.g.reduceMotion ? 0 : Math.sin(this.t * 2.6) * .08, pulse = this.g.reduceMotion ? 1 : 1 + Math.sin(this.t * 3.4) * .05;
     this.sprite.position.set(this.base.x, this.base.y + bob, this.base.z);
     this.sprite.material.opacity = this.a * .95; this.sprite.scale.setScalar(.62 * pulse * (.7 + .3 * this.a));
-  }
-  // heading toward the marked target for a click, when it lies inside the cone in front of the view (else null)
-  aimHeading(viewHeading) {
-    const t = this.target, ch = this.g.character; if (!t || !ch) return null;
-    const h = Math.atan2(t.x - ch.position.x, t.z - ch.position.z), d = Math.atan2(Math.sin(h - viewHeading), Math.cos(h - viewHeading));
-    return Math.abs(d) <= CONE ? h : null;
   }
 }
