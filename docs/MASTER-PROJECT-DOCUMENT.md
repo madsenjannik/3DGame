@@ -1866,7 +1866,7 @@ framework, procedural streaming, day/night, skill tree, inventory grid, equipmen
 
 **R204 (v0.8.204):** Character select: the live 3D canvas is a child of the centre card (layout-sized over the art box), so it follows the pop and is never misplaced; the pop is softer (one overshoot, gentle halo, rising plate, 10 small drifting sparks).
 
-**R205 (v0.8.205):** Character select: the centre card keeps its pop class (removing it restarted the row's slide-in: a sideways jump after the pop); on a switch the canvas hides instantly and drops the previous figure, so only the new one fades in.
+**R205 (v0.8.205):** Character select: the centre card keeps its pop class (removing it restarted the row's slide-in: a sideways jump after the pop); on a switch the canvas hides instantly and drops the previous figure, so only the new one fades in. Smoke: 61/61, all PASS (thumb-arc 'charged' now recorded during the hold).
 
 ## Performance budgets
 Mobile FPS target 50–60 (minimum ~30 in heavy scenes) · frame budget 16.7 ms · avoid startup long-task series >50 ms ·
