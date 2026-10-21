@@ -6,7 +6,7 @@
 // aimHeading()). Hidden in menus, special cameras and without pointer lock. No camera change. Visual only, fails soft.
 // R212 (GO 21/10): a quiet focus dot while the mouse steers. The camera looks at the character's head, so a dot in the exact
 // screen centre would sit on the head: it marks the point 4.5 m ahead in the view direction instead (where a click strikes when
-// nothing is marked). Faint at rest, clearer while the mouse turns, gone while the sprout shows a target.
+// nothing is marked). R213 (GO A): a soft open ring, 85% at rest, full while the mouse turns, gone while the sprout shows a target.
 import * as THREE from 'three';
 
 const KIND_H = { giant: 6.4, bear: 4.4, root: 1.7, mole: .9, snail: .75 };   // creatures move and animate: a fixed head height
@@ -42,7 +42,7 @@ export class AimMarker {
     if (active && cam && ch) {
       const h = cam.yaw + Math.PI, p = this.v.set(ch.position.x + Math.sin(h) * 4.5, ch.position.y + .7, ch.position.z + Math.cos(h) * 4.5).project(g.camera);
       if (p.z > -1 && p.z < 1 && Math.abs(p.x) < 1 && Math.abs(p.y) < 1) {
-        want = ((cam.idleLook ?? 9) < .6 ? .75 : .38) * (1 - Math.min(1, this.a * 1.6));
+        want = ((cam.idleLook ?? 9) < .6 ? 1 : .85) * (1 - Math.min(1, this.a * 1.6)) * (1 - THREE.MathUtils.smoothstep(Math.max(Math.abs(p.x), Math.abs(p.y)), .75, .95));   // R213: fades at the screen edge (near top-down view): clearly visible at rest, a touch stronger while turning
         this.dot.style.transform = `translate(${((p.x + 1) / 2 * innerWidth).toFixed(1)}px, ${((1 - p.y) / 2 * innerHeight).toFixed(1)}px) translate(-50%, -50%)`;
       }
     }

@@ -1882,6 +1882,8 @@ framework, procedural streaming, day/night, skill tree, inventory grid, equipmen
 
 **R212 (v0.8.212, GO 21/10 incl. the locked camera):** desktop mouse-look: UE4-default 0.175°/count on both axes (ARK's own value is not published) with raw input; Settings get Mouse sensitivity (x0.2-3, `tgw.mouseSens`) and Mouse smoothing (`tgw.mouseSmooth`); a quiet focus dot 4.5 m ahead in the view; the 'free' camera with pointer look tilts from -0.32 rad (look up, view lifts, character stays in frame) to 1.2 rad (near top-down). Touch and other profiles unchanged.
 
+**R213 (v0.8.213, GO A 21/10):** the desktop focus dot is a 13 px soft open ring (cream, thin dark outline), 85% at rest / 100% while turning, hidden while the aim sprout shows a target and near the screen edge.
+
 ## Performance budgets
 Mobile FPS target 50–60 (minimum ~30 in heavy scenes) · frame budget 16.7 ms · avoid startup long-task series >50 ms ·
 as few WebGL contexts as possible · draw calls and triangles measured, not guessed.
