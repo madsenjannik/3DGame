@@ -1870,6 +1870,8 @@ framework, procedural streaming, day/night, skill tree, inventory grid, equipmen
 
 **R206 (v0.8.206):** Loading cover: the typed lines (a JS timer starved while loading) are replaced by whole lines that fade in (CSS) and stay at least 1.3 s, queued; done() skips the queue to 'Welcome home' after 0.6 s and lifts 0.65 s later.
 
+**R207 (v0.8.207):** Loading cover: the sprout's parts are separate transform-animated layers (smooth while loading), grown in step with the shown line, with a slow sway; bloom with 'Welcome home', cover lifts 0.9 s later.
+
 ## Performance budgets
 Mobile FPS target 50–60 (minimum ~30 in heavy scenes) · frame budget 16.7 ms · avoid startup long-task series >50 ms ·
 as few WebGL contexts as possible · draw calls and triangles measured, not guessed.

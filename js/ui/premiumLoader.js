@@ -16,13 +16,18 @@
       + '#tgw-premium-veil .pl-shade{position:absolute;inset:0;background:radial-gradient(55% 60% at 50% 46%,rgba(246,241,226,.55) 0%,rgba(223,230,214,.35) 55%,rgba(40,52,34,.38) 100%)}'
       + '#tgw-premium-veil .pl-mote{position:absolute;bottom:-12px;width:6px;height:6px;border-radius:50%;background:radial-gradient(circle,#fff6d8 0%,rgba(255,236,170,.0) 70%);opacity:0;animation:plMote linear infinite}'
       + '#tgw-premium-veil .pl-col{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);display:flex;flex-direction:column;align-items:center;gap:14px;width:min(86vw,420px)}'
-      + '#tgw-premium-veil svg{width:clamp(120px,19vmin,170px);height:auto;overflow:visible}'
-      + '#tgw-premium-veil .pl-stem{stroke-dasharray:60;stroke-dashoffset:60;transition:stroke-dashoffset 1.1s ease}'
-      + '#tgw-premium-veil .pl-leaf{transform-box:fill-box;transform:scale(0);transition:transform .9s cubic-bezier(.3,1.6,.5,1)}'
-      + '#tgw-premium-veil .pl-leaf.l0{transform-origin:100% 100%}#tgw-premium-veil .pl-leaf.l1{transform-origin:0% 100%}#tgw-premium-veil .pl-leaf.l2{transform-origin:100% 100%}'
-      + '#tgw-premium-veil .pl-bloom{transform-box:fill-box;transform-origin:50% 100%;transform:scale(0);transition:transform 1s cubic-bezier(.3,1.7,.5,1)}'
-      + '#tgw-premium-veil .pl-bud{transform-box:fill-box;transform-origin:50% 100%;transform:scale(0);transition:transform .8s ease}'
-      + '#tgw-premium-veil .on{transform:scale(1)}#tgw-premium-veil .pl-stem.on{stroke-dashoffset:var(--o,0)}'
+      // R207 (Jannik 21/10: 'the flower itself must be smooth too'): each part is its own layer (a div with its own SVG over the same viewBox)
+      // animated with transform only, so the compositor runs it smoothly while the game loads (the stem's stroke-dashoffset and the SVG-element
+      // scales ran on the busy main thread and stuttered); calm ease-out curves, and a slow sway so it is never quite still
+      + '#tgw-premium-veil .pl-sprout{position:relative;width:clamp(120px,19vmin,170px);aspect-ratio:100/78;transform-origin:50% 90%;animation:plSway 5.5s ease-in-out infinite alternate}'
+      + '#tgw-premium-veil .pl-part{position:absolute;inset:0;will-change:transform}#tgw-premium-veil .pl-part svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible}'
+      + '#tgw-premium-veil .pl-stem{transform-origin:50% 89.7%;transform:scaleY(0);transition:transform 1.3s cubic-bezier(.22,1,.36,1)}'
+      + '#tgw-premium-veil .pl-leaf{transform:scale(0) rotate(-24deg);transition:transform 1s cubic-bezier(.22,1,.36,1)}'
+      + '#tgw-premium-veil .pl-leaf.l0{transform-origin:49% 74.4%}#tgw-premium-veil .pl-leaf.l1{transform-origin:51% 59%;transform:scale(0) rotate(24deg)}#tgw-premium-veil .pl-leaf.l2{transform-origin:49% 43.6%}'
+      + '#tgw-premium-veil .pl-bud{transform-origin:50% 22.4%;transform:scale(0);transition:transform 1s cubic-bezier(.22,1,.36,1)}'
+      + '#tgw-premium-veil .pl-bloom{transform-origin:50% 15.4%;transform:scale(0) rotate(-40deg);transition:transform 1.2s cubic-bezier(.22,1,.36,1)}'
+      + '#tgw-premium-veil .pl-part.on{transform:none}'
+      + '@keyframes plSway{from{transform:rotate(-1.6deg)}to{transform:rotate(1.6deg)}}'
       + '#tgw-premium-veil .pl-line{min-height:1.4em;color:#3f4a36;font-weight:800;font-size:12px;letter-spacing:.2em;text-transform:uppercase;text-align:center;text-shadow:0 1px 0 rgba(255,250,236,.7);transition:opacity .45s ease}'
       + '#tgw-premium-veil .pl-t{display:inline-block;animation:plIn .5s cubic-bezier(.33,1,.68,1) both}'
       + '@keyframes plIn{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:none}}'
@@ -32,36 +37,38 @@
       + '@media (prefers-reduced-motion:reduce){#tgw-premium-veil *{animation:none!important}}';
     var st = document.createElement('style'); st.textContent = css; document.head.appendChild(st);
     var v = document.createElement('div'); v.id = 'tgw-premium-veil';
+    var part = function (cls, inner) { return '<div class="pl-part ' + cls + '"><svg viewBox="0 0 100 78">' + inner + '</svg></div>'; };
     var motes = ''; for (var i = 0; i < 16; i++) { var s = 3 + (i * 7) % 6; motes += '<i class="pl-mote" style="left:' + ((i * 37) % 100) + '%;width:' + s + 'px;height:' + s + 'px;--dx:' + ((i % 2 ? 1 : -1) * (10 + (i * 13) % 50)) + 'px;animation-duration:' + (9 + (i * 5) % 9) + 's;animation-delay:' + (-(i * 1.3) % 12) + 's"></i>'; }
     v.innerHTML = '<div class="pl-bg"></div><div class="pl-shade"></div>' + motes
       + '<div class="pl-col">'
-      + '<svg viewBox="0 0 100 78" aria-hidden="true">'
-      + '<ellipse cx="50" cy="72" rx="30" ry="6" fill="#6b5137" opacity=".85"/><ellipse cx="50" cy="70" rx="24" ry="3.6" fill="#86684a"/>'
-      + '<path class="pl-stem" d="M50 70 C50 58 47 48 50 36 C52 28 50 20 50 14" fill="none" stroke="#5f8a3a" stroke-width="3.2" stroke-linecap="round"/>'
-      + '<path class="pl-leaf l0" d="M49 58 C40 58 33 53 31 46 C39 45 46 49 49 58Z" fill="#7fae4a"/>'
-      + '<path class="pl-leaf l1" d="M51 46 C60 46 68 41 70 33 C61 32 54 37 51 46Z" fill="#8fbd55"/>'
-      + '<path class="pl-leaf l2" d="M49 34 C42 33 37 28 36 22 C43 22 48 26 49 34Z" fill="#9ccb5e"/>'
-      + '<g class="pl-bud"><ellipse cx="50" cy="12" rx="4" ry="5.5" fill="#e9a35a"/></g>'
-      + '<g class="pl-bloom">' + [0, 72, 144, 216, 288].map(function (a) { return '<ellipse cx="50" cy="5" rx="4.6" ry="7.4" fill="#f3c46a" transform="rotate(' + a + ' 50 12)"/>'; }).join('') + '<circle cx="50" cy="12" r="3.6" fill="#c8603a"/></g>'
-      + '</svg><div class="pl-line"></div></div>';
+      + '<div class="pl-sprout" aria-hidden="true">'
+      + part('', '<ellipse cx="50" cy="72" rx="30" ry="6" fill="#6b5137" opacity=".85"/><ellipse cx="50" cy="70" rx="24" ry="3.6" fill="#86684a"/>')
+      + part('pl-stem', '<path d="M50 70 C50 58 47 48 50 36 C52 28 50 20 50 14" fill="none" stroke="#5f8a3a" stroke-width="3.2" stroke-linecap="round"/>')
+      + part('pl-leaf l0', '<path d="M49 58 C40 58 33 53 31 46 C39 45 46 49 49 58Z" fill="#7fae4a"/>')
+      + part('pl-leaf l1', '<path d="M51 46 C60 46 68 41 70 33 C61 32 54 37 51 46Z" fill="#8fbd55"/>')
+      + part('pl-leaf l2', '<path d="M49 34 C42 33 37 28 36 22 C43 22 48 26 49 34Z" fill="#9ccb5e"/>')
+      + part('pl-bud', '<ellipse cx="50" cy="12" rx="4" ry="5.5" fill="#e9a35a"/>')
+      + part('pl-bloom', [0, 72, 144, 216, 288].map(function (a) { return '<ellipse cx="50" cy="5" rx="4.6" ry="7.4" fill="#f3c46a" transform="rotate(' + a + ' 50 12)"/>'; }).join('') + '<circle cx="50" cy="12" r="3.6" fill="#c8603a"/>')
+      + '</div><div class="pl-line"></div></div>';
     document.body.appendChild(v);
     var line = v.querySelector('.pl-line'), stem = v.querySelector('.pl-stem'), leaves = v.querySelectorAll('.pl-leaf'), bud = v.querySelector('.pl-bud'), bloom = v.querySelector('.pl-bloom'), at = 0, gone = false;
     // R196 typed each line letter by letter from a JS timer; while the game loads the main thread is busy, so it reached only a few letters
     // before the next step replaced the line. R206 (Jannik 21/10: 'set a time to show them instead'): each line appears whole with a soft
     // fade + lift (a CSS animation, smooth while JS is busy) and stays at least MIN ms; steps that come faster wait in a queue.
     var MIN = 1300, shownAt = 0, queue = [], wait = null, cur = '';
-    var put = function (t) { cur = t; shownAt = performance.now(); line.innerHTML = '<span class="pl-t"></span>'; line.firstChild.textContent = t; };
+    var put = function (t) { cur = t; shownAt = performance.now(); line.innerHTML = '<span class="pl-t"></span>'; line.firstChild.textContent = t; var n = LINES.indexOf(t); if (n >= 0) requestAnimationFrame(function () { show(n); }); };   // R207: the sprout grows with the line it shows
     var pump = function () { clearTimeout(wait); wait = null; if (!queue.length) return; var left = MIN - (performance.now() - shownAt); if (left > 0) { wait = setTimeout(pump, left); return; } put(queue.shift()); if (queue.length) wait = setTimeout(pump, MIN); };
     var say = function (t) { if (t === cur || queue[queue.length - 1] === t) return; queue.push(t); if (!wait) pump(); };
-    var show = function (n) { stem.style.setProperty('--o', String(Math.round(60 - 60 * Math.min(1, (n + 1) / 4)))); stem.classList.add('on'); for (var k = 0; k < leaves.length; k++) if (k < n) leaves[k].classList.add('on'); if (n >= 3) bud.classList.add('on'); };
-    say(LINES[0]); requestAnimationFrame(function () { show(0); });   // R206: the first line at once (not after the first frame)
+    // R207: stem height per step (0: 40 %, 1: 62 %, 2: 82 %, 3+: full), leaf k from step k+1, bud at 3, bloom at 4 ('Welcome home')
+    var show = function (n) { stem.style.transform = 'scaleY(' + [.4, .62, .82, 1, 1][Math.min(n, 4)] + ')'; for (var k = 0; k < leaves.length; k++) leaves[k].classList.toggle('on', k < n); bud.classList.toggle('on', n >= 3); bloom.classList.toggle('on', n >= 4); };
+    say(LINES[0]);   // R206: the first line at once; R207: put() grows the sprout with it
     var lift = function () { if (gone) return; gone = true; v.style.opacity = '0'; setTimeout(function () { v.remove(); }, 650); };
     window.TGW_LOAD = {
-      stage: function (n) { if (gone || n <= at) return; at = n; show(n); say(LINES[Math.min(n, 3)]); },
+      stage: function (n) { if (gone || n <= at) return; at = n; say(LINES[Math.min(n, 3)]); },
       // R193: bloom, then lift. R206: the steps still queued are skipped; 'Welcome home' comes once the current line has stood 0.6 s and the
       // cover lifts 0.65 s after it (at most ~1 s later than before)
-      done: function () { if (gone) return; window.TGW_LOAD.stage(3); bud.classList.add('on'); bloom.classList.add('on'); clearTimeout(wait); wait = null; queue = [];
-        setTimeout(function () { put(LINES[4]); setTimeout(lift, 650); }, Math.max(0, 600 - (performance.now() - shownAt))); }
+      done: function () { if (gone) return; at = 3; clearTimeout(wait); wait = null; queue = [];
+        setTimeout(function () { put(LINES[4]); setTimeout(lift, 900); }, Math.max(0, 600 - (performance.now() - shownAt))); }   // R207: lift once the bloom has opened
     };
     setTimeout(lift, 30000);
   } catch (e) { var o = document.getElementById('tgw-premium-veil'); if (o) o.remove(); }
