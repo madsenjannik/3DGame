@@ -1892,6 +1892,8 @@ framework, procedural streaming, day/night, skill tree, inventory grid, equipmen
 
 **R217 (v0.8.217, GO 21/10, Jannik chose ARK):** R215/R216 rolled back to the R214 desktop controls (pointer-lock mouse-look, fixed ring with gold lock-on, look-to-pick); while the mouse steers the controller walks on the mouse's target yaw (`freeYaw`) so W follows the view at once. A/D/S still turn and walk (no strafe/backward clips). R215/R216 entries above describe superseded builds.
 
+**R218 (v0.8.218, GO B 21/10):** desktop mouse control is the R210 pointer-lock mouse-look again; R211-R217 (aim sprout, ring, look-to-pick, cursor aim, ARK rate, mouse settings, wide tilt) are removed and only in git history. Settings cards keep scrolling in short windows.
+
 ## Performance budgets
 Mobile FPS target 50–60 (minimum ~30 in heavy scenes) · frame budget 16.7 ms · avoid startup long-task series >50 ms ·
 as few WebGL contexts as possible · draw calls and triangles measured, not guessed.

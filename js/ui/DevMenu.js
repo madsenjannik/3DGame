@@ -2,7 +2,7 @@
 // Test shortcuts for the wilds/garden loop. Enabled per device from Indstillinger on the start
 // screen (localStorage 'tgw.devMenu' = '1'). Works on the player's real save.
 import { MATERIALS, TOOLS } from '../data/wildsCatalog.js';
-import { PROFILES, CONTROL_PROFILE_KEY, savedProfile, applyControlProfile } from '../core/ControlProfiles.js?build=RING-R217-20261021A';
+import { PROFILES, CONTROL_PROFILE_KEY, savedProfile, applyControlProfile } from '../core/ControlProfiles.js?build=RING-R218-20261021A';
 
 export const DEV_MENU_KEY = 'tgw.devMenu';
 export const HUD_TEST_KEY = 'tgw.hudTestV1';   // R131: the old 'Test HUD' is gone; the key is only cleared

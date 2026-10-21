@@ -5634,11 +5634,4 @@ body:not(.touch) .wilds-card .wilds-list{flex:1 1 auto}
 #game-menu .gm-seg button.on{background:#30392b;color:#f4f0e7;box-shadow:0 2px 8px rgba(20,26,17,.18)}
 #game-menu .gm-ver{margin-top:12px;font:600 10px/1 Manrope,system-ui,sans-serif;color:#9a9f91}
 @media (max-height:430px){#game-menu .gm-card{padding:14px 18px 10px}#game-menu h2{font-size:20px;margin:4px 0 10px}#game-menu button{min-height:38px}#game-menu .gm-row{padding:8px 0}}
-/* R212: the quiet focus dot (R213 GO A: a soft open ring, so it never reads as a pollen mote) while the mouse steers (js/gameplay/AimMarker.js places it; hidden without pointer lock) */
-#aim-dot{position:fixed;left:0;top:0;width:13px;height:13px;box-sizing:border-box;border-radius:50%;border:2px solid rgba(255,246,223,.92);box-shadow:0 0 0 1px rgba(40,48,36,.55),inset 0 0 0 1px rgba(40,48,36,.4);opacity:0;pointer-events:none;z-index:5;will-change:transform,opacity}
-body:not(.tgw-mouse-look) #aim-dot{display:none}
-#game-menu .gm-range{display:flex;align-items:center;gap:8px}
-#game-menu .gm-range input{width:130px;accent-color:#30392b;cursor:pointer}
-#game-menu .gm-range output{min-width:34px;font-size:12px;font-weight:700;color:#30392b;text-align:right;font-variant-numeric:tabular-nums}
-#game-menu .gm-card{max-height:calc(100dvh - 24px);overflow-y:auto;overscroll-behavior:contain}   /* R212: Settings grew (mouse rows); short windows scroll */
-#aim-dot{transition:border-color .2s}#aim-dot.locked{border-color:rgba(255,226,140,.96)}   /* R214: lock-on turns the ring gold */
+#game-menu .gm-card{max-height:calc(100dvh - 24px);overflow-y:auto;overscroll-behavior:contain}   /* R212, kept in R218: short windows scroll the menu card */
