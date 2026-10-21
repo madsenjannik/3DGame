@@ -2,7 +2,7 @@
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { FoundationSample } from './FoundationSample.js';
-import { SharedLandscape } from './SharedLandscape.js?build=RING-R218-20261021A';
+import { SharedLandscape } from './SharedLandscape.js?build=RING-R219-20261021A';
 import { color, createSkyMaterial, patchMaterial, seededRandom, smooth } from '../visual/VisualKit.js';
 
 function paintGeometry(geometry, hex){
@@ -183,7 +183,7 @@ export class GardenEnvironment {
       for(const body of this.localWaterBodies)this.resolveLocalWaterBody(p,body,radius);
     }else if(this.sharedLandscape)this.sharedLandscape.resolveCollisions(p,radius);
     this.homeCollisionResolver?.(p,radius,space);
-    if(space==='world'){this.orangeryCollisionResolver?.(p,radius);this.stableCollisionResolver?.(p,radius);}
+    if(space==='world'){this.orangeryCollisionResolver?.(p,radius);this.stableCollisionResolver?.(p,radius);this.wildlifeCollisionResolver?.(p,radius);}   // R219: ground animals are solid
   }
 
   pathX(z){return Math.sin((10.8-z)*.34)*.52;}

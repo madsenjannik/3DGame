@@ -1894,6 +1894,8 @@ framework, procedural streaming, day/night, skill tree, inventory grid, equipmen
 
 **R218 (v0.8.218, GO B 21/10):** desktop mouse control is the R210 pointer-lock mouse-look again; R211-R217 (aim sprout, ring, look-to-pick, cursor aim, ARK rate, mouse settings, wide tilt) are removed and only in git history. Settings cards keep scrolling in short windows.
 
+**R219 (v0.8.219, GO 21/10):** collisions: ground-walking wildlife has a moving collider (`WildlifeSystem.resolveCollisions` via `world.wildlifeCollisionResolver`) and is itself kept out of the world's colliders; moles collide only while above ground. Audit method and the remaining walk-through items (L0 rain site, fiber bundles) are in HANDOVER R219.
+
 ## Performance budgets
 Mobile FPS target 50–60 (minimum ~30 in heavy scenes) · frame budget 16.7 ms · avoid startup long-task series >50 ms ·
 as few WebGL contexts as possible · draw calls and triangles measured, not guessed.

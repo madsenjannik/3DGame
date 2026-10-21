@@ -8,7 +8,7 @@
 import * as THREE from 'three';
 import { loadGLTF } from '../core/AssetManager.js';
 import { WildsModel } from './WildsModels.js';
-import { WildsFarProxy } from './WildsFarProxy.js?build=RING-R218-20261021A';   // R193 Fase 1c
+import { WildsFarProxy } from './WildsFarProxy.js?build=RING-R219-20261021A';   // R193 Fase 1c
 import { WoodGiantBoss } from './WoodGiantBoss.js';
 import { RootBearBoss } from './RootBearBoss.js?build=DAYNIGHT-R81-20261005A';
 import { SpecialSystem } from './SpecialSystem.js?build=DAYNIGHT-R81-20261005A';
@@ -85,6 +85,9 @@ export class CombatSystem {
   }
 
   updateMole(m, dt, ch) {
+    // R219 (Jannik GO 21/10): a mole is solid while it is above ground (emerge, up, attack, hit); the mound alone can be walked over
+    const col = m.col ||= Object.assign(this.g.world.addObstacle({ x: m.x, z: m.z, r: .4, height: .8, kind: 'wilds-mole' }), { space: 'off' });
+    col.x = m.x; col.z = m.z; col.space = VULNERABLE.has(m.state) ? 'world' : 'off';
     const md = m.model; if (!md || m.state === 'gone') return;
     const px = ch.position.x, pz = ch.position.z, d = Math.hypot(px - m.x, pz - m.z);
     if (d > 60 && m.state === 'dormant') return;

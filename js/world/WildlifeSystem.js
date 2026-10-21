@@ -6,6 +6,11 @@ const ASSET_URL='./assets/wildlife/animal_assets_20.glb';
 const PERIODS=['day','dusk','night'];
 const clamp=(v,a=0,b=1)=>Math.max(a,Math.min(b,v));
 const angleLerp=(a,b,t)=>a+Math.atan2(Math.sin(b-a),Math.cos(b-a))*t;
+// R219 (Jannik GO 21/10, 'animals have no colliders'): animals that walk on the ground are solid (the player cannot walk through them)
+// and are kept out of the world's own colliders (trees, rocks, houses...) while they move; one that is blocked gives up its walk.
+// Birds, insects, bats and swimmers stay as they were. Radius from the species' size.
+const solid=cfg=>!cfg.bird&&!cfg.hover&&!cfg.water&&cfg.targetSize>=.3;
+const bodyR=cfg=>Math.max(.12,cfg.targetSize*.3);
 
 // targetSize is a The Growing Wilds visual size in metres-ish world units. The source GLB
 // was authored as an asset sheet with display-normalized scales, so runtime size
@@ -170,7 +175,7 @@ export class WildlifeSystem{
     wrapper.add(visual);wrapper.position.set(pos.x,pos.y,pos.z);wrapper.rotation.y=this.rand()*Math.PI*2;this.scene.add(wrapper);
     const a={id,cfg,template,root:wrapper,visual,mixer:new THREE.AnimationMixer(visual),action:null,role:'idle',decision:1.2+this.rand()*3,target:null,start:null,startDist:0,moveTime:0,moveDuration:0,fleeing:false,seed:this.rand()*100};
     if(cfg.hover&&!cfg.water)wrapper.position.y=this.world.groundHeight(pos.x,pos.z)+(cfg.airHeight||.6);
-    this.animals.push(a);this.play(a,'idle');return a;
+    a.r=solid(cfg)?bodyR(cfg):0;this.animals.push(a);this.play(a,'idle');return a;
   }
 
   despawn(a){const i=this.animals.indexOf(a);if(i>=0)this.animals.splice(i,1);a.mixer.stopAllAction();a.root.removeFromParent();}
@@ -197,6 +202,8 @@ export class WildlifeSystem{
       a.moveTime+=dt;const tx=a.target.x-a.root.position.x,tz=a.target.z-a.root.position.z,d=Math.hypot(tx,tz),speed=a.fleeing?cfg.fleeSpeed:cfg.speed;
       if(d<.12||a.moveTime>a.moveDuration+1.2){this.settle(a);}else{
         const step=Math.min(d,speed*dt),nx=tx/Math.max(d,.0001),nz=tz/Math.max(d,.0001);a.root.position.x+=nx*step;a.root.position.z+=nz*step;
+        if(a.r){const px=a.root.position.x,pz=a.root.position.z;this._self=a;try{this.world.resolveCollisions(a.root.position,a.r);}finally{this._self=null;}   // R219: around trees, rocks, houses
+          const got=(a.root.position.x-px+nx*step)*nx+(a.root.position.z-pz+nz*step)*nz;a.stuck=got<step*.35?(a.stuck||0)+dt:0;if(a.stuck>.5){a.stuck=0;this.settle(a);return;}}
         a.root.rotation.y=angleLerp(a.root.rotation.y,Math.atan2(nx,nz),Math.min(1,dt*7));
         const ground=this.world.groundHeight(a.root.position.x,a.root.position.z),p=clamp(a.moveTime/Math.max(.01,a.moveDuration));
         if(cfg.water)a.root.position.y=this.shared.WL+(cfg.waterOffset||0)+Math.sin(time*1.7+a.seed)*(cfg.waterBob??.012);
@@ -213,6 +220,12 @@ export class WildlifeSystem{
     const r=this.rand();if(r<.38&&a.cfg.action){this.play(a,'action');a.decision=Math.max(a.decision,1.5+this.rand()*2);}else if(r<.84){if(!this.chooseMoveTarget(a,player))a.decision=1+this.rand()*2;}else{this.play(a,'idle');a.decision=1.8+this.rand()*4;}
   }
 
+  // R219: GardenEnvironment.resolveCollisions asks this in the world (the player, and each animal for the others)
+  resolveCollisions(p,radius=.3){
+    if(!this.active)return;
+    for(const a of this.animals){if(!a.r||a===this._self)continue;const dx=p.x-a.root.position.x,dz=p.z-a.root.position.z,r=a.r+radius,d2=dx*dx+dz*dz;if(d2>=r*r)continue;
+      const d=Math.sqrt(d2);const nx=d>1e-4?dx/d:1,nz=d>1e-4?dz/d:0;p.x=a.root.position.x+nx*r;p.z=a.root.position.z+nz*r;}
+  }
   spawnOne(player){const pick=this.chooseSpecies();if(!pick)return false;const [id,cfg]=pick,pos=this.sampleNearPlayer(cfg,player);if(!pos)return false;return !!this.createAnimal(id,cfg,pos);}
 
   update(dt,time,player){
